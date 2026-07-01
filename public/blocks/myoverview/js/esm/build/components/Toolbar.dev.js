@@ -51,12 +51,30 @@ function Toolbar(props) {
       case "hidden":
         return strings.filterhidden;
       case "customfield":
-        return config.customfieldname ?? strings.filtercustomfield;
+        return strings.filtercustomfield;
       default:
         return f;
     }
   }, "filterLabel");
-  const filterOptions = config.enabledfilters.map((f) => ({ value: f, label: filterLabel(f) }));
+  const filterOptions = [];
+  for (const f of config.enabledfilters) {
+    if (f === "customfield") {
+      for (const cfv of config.customfieldvalues ?? []) {
+        filterOptions.push({ value: `cf:${cfv.value}`, label: cfv.name });
+      }
+    } else {
+      filterOptions.push({ value: f, label: filterLabel(f) });
+    }
+  }
+  const currentFilterValue = filter === "customfield" ? `cf:${customfieldvalue ?? ""}` : filter;
+  const onFilterSelect = /* @__PURE__ */ __name((val) => {
+    if (val.startsWith("cf:")) {
+      onCustomFieldValue(val.slice(3));
+      onFilter("customfield");
+    } else {
+      onFilter(val);
+    }
+  }, "onFilterSelect");
   const sortOptions = [
     { value: "title", label: strings.sortcoursename },
     // Short name sort is only available when extended course names are shown.
@@ -70,11 +88,7 @@ function Toolbar(props) {
     summary: strings.viewsummary
   };
   const viewOptions = config.enabledviews.map((v) => ({ value: v, label: viewLabels[v] }));
-  const customfieldvalues = config.customfieldvalues ?? [];
-  const showCustomFieldSelector = filter === "customfield" && customfieldvalues.length > 0;
-  const customFieldOptions = customfieldvalues.map((v) => ({ value: v.value, label: v.name }));
-  const selectedCustomFieldName = customfieldvalues.find((v) => v.value === customfieldvalue)?.name;
-  const selectedFilter = filterOptions.find((o) => o.value === filter);
+  const selectedFilter = filterOptions.find((o) => o.value === currentFilterValue);
   const selectedSort = sortOptions.find((o) => o.value === sort);
   const selectedView = viewOptions.find((o) => o.value === view);
   const showActions = !!(managecourseurl || createcourseurl || requestcourseurl);
@@ -82,44 +96,44 @@ function Toolbar(props) {
     showActions && /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__group local-co-toolbar__group--actions", children: [
       managecourseurl && /* @__PURE__ */ jsxDEV("a", { className: "btn btn-outline-primary btn-sm", href: managecourseurl, children: strings.managecourses }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-        lineNumber: 130,
+        lineNumber: 145,
         columnNumber: 25
       }, this),
       requestcourseurl && /* @__PURE__ */ jsxDEV("a", { className: "btn btn-primary btn-sm", href: requestcourseurl, children: strings.requestcoursebutton }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-        lineNumber: 135,
+        lineNumber: 150,
         columnNumber: 25
       }, this),
       createcourseurl && /* @__PURE__ */ jsxDEV("a", { className: "btn btn-primary btn-sm", href: createcourseurl, children: [
         /* @__PURE__ */ jsxDEV("i", { className: "fa-solid fa-plus", "aria-hidden": "true" }, void 0, false, {
           fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 141,
+          lineNumber: 156,
           columnNumber: 29
         }, this),
         " ",
         strings.createcourse
       ] }, void 0, true, {
         fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-        lineNumber: 140,
+        lineNumber: 155,
         columnNumber: 25
       }, this)
     ] }, void 0, true, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 128,
+      lineNumber: 143,
       columnNumber: 17
     }, this),
     showActions && showControls && /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__divider", "aria-hidden": "true" }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 147,
+      lineNumber: 162,
       columnNumber: 17
     }, this),
     showControls && /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__group local-co-toolbar__group--search", children: /* @__PURE__ */ jsxDEV(SearchInput, { value: search, onChange: onSearch }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 151,
+      lineNumber: 166,
       columnNumber: 17
     }, this) }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 150,
+      lineNumber: 165,
       columnNumber: 13
     }, this),
     showControls && /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__group local-co-toolbar__group--tools", children: [
@@ -130,8 +144,8 @@ function Toolbar(props) {
           triggerAriaLabel: `${strings.filterresults}: ${selectedFilter?.label ?? ""}`,
           icon: "filter",
           options: filterOptions,
-          current: filter,
-          onSelect: onFilter,
+          current: currentFilterValue,
+          onSelect: onFilterSelect,
           active: filter !== DEFAULT_FILTER,
           showLabel: true
         },
@@ -139,28 +153,7 @@ function Toolbar(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 157,
-          columnNumber: 21
-        },
-        this
-      ),
-      showCustomFieldSelector && /* @__PURE__ */ jsxDEV(
-        Dropdown,
-        {
-          label: config.customfieldname ?? strings.filtercustomfield,
-          triggerAriaLabel: `${config.customfieldname ?? strings.filtercustomfield}: ${selectedCustomFieldName ?? ""}`,
-          icon: "tag",
-          options: customFieldOptions,
-          current: customfieldvalue ?? "",
-          onSelect: onCustomFieldValue,
-          active: customfieldvalue !== null,
-          showLabel: true
-        },
-        void 0,
-        false,
-        {
-          fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 169,
+          lineNumber: 172,
           columnNumber: 21
         },
         this
@@ -181,7 +174,7 @@ function Toolbar(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 182,
+          lineNumber: 183,
           columnNumber: 17
         },
         this
@@ -202,19 +195,19 @@ function Toolbar(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 193,
+          lineNumber: 194,
           columnNumber: 21
         },
         this
       )
     ] }, void 0, true, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 155,
+      lineNumber: 170,
       columnNumber: 13
     }, this)
   ] }, void 0, true, {
     fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-    lineNumber: 126,
+    lineNumber: 141,
     columnNumber: 9
   }, this);
 }

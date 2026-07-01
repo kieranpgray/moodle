@@ -77,8 +77,7 @@ export default function Toolbar(props: ToolbarProps) {
     const strings = useStrings();
     const currentViewIcon = VIEW_ICON[view] ?? "table-cells-large";
 
-    // Filter label lookup. The customfield grouping is labelled with the field's
-    // configured name when available, falling back to the generic string.
+    // Filter label lookup for the standard groupings.
     const filterLabel = (f: Filter): string => {
         switch (f) {
             case "allincludinghidden": return strings.filterallincludinghidden;
@@ -88,13 +87,34 @@ export default function Toolbar(props: ToolbarProps) {
             case "past": return strings.filterpast;
             case "favourites": return strings.filterfavourites;
             case "hidden": return strings.filterhidden;
-            case "customfield": return config.customfieldname ?? strings.filtercustomfield;
+            case "customfield": return strings.filtercustomfield;
             default: return f;
         }
     };
 
-    // Only offer filters/views the admin has enabled.
-    const filterOptions = config.enabledfilters.map((f) => ({value: f, label: filterLabel(f)}));
+    // Build the grouping options, only offering filters the admin has enabled. When the
+    // custom-field grouping is enabled and has values, its values are listed inline (like the
+    // old block) so that selecting one applies the 'customfield' grouping and its value together.
+    // Such options are encoded as `cf:<value>` and decoded in onFilterSelect.
+    const filterOptions: Array<{value: string; label: string}> = [];
+    for (const f of config.enabledfilters) {
+        if (f === "customfield") {
+            for (const cfv of config.customfieldvalues ?? []) {
+                filterOptions.push({value: `cf:${cfv.value}`, label: cfv.name});
+            }
+        } else {
+            filterOptions.push({value: f, label: filterLabel(f)});
+        }
+    }
+    const currentFilterValue = filter === "customfield" ? `cf:${customfieldvalue ?? ""}` : filter;
+    const onFilterSelect = (val: string) => {
+        if (val.startsWith("cf:")) {
+            onCustomFieldValue(val.slice(3));
+            onFilter("customfield");
+        } else {
+            onFilter(val as Filter);
+        }
+    };
 
     const sortOptions = [
         {value: "title" as Sort, label: strings.sortcoursename},
@@ -111,12 +131,7 @@ export default function Toolbar(props: ToolbarProps) {
     };
     const viewOptions = config.enabledviews.map((v) => ({value: v, label: viewLabels[v]}));
 
-    const customfieldvalues = config.customfieldvalues ?? [];
-    const showCustomFieldSelector = filter === "customfield" && customfieldvalues.length > 0;
-    const customFieldOptions = customfieldvalues.map((v) => ({value: v.value, label: v.name}));
-    const selectedCustomFieldName = customfieldvalues.find((v) => v.value === customfieldvalue)?.name;
-
-    const selectedFilter = filterOptions.find((o) => o.value === filter);
+    const selectedFilter = filterOptions.find((o) => o.value === currentFilterValue);
     const selectedSort = sortOptions.find((o) => o.value === sort);
     const selectedView = viewOptions.find((o) => o.value === view);
 
@@ -154,28 +169,14 @@ export default function Toolbar(props: ToolbarProps) {
             {showControls && (
             <div className="local-co-toolbar__group local-co-toolbar__group--tools">
                 {filterOptions.length > 1 && (
-                    <Dropdown<Filter>
+                    <Dropdown<string>
                         label={strings.filterresults}
                         triggerAriaLabel={`${strings.filterresults}: ${selectedFilter?.label ?? ""}`}
                         icon="filter"
                         options={filterOptions}
-                        current={filter}
-                        onSelect={onFilter}
+                        current={currentFilterValue}
+                        onSelect={onFilterSelect}
                         active={filter !== DEFAULT_FILTER}
-                        showLabel
-                    />
-                )}
-                {showCustomFieldSelector && (
-                    <Dropdown<string>
-                        label={config.customfieldname ?? strings.filtercustomfield}
-                        triggerAriaLabel={
-                            `${config.customfieldname ?? strings.filtercustomfield}: ${selectedCustomFieldName ?? ""}`
-                        }
-                        icon="tag"
-                        options={customFieldOptions}
-                        current={customfieldvalue ?? ""}
-                        onSelect={onCustomFieldValue}
-                        active={customfieldvalue !== null}
                         showLabel
                     />
                 )}
