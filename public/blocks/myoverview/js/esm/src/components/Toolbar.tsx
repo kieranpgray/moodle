@@ -38,6 +38,7 @@ import SearchInput from "./SearchInput";
 type ToolbarProps = {
     role: Role;
     permissions: Permissions;
+    showControls: boolean;
     view: View;
     filter: Filter;
     sort: Sort;
@@ -69,7 +70,7 @@ const VIEW_ICON: Record<View, string> = {
  */
 export default function Toolbar(props: ToolbarProps) {
     const {
-        view, filter, sort, search, config,
+        showControls, view, filter, sort, search, config,
         createcourseurl, managecourseurl, requestcourseurl, customfieldvalue,
         onView, onFilter, onSort, onSearch, onCustomFieldValue,
     } = props;
@@ -142,12 +143,15 @@ export default function Toolbar(props: ToolbarProps) {
                     )}
                 </div>
             )}
-            {showActions && (
+            {showActions && showControls && (
                 <div className="local-co-toolbar__divider" aria-hidden="true" />
             )}
+            {showControls && (
             <div className="local-co-toolbar__group local-co-toolbar__group--search">
                 <SearchInput value={search} onChange={onSearch} />
             </div>
+            )}
+            {showControls && (
             <div className="local-co-toolbar__group local-co-toolbar__group--tools">
                 {filterOptions.length > 1 && (
                     <Dropdown<Filter>
@@ -198,6 +202,7 @@ export default function Toolbar(props: ToolbarProps) {
                     />
                 )}
             </div>
+            )}
         </div>
     );
 }

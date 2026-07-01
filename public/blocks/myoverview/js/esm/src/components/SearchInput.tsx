@@ -23,6 +23,7 @@
  * @module     block_myoverview/components/SearchInput
  */
 
+import {useId} from "react";
 import {CloseButton} from "@moodlehq/design-system";
 import {useStrings} from "../state";
 import Icon from "./Icon";
@@ -40,10 +41,13 @@ type SearchInputProps = {
  */
 export default function SearchInput({value, onChange}: SearchInputProps) {
     const strings = useStrings();
+    const inputId = useId();
     return (
         <div className="local-co-search">
+            <label htmlFor={inputId} className="visually-hidden">{strings.searchcourses}</label>
             <Icon name="magnifying-glass" className="local-co-search__icon" />
             <input
+                id={inputId}
                 type="text"
                 className="local-co-search__input"
                 placeholder={strings.search}

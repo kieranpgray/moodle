@@ -16,6 +16,7 @@ const VIEW_ICON = {
 };
 function Toolbar(props) {
   const {
+    showControls,
     view,
     filter,
     sort,
@@ -81,47 +82,47 @@ function Toolbar(props) {
     showActions && /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__group local-co-toolbar__group--actions", children: [
       managecourseurl && /* @__PURE__ */ jsxDEV("a", { className: "btn btn-outline-primary btn-sm", href: managecourseurl, children: strings.managecourses }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-        lineNumber: 129,
+        lineNumber: 130,
         columnNumber: 25
       }, this),
       requestcourseurl && /* @__PURE__ */ jsxDEV("a", { className: "btn btn-primary btn-sm", href: requestcourseurl, children: strings.requestcoursebutton }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-        lineNumber: 134,
+        lineNumber: 135,
         columnNumber: 25
       }, this),
       createcourseurl && /* @__PURE__ */ jsxDEV("a", { className: "btn btn-primary btn-sm", href: createcourseurl, children: [
         /* @__PURE__ */ jsxDEV("i", { className: "fa-solid fa-plus", "aria-hidden": "true" }, void 0, false, {
           fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 140,
+          lineNumber: 141,
           columnNumber: 29
         }, this),
         " ",
         strings.createcourse
       ] }, void 0, true, {
         fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-        lineNumber: 139,
+        lineNumber: 140,
         columnNumber: 25
       }, this)
     ] }, void 0, true, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 127,
+      lineNumber: 128,
       columnNumber: 17
     }, this),
-    showActions && /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__divider", "aria-hidden": "true" }, void 0, false, {
+    showActions && showControls && /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__divider", "aria-hidden": "true" }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 146,
+      lineNumber: 147,
       columnNumber: 17
     }, this),
-    /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__group local-co-toolbar__group--search", children: /* @__PURE__ */ jsxDEV(SearchInput, { value: search, onChange: onSearch }, void 0, false, {
+    showControls && /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__group local-co-toolbar__group--search", children: /* @__PURE__ */ jsxDEV(SearchInput, { value: search, onChange: onSearch }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 149,
+      lineNumber: 151,
       columnNumber: 17
     }, this) }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 148,
+      lineNumber: 150,
       columnNumber: 13
     }, this),
-    /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__group local-co-toolbar__group--tools", children: [
+    showControls && /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__group local-co-toolbar__group--tools", children: [
       filterOptions.length > 1 && /* @__PURE__ */ jsxDEV(
         Dropdown,
         {
@@ -138,7 +139,7 @@ function Toolbar(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 153,
+          lineNumber: 157,
           columnNumber: 21
         },
         this
@@ -159,7 +160,7 @@ function Toolbar(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 165,
+          lineNumber: 169,
           columnNumber: 21
         },
         this
@@ -180,7 +181,7 @@ function Toolbar(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 178,
+          lineNumber: 182,
           columnNumber: 17
         },
         this
@@ -201,19 +202,19 @@ function Toolbar(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 189,
+          lineNumber: 193,
           columnNumber: 21
         },
         this
       )
     ] }, void 0, true, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 151,
+      lineNumber: 155,
       columnNumber: 13
     }, this)
   ] }, void 0, true, {
     fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-    lineNumber: 125,
+    lineNumber: 126,
     columnNumber: 9
   }, this);
 }

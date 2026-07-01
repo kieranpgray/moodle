@@ -58,7 +58,7 @@ Feature: My overview block searching
     And I set the field "Search courses" in the "Course overview" "block" to "Course"
     And I should see "Course 01" in the "Course overview" "block"
     And I should not see "Course 13" in the "Course overview" "block"
-    And I click on "[data-control='next']" "css_element" in the "Course overview" "block"
-    And I wait until ".block_myoverview [data-control='next']" "css_element" exists
+    And I click on "Next page" "button" in the "Course overview" "block"
+    And I wait until "Course 13" "text" exists
     Then I should see "Course 13" in the "Course overview" "block"
     And I should not see "Course 01" in the "Course overview" "block"

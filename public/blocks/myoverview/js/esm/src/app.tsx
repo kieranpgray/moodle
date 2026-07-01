@@ -26,7 +26,7 @@
  */
 
 import {useCallback, useEffect, useMemo, useReducer, useRef, useState} from "react";
-import {AppProps, PAGE_SIZE} from "./types";
+import {AppProps, DEFAULT_FILTER, PAGE_SIZE} from "./types";
 import {
     getCourses, setFavourite, setCourseHidden, setPreference,
     PREF_VIEW, PREF_FILTER, PREF_SORT, PREF_CFVALUE,
@@ -158,11 +158,31 @@ export default function App(props: AppProps) {
     const callbacks = useMemo(() => ({toggleFavourite, toggleHidden}), [toggleFavourite, toggleHidden]);
     const memberships = useMemo(() => ({favourites, hidden}), [favourites, hidden]);
 
-    const hasNoCourses = !loading && !error && courses.length === 0;
-    // Client-side pagination over the full result set (see the fetch effect above).
-    const pageCount = Math.max(1, Math.ceil(courses.length / PAGE_SIZE));
+    // Apply the hidden state as a client-side filter on top of the server results so that hiding
+    // or restoring a course updates the visible list immediately (before any refetch), matching
+    // the classification: the 'hidden' filter shows only hidden courses, 'allincludinghidden' shows
+    // everything, a search shows the server results as-is, and every other filter excludes hidden.
+    const searching = debouncedSearch.trim() !== "";
+    const visibleCourses = searching ? courses : courses.filter((c) => {
+        const isHidden = hidden.has(c.id);
+        if (filter === "hidden") {
+            return isHidden;
+        }
+        if (filter === "allincludinghidden") {
+            return true;
+        }
+        return !isHidden;
+    });
+
+    const hasNoCourses = !loading && !error && visibleCourses.length === 0;
+    // Hide the search/filter/sort/view controls in a genuine zero-state (no courses and no active
+    // search or non-default filter), matching the old block and the Figma zero-state. They stay
+    // visible when a search or filter is active so the user can always undo it.
+    const showControls = loading || courses.length > 0 || search !== "" || filter !== DEFAULT_FILTER;
+    // Client-side pagination over the (hidden-filtered) result set (see the fetch effect above).
+    const pageCount = Math.max(1, Math.ceil(visibleCourses.length / PAGE_SIZE));
     const currentPage = Math.min(page, pageCount);
-    const pageCourses = courses.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    const pageCourses = visibleCourses.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
     return (
         <StringsContext.Provider value={strings}>
@@ -172,6 +192,7 @@ export default function App(props: AppProps) {
                         <Toolbar
                             role={role}
                             permissions={permissions}
+                            showControls={showControls}
                             view={view}
                             filter={filter}
                             sort={sort}

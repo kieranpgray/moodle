@@ -1,20 +1,28 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 import { jsxDEV } from "react/jsx-dev-runtime";
+import { useId } from "react";
 import { CloseButton } from "@moodlehq/design-system";
 import { useStrings } from "../state";
 import Icon from "./Icon";
 function SearchInput({ value, onChange }) {
   const strings = useStrings();
+  const inputId = useId();
   return /* @__PURE__ */ jsxDEV("div", { className: "local-co-search", children: [
+    /* @__PURE__ */ jsxDEV("label", { htmlFor: inputId, className: "visually-hidden", children: strings.searchcourses }, void 0, false, {
+      fileName: "public/blocks/myoverview/js/esm/src/components/SearchInput.tsx",
+      lineNumber: 47,
+      columnNumber: 13
+    }, this),
     /* @__PURE__ */ jsxDEV(Icon, { name: "magnifying-glass", className: "local-co-search__icon" }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/SearchInput.tsx",
-      lineNumber: 45,
+      lineNumber: 48,
       columnNumber: 13
     }, this),
     /* @__PURE__ */ jsxDEV(
       "input",
       {
+        id: inputId,
         type: "text",
         className: "local-co-search__input",
         placeholder: strings.search,
@@ -26,7 +34,7 @@ function SearchInput({ value, onChange }) {
       false,
       {
         fileName: "public/blocks/myoverview/js/esm/src/components/SearchInput.tsx",
-        lineNumber: 46,
+        lineNumber: 49,
         columnNumber: 13
       },
       this
@@ -43,14 +51,14 @@ function SearchInput({ value, onChange }) {
       false,
       {
         fileName: "public/blocks/myoverview/js/esm/src/components/SearchInput.tsx",
-        lineNumber: 55,
+        lineNumber: 59,
         columnNumber: 17
       },
       this
     )
   ] }, void 0, true, {
     fileName: "public/blocks/myoverview/js/esm/src/components/SearchInput.tsx",
-    lineNumber: 44,
+    lineNumber: 46,
     columnNumber: 9
   }, this);
 }
