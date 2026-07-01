@@ -29,19 +29,26 @@ type CourseListProps = {
     courses: Course[];
     view: View;
     role: Role;
+    displaycategories: boolean;
 };
 
 /**
  * Render the page of courses in the active view.
  *
- * @param props The (already paginated) courses, view mode and role.
+ * @param props The (already paginated) courses, view mode, role and category display flag.
  * @returns The list container.
  */
-export default function CourseList({courses, view, role}: CourseListProps) {
+export default function CourseList({courses, view, role, displaycategories}: CourseListProps) {
     return (
         <div className={`local-co-list local-co-list--${view}`}>
             {courses.map((course) => (
-                <CourseItem key={course.id} course={course} view={view} role={role} />
+                <CourseItem
+                    key={course.id}
+                    course={course}
+                    view={view}
+                    role={role}
+                    displaycategories={displaycategories}
+                />
             ))}
         </div>
     );

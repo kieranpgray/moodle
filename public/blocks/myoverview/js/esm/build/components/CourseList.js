@@ -1,1 +1,1 @@
-import l from"./CourseItem";import{jsx as r}from"react/jsx-runtime";function t({courses:s,view:o,role:i}){return r("div",{className:`local-co-list local-co-list--${o}`,children:s.map(e=>r(l,{course:e,view:o,role:i},e.id))})}export{t as default};
+import t from"./CourseItem";import{jsx as s}from"react/jsx-runtime";function a({courses:r,view:o,role:i,displaycategories:l}){return s("div",{className:`local-co-list local-co-list--${o}`,children:r.map(e=>s(t,{course:e,view:o,role:i,displaycategories:l},e.id))})}export{a as default};

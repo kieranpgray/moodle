@@ -188,7 +188,10 @@ export default function App(props: AppProps) {
         <StringsContext.Provider value={strings}>
             <CourseCallbacksContext.Provider value={callbacks}>
                 <CourseMembershipContext.Provider value={memberships}>
-                    <section className="block-myoverview" aria-label={strings.courseoverview}>
+                    {/* No aria-label here: the Moodle block wrapper is already a "Course overview"
+                        region landmark, so naming this section too would create a duplicate landmark
+                        (axe landmark-unique). */}
+                    <section className="block-myoverview">
                         <Toolbar
                             role={role}
                             permissions={permissions}
@@ -221,7 +224,12 @@ export default function App(props: AppProps) {
                         {hasNoCourses && <EmptyState zerostate={zerostate} />}
                         {!hasNoCourses && !loading && !error && (
                             <>
-                                <CourseList courses={pageCourses} view={view} role={role} />
+                                <CourseList
+                                    courses={pageCourses}
+                                    view={view}
+                                    role={role}
+                                    displaycategories={config.displaycategories}
+                                />
                                 <Pagination
                                     page={currentPage}
                                     pageCount={pageCount}

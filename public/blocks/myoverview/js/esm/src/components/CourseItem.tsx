@@ -37,15 +37,16 @@ type CourseItemProps = {
     course: Course;
     view: View;
     role: Role;
+    displaycategories: boolean;
 };
 
 /**
  * Render one course in the active view.
  *
- * @param props The course, view mode and viewer role.
+ * @param props The course, view mode, viewer role and category display flag.
  * @returns The course item element.
  */
-export default function CourseItem({course, view, role}: CourseItemProps) {
+export default function CourseItem({course, view, role, displaycategories}: CourseItemProps) {
     // Progress is shown for students only (educator cards omit it per Figma).
     const showProgress = role === "student" && course.hasprogress && course.progress !== null;
 
@@ -62,7 +63,7 @@ export default function CourseItem({course, view, role}: CourseItemProps) {
                     <a id={titleId} className="local-co-card__title stretched-link" href={course.viewurl}>
                         {course.fullnamedisplay}
                     </a>
-                    {course.showcoursecategory && (
+                    {displaycategories && course.coursecategory && (
                         <div className="local-co-card__category">{course.coursecategory}</div>
                     )}
                 </div>

@@ -6,7 +6,7 @@ const CARDLIST_REQUIRED_FIELDS = [
   "id",
   "fullname",
   "shortname",
-  "showcoursecategory",
+  "coursecategory",
   "showshortname",
   "visible",
   "enddate"

@@ -40,7 +40,7 @@ import {Course, Sort, View} from "./types";
 // Requiredfields mirrors the current AMD split (amd/src/repository.js): summary view
 // needs summary/summaryformat, card/list views omit them to keep the payload small.
 const CARDLIST_REQUIRED_FIELDS = [
-    "id", "fullname", "shortname", "showcoursecategory", "showshortname", "visible", "enddate",
+    "id", "fullname", "shortname", "coursecategory", "showshortname", "visible", "enddate",
 ];
 const SUMMARY_REQUIRED_FIELDS = [...CARDLIST_REQUIRED_FIELDS, "summary", "summaryformat"];
 
