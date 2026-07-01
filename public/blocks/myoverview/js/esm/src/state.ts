@@ -66,14 +66,14 @@ export type Action =
  * @param prefs The user's stored view/filter/sort/customfield preferences.
  * @returns The initial reducer state.
  */
-export const initState = (prefs: ServerPreferences): State => ({
+export const initState = (prefs: ServerPreferences, hiddenids: number[] = []): State => ({
     view: prefs.view ?? DEFAULT_VIEW,
     filter: prefs.filter ?? DEFAULT_FILTER,
     sort: prefs.sort ?? DEFAULT_SORT,
     search: "",
     page: 1,
     favourites: new Set<number>(),
-    hidden: new Set<number>(),
+    hidden: new Set<number>(hiddenids),
     loading: false,
     error: null,
     courses: [],
@@ -102,7 +102,15 @@ export const reducer = (state: State, action: Action): State => {
         case "SET_CUSTOMFIELDVALUE":
             return {...state, customfieldvalue: action.value, page: 1};
         case "SET_COURSES":
-            return {...state, courses: action.courses, loading: false, error: null};
+            // Reseed favourites from server truth: each course carries its own isfavourite
+            // flag, so the star state always reflects what the server returned for this fetch.
+            return {
+                ...state,
+                courses: action.courses,
+                favourites: new Set(action.courses.filter((c) => c.isfavourite).map((c) => c.id)),
+                loading: false,
+                error: null,
+            };
         case "SET_LOADING":
             return {...state, loading: true, error: null};
         case "SET_ERROR":

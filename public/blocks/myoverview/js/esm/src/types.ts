@@ -167,6 +167,8 @@ export type LiveAppProps = {
     createcourseurl?: string | null;
     managecourseurl?: string | null;
     requestcourseurl?: string | null;
+    /** Ids of courses the user has removed from view, to seed the hidden state. */
+    hiddencourseids?: number[];
     /**
      * Pre-computed zero-state data for when the course list is empty. The
      * request-course button lives in the persistent toolbar (requestcourseurl),

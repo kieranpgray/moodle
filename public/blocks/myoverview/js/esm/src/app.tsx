@@ -69,10 +69,11 @@ function useSkipFirstEffect(effect: () => void, deps: unknown[]) {
 export default function App(props: AppProps) {
     const {
         strings, preferences, config, permissions, role,
-        createcourseurl, managecourseurl, requestcourseurl, zerostate,
+        createcourseurl, managecourseurl, requestcourseurl, hiddencourseids, zerostate,
     } = props;
 
-    const [state, dispatch] = useReducer(reducer, preferences, initState);
+    const [state, dispatch] = useReducer(
+        reducer, preferences, (prefs) => initState(prefs, hiddencourseids ?? []));
     const {
         view, filter, sort, search, page, favourites, hidden,
         loading, error, courses, customfieldvalue,

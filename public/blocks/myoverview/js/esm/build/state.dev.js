@@ -6,14 +6,14 @@ import {
   DEFAULT_SORT,
   DEFAULT_VIEW
 } from "./types";
-const initState = /* @__PURE__ */ __name((prefs) => ({
+const initState = /* @__PURE__ */ __name((prefs, hiddenids = []) => ({
   view: prefs.view ?? DEFAULT_VIEW,
   filter: prefs.filter ?? DEFAULT_FILTER,
   sort: prefs.sort ?? DEFAULT_SORT,
   search: "",
   page: 1,
   favourites: /* @__PURE__ */ new Set(),
-  hidden: /* @__PURE__ */ new Set(),
+  hidden: new Set(hiddenids),
   loading: false,
   error: null,
   courses: [],
@@ -34,7 +34,13 @@ const reducer = /* @__PURE__ */ __name((state, action) => {
     case "SET_CUSTOMFIELDVALUE":
       return { ...state, customfieldvalue: action.value, page: 1 };
     case "SET_COURSES":
-      return { ...state, courses: action.courses, loading: false, error: null };
+      return {
+        ...state,
+        courses: action.courses,
+        favourites: new Set(action.courses.filter((c) => c.isfavourite).map((c) => c.id)),
+        loading: false,
+        error: null
+      };
     case "SET_LOADING":
       return { ...state, loading: true, error: null };
     case "SET_ERROR":

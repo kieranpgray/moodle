@@ -381,6 +381,7 @@ class main implements renderable, templatable {
      */
     public function export_for_template(renderer_base $output) {
         global $CFG;
+        require_once($CFG->dirroot . '/course/lib.php');
 
         $coursecat = \core_course_category::user_top();
 
@@ -391,7 +392,7 @@ class main implements renderable, templatable {
         }
         $managecourseurl = null;
         if ($coursecat && ($category = \core_course_category::get_nearest_editable_subcategory($coursecat, ['manage']))) {
-            // course/management.php reads the 'categoryid' parameter.
+            // Note: course/management.php reads the 'categoryid' parameter.
             $managecourseurl = (new \moodle_url('/course/management.php', ['categoryid' => $category->id]))->out(false);
         }
         $requestcourseurl = $this->get_request_course_url();
@@ -440,6 +441,7 @@ class main implements renderable, templatable {
             'createcourseurl' => $createcourseurl,
             'managecourseurl' => $managecourseurl,
             'requestcourseurl' => $requestcourseurl,
+            'hiddencourseids' => array_map('intval', get_hidden_courses_on_timeline()),
             'zerostate' => $this->get_zero_state_data(),
         ];
 
@@ -561,7 +563,7 @@ class main implements renderable, templatable {
         if (!$category || !$category->can_request_course()) {
             return null;
         }
-        // course/request.php reads the 'category' parameter (not 'categoryid').
+        // Note: course/request.php reads the 'category' parameter (not 'categoryid').
         return (new \moodle_url('/course/request.php', ['category' => $category->id]))->out(false);
     }
 
@@ -593,10 +595,10 @@ class main implements renderable, templatable {
             if ($category = \core_course_category::get_nearest_editable_subcategory($coursecat, ['create'])) {
                 $buttons = [];
                 if ($categorytomanage = \core_course_category::get_nearest_editable_subcategory($coursecat, ['manage'])) {
+                    $manageurl = new \moodle_url('/course/management.php', ['categoryid' => $categorytomanage->id]);
                     $buttons[] = [
                         'label' => $totalcourses ? get_string('managecourses') : get_string('managecategories'),
-                        'url' => (new \moodle_url('/course/management.php',
-                            ['categoryid' => $categorytomanage->id]))->out(false),
+                        'url' => $manageurl->out(false),
                         'primary' => false,
                     ];
                 }
