@@ -76,8 +76,8 @@ function App(props) {
     getCourses({
       classification: searching ? "search" : filter,
       sort,
-      limit: PAGE_SIZE,
-      offset: (page - 1) * PAGE_SIZE,
+      limit: 0,
+      offset: 0,
       view,
       customfieldname: isCustomField ? config.customfieldname : void 0,
       customfieldvalue: isCustomField ? customfieldvalue ?? void 0 : void 0,
@@ -91,7 +91,7 @@ function App(props) {
         dispatch({ type: "SET_ERROR", error: strings.errorloadingcourses });
       }
     });
-  }, [filter, sort, customfieldvalue, page, debouncedSearch, view]);
+  }, [filter, sort, customfieldvalue, debouncedSearch, view]);
   useSkipFirstEffect(() => {
     setPreference(PREF_VIEW, view);
   }, [view]);
@@ -120,6 +120,8 @@ function App(props) {
   const memberships = useMemo(() => ({ favourites, hidden }), [favourites, hidden]);
   const hasNoCourses = !loading && !error && courses.length === 0;
   const pageCount = Math.max(1, Math.ceil(courses.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pageCourses = courses.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   return /* @__PURE__ */ jsxDEV(StringsContext.Provider, { value: strings, children: /* @__PURE__ */ jsxDEV(CourseCallbacksContext.Provider, { value: callbacks, children: /* @__PURE__ */ jsxDEV(CourseMembershipContext.Provider, { value: memberships, children: /* @__PURE__ */ jsxDEV("section", { className: "block-myoverview", "aria-label": strings.courseoverview, children: [
     /* @__PURE__ */ jsxDEV(
       Toolbar,
@@ -145,7 +147,7 @@ function App(props) {
       false,
       {
         fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-        lineNumber: 165,
+        lineNumber: 171,
         columnNumber: 25
       },
       this
@@ -153,34 +155,34 @@ function App(props) {
     /* @__PURE__ */ jsxDEV("div", { "aria-live": "polite", children: [
       loading && /* @__PURE__ */ jsxDEV("div", { className: "block-myoverview__loading", role: "status", "aria-busy": "true" }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-        lineNumber: 189,
+        lineNumber: 195,
         columnNumber: 33
       }, this),
       error && /* @__PURE__ */ jsxDEV("p", { className: "block-myoverview__error", children: error }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-        lineNumber: 191,
+        lineNumber: 197,
         columnNumber: 39
       }, this)
     ] }, void 0, true, {
       fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-      lineNumber: 187,
+      lineNumber: 193,
       columnNumber: 25
     }, this),
     hasNoCourses && /* @__PURE__ */ jsxDEV(EmptyState, { zerostate }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-      lineNumber: 193,
+      lineNumber: 199,
       columnNumber: 42
     }, this),
     !hasNoCourses && !loading && !error && /* @__PURE__ */ jsxDEV(Fragment, { children: [
-      /* @__PURE__ */ jsxDEV(CourseList, { courses, view, role }, void 0, false, {
+      /* @__PURE__ */ jsxDEV(CourseList, { courses: pageCourses, view, role }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-        lineNumber: 196,
+        lineNumber: 202,
         columnNumber: 33
       }, this),
       /* @__PURE__ */ jsxDEV(
         Pagination,
         {
-          page,
+          page: currentPage,
           pageCount,
           onPage: (p) => dispatch({ type: "SET_PAGE", page: p })
         },
@@ -188,31 +190,31 @@ function App(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-          lineNumber: 197,
+          lineNumber: 203,
           columnNumber: 33
         },
         this
       )
     ] }, void 0, true, {
       fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-      lineNumber: 195,
+      lineNumber: 201,
       columnNumber: 29
     }, this)
   ] }, void 0, true, {
     fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-    lineNumber: 164,
+    lineNumber: 170,
     columnNumber: 21
   }, this) }, void 0, false, {
     fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-    lineNumber: 163,
+    lineNumber: 169,
     columnNumber: 17
   }, this) }, void 0, false, {
     fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-    lineNumber: 162,
+    lineNumber: 168,
     columnNumber: 13
   }, this) }, void 0, false, {
     fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-    lineNumber: 161,
+    lineNumber: 167,
     columnNumber: 9
   }, this);
 }

@@ -87,10 +87,13 @@ export default function App(props: AppProps) {
         return () => clearTimeout(timer);
     }, [search]);
 
-    // Fetch courses whenever filter/sort/customfieldvalue/page/debouncedSearch/view changes.
-    // requestIdRef guards against an older, slower request overwriting a newer one's result.
-    // getCourses() is built on core/ajax's fetchOne, which has no per-call cancellation signal,
-    // so a superseded request can't be cancelled — only its result can be ignored once it resolves.
+    // Fetch the full matching course set whenever filter/sort/customfieldvalue/debouncedSearch/view
+    // changes (NOT on page change). Pagination is client-side: the timeline web service returns no
+    // total count, so numbered pagination needs the whole result set to know how many pages there
+    // are. limit:0 asks the web service for all matching courses. requestIdRef guards against an
+    // older, slower request overwriting a newer one's result — getCourses() is built on core/ajax's
+    // fetchOne, which has no per-call cancellation signal, so a superseded request can't be
+    // cancelled, only its result ignored once it resolves.
     const requestIdRef = useRef(0);
     useEffect(() => {
         const requestId = ++requestIdRef.current;
@@ -102,8 +105,8 @@ export default function App(props: AppProps) {
         getCourses({
             classification: searching ? "search" : filter,
             sort,
-            limit: PAGE_SIZE,
-            offset: (page - 1) * PAGE_SIZE,
+            limit: 0,
+            offset: 0,
             view,
             customfieldname: isCustomField ? config.customfieldname : undefined,
             customfieldvalue: isCustomField ? (customfieldvalue ?? undefined) : undefined,
@@ -119,7 +122,7 @@ export default function App(props: AppProps) {
                     dispatch({type: "SET_ERROR", error: strings.errorloadingcourses});
                 }
             });
-    }, [filter, sort, customfieldvalue, page, debouncedSearch, view]);
+    }, [filter, sort, customfieldvalue, debouncedSearch, view]);
 
     // Write preferences back to the server on real changes only — useSkipFirstEffect
     // prevents these from firing on initial mount (they would just re-write the value
@@ -155,7 +158,10 @@ export default function App(props: AppProps) {
     const memberships = useMemo(() => ({favourites, hidden}), [favourites, hidden]);
 
     const hasNoCourses = !loading && !error && courses.length === 0;
+    // Client-side pagination over the full result set (see the fetch effect above).
     const pageCount = Math.max(1, Math.ceil(courses.length / PAGE_SIZE));
+    const currentPage = Math.min(page, pageCount);
+    const pageCourses = courses.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
     return (
         <StringsContext.Provider value={strings}>
@@ -193,9 +199,9 @@ export default function App(props: AppProps) {
                         {hasNoCourses && <EmptyState zerostate={zerostate} />}
                         {!hasNoCourses && !loading && !error && (
                             <>
-                                <CourseList courses={courses} view={view} role={role} />
+                                <CourseList courses={pageCourses} view={view} role={role} />
                                 <Pagination
-                                    page={page}
+                                    page={currentPage}
                                     pageCount={pageCount}
                                     onPage={(p) => dispatch({type: "SET_PAGE", page: p})}
                                 />
