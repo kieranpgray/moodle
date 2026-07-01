@@ -17,59 +17,26 @@
 {{!
     @template block_myoverview/main
 
-    This template renders the main content area for the myoverview block.
+    Mount point for the course overview React component.
+
+    The react Mustache helper emits a div with data-react-component and
+    data-react-props that core/react_autoinit detects and mounts.
+
+    Context variables required for this template:
+    * propsjson - JSON-encoded props object passed to the React component
+    * uniqid - unique suffix for the mount point id
 
     Example context (json):
-    {}
+    {
+        "propsjson": "{\"strings\":{}}",
+        "uniqid": "5f9c2a"
+    }
 }}
-
-<div id="block-myoverview-{{uniqid}}" class="block-myoverview block-cards" data-region="myoverview">
-    {{#hascourseactions}}
-    <div class="d-flex flex-wrap gap-2 my-2">
-        {{#courseactionurls}}
-        <form action="{{url}}" method="post">
-            <button type="submit" class="{{class}}">{{label}}</button>
-        </form>
-        {{/courseactionurls}}
-    </div>
-    <hr class="border-bottom">
-    {{/hascourseactions}}
-    <div role="search" data-region="filter" class="d-flex align-items-center my-2" aria-label="{{#str}} aria:controls, block_myoverview {{/str}}">
-        <div class="d-flex flex-wrap gap-1 align-items-center w-100">
-            {{> block_myoverview/nav-grouping-selector }}
-
-            {{!
-                Override the `searchrole` block with an empty string to remove the `role="search"` landmark in
-                `core/search_input_auto` used by the `block_myoverview/nav-search-widget` template.
-                It is not necessary for the Course overview block that already has its own search landmark.
-            }}
-            {{< block_myoverview/nav-search-widget }}
-                {{$searchrole}}{{/searchrole}}
-            {{/ block_myoverview/nav-search-widget }}
-
-            {{> block_myoverview/nav-sort-selector }}
-
-            {{#displaydropdown}}
-                {{> block_myoverview/nav-display-selector }}
-            {{/displaydropdown}}
-        </div>
-    </div>
-
-    <div class="container-fluid p-0">
-        {{> block_myoverview/courses-view }}
-    </div>
-</div>
-{{#js}}
-require(
-[
-    'jquery',
-    'block_myoverview/main',
-],
-function(
-    $,
-    Main
-) {
-    var root = $('#block-myoverview-{{uniqid}}');
-    Main.init(root);
-});
-{{/js}}
+{{#react}}
+{
+    "component": "@moodle/lms/block_myoverview/app",
+    "props": {{{propsjson}}},
+    "id": "block-myoverview-{{uniqid}}",
+    "class": "block-myoverview"
+}
+{{/react}}

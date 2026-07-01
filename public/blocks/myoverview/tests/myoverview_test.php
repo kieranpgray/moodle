@@ -25,7 +25,6 @@ namespace block_myoverview;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class myoverview_test extends \advanced_testcase {
-
     /**
      * Test getting block configuration
      */
@@ -114,5 +113,37 @@ final class myoverview_test extends \advanced_testcase {
         $this->assertFalse($fields[1]->active);
         $this->assertEquals('No Custom field', $fields[2]->name);
         $this->assertFalse($fields[2]->active);
+    }
+
+    /**
+     * The request-course URL must use the 'category' parameter, not 'categoryid'.
+     *
+     * course/request.php reads the pre-selected category via optional_param('category', ...),
+     * so a 'categoryid' key would silently drop the selection. This pins the fix in place.
+     */
+    public function test_get_request_course_url_uses_category_param(): void {
+        global $CFG, $PAGE;
+        $this->resetAfterTest();
+
+        // Enable course requests and grant the request capability (but not create) in a category.
+        $CFG->enablecourserequests = 1;
+        $category = $this->getDataGenerator()->create_category();
+        $catcontext = \context_coursecat::instance($category->id);
+
+        $user = $this->getDataGenerator()->create_user();
+        $roleid = $this->getDataGenerator()->create_role();
+        assign_capability('moodle/course:request', CAP_ALLOW, $roleid, $catcontext->id, true);
+        role_assign($roleid, $user->id, $catcontext->id);
+
+        $this->setUser($user);
+        $PAGE->set_url('/my/courses.php');
+
+        $renderable = new \block_myoverview\output\main(null, null, null);
+        $data = $renderable->export_for_template($PAGE->get_renderer('block_myoverview'));
+        $props = json_decode($data['propsjson'], true);
+
+        $this->assertNotNull($props['requestcourseurl']);
+        $this->assertStringContainsString('category=' . $category->id, $props['requestcourseurl']);
+        $this->assertStringNotContainsString('categoryid=', $props['requestcourseurl']);
     }
 }
