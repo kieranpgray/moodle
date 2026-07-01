@@ -196,6 +196,7 @@ export default function App(props: AppProps) {
                             role={role}
                             permissions={permissions}
                             showControls={showControls}
+                            hasnocourses={hasNoCourses}
                             view={view}
                             filter={filter}
                             sort={sort}

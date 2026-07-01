@@ -634,6 +634,12 @@
     color: var(--co-subtle);
 }
 
+/* Underline links inside the zero-state intro so they are distinguishable from the
+   surrounding muted text without relying on colour (axe link-in-text-block). */
+.local-co-empty__text a {
+    text-decoration: underline;
+}
+
 .local-co-empty__actions {
     display: flex;
     flex-wrap: wrap;

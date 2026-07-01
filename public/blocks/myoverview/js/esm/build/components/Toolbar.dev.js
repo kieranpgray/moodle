@@ -17,6 +17,7 @@ const VIEW_ICON = {
 function Toolbar(props) {
   const {
     showControls,
+    hasnocourses,
     view,
     filter,
     sort,
@@ -91,49 +92,52 @@ function Toolbar(props) {
   const selectedFilter = filterOptions.find((o) => o.value === currentFilterValue);
   const selectedSort = sortOptions.find((o) => o.value === sort);
   const selectedView = viewOptions.find((o) => o.value === view);
-  const showActions = !!(managecourseurl || createcourseurl || requestcourseurl);
+  const showManage = !!managecourseurl && !hasnocourses;
+  const showCreate = !!createcourseurl && !hasnocourses;
+  const showRequest = !!requestcourseurl;
+  const showActions = showManage || showCreate || showRequest;
   return /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar", children: [
     showActions && /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__group local-co-toolbar__group--actions", children: [
-      managecourseurl && /* @__PURE__ */ jsxDEV("a", { className: "btn btn-outline-primary btn-sm", href: managecourseurl, children: strings.managecourses }, void 0, false, {
+      showManage && /* @__PURE__ */ jsxDEV("a", { className: "btn btn-outline-primary btn-sm", href: managecourseurl, children: strings.managecourses }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-        lineNumber: 145,
+        lineNumber: 152,
         columnNumber: 25
       }, this),
-      requestcourseurl && /* @__PURE__ */ jsxDEV("a", { className: "btn btn-primary btn-sm", href: requestcourseurl, children: strings.requestcoursebutton }, void 0, false, {
+      showRequest && /* @__PURE__ */ jsxDEV("a", { className: "btn btn-primary btn-sm", href: requestcourseurl, children: strings.requestcoursebutton }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-        lineNumber: 150,
+        lineNumber: 157,
         columnNumber: 25
       }, this),
-      createcourseurl && /* @__PURE__ */ jsxDEV("a", { className: "btn btn-primary btn-sm", href: createcourseurl, children: [
+      showCreate && /* @__PURE__ */ jsxDEV("a", { className: "btn btn-primary btn-sm", href: createcourseurl, children: [
         /* @__PURE__ */ jsxDEV("i", { className: "fa-solid fa-plus", "aria-hidden": "true" }, void 0, false, {
           fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 156,
+          lineNumber: 163,
           columnNumber: 29
         }, this),
         " ",
         strings.createcourse
       ] }, void 0, true, {
         fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-        lineNumber: 155,
+        lineNumber: 162,
         columnNumber: 25
       }, this)
     ] }, void 0, true, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 143,
+      lineNumber: 150,
       columnNumber: 17
     }, this),
     showActions && showControls && /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__divider", "aria-hidden": "true" }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 162,
+      lineNumber: 169,
       columnNumber: 17
     }, this),
     showControls && /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__group local-co-toolbar__group--search", children: /* @__PURE__ */ jsxDEV(SearchInput, { value: search, onChange: onSearch }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 166,
+      lineNumber: 173,
       columnNumber: 17
     }, this) }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 165,
+      lineNumber: 172,
       columnNumber: 13
     }, this),
     showControls && /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__group local-co-toolbar__group--tools", children: [
@@ -153,7 +157,7 @@ function Toolbar(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 172,
+          lineNumber: 179,
           columnNumber: 21
         },
         this
@@ -174,7 +178,7 @@ function Toolbar(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 183,
+          lineNumber: 190,
           columnNumber: 17
         },
         this
@@ -195,19 +199,19 @@ function Toolbar(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 194,
+          lineNumber: 201,
           columnNumber: 21
         },
         this
       )
     ] }, void 0, true, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 170,
+      lineNumber: 177,
       columnNumber: 13
     }, this)
   ] }, void 0, true, {
     fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-    lineNumber: 141,
+    lineNumber: 148,
     columnNumber: 9
   }, this);
 }

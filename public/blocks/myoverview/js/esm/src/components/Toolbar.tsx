@@ -39,6 +39,7 @@ type ToolbarProps = {
     role: Role;
     permissions: Permissions;
     showControls: boolean;
+    hasnocourses: boolean;
     view: View;
     filter: Filter;
     sort: Sort;
@@ -70,7 +71,7 @@ const VIEW_ICON: Record<View, string> = {
  */
 export default function Toolbar(props: ToolbarProps) {
     const {
-        showControls, view, filter, sort, search, config,
+        showControls, hasnocourses, view, filter, sort, search, config,
         createcourseurl, managecourseurl, requestcourseurl, customfieldvalue,
         onView, onFilter, onSort, onSearch, onCustomFieldValue,
     } = props;
@@ -135,24 +136,30 @@ export default function Toolbar(props: ToolbarProps) {
     const selectedSort = sortOptions.find((o) => o.value === sort);
     const selectedView = viewOptions.find((o) => o.value === view);
 
-    const showActions = !!(managecourseurl || createcourseurl || requestcourseurl);
+    // In a genuine zero-state the create/manage CTAs are rendered inside the empty-state card
+    // (with context-aware labels), so the toolbar only keeps the persistent Request button there
+    // to avoid duplicate CTAs. Outside the zero-state the toolbar shows all applicable actions.
+    const showManage = !!managecourseurl && !hasnocourses;
+    const showCreate = !!createcourseurl && !hasnocourses;
+    const showRequest = !!requestcourseurl;
+    const showActions = showManage || showCreate || showRequest;
 
     return (
         <div className="local-co-toolbar">
             {showActions && (
                 <div className="local-co-toolbar__group local-co-toolbar__group--actions">
-                    {managecourseurl && (
-                        <a className="btn btn-outline-primary btn-sm" href={managecourseurl}>
+                    {showManage && (
+                        <a className="btn btn-outline-primary btn-sm" href={managecourseurl as string}>
                             {strings.managecourses}
                         </a>
                     )}
-                    {requestcourseurl && (
-                        <a className="btn btn-primary btn-sm" href={requestcourseurl}>
+                    {showRequest && (
+                        <a className="btn btn-primary btn-sm" href={requestcourseurl as string}>
                             {strings.requestcoursebutton}
                         </a>
                     )}
-                    {createcourseurl && (
-                        <a className="btn btn-primary btn-sm" href={createcourseurl}>
+                    {showCreate && (
+                        <a className="btn btn-primary btn-sm" href={createcourseurl as string}>
                             <i className="fa-solid fa-plus" aria-hidden="true" /> {strings.createcourse}
                         </a>
                     )}

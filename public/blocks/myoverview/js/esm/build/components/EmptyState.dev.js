@@ -16,9 +16,11 @@ function EmptyState({ zerostate, variant }) {
         lineNumber: 53,
         columnNumber: 17
       }, this),
-      zerostate.title !== "" && /* @__PURE__ */ jsxDEV("h6", { className: "local-co-empty__title", children: zerostate.title }, void 0, false, {
+      zerostate.title !== "" && // h2 keeps a valid heading order after the page's h1 (axe heading-order); the
+      // Figma "H6" look is applied through the local-co-empty__title styles, not the tag.
+      /* @__PURE__ */ jsxDEV("h2", { className: "local-co-empty__title", children: zerostate.title }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/components/EmptyState.tsx",
-        lineNumber: 57,
+        lineNumber: 59,
         columnNumber: 21
       }, this),
       zerostate.intro !== "" && /* @__PURE__ */ jsxDEV(
@@ -31,7 +33,7 @@ function EmptyState({ zerostate, variant }) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/components/EmptyState.tsx",
-          lineNumber: 60,
+          lineNumber: 62,
           columnNumber: 21
         },
         this
@@ -47,13 +49,13 @@ function EmptyState({ zerostate, variant }) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/components/EmptyState.tsx",
-          lineNumber: 68,
+          lineNumber: 70,
           columnNumber: 29
         },
         this
       )) }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/components/EmptyState.tsx",
-        lineNumber: 66,
+        lineNumber: 68,
         columnNumber: 21
       }, this)
     ] }, void 0, true, {
@@ -70,21 +72,21 @@ function EmptyState({ zerostate, variant }) {
   return /* @__PURE__ */ jsxDEV("div", { className: "local-co-empty", "data-variant": variant ?? "student", children: [
     /* @__PURE__ */ jsxDEV("div", { className: "local-co-empty__illustration", "aria-hidden": "true", children: /* @__PURE__ */ jsxDEV(Icon, { name: "book-open" }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/EmptyState.tsx",
-      lineNumber: 90,
+      lineNumber: 92,
       columnNumber: 17
     }, this) }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/EmptyState.tsx",
-      lineNumber: 89,
+      lineNumber: 91,
       columnNumber: 13
     }, this),
     /* @__PURE__ */ jsxDEV("p", { className: "local-co-empty__text", children: copy[variant ?? "student"] }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/EmptyState.tsx",
-      lineNumber: 92,
+      lineNumber: 94,
       columnNumber: 13
     }, this)
   ] }, void 0, true, {
     fileName: "public/blocks/myoverview/js/esm/src/components/EmptyState.tsx",
-    lineNumber: 88,
+    lineNumber: 90,
     columnNumber: 9
   }, this);
 }
