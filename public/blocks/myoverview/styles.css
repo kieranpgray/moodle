@@ -1,14 +1,24 @@
-/* Hide the first dropdown-divider if no filter option element is listed before it.
-   This can happen for some subset configurations of the block_myoverview course filter. */
-.block_myoverview button#groupingdropdown + .dropdown-menu li:first-of-type.dropdown-divider:first-of-type {
-    display: none;
-}
-.block_myoverview .whitebutton .btn-secondary {
-    background: white;
-    border-color: var(--bs-primary);
-    color: var(--bs-primary);
-}
+/* Course overview layout and component styles. */
+@import url("styles/app.css");
 
+/*
+ * FavouriteButton/CloseButton overrides, scoped to this block.
+ *
+ * Boost's compiled design-system component CSS (theme/boost/style/moodle.css, from
+ * MDL-88891) is missing the icon assets these two components need — the upstream
+ * vendoring script copies each component's JS/CSS but not its assets/ folder, so
+ * Boost's own .mds-favourite-button and .mds-close-button icons are currently broken
+ * (missing mask-image/background-image). StarButton.tsx and SearchInput.tsx both use
+ * these components, so the block cannot rely on Boost's copy for them yet.
+ *
+ * These files are copied from the design system's vendored output with every selector
+ * prefixed with `.block_myoverview` so the override always wins regardless of CSS
+ * source order between this file and the theme's compiled output.
+ */
+@import url("styles/ds/favourite-button/index.css");
+@import url("styles/ds/close-button/index.css");
+
+/* Hide block edit controls on the My Courses page (same as before). */
 .page-mycourses .block_myoverview .block-controls {
     display: none;
 }

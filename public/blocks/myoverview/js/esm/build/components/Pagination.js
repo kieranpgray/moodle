@@ -1,0 +1,1 @@
+import{Pagination as t}from"@moodlehq/design-system";import{useStrings as r}from"../state";import{jsx as a}from"react/jsx-runtime";function g({page:n,pageCount:o,onPage:i}){const e=r();return a("div",{className:"local-co-pagination",children:a(t,{totalPages:o,currentPage:n,onPageChange:i,ariaLabel:e.courseoverview})})}export{g as default};

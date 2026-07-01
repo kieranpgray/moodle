@@ -1,0 +1,1 @@
+import{ProgressBar as s}from"@moodlehq/design-system";import{useStrings as t}from"../state";import{jsx as n}from"react/jsx-runtime";function a({progress:e}){const r=t(),o=Math.max(0,Math.min(100,Math.round(e)));return n(s,{value:o,labelVariant:"inline",title:r.courseprogress,count:r.percentcomplete.replace("{$a}",String(o)),className:"local-co-progress"})}export{a as default};

@@ -1,0 +1,95 @@
+/*
+ * Favourite button (icon-only toggle).
+ *
+ * Copied from @moodlehq/design-system's vendored favourite-button component CSS,
+ * with every selector scoped under .block_myoverview. Boost compiles the same
+ * component natively (MDL-88891) but the upstream vendoring script does not copy
+ * the icon assets (assets/star-outline.svg / star-filled.svg), leaving Boost's
+ * copy without a mask-image. Scoping this override under .block_myoverview means
+ * it wins regardless of CSS source order between this file and moodle.css.
+ */
+
+.block_myoverview .mds-favourite-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--mds-spacing-xs);
+  border: none;
+  border-radius: var(--mds-border-radius-pill);
+  background-color: var(--mds-bg-surface-default);
+  color: var(--mds-text-default);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease-in-out,
+    color 0.15s ease-in-out;
+}
+
+.block_myoverview .mds-favourite-button__icon {
+  display: block;
+  inline-size: var(--mds-icons-xs);
+  block-size: var(--mds-icons-xs);
+  background-color: currentColor;
+  mask-image: url('./assets/star-outline.svg');
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-image: url('./assets/star-outline.svg');
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
+.block_myoverview .mds-favourite-button--selected .mds-favourite-button__icon {
+  mask-image: url('./assets/star-filled.svg');
+  -webkit-mask-image: url('./assets/star-filled.svg');
+}
+
+/* Unselected states */
+.block_myoverview .mds-favourite-button:hover:not(:disabled) {
+  background-color: var(--mds-bg-surface-subtle);
+  color: var(--mds-text-subtle);
+}
+
+.block_myoverview .mds-favourite-button:active:not(:disabled) {
+  background-color: var(--mds-bg-surface-strong);
+  color: var(--mds-text-default);
+}
+
+/* Selected states */
+.block_myoverview .mds-favourite-button--selected {
+  background-color: var(--mds-bg-surface-default);
+  color: var(--mds-text-link-primary-default);
+}
+
+.block_myoverview .mds-favourite-button--selected:hover:not(:disabled) {
+  background-color: var(--mds-bg-surface-subtle);
+  color: var(--mds-text-link-primary-hover);
+}
+
+.block_myoverview .mds-favourite-button--selected:active:not(:disabled) {
+  background-color: var(--mds-bg-surface-strong);
+  color: var(--mds-text-link-primary-default);
+}
+
+/* Disabled states */
+.block_myoverview .mds-favourite-button:disabled {
+  background-color: var(--mds-bg-surface-default);
+  color: var(--mds-text-muted);
+  cursor: not-allowed;
+}
+
+.block_myoverview .mds-favourite-button--selected:disabled {
+  color: var(--mds-text-link-primary-disabled);
+}
+
+/* Focus ring */
+.block_myoverview .mds-favourite-button:focus {
+  box-shadow: none;
+  outline: none;
+}
+
+.block_myoverview .mds-favourite-button:focus-visible {
+  box-shadow: none;
+  outline: var(--mds-stroke-weight-md) solid var(--mds-focus-default);
+  outline-offset: 0;
+}

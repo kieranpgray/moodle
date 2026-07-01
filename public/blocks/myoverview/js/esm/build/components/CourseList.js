@@ -1,0 +1,1 @@
+import l from"./CourseItem";import{jsx as r}from"react/jsx-runtime";function t({courses:s,view:o,role:i}){return r("div",{className:`local-co-list local-co-list--${o}`,children:s.map(e=>r(l,{course:e,view:o,role:i},e.id))})}export{t as default};
