@@ -1,22 +1,824 @@
-/* Course overview layout and component styles. */
-@import url("styles/app.css");
+/*
+ * Course overview block styles (MDL-89070).
+ *
+ * All CSS is inlined here rather than pulled in with @import: Moodle's CSS
+ * optimiser aggregates a plugin's styles.css into the theme stylesheet and strips
+ * @import rules, so an @import chain never loads. The favourite-button and
+ * close-button icon assets are embedded as data URIs for the same reason —
+ * relative url() paths would not resolve against the aggregated theme CSS URL.
+ * Design-system tokens (--mds-*) and most component CSS come from Boost natively
+ * (MDL-88891); only the two icon components below need a scoped local override.
+ */
 
 /*
- * FavouriteButton/CloseButton overrides, scoped to this block.
+ * Course overview React block styles (MDL-88965).
  *
- * Boost's compiled design-system component CSS (theme/boost/style/moodle.css, from
- * MDL-88891) is missing the icon assets these two components need — the upstream
- * vendoring script copies each component's JS/CSS but not its assets/ folder, so
- * Boost's own .mds-favourite-button and .mds-close-button icons are currently broken
- * (missing mask-image/background-image). StarButton.tsx and SearchInput.tsx both use
- * these components, so the block cannot rely on Boost's copy for them yet.
- *
- * These files are copied from the design system's vendored output with every selector
- * prefixed with `.block_myoverview` so the override always wins regardless of CSS
- * source order between this file and the theme's compiled output.
+ * Colour, spacing, and typography values are aliased from @moodlehq/design-system
+ * tokens (tokens/css/index.css) so this component stays in sync with DS updates
+ * automatically. The --co-* custom properties below are thin aliases; no raw hex
+ * values are defined here. Buttons reuse Bootstrap classes emitted by the
+ * design-system Button component.
  */
-@import url("styles/ds/favourite-button/index.css");
-@import url("styles/ds/close-button/index.css");
+
+.block-myoverview {
+    /* --- Colour aliases → MDS semantic tokens --- */
+    --co-primary:          var(--mds-bg-interactive-primary-default);
+    --co-link:             var(--mds-text-link-primary-default);
+    --co-text:             var(--mds-text-default);
+    --co-subtle:           var(--mds-text-subtle);
+    --co-muted:            var(--mds-text-muted);
+    --co-surface:          var(--mds-bg-surface-default);
+    --co-surface-subtle:   var(--mds-bg-surface-subtle);
+    --co-surface-strong:   var(--mds-bg-surface-strong);
+    --co-border:           var(--mds-border-default);
+    --co-border-subtle:    var(--mds-border-subtle);
+    --co-border-interactive: var(--mds-color-gray-500);
+    --co-danger:           var(--mds-text-danger);
+
+    /* --- Spacing aliases → MDS spacing scale --- */
+    --co-sp-xxs: var(--mds-spacing-xxs); /* 0.25rem / 4px  */
+    --co-sp-xs:  var(--mds-spacing-xs);  /* 0.5rem  / 8px  */
+    --co-sp-sm:  var(--mds-spacing-sm);  /* 0.75rem / 12px */
+    --co-sp-md:  var(--mds-spacing-md);  /* 1rem    / 16px */
+    --co-sp-lg:  var(--mds-spacing-lg);  /* 1.25rem / 20px */
+    --co-sp-xl:  var(--mds-spacing-xl);  /* 2rem    / 32px */
+
+    /* --- Radius — no MDS border-radius tokens yet; kept as literals --- */
+    --co-r-xs:   4px;
+    --co-r-sm:   6px;
+    --co-r-md:   8px;
+    --co-r-xl:   16px;
+    --co-r-pill: 800px;
+
+    /* Image block height per Figma (4902:13914): 160px. Not 7rem — that is the legacy */
+    /* Bootstrap .card-img-top rule for the old course listing, a different component.   */
+    --co-image-h: 160px;
+
+    /* DS token has a typo: "Noto sans" (lowercase s). Use the correct name directly. */
+    font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--co-text);
+}
+
+.block-myoverview *,
+.block-myoverview *::before,
+.block-myoverview *::after {
+    box-sizing: border-box;
+}
+
+/* --- Section header --- */
+.local-co__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--co-sp-md);
+    margin-bottom: var(--co-sp-md);
+}
+
+.local-co__heading {
+    font-size: 20px;
+    font-weight: 500;
+    margin: 0;
+}
+
+.local-co__scenario {
+    font-size: 12px;
+    color: var(--co-muted);
+    background: var(--co-surface-subtle);
+    border: 1px solid var(--co-border);
+    border-radius: var(--co-r-pill);
+    padding: 2px var(--co-sp-sm);
+}
+
+/* --- Toolbar --- */
+.local-co-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--co-sp-xs);
+    margin-bottom: var(--co-sp-md);
+}
+
+.local-co-toolbar__group {
+    display: flex;
+    align-items: center;
+    gap: var(--co-sp-xs);
+}
+
+/* Search expands to fill available space between actions and tools. */
+.local-co-toolbar__group--search {
+    flex: 1;
+}
+
+/* Tablet: actions wrap onto their own row above search+tools. */
+@media (max-width: 768px) {
+    .local-co-toolbar__group--actions {
+        width: 100%;
+    }
+}
+
+/* Mobile: search fills its own row; tools wrap below at natural width. */
+@media (max-width: 480px) {
+    .local-co-toolbar__group--search {
+        width: 100%;
+    }
+}
+
+/* Vertical separator between educator action buttons and search/tools (Figma 4616:15086). */
+.local-co-toolbar__divider {
+    width: 1px;
+    height: 24px;
+    background: var(--co-surface-strong);
+    flex-shrink: 0;
+    align-self: center;
+}
+
+/* Hide when the actions row wraps to full width at tablet breakpoint. */
+@media (max-width: 768px) {
+    .local-co-toolbar__divider {
+        display: none;
+    }
+}
+
+/* --- Search --- */
+.local-co-search {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.local-co-search__icon {
+    position: absolute;
+    left: var(--co-sp-sm);
+    color: var(--co-muted);
+    pointer-events: none;
+    font-size: 12px;
+}
+
+.local-co-search__input {
+    height: 28px;
+    width: 100%;
+    min-width: 200px;
+    padding: 0 30px 0 28px;
+    border: 1px solid var(--co-border-interactive);
+    border-radius: var(--co-r-sm); /* Figma: --border-radius/sm = 6px */
+    background: var(--co-surface);
+    color: var(--co-text);
+    font-size: 16px; /* Figma: $font-size-body; intentionally larger than chip buttons */
+}
+
+.local-co-search__input:focus-visible {
+    outline: 2px solid var(--co-primary);
+    outline-offset: 1px;
+}
+
+.local-co-search__clear {
+    position: absolute;
+    right: var(--co-sp-xs);
+    flex-shrink: 0;
+}
+
+/* --- Tool buttons / dropdowns --- */
+.local-co-dropdown {
+    position: relative;
+}
+
+.local-co-toolbtn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--co-sp-xs);
+    height: 28px;
+    min-width: 28px;
+    justify-content: center;
+    padding: 0 var(--co-sp-xs);
+    border: 1px solid var(--co-border-interactive);
+    border-radius: var(--co-r-md);
+    background: var(--co-surface);
+    color: var(--co-subtle);
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* Constrain the design-system Button (Bootstrap .btn) to the 28px toolbar height. */
+.local-co-toolbar .btn {
+    display: inline-flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 var(--co-sp-sm);
+    font-size: 14px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.local-co-toolbtn--labelled {
+    padding: 0 var(--co-sp-sm);
+}
+
+.local-co-toolbtn:hover {
+    background: var(--co-surface-subtle);
+    border-color: var(--co-muted);
+    color: var(--co-text);
+}
+
+/* Pressed state. */
+.local-co-toolbtn:active {
+    background: var(--co-surface-strong);
+    border-color: var(--co-border-interactive);
+    color: var(--co-text);
+}
+
+.local-co-toolbtn.is-active:active {
+    background: color-mix(in srgb, #000 12%, var(--mds-border-interactive-secondary-active));
+}
+
+/* CSS tooltip for icon-only tool buttons (replaces native browser title tooltip). */
+.local-co-toolbtn[data-tooltip] {
+    position: relative;
+    overflow: visible;
+}
+
+.local-co-toolbtn[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--co-text);
+    color: var(--mds-text-inverse);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1;
+    padding: 5px 8px;
+    border-radius: var(--co-r-xs);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+    z-index: 300;
+}
+
+.local-co-toolbtn[data-tooltip]:hover::after {
+    opacity: 1;
+}
+
+.local-co-toolbtn:focus-visible,
+.local-co-iconbtn:focus-visible,
+.local-co-menu__item:focus-visible,
+.local-co-pagination__page:focus-visible,
+.local-co-pagination__nav:focus-visible,
+.local-co-card__title:focus-visible {
+    outline: 2px solid var(--co-primary);
+    outline-offset: 2px;
+}
+
+/* Active state: a setting differs from its default (MDL-88972).
+   Figma (4866:65941/65440/66058): --border/interactive/secondary/active bg, --text/inverse text. */
+.local-co-toolbtn.is-active {
+    background: var(--mds-border-interactive-secondary-active); /* #495057 */
+    border-color: var(--mds-border-interactive-secondary-active);
+    color: var(--mds-text-inverse); /* #f8f9fa */
+}
+
+.local-co-toolbtn.is-active:hover {
+    background: var(--mds-border-interactive-secondary-active);
+    border-color: var(--mds-border-interactive-secondary-active);
+    color: var(--mds-text-inverse);
+}
+
+.local-co-toolbtn__caret {
+    font-size: 10px;
+    color: var(--co-muted);
+}
+
+/* Caret inherits inverse colour when button is in active state. */
+.local-co-toolbtn.is-active .local-co-toolbtn__caret {
+    color: var(--mds-text-inverse);
+}
+
+/* --- Menus (dropdown + ellipsis) --- */
+/* Group label header inside a dropdown menu (Figma 4866:65906 / 4866:65507). */
+.local-co-menu__group-label {
+    padding: var(--co-sp-xs) var(--co-sp-sm);
+    border-bottom: 1px solid var(--co-border-interactive);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--co-subtle);
+    margin-bottom: var(--co-sp-xxs);
+}
+
+.local-co-menu {
+    position: relative;
+}
+
+.local-co-menu__list {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 30;
+    min-width: 200px;
+    padding: var(--co-sp-xxs);
+    background: var(--co-surface);
+    border: 1px solid var(--co-border);
+    border-radius: var(--co-r-md);
+    box-shadow: 0 6px 18px rgba(29, 33, 37, 0.12);
+}
+
+.local-co-menu__item {
+    display: flex;
+    align-items: center;
+    gap: var(--co-sp-xs);
+    width: 100%;
+    padding: var(--co-sp-xs) var(--co-sp-sm);
+    border: 0;
+    border-radius: var(--co-r-sm);
+    background: transparent;
+    color: var(--co-text);
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.local-co-menu__item:hover {
+    background: var(--co-surface-subtle);
+}
+
+.local-co-menu__item.is-selected {
+    color: var(--co-primary);
+    font-weight: 500;
+}
+
+.local-co-menu__check {
+    margin-left: auto;
+    color: var(--co-primary);
+    font-size: 12px;
+}
+
+.local-co-menu__icon {
+    width: 16px;
+    text-align: center;
+    color: var(--co-muted);
+}
+
+/* --- Course list layouts --- */
+.local-co-list--card {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--co-sp-md);
+}
+
+@media (min-width: 576px) {
+    .local-co-list--card {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 992px) {
+    .local-co-list--card {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.local-co-list--list,
+.local-co-list--summary {
+    display: flex;
+    flex-direction: column;
+    gap: var(--co-sp-sm);
+}
+
+/* --- Course card (shared) --- */
+.local-co-card {
+    position: relative;
+    background: var(--co-surface);
+    border: 1px solid var(--co-border);
+    border-radius: var(--co-r-md);
+    padding: var(--co-sp-md);
+}
+
+.local-co-card:hover {
+    box-shadow: 0 4px 12px rgba(29, 33, 37, 0.1);
+}
+
+.local-co-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--co-sp-xs); /* Figma (4902:13914): --spacing/xs = 8px between body children */
+    min-width: 0;
+}
+
+.local-co-card__text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--co-sp-xxs); /* Figma: 4px between title and category. */
+    min-width: 0;
+}
+
+.local-co-card__title {
+    color: var(--co-link);
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.2;
+    text-decoration: none;
+    word-break: break-word;
+}
+
+.local-co-card__title:hover {
+    text-decoration: underline;
+}
+
+/* Stretched link makes the whole card clickable (MDL-88971). */
+.local-co-card__title.stretched-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+
+.local-co-card__category {
+    font-size: 14px;
+    line-height: 17.4px;
+    color: var(--co-muted);
+}
+
+.local-co-card__summary {
+    margin: 0;
+    font-size: 14px;
+    color: var(--co-subtle);
+}
+
+
+/* --- Image block (MDL-88967) --- */
+.local-co-card__media {
+    position: relative;
+}
+
+.local-co-image {
+    height: var(--co-image-h);
+    border-radius: var(--co-r-sm);
+    overflow: hidden;
+    background: var(--co-surface-strong);
+}
+
+/* Checkerboard fallback when no image is set. */
+.local-co-image--empty {
+    background-image:
+        linear-gradient(45deg, #e4e8ec 25%, transparent 25%),
+        linear-gradient(-45deg, #e4e8ec 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e4e8ec 75%),
+        linear-gradient(-45deg, transparent 75%, #e4e8ec 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+}
+
+.local-co-image__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* --- Card controls (star + ellipsis), top-right (MDL-88968/88969) --- */
+.local-co-controls {
+    position: absolute;
+    top: var(--co-sp-xs);
+    right: var(--co-sp-xs);
+    z-index: 2;
+    display: flex;
+    gap: var(--co-sp-xs);
+}
+
+/* --- Star / FavouriteButton sizing override ---
+   The DS FavouriteButton fills a transparent circle; constrain it to the
+   same 28px footprint as the legacy icon button so card-overlay layout is unchanged. */
+.local-co-iconbtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--co-r-xl);
+    background: var(--co-surface);
+    color: var(--co-subtle);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.local-co-iconbtn:hover {
+    background: var(--co-surface-subtle);
+}
+
+.local-co-controls .mds-favourite-button {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--mds-border-radius-pill); /* MDS pill = circular at 28px */
+}
+
+/* --- Card view layout (image on top, body below) --- */
+.local-co-card--card {
+    display: grid;
+    grid-template-areas: "media" "body";
+    gap: var(--co-sp-md);
+}
+
+.local-co-card--card .local-co-card__media {
+    grid-area: media;
+}
+
+.local-co-card--card .local-co-card__body {
+    grid-area: body;
+}
+
+/* --- List & summary view layout (image left, body right) --- */
+.local-co-card--list,
+.local-co-card--summary {
+    display: grid;
+    grid-template-areas: "media body";
+    gap: var(--co-sp-lg); /* Figma: --spacing/lg = 20px between image and body */
+    align-items: start;
+}
+
+.local-co-card--list {
+    grid-template-columns: 120px 1fr; /* Figma (4866:65954): 7.5rem image column */
+}
+
+.local-co-card--summary {
+    grid-template-columns: 93px 1fr; /* Figma (4866:66077): 5.8125rem image column */
+}
+
+.local-co-card--list .local-co-card__media,
+.local-co-card--summary .local-co-card__media {
+    grid-area: media;
+    /* Static positioning so .local-co-controls (position:absolute) escapes to
+       .local-co-card (position:relative) and anchors at the card's top-right
+       instead of the image column's top-right. */
+    position: static;
+}
+
+.local-co-card--list .local-co-card__body,
+.local-co-card--summary .local-co-card__body {
+    grid-area: body;
+    /* Reserve space at the right for the controls that float over the card. */
+    padding-right: 72px;
+}
+
+.local-co-card--summary .local-co-card__body {
+    gap: var(--co-sp-md); /* Figma (4866:66077): 16px between text group and description */
+}
+
+.local-co-card--list .local-co-image {
+    height: 80px; /* Figma (4866:65954): 5rem */
+}
+
+.local-co-card--summary .local-co-image {
+    /* aspect-ratio enforces 1:1 at any column width — prevents empty placeholder
+       from stretching to body height when no course image is present. */
+    height: auto;
+    aspect-ratio: 1 / 1;
+}
+
+@media (max-width: 575px) {
+    .local-co-card--list {
+        grid-template-columns: 72px 1fr; /* scaled from 120px desktop at 60% */
+    }
+
+    .local-co-card--summary {
+        grid-template-columns: 56px 1fr; /* scaled from 93px desktop at 60% */
+    }
+
+    .local-co-card--list .local-co-image {
+        height: 64px; /* scaled from 80px desktop at 80% */
+    }
+}
+
+/* --- Progress (MDL-88970) ---
+   DS ProgressBar owns internal layout; this just constrains the wrapper width
+   inside the card body so the track doesn't stretch beyond the text column. */
+.local-co-progress {
+    width: 100%;
+}
+
+/* --- Pagination (MDL-88977) ---
+   Internal styles are owned by the DS Pagination component.
+   This wrapper only provides top margin and centering. */
+.local-co-pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--co-sp-lg);
+}
+
+/* --- Empty / no-results states --- */
+.local-co-empty {
+    text-align: center;
+    padding: var(--co-sp-xl) var(--co-sp-md);
+    color: var(--co-muted);
+}
+
+.local-co-empty__illustration {
+    font-size: 40px;
+    color: var(--co-border-interactive);
+    margin-bottom: var(--co-sp-md);
+}
+
+.local-co-empty__text {
+    margin: 0 auto;
+    max-width: 36rem;
+    font-size: 16px;
+}
+
+/* --- Rich zero-state (server-built) additions --- */
+.local-co-empty__title {
+    margin: 0 0 var(--co-sp-xs);
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--co-subtle);
+}
+
+.local-co-empty__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--co-sp-xs);
+    justify-content: center;
+    margin-top: var(--co-sp-md);
+}
+
+/* --- Async loading / error region (new client-side states, MDL-88965) --- */
+.block-myoverview__loading {
+    height: 3px;
+    margin: var(--co-sp-md) 0;
+    background: linear-gradient(90deg, var(--co-surface-strong) 0%, var(--co-primary) 50%, var(--co-surface-strong) 100%);
+    background-size: 200% 100%;
+    animation: block-myoverview-loading 1.2s ease-in-out infinite;
+    border-radius: var(--co-r-pill);
+}
+
+@keyframes block-myoverview-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.block-myoverview__error {
+    margin: var(--co-sp-md) 0;
+    padding: var(--co-sp-sm) var(--co-sp-md);
+    color: var(--co-danger);
+    border: 1px solid var(--co-danger);
+    border-radius: var(--co-r-sm);
+}
+
+/*
+ * Favourite button (icon-only toggle).
+ *
+ * Copied from @moodlehq/design-system's vendored favourite-button component CSS,
+ * with every selector scoped under .block_myoverview. Boost compiles the same
+ * component natively (MDL-88891) but the upstream vendoring script does not copy
+ * the icon assets (assets/star-outline.svg / star-filled.svg), leaving Boost's
+ * copy without a mask-image. Scoping this override under .block_myoverview means
+ * it wins regardless of CSS source order between this file and moodle.css.
+ */
+
+.block_myoverview .mds-favourite-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--mds-spacing-xs);
+  border: none;
+  border-radius: var(--mds-border-radius-pill);
+  background-color: var(--mds-bg-surface-default);
+  color: var(--mds-text-default);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease-in-out,
+    color 0.15s ease-in-out;
+}
+
+.block_myoverview .mds-favourite-button__icon {
+  display: block;
+  inline-size: var(--mds-icons-xs);
+  block-size: var(--mds-icons-xs);
+  background-color: currentColor;
+  mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTMiIGhlaWdodD0iMTMiIHZpZXdCb3g9IjAgMCAxMyAxMyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTYuMTcyMjcgMEM2LjQwNjY0IDAgNi41OTQxNCAwLjE0MDYyNSA2LjY4Nzg5IDAuMzI4MTI1TDguMzA1MDggMy42MzI4MUwxMS44OTEgNC4xNzE4OEMxMi4xMDIgNC4xOTUzMSAxMi4yNjYgNC4zMzU5NCAxMi4zMzYzIDQuNTQ2ODhDMTIuNDA2NiA0Ljc1NzgxIDEyLjM1OTggNC45Njg3NSAxMi4xOTU3IDUuMTMyODFMOS41OTQxNCA3LjcxMDk0TDEwLjIwMzUgMTEuMzQzOEMxMC4yNTA0IDExLjU1NDcgMTAuMTU2NiAxMS43ODkxIDkuOTkyNTggMTEuOTA2MkM5LjgwNTA4IDEyLjAyMzQgOS41NzA3IDEyLjA0NjkgOS4zODMyIDExLjk1MzFMNi4xNzIyNyAxMC4yMTg4TDIuOTg0NzcgMTEuOTUzMUMyLjc3MzgzIDEyLjA0NjkgMi41NjI4OSAxMi4wMjM0IDIuMzc1MzkgMTEuOTA2MkMyLjIxMTMzIDExLjc2NTYgMi4xMTc1OCAxMS41NTQ3IDIuMTY0NDUgMTEuMzQzOEwyLjc3MzgzIDcuNzEwOTRMMC4xNzIyNjYgNS4xMzI4MUMwLjAwODIwMzEyIDQuOTY4NzUgLTAuMDM4NjcxOSA0Ljc1NzgxIDAuMDMxNjQwNiA0LjU0Njg4QzAuMTAxOTUzIDQuMzU5MzggMC4yNjYwMTYgNC4xOTUzMSAwLjQ3Njk1MyA0LjE3MTg4TDQuMDYyODkgMy42MzI4MUw1LjY4MDA4IDAuMzI4MTI1QzUuNzczODMgMC4xNDA2MjUgNS45NjEzMyAwIDYuMTcyMjcgMFpNNi4xNzIyNyAxLjg1MTU2TDQuOTUzNTIgNC40MDYyNUM0Ljg1OTc3IDQuNTcwMzEgNC43MTkxNCA0LjY4NzUgNC41MzE2NCA0LjcxMDk0TDEuNzY2MDIgNS4xMDkzOEwzLjc1ODIgNy4xMDE1NkMzLjg5ODgzIDcuMjQyMTkgMy45NjkxNCA3LjQyOTY5IDMuOTIyMjcgNy41OTM3NUwzLjQ1MzUyIDEwLjQwNjJMNS45MTQ0NSA5LjA5Mzc1QzYuMDc4NTIgOSA2LjI4OTQ1IDkgNi40NTM1MiA5LjA5Mzc1TDguOTE0NDUgMTAuNDA2Mkw4LjQ0NTcgNy42MTcxOUM4LjM5ODgzIDcuNDI5NjkgOC40NjkxNCA3LjI0MjE5IDguNjA5NzcgNy4xMjVMMTAuNjAyIDUuMTA5MzhMNy44MzYzMyA0LjcxMDk0QzcuNjQ4ODMgNC42ODc1IDcuNTA4MiA0LjU3MDMxIDcuNDE0NDUgNC40MDYyNUw2LjE3MjI3IDEuODUxNTZaIiBmaWxsPSIjMUQyMTI1Ii8+Cjwvc3ZnPgo=");
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTMiIGhlaWdodD0iMTMiIHZpZXdCb3g9IjAgMCAxMyAxMyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTYuMTcyMjcgMEM2LjQwNjY0IDAgNi41OTQxNCAwLjE0MDYyNSA2LjY4Nzg5IDAuMzI4MTI1TDguMzA1MDggMy42MzI4MUwxMS44OTEgNC4xNzE4OEMxMi4xMDIgNC4xOTUzMSAxMi4yNjYgNC4zMzU5NCAxMi4zMzYzIDQuNTQ2ODhDMTIuNDA2NiA0Ljc1NzgxIDEyLjM1OTggNC45Njg3NSAxMi4xOTU3IDUuMTMyODFMOS41OTQxNCA3LjcxMDk0TDEwLjIwMzUgMTEuMzQzOEMxMC4yNTA0IDExLjU1NDcgMTAuMTU2NiAxMS43ODkxIDkuOTkyNTggMTEuOTA2MkM5LjgwNTA4IDEyLjAyMzQgOS41NzA3IDEyLjA0NjkgOS4zODMyIDExLjk1MzFMNi4xNzIyNyAxMC4yMTg4TDIuOTg0NzcgMTEuOTUzMUMyLjc3MzgzIDEyLjA0NjkgMi41NjI4OSAxMi4wMjM0IDIuMzc1MzkgMTEuOTA2MkMyLjIxMTMzIDExLjc2NTYgMi4xMTc1OCAxMS41NTQ3IDIuMTY0NDUgMTEuMzQzOEwyLjc3MzgzIDcuNzEwOTRMMC4xNzIyNjYgNS4xMzI4MUMwLjAwODIwMzEyIDQuOTY4NzUgLTAuMDM4NjcxOSA0Ljc1NzgxIDAuMDMxNjQwNiA0LjU0Njg4QzAuMTAxOTUzIDQuMzU5MzggMC4yNjYwMTYgNC4xOTUzMSAwLjQ3Njk1MyA0LjE3MTg4TDQuMDYyODkgMy42MzI4MUw1LjY4MDA4IDAuMzI4MTI1QzUuNzczODMgMC4xNDA2MjUgNS45NjEzMyAwIDYuMTcyMjcgMFpNNi4xNzIyNyAxLjg1MTU2TDQuOTUzNTIgNC40MDYyNUM0Ljg1OTc3IDQuNTcwMzEgNC43MTkxNCA0LjY4NzUgNC41MzE2NCA0LjcxMDk0TDEuNzY2MDIgNS4xMDkzOEwzLjc1ODIgNy4xMDE1NkMzLjg5ODgzIDcuMjQyMTkgMy45NjkxNCA3LjQyOTY5IDMuOTIyMjcgNy41OTM3NUwzLjQ1MzUyIDEwLjQwNjJMNS45MTQ0NSA5LjA5Mzc1QzYuMDc4NTIgOSA2LjI4OTQ1IDkgNi40NTM1MiA5LjA5Mzc1TDguOTE0NDUgMTAuNDA2Mkw4LjQ0NTcgNy42MTcxOUM4LjM5ODgzIDcuNDI5NjkgOC40NjkxNCA3LjI0MjE5IDguNjA5NzcgNy4xMjVMMTAuNjAyIDUuMTA5MzhMNy44MzYzMyA0LjcxMDk0QzcuNjQ4ODMgNC42ODc1IDcuNTA4MiA0LjU3MDMxIDcuNDE0NDUgNC40MDYyNUw2LjE3MjI3IDEuODUxNTZaIiBmaWxsPSIjMUQyMTI1Ii8+Cjwvc3ZnPgo=");
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
+.block_myoverview .mds-favourite-button--selected .mds-favourite-button__icon {
+  mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTMiIGhlaWdodD0iMTMiIHZpZXdCb3g9IjAgMCAxMyAxMyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTYuODQ3MDYgMC40MjE4NzVMOC4zNzA1IDMuNTM5MDZMMTEuNzIyMSA0LjAzMTI1QzEyLjAwMzMgNC4wNzgxMiAxMi4yMzc3IDQuMjY1NjIgMTIuMzMxNCA0LjU0Njg4QzEyLjQyNTIgNC44MDQ2OSAxMi4zNTQ5IDUuMTA5MzggMTIuMTQzOSA1LjI5Njg4TDkuNzA2NDMgNy43MTA5NEwxMC4yOTI0IDExLjEzMjhDMTAuMzM5MiAxMS40MTQxIDEwLjIyMjEgMTEuNjk1MyA5Ljk4NzY4IDExLjg1OTRDOS43NTMzMSAxMi4wNDY5IDkuNDQ4NjIgMTIuMDQ2OSA5LjE5MDgxIDExLjkyOTdMNi4xOTA4MSAxMC4zMTI1TDMuMTY3MzcgMTEuOTI5N0MyLjkzMyAxMi4wNDY5IDIuNjI4MzEgMTIuMDQ2OSAyLjM5MzkzIDExLjg1OTRDMi4xNTk1NiAxMS42OTUzIDIuMDQyMzcgMTEuNDE0MSAyLjA4OTI1IDExLjEzMjhMMi42NTE3NSA3LjcxMDk0TDAuMjE0MjQ1IDUuMjk2ODhDMC4wMjY3NDUzIDUuMTA5MzggLTAuMDQzNTY3MiA0LjgwNDY5IDAuMDI2NzQ1MyA0LjU0Njg4QzAuMTIwNDk1IDQuMjY1NjIgMC4zNTQ4NyA0LjA3ODEyIDAuNjM2MTIgNC4wMzEyNUw0LjAxMTEyIDMuNTM5MDZMNS41MTExMiAwLjQyMTg3NUM1LjYyODMxIDAuMTY0MDYyIDUuODg2MTIgMCA2LjE5MDgxIDBDNi40NzIwNiAwIDYuNzI5ODcgMC4xNjQwNjIgNi44NDcwNiAwLjQyMTg3NVoiIGZpbGw9IiMwRjZDQkYiLz4KPC9zdmc+Cg==");
+  -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTMiIGhlaWdodD0iMTMiIHZpZXdCb3g9IjAgMCAxMyAxMyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTYuODQ3MDYgMC40MjE4NzVMOC4zNzA1IDMuNTM5MDZMMTEuNzIyMSA0LjAzMTI1QzEyLjAwMzMgNC4wNzgxMiAxMi4yMzc3IDQuMjY1NjIgMTIuMzMxNCA0LjU0Njg4QzEyLjQyNTIgNC44MDQ2OSAxMi4zNTQ5IDUuMTA5MzggMTIuMTQzOSA1LjI5Njg4TDkuNzA2NDMgNy43MTA5NEwxMC4yOTI0IDExLjEzMjhDMTAuMzM5MiAxMS40MTQxIDEwLjIyMjEgMTEuNjk1MyA5Ljk4NzY4IDExLjg1OTRDOS43NTMzMSAxMi4wNDY5IDkuNDQ4NjIgMTIuMDQ2OSA5LjE5MDgxIDExLjkyOTdMNi4xOTA4MSAxMC4zMTI1TDMuMTY3MzcgMTEuOTI5N0MyLjkzMyAxMi4wNDY5IDIuNjI4MzEgMTIuMDQ2OSAyLjM5MzkzIDExLjg1OTRDMi4xNTk1NiAxMS42OTUzIDIuMDQyMzcgMTEuNDE0MSAyLjA4OTI1IDExLjEzMjhMMi42NTE3NSA3LjcxMDk0TDAuMjE0MjQ1IDUuMjk2ODhDMC4wMjY3NDUzIDUuMTA5MzggLTAuMDQzNTY3MiA0LjgwNDY5IDAuMDI2NzQ1MyA0LjU0Njg4QzAuMTIwNDk1IDQuMjY1NjIgMC4zNTQ4NyA0LjA3ODEyIDAuNjM2MTIgNC4wMzEyNUw0LjAxMTEyIDMuNTM5MDZMNS41MTExMiAwLjQyMTg3NUM1LjYyODMxIDAuMTY0MDYyIDUuODg2MTIgMCA2LjE5MDgxIDBDNi40NzIwNiAwIDYuNzI5ODcgMC4xNjQwNjIgNi44NDcwNiAwLjQyMTg3NVoiIGZpbGw9IiMwRjZDQkYiLz4KPC9zdmc+Cg==");
+}
+
+/* Unselected states */
+.block_myoverview .mds-favourite-button:hover:not(:disabled) {
+  background-color: var(--mds-bg-surface-subtle);
+  color: var(--mds-text-subtle);
+}
+
+.block_myoverview .mds-favourite-button:active:not(:disabled) {
+  background-color: var(--mds-bg-surface-strong);
+  color: var(--mds-text-default);
+}
+
+/* Selected states */
+.block_myoverview .mds-favourite-button--selected {
+  background-color: var(--mds-bg-surface-default);
+  color: var(--mds-text-link-primary-default);
+}
+
+.block_myoverview .mds-favourite-button--selected:hover:not(:disabled) {
+  background-color: var(--mds-bg-surface-subtle);
+  color: var(--mds-text-link-primary-hover);
+}
+
+.block_myoverview .mds-favourite-button--selected:active:not(:disabled) {
+  background-color: var(--mds-bg-surface-strong);
+  color: var(--mds-text-link-primary-default);
+}
+
+/* Disabled states */
+.block_myoverview .mds-favourite-button:disabled {
+  background-color: var(--mds-bg-surface-default);
+  color: var(--mds-text-muted);
+  cursor: not-allowed;
+}
+
+.block_myoverview .mds-favourite-button--selected:disabled {
+  color: var(--mds-text-link-primary-disabled);
+}
+
+/* Focus ring */
+.block_myoverview .mds-favourite-button:focus {
+  box-shadow: none;
+  outline: none;
+}
+
+.block_myoverview .mds-favourite-button:focus-visible {
+  box-shadow: none;
+  outline: var(--mds-stroke-weight-md) solid var(--mds-focus-default);
+  outline-offset: 0;
+}
+
+/*
+ * Close button (search clear control).
+ *
+ * Copied from @moodlehq/design-system's vendored close-button component CSS, with
+ * every selector scoped under .block_myoverview. Boost compiles the same component
+ * natively (MDL-88891) but the upstream vendoring script does not copy the icon
+ * asset (close-button.svg), leaving Boost's copy without a background-image.
+ * Scoping this override under .block_myoverview means it wins regardless of CSS
+ * source order between this file and moodle.css.
+ */
+
+.block_myoverview .mds-close-button.btn-close {
+  inline-size: var(--mds-icons-md);
+  block-size: var(--mds-icons-md);
+  padding: 0;
+  border-radius: var(--mds-border-radius-xs);
+  background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQuMTIxMDkgNS44Nzg5MUw4LjIyMjY2IDkuOTgwNDdMNC4xMjEwOSAxNC4xMjExQzMuNjEzMjggMTQuNTg5OCAzLjYxMzI4IDE1LjQxMDIgNC4xMjEwOSAxNS44Nzg5QzQuNTg5ODQgMTYuMzg2NyA1LjQxMDE2IDE2LjM4NjcgNS44Nzg5MSAxNS44Nzg5TDkuOTgwNDcgMTEuNzc3M0wxNC4xMjExIDE1Ljg3ODlDMTQuNTg5OCAxNi4zODY3IDE1LjQxMDIgMTYuMzg2NyAxNS44Nzg5IDE1Ljg3ODlDMTYuMzg2NyAxNS40MTAyIDE2LjM4NjcgMTQuNTg5OCAxNS44Nzg5IDE0LjEyMTFMMTEuNzc3MyA5Ljk4MDQ3TDE1Ljg3ODkgNS44Nzg5MUMxNi4zODY3IDUuNDEwMTYgMTYuMzg2NyA0LjU4OTg0IDE1Ljg3ODkgNC4xMjEwOUMxNS40MTAyIDMuNjEzMjggMTQuNTg5OCAzLjYxMzI4IDE0LjEyMTEgNC4xMjEwOUw5Ljk4MDQ3IDguMjIyNjZMNS44Nzg5MSA0LjEyMTA5QzUuNDEwMTYgMy42MTMyOCA0LjU4OTg0IDMuNjEzMjggNC4xMjEwOSA0LjEyMTA5QzMuNjEzMjggNC41ODk4NCAzLjYxMzI4IDUuNDEwMTYgNC4xMjEwOSA1Ljg3ODkxWiIgZmlsbD0iIzFEMjEyNSIvPgo8L3N2Zz4K");
+  background-size: var(--mds-icons-md) var(--mds-icons-md);
+  opacity: 0.6;
+}
+
+.block_myoverview .mds-close-button.btn-close:hover {
+  opacity: 0.75;
+}
+
+.block_myoverview .mds-close-button.btn-close:focus {
+  box-shadow: none;
+}
+
+.block_myoverview .mds-close-button.btn-close:focus-visible {
+  outline: var(--mds-stroke-weight-md) solid var(--mds-focus-default);
+  outline-offset: 0;
+  box-shadow: none;
+  opacity: 1;
+}
+
+.block_myoverview .mds-close-button.btn-close:disabled,
+.block_myoverview .mds-close-button.btn-close.disabled {
+  opacity: 0.25;
+}
+
+.block_myoverview .mds-close-button.btn-close.mds-close-button--sm {
+  inline-size: var(--mds-icons-sm);
+  block-size: var(--mds-icons-sm);
+  background-size: var(--mds-icons-sm) var(--mds-icons-sm);
+}
+
+.block_myoverview .mds-close-button.btn-close.mds-close-button--md {
+  inline-size: var(--mds-icons-md);
+  block-size: var(--mds-icons-md);
+  background-size: var(--mds-icons-md) var(--mds-icons-md);
+}
+
+.block_myoverview .mds-close-button.btn-close.mds-close-button--lg {
+  inline-size: var(--mds-icons-lg);
+  block-size: var(--mds-icons-lg);
+  background-size: var(--mds-icons-lg) var(--mds-icons-lg);
+}
 
 /* Hide block edit controls on the My Courses page (same as before). */
 .page-mycourses .block_myoverview .block-controls {
