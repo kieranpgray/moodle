@@ -16,7 +16,7 @@ function EmptyState({ zerostate, variant }) {
         lineNumber: 53,
         columnNumber: 17
       }, this),
-      zerostate.title !== "" && // h2 keeps a valid heading order after the page's h1 (axe heading-order); the
+      zerostate.title !== "" && // H2 keeps a valid heading order after the page's h1 (axe heading-order); the
       // Figma "H6" look is applied through the local-co-empty__title styles, not the tag.
       /* @__PURE__ */ jsxDEV("h2", { className: "local-co-empty__title", children: zerostate.title }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/components/EmptyState.tsx",

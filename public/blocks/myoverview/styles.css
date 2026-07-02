@@ -21,6 +21,14 @@
  */
 
 .block-myoverview {
+    /*
+     * The layout responds to the block's own width (not the viewport) so it is usable in
+     * the narrow block drawer. Width tiers are applied as co-min-<bp> classes by a
+     * ResizeObserver in app.tsx and the rules below are mobile-first (base = narrowest
+     * layout, each co-min-<bp> widens it). CSS @container queries would be cleaner but
+     * Moodle's plugin-CSS pipeline strips @container/container declarations.
+     */
+
     /* --- Colour aliases → MDS semantic tokens --- */
     --co-primary:          var(--mds-bg-interactive-primary-default);
     --co-link:             var(--mds-text-link-primary-default);
@@ -109,18 +117,22 @@
     flex: 1;
 }
 
-/* Tablet: actions wrap onto their own row above search+tools. */
-@media (max-width: 768px) {
-    .local-co-toolbar__group--actions {
-        width: 100%;
-    }
+/* Mobile-first: in a narrow container the actions and search each take their own row. They
+   return to sharing a row once the container is wide enough (co-min-768 / co-min-480). */
+.local-co-toolbar__group--actions {
+    width: 100%;
 }
 
-/* Mobile: search fills its own row; tools wrap below at natural width. */
-@media (max-width: 480px) {
-    .local-co-toolbar__group--search {
-        width: 100%;
-    }
+.co-min-768 .local-co-toolbar__group--actions {
+    width: auto;
+}
+
+.local-co-toolbar__group--search {
+    width: 100%;
+}
+
+.co-min-480 .local-co-toolbar__group--search {
+    width: auto;
 }
 
 /* Vertical separator between educator action buttons and search/tools (Figma 4616:15086). */
@@ -132,11 +144,13 @@
     align-self: center;
 }
 
-/* Hide when the actions row wraps to full width at tablet breakpoint. */
-@media (max-width: 768px) {
-    .local-co-toolbar__divider {
-        display: none;
-    }
+/* Mobile-first: the divider only appears once actions and search share a row (co-min-768). */
+.local-co-toolbar__divider {
+    display: none;
+}
+
+.co-min-768 .local-co-toolbar__divider {
+    display: block;
 }
 
 /* --- Search --- */
@@ -365,16 +379,12 @@
     gap: var(--co-sp-md);
 }
 
-@media (min-width: 576px) {
-    .local-co-list--card {
-        grid-template-columns: repeat(2, 1fr);
-    }
+.co-min-576 .local-co-list--card {
+    grid-template-columns: repeat(2, 1fr);
 }
 
-@media (min-width: 992px) {
-    .local-co-list--card {
-        grid-template-columns: repeat(3, 1fr);
-    }
+.co-min-992 .local-co-list--card {
+    grid-template-columns: repeat(3, 1fr);
 }
 
 .local-co-list--list,
@@ -538,11 +548,21 @@
     align-items: start;
 }
 
+/* Mobile-first: narrow image columns by default (scaled for the drawer/narrow container),
+   widening to the Figma sizes once the container is wide enough (co-min-576). */
 .local-co-card--list {
-    grid-template-columns: 120px 1fr; /* Figma (4866:65954): 7.5rem image column */
+    grid-template-columns: 72px 1fr; /* scaled from 120px at 60% */
 }
 
 .local-co-card--summary {
+    grid-template-columns: 56px 1fr; /* scaled from 93px at 60% */
+}
+
+.co-min-576 .local-co-card--list {
+    grid-template-columns: 120px 1fr; /* Figma (4866:65954): 7.5rem image column */
+}
+
+.co-min-576 .local-co-card--summary {
     grid-template-columns: 93px 1fr; /* Figma (4866:66077): 5.8125rem image column */
 }
 
@@ -567,6 +587,10 @@
 }
 
 .local-co-card--list .local-co-image {
+    height: 64px; /* scaled from 80px at 80% */
+}
+
+.co-min-576 .local-co-card--list .local-co-image {
     height: 80px; /* Figma (4866:65954): 5rem */
 }
 
@@ -575,20 +599,6 @@
        from stretching to body height when no course image is present. */
     height: auto;
     aspect-ratio: 1 / 1;
-}
-
-@media (max-width: 575px) {
-    .local-co-card--list {
-        grid-template-columns: 72px 1fr; /* scaled from 120px desktop at 60% */
-    }
-
-    .local-co-card--summary {
-        grid-template-columns: 56px 1fr; /* scaled from 93px desktop at 60% */
-    }
-
-    .local-co-card--list .local-co-image {
-        height: 64px; /* scaled from 80px desktop at 80% */
-    }
 }
 
 /* --- Progress (MDL-88970) ---

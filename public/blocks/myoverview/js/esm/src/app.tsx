@@ -25,7 +25,7 @@
  * @module     block_myoverview/app
  */
 
-import {useCallback, useEffect, useMemo, useReducer, useRef, useState} from "react";
+import {useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState} from "react";
 import {AppProps, DEFAULT_FILTER, PAGE_SIZE} from "./types";
 import {
     getCourses, setFavourite, setCourseHidden, setPreference,
@@ -60,6 +60,39 @@ function useSkipFirstEffect(effect: () => void, deps: unknown[]) {
     }, deps);
 }
 
+// Container width breakpoints (px). Mobile-first: the base CSS is the narrowest layout and
+// each class widens it. Used instead of CSS @container queries because Moodle's plugin CSS
+// pipeline strips @container/container rules; see styles.css.
+const WIDTH_BREAKPOINTS = [480, 576, 768, 992];
+
+/**
+ * Observe an element's width and return the space-separated `co-min-<bp>` classes for every
+ * breakpoint it currently meets, so the layout responds to the block's own width (e.g. the
+ * narrow block drawer) rather than the viewport.
+ *
+ * @param ref A ref to the element to observe.
+ * @returns The width-tier class string.
+ */
+function useContainerWidthClasses(ref: React.RefObject<HTMLElement>): string {
+    const [width, setWidth] = useState(0);
+    useLayoutEffect(() => {
+        const el = ref.current;
+        if (!el) {
+            return undefined;
+        }
+        setWidth(el.getBoundingClientRect().width);
+        if (typeof ResizeObserver === "undefined") {
+            return undefined;
+        }
+        const observer = new ResizeObserver((entries) => {
+            setWidth(entries[0].contentRect.width);
+        });
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [ref]);
+    return WIDTH_BREAKPOINTS.filter((bp) => width >= bp).map((bp) => `co-min-${bp}`).join(" ");
+}
+
 /**
  * The course overview application.
  *
@@ -74,6 +107,11 @@ export default function App(props: AppProps) {
 
     const [state, dispatch] = useReducer(
         reducer, preferences, (prefs) => initState(prefs, hiddencourseids ?? []));
+
+    // Width-tier classes so the layout responds to the block's own width (e.g. the block drawer).
+    const rootRef = useRef<HTMLElement>(null);
+    const widthClasses = useContainerWidthClasses(rootRef);
+
     const {
         view, filter, sort, search, page, favourites, hidden,
         loading, error, courses, customfieldvalue,
@@ -191,7 +229,7 @@ export default function App(props: AppProps) {
                     {/* No aria-label here: the Moodle block wrapper is already a "Course overview"
                         region landmark, so naming this section too would create a duplicate landmark
                         (axe landmark-unique). */}
-                    <section className="block-myoverview">
+                    <section ref={rootRef} className={`block-myoverview ${widthClasses}`.trim()}>
                         <Toolbar
                             role={role}
                             permissions={permissions}

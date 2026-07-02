@@ -54,7 +54,7 @@ export default function EmptyState({zerostate, variant}: EmptyStateProps) {
                     <Icon name="book-open" />
                 </div>
                 {zerostate.title !== "" && (
-                    // h2 keeps a valid heading order after the page's h1 (axe heading-order); the
+                    // H2 keeps a valid heading order after the page's h1 (axe heading-order); the
                     // Figma "H6" look is applied through the local-co-empty__title styles, not the tag.
                     <h2 className="local-co-empty__title">{zerostate.title}</h2>
                 )}

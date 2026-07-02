@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 import { Fragment, jsxDEV } from "react/jsx-dev-runtime";
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
 import { DEFAULT_FILTER, PAGE_SIZE } from "./types";
 import {
   getCourses,
@@ -36,6 +36,27 @@ function useSkipFirstEffect(effect, deps) {
   }, deps);
 }
 __name(useSkipFirstEffect, "useSkipFirstEffect");
+const WIDTH_BREAKPOINTS = [480, 576, 768, 992];
+function useContainerWidthClasses(ref) {
+  const [width, setWidth] = useState(0);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) {
+      return void 0;
+    }
+    setWidth(el.getBoundingClientRect().width);
+    if (typeof ResizeObserver === "undefined") {
+      return void 0;
+    }
+    const observer = new ResizeObserver((entries) => {
+      setWidth(entries[0].contentRect.width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref]);
+  return WIDTH_BREAKPOINTS.filter((bp) => width >= bp).map((bp) => `co-min-${bp}`).join(" ");
+}
+__name(useContainerWidthClasses, "useContainerWidthClasses");
 function App(props) {
   const {
     strings,
@@ -54,6 +75,8 @@ function App(props) {
     preferences,
     (prefs) => initState(prefs, hiddencourseids ?? [])
   );
+  const rootRef = useRef(null);
+  const widthClasses = useContainerWidthClasses(rootRef);
   const {
     view,
     filter,
@@ -139,7 +162,7 @@ function App(props) {
   const pageCount = Math.max(1, Math.ceil(visibleCourses.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const pageCourses = visibleCourses.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  return /* @__PURE__ */ jsxDEV(StringsContext.Provider, { value: strings, children: /* @__PURE__ */ jsxDEV(CourseCallbacksContext.Provider, { value: callbacks, children: /* @__PURE__ */ jsxDEV(CourseMembershipContext.Provider, { value: memberships, children: /* @__PURE__ */ jsxDEV("section", { className: "block-myoverview", children: [
+  return /* @__PURE__ */ jsxDEV(StringsContext.Provider, { value: strings, children: /* @__PURE__ */ jsxDEV(CourseCallbacksContext.Provider, { value: callbacks, children: /* @__PURE__ */ jsxDEV(CourseMembershipContext.Provider, { value: memberships, children: /* @__PURE__ */ jsxDEV("section", { ref: rootRef, className: `block-myoverview ${widthClasses}`.trim(), children: [
     /* @__PURE__ */ jsxDEV(
       Toolbar,
       {
@@ -166,7 +189,7 @@ function App(props) {
       false,
       {
         fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-        lineNumber: 195,
+        lineNumber: 233,
         columnNumber: 25
       },
       this
@@ -174,22 +197,22 @@ function App(props) {
     /* @__PURE__ */ jsxDEV("div", { "aria-live": "polite", children: [
       loading && /* @__PURE__ */ jsxDEV("div", { className: "block-myoverview__loading", role: "status", "aria-busy": "true" }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-        lineNumber: 221,
+        lineNumber: 259,
         columnNumber: 33
       }, this),
       error && /* @__PURE__ */ jsxDEV("p", { className: "block-myoverview__error", children: error }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-        lineNumber: 223,
+        lineNumber: 261,
         columnNumber: 39
       }, this)
     ] }, void 0, true, {
       fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-      lineNumber: 219,
+      lineNumber: 257,
       columnNumber: 25
     }, this),
     hasNoCourses && /* @__PURE__ */ jsxDEV(EmptyState, { zerostate }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-      lineNumber: 225,
+      lineNumber: 263,
       columnNumber: 42
     }, this),
     !hasNoCourses && !loading && !error && /* @__PURE__ */ jsxDEV(Fragment, { children: [
@@ -205,7 +228,7 @@ function App(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-          lineNumber: 228,
+          lineNumber: 266,
           columnNumber: 33
         },
         this
@@ -221,31 +244,31 @@ function App(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-          lineNumber: 234,
+          lineNumber: 272,
           columnNumber: 33
         },
         this
       )
     ] }, void 0, true, {
       fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-      lineNumber: 227,
+      lineNumber: 265,
       columnNumber: 29
     }, this)
   ] }, void 0, true, {
     fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-    lineNumber: 194,
+    lineNumber: 232,
     columnNumber: 21
   }, this) }, void 0, false, {
     fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-    lineNumber: 190,
+    lineNumber: 228,
     columnNumber: 17
   }, this) }, void 0, false, {
     fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-    lineNumber: 189,
+    lineNumber: 227,
     columnNumber: 13
   }, this) }, void 0, false, {
     fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-    lineNumber: 188,
+    lineNumber: 226,
     columnNumber: 9
   }, this);
 }
