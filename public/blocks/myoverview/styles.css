@@ -216,19 +216,34 @@
     font-size: 14px;
 }
 
-/* Constrain the design-system Button (Bootstrap .btn) to the 28px toolbar height. */
+/* Constrain the design-system Button (Bootstrap .btn) to the 28px toolbar height. The label uses
+   the DS paragraph-default size (1rem) to match the search field and the design system; the icon
+   gap matches the DS Button (--mds-spacing-xs). */
 .local-co-toolbar .btn {
     display: inline-flex;
     align-items: center;
+    gap: var(--co-sp-xs);
     height: 28px;
     padding: 0 var(--co-sp-sm);
-    font-size: 14px;
+    font-size: var(--mds-font-size-paragraph-default);
     line-height: 1;
     white-space: nowrap;
 }
 
+/* Keep the leading icon (e.g. the Create "+") on the DS icon token rather than scaling it up with
+   the label — the DS sizes button icons independently of the label. */
+.local-co-toolbar .btn i {
+    font-size: var(--mds-icons-xs);
+}
+
 .local-co-toolbtn--labelled {
     padding: 0 var(--co-sp-sm);
+}
+
+/* The filter chip's text label uses the DS paragraph-default size (1rem) to match the other toolbar
+   buttons and the search field. The chip's icon/caret keep the smaller chip font-size. */
+.local-co-toolbtn__label {
+    font-size: var(--mds-font-size-paragraph-default);
 }
 
 .local-co-toolbtn:hover {
@@ -317,7 +332,7 @@
 .local-co-menu__group-label {
     padding: var(--co-sp-xs) var(--co-sp-sm);
     border-bottom: 1px solid var(--co-border-interactive);
-    font-size: 14px;
+    font-size: 14px; /* Figma (4866:65507): $font-size-sm / 14px, medium — matches the menu items */
     font-weight: 500;
     color: var(--co-subtle);
     margin-bottom: var(--co-sp-xxs);
@@ -345,12 +360,12 @@
     align-items: center;
     gap: var(--co-sp-xs);
     width: 100%;
-    padding: var(--co-sp-xs) var(--co-sp-sm);
+    padding: var(--co-sp-xs); /* Figma (4616:16251): 8px on all sides */
     border: 0;
     border-radius: var(--co-r-sm);
     background: transparent;
-    color: var(--co-text);
-    font-size: 14px;
+    color: var(--co-subtle); /* Figma: --text/subtle */
+    font-size: 14px; /* Figma: $font-size-sm */
     text-align: left;
     cursor: pointer;
 }
@@ -359,15 +374,20 @@
     background: var(--co-surface-subtle);
 }
 
+/* Divider drawn after the last item of a semantic group (Figma menu grouping). */
+.local-co-menu__item--group-end {
+    border-bottom: 1px solid var(--co-border-interactive); /* Figma: --border/interactive/secondary/default */
+}
+
 .local-co-menu__item.is-selected {
-    color: var(--co-primary);
+    color: var(--co-link); /* Figma: --text/link/primary */
     font-weight: 500;
 }
 
 .local-co-menu__check {
     margin-left: auto;
-    color: var(--co-primary);
-    font-size: 12px;
+    color: var(--co-link);
+    font-size: var(--mds-icons-sm); /* Figma: --icons/sm / 16px */
 }
 
 .local-co-menu__icon {

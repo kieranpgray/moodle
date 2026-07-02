@@ -57,7 +57,7 @@ Feature: The my overview block allows admins to easily configure the students' c
     And I log out
     Then I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    Then "All" "button" should exist in the ".local-co-menu__list" "css_element"
+    Then "All courses" "button" should exist in the ".local-co-menu__list" "css_element"
 
   Scenario: Disable 'All' course filter option
     Given I log in as "admin"
@@ -68,7 +68,7 @@ Feature: The my overview block allows admins to easily configure the students' c
     Then I am on the "My courses" page logged in as "student1"
     # 'All' option has been disabled, so the grouping trigger is falling back to the 'In progress' option which is the next enabled option.
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    Then "All" "button" should not exist in the ".local-co-menu__list" "css_element"
+    Then "All courses" "button" should not exist in the ".local-co-menu__list" "css_element"
 
   Scenario: Enable 'In progress' course filter option
     Given I log in as "admin"
@@ -159,7 +159,7 @@ Feature: The my overview block allows admins to easily configure the students' c
     And I log out
     Then I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    Then "Courses removed from view" "button" should exist in the ".local-co-menu__list" "css_element"
+    Then "Removed from view" "button" should exist in the ".local-co-menu__list" "css_element"
 
   Scenario: Disable 'Removed courses' course filter option
     Given I log in as "admin"
@@ -169,7 +169,7 @@ Feature: The my overview block allows admins to easily configure the students' c
     And I log out
     Then I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    Then "Courses removed from view" "button" should not exist in the ".local-co-menu__list" "css_element"
+    Then "Removed from view" "button" should not exist in the ".local-co-menu__list" "css_element"
 
   Scenario: Disable all course filter options
     Given I log in as "admin"

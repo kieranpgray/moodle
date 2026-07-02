@@ -24,6 +24,7 @@
 
 $string['allincludinghidden'] = 'All (including removed from view)';
 $string['all'] = 'All';
+$string['allcourses'] = 'All courses';
 $string['addtofavourites'] = 'Star this course';
 $string['aria:addtofavourites'] = 'Star for';
 $string['aria:allcoursesincludinghidden'] = 'Show all courses';

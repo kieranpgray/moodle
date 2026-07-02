@@ -136,22 +136,52 @@ export default function App(props: AppProps) {
     const requestIdRef = useRef(0);
     useEffect(() => {
         const requestId = ++requestIdRef.current;
-        // A non-empty search overrides the grouping: the web service uses the
-        // 'search' classification with a searchvalue, matching the current AMD block.
+        // A search uses the 'search' classification with a searchvalue (the web service treats
+        // classifications as mutually exclusive, so it cannot combine search with a grouping).
+        // To keep the active filter applied during a search we intersect the search results with
+        // the filter's own set. Favourites/hidden/all are applied client-side (see visibleCourses);
+        // timeline and custom-field membership can't be derived from the card payload, so for those
+        // we fetch the filter's set and intersect by id, reusing the server's own logic.
         const searching = debouncedSearch.trim() !== "";
-        const isCustomField = !searching && filter === "customfield";
+        const isCustomField = filter === "customfield";
+        const serverFilter = filter === "inprogress" || filter === "future"
+            || filter === "past" || isCustomField;
         dispatch({type: "SET_LOADING"});
-        getCourses({
+
+        const primaryArgs = {
             classification: searching ? "search" : filter,
             sort,
             limit: 0,
             offset: 0,
             view,
-            customfieldname: isCustomField ? config.customfieldname : undefined,
-            customfieldvalue: isCustomField ? (customfieldvalue ?? undefined) : undefined,
+            customfieldname: !searching && isCustomField ? config.customfieldname : undefined,
+            customfieldvalue: !searching && isCustomField ? (customfieldvalue ?? undefined) : undefined,
             searchvalue: searching ? debouncedSearch : undefined,
-        })
-            .then(({courses: fetched}) => {
+        };
+
+        const load = async(): Promise<typeof state.courses> => {
+            if (searching && serverFilter) {
+                const [searchRes, filterRes] = await Promise.all([
+                    getCourses(primaryArgs),
+                    getCourses({
+                        classification: filter,
+                        sort,
+                        limit: 0,
+                        offset: 0,
+                        view,
+                        customfieldname: isCustomField ? config.customfieldname : undefined,
+                        customfieldvalue: isCustomField ? (customfieldvalue ?? undefined) : undefined,
+                    }),
+                ]);
+                const allowed = new Set(filterRes.courses.map((c) => c.id));
+                return searchRes.courses.filter((c) => allowed.has(c.id));
+            }
+            const {courses: fetched} = await getCourses(primaryArgs);
+            return fetched;
+        };
+
+        load()
+            .then((fetched) => {
                 if (requestId === requestIdRef.current) {
                     dispatch({type: "SET_COURSES", courses: fetched});
                 }
@@ -196,18 +226,21 @@ export default function App(props: AppProps) {
     const callbacks = useMemo(() => ({toggleFavourite, toggleHidden}), [toggleFavourite, toggleHidden]);
     const memberships = useMemo(() => ({favourites, hidden}), [favourites, hidden]);
 
-    // Apply the hidden state as a client-side filter on top of the server results so that hiding
-    // or restoring a course updates the visible list immediately (before any refetch), matching
-    // the classification: the 'hidden' filter shows only hidden courses, 'allincludinghidden' shows
-    // everything, a search shows the server results as-is, and every other filter excludes hidden.
-    const searching = debouncedSearch.trim() !== "";
-    const visibleCourses = searching ? courses : courses.filter((c) => {
+    // Apply the active filter as a client-side filter on top of the server results. This keeps the
+    // filter applied during a search (search results are intersected with the filter) and lets a
+    // hide/restore or star/unstar update the visible list immediately, before any refetch:
+    // 'hidden' shows only hidden courses, 'allincludinghidden' shows everything, 'favourites' shows
+    // only starred courses, and every other filter (all, timeline, custom-field) excludes hidden.
+    const visibleCourses = courses.filter((c) => {
         const isHidden = hidden.has(c.id);
         if (filter === "hidden") {
             return isHidden;
         }
         if (filter === "allincludinghidden") {
             return true;
+        }
+        if (filter === "favourites") {
+            return favourites.has(c.id);
         }
         return !isHidden;
     });

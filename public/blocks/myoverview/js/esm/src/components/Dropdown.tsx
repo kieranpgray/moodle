@@ -52,6 +52,13 @@ type DropdownProps<T extends string> = {
     showLabel?: boolean;
     /** Optional heading shown at the top of the open menu (Figma group label). */
     menuTitle?: string;
+    /** Short hover tooltip on the trigger; defaults to `label` when omitted. */
+    tooltip?: string;
+    /**
+     * Optional grouping function. When supplied, a divider is drawn after any
+     * item whose group differs from the next item's group (Figma menu grouping).
+     */
+    groupOf?: (value: T) => string;
 };
 
 
@@ -63,6 +70,7 @@ type DropdownProps<T extends string> = {
  */
 export default function Dropdown<T extends string>({
     label, triggerAriaLabel, icon, options, current, onSelect, active, showLabel = false, menuTitle,
+    tooltip, groupOf,
 }: DropdownProps<T>) {
     const [open, setOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -139,7 +147,7 @@ export default function Dropdown<T extends string>({
                 aria-haspopup="menu"
                 aria-expanded={open}
                 aria-label={triggerAriaLabel ?? label}
-                data-tooltip={label}
+                data-tooltip={tooltip ?? label}
                 onClick={() => setOpen((v) => !v)}
             >
                 <Icon name={icon} />
@@ -158,13 +166,17 @@ export default function Dropdown<T extends string>({
                         <div className="local-co-menu__group-label" aria-hidden="true">{menuTitle}</div>
                     )}
                     <div role="group" aria-label={menuTitle ?? label}>
-                        {options.map((opt) => (
+                        {options.map((opt, i) => {
+                            const groupEnd = !!groupOf && i < options.length - 1
+                                && groupOf(opt.value) !== groupOf(options[i + 1].value);
+                            return (
                             <button
                                 key={opt.value}
                                 type="button"
                                 role="menuitemradio"
                                 aria-checked={opt.value === current}
-                                className={`local-co-menu__item${opt.value === current ? " is-selected" : ""}`}
+                                className={`local-co-menu__item${opt.value === current ? " is-selected" : ""}`
+                                    + `${groupEnd ? " local-co-menu__item--group-end" : ""}`}
                                 onClick={() => {
                                     onSelect(opt.value);
                                     setOpen(false);
@@ -175,7 +187,8 @@ export default function Dropdown<T extends string>({
                                 {opt.label}
                                 {opt.value === current && <Icon name="check" className="local-co-menu__check" />}
                             </button>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             )}

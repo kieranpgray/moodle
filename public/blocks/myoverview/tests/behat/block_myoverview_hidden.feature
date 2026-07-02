@@ -28,7 +28,7 @@ Feature: The my overview block allows users to hide their courses
   Scenario: Test hide toggle functionality
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "All" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "All courses" "button" in the ".local-co-menu__list" "css_element"
     And I click on ".local-co-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
     And I click on "Remove from view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
     And I reload the page
@@ -37,7 +37,7 @@ Feature: The my overview block allows users to hide their courses
   Scenario: Test hide toggle functionality w/ favorites
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    And I click on "All" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "All courses" "button" in the ".local-co-menu__list" "css_element"
     And I click on ".mds-favourite-button" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
     And I click on ".local-co-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
     And I click on "Remove from view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
@@ -47,42 +47,42 @@ Feature: The my overview block allows users to hide their courses
     And I click on "Starred" "button" in the ".local-co-menu__list" "css_element"
     Then I should not see "Course 2" in the "Course overview" "block"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    And I click on "Courses removed from view" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "Removed from view" "button" in the ".local-co-menu__list" "css_element"
     And I should see "Course 2" in the "Course overview" "block"
 
   Scenario: Test show toggle functionality
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    And I click on "All" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "All courses" "button" in the ".local-co-menu__list" "css_element"
     And I click on ".local-co-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
     And I click on "Remove from view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    And I click on "Courses removed from view" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "Removed from view" "button" in the ".local-co-menu__list" "css_element"
     And I click on ".local-co-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
     And I click on "Restore to view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
     And I reload the page
     And I should not see "Course 2" in the "Course overview" "block"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "All" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "All courses" "button" in the ".local-co-menu__list" "css_element"
     And I reload the page
     Then I should see "Course 2" in the "Course overview" "block"
 
   Scenario: Test star and unstar functionality
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    And I click on "All" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "All courses" "button" in the ".local-co-menu__list" "css_element"
     And I click on ".mds-favourite-button" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
     And I click on ".local-co-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
     And I click on "Remove from view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    And I click on "Courses removed from view" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "Removed from view" "button" in the ".local-co-menu__list" "css_element"
     And I should see "Course 2" in the "Course overview" "block"
     And I click on ".local-co-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
     And I click on "Restore to view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
     When I reload the page
     Then I should not see "Course 2" in the "Course overview" "block"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    And I click on "All" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "All courses" "button" in the ".local-co-menu__list" "css_element"
     And I should see "Course 2" in the "Course overview" "block"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
     And I click on "Starred" "button" in the ".local-co-menu__list" "css_element"
@@ -91,7 +91,7 @@ Feature: The my overview block allows users to hide their courses
   Scenario: Test a course is hidden directly with "All" courses
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "All" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "All courses" "button" in the ".local-co-menu__list" "css_element"
     And I click on ".local-co-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
     And I click on "Remove from view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
     Then I should not see "Course 2" in the "Course overview" "block"

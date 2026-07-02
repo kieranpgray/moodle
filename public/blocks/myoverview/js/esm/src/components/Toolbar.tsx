@@ -108,6 +108,25 @@ export default function Toolbar(props: ToolbarProps) {
         }
     }
     const currentFilterValue = filter === "customfield" ? `cf:${customfieldvalue ?? ""}` : filter;
+
+    // Semantic grouping for the filter menu dividers (Figma 4616:65101 / 4616:16251): a divider is
+    // drawn where consecutive options fall into different groups. Keyed on filter values (not
+    // labels) so translations never affect the grouping.
+    const filterGroup = (val: string): string => {
+        if (val.startsWith("cf:")) {
+            return "customfield";
+        }
+        switch (val) {
+            case "all":
+            case "allincludinghidden": return "default";
+            case "inprogress":
+            case "future":
+            case "past": return "timeline";
+            case "favourites": return "favourites";
+            case "hidden": return "removed";
+            default: return val;
+        }
+    };
     const onFilterSelect = (val: string) => {
         if (val.startsWith("cf:")) {
             onCustomFieldValue(val.slice(3));
@@ -179,17 +198,21 @@ export default function Toolbar(props: ToolbarProps) {
                     <Dropdown<string>
                         label={strings.filterresults}
                         triggerAriaLabel={`${strings.filterresults}: ${selectedFilter?.label ?? ""}`}
+                        tooltip={strings.tooltipfilter}
+                        menuTitle={strings.filters}
                         icon="filter"
                         options={filterOptions}
                         current={currentFilterValue}
                         onSelect={onFilterSelect}
                         active={filter !== DEFAULT_FILTER}
+                        groupOf={filterGroup}
                         showLabel
                     />
                 )}
                 <Dropdown<Sort>
                     label={strings.sortcourses}
                     triggerAriaLabel={`${strings.sortcourses}: ${selectedSort?.label ?? ""}`}
+                    tooltip={strings.tooltipsort}
                     icon="sort"
                     options={sortOptions}
                     current={sort}
@@ -201,6 +224,7 @@ export default function Toolbar(props: ToolbarProps) {
                     <Dropdown<View>
                         label={strings.changelayout}
                         triggerAriaLabel={`${strings.changelayout}: ${selectedView?.label ?? ""}`}
+                        tooltip={strings.tooltipview}
                         icon={currentViewIcon}
                         options={viewOptions}
                         current={view}

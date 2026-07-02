@@ -98,19 +98,41 @@ function App(props) {
   const requestIdRef = useRef(0);
   useEffect(() => {
     const requestId = ++requestIdRef.current;
-    const searching2 = debouncedSearch.trim() !== "";
-    const isCustomField = !searching2 && filter === "customfield";
+    const searching = debouncedSearch.trim() !== "";
+    const isCustomField = filter === "customfield";
+    const serverFilter = filter === "inprogress" || filter === "future" || filter === "past" || isCustomField;
     dispatch({ type: "SET_LOADING" });
-    getCourses({
-      classification: searching2 ? "search" : filter,
+    const primaryArgs = {
+      classification: searching ? "search" : filter,
       sort,
       limit: 0,
       offset: 0,
       view,
-      customfieldname: isCustomField ? config.customfieldname : void 0,
-      customfieldvalue: isCustomField ? customfieldvalue ?? void 0 : void 0,
-      searchvalue: searching2 ? debouncedSearch : void 0
-    }).then(({ courses: fetched }) => {
+      customfieldname: !searching && isCustomField ? config.customfieldname : void 0,
+      customfieldvalue: !searching && isCustomField ? customfieldvalue ?? void 0 : void 0,
+      searchvalue: searching ? debouncedSearch : void 0
+    };
+    const load = /* @__PURE__ */ __name(async () => {
+      if (searching && serverFilter) {
+        const [searchRes, filterRes] = await Promise.all([
+          getCourses(primaryArgs),
+          getCourses({
+            classification: filter,
+            sort,
+            limit: 0,
+            offset: 0,
+            view,
+            customfieldname: isCustomField ? config.customfieldname : void 0,
+            customfieldvalue: isCustomField ? customfieldvalue ?? void 0 : void 0
+          })
+        ]);
+        const allowed = new Set(filterRes.courses.map((c) => c.id));
+        return searchRes.courses.filter((c) => allowed.has(c.id));
+      }
+      const { courses: fetched } = await getCourses(primaryArgs);
+      return fetched;
+    }, "load");
+    load().then((fetched) => {
       if (requestId === requestIdRef.current) {
         dispatch({ type: "SET_COURSES", courses: fetched });
       }
@@ -146,14 +168,16 @@ function App(props) {
   }, [hidden]);
   const callbacks = useMemo(() => ({ toggleFavourite, toggleHidden }), [toggleFavourite, toggleHidden]);
   const memberships = useMemo(() => ({ favourites, hidden }), [favourites, hidden]);
-  const searching = debouncedSearch.trim() !== "";
-  const visibleCourses = searching ? courses : courses.filter((c) => {
+  const visibleCourses = courses.filter((c) => {
     const isHidden = hidden.has(c.id);
     if (filter === "hidden") {
       return isHidden;
     }
     if (filter === "allincludinghidden") {
       return true;
+    }
+    if (filter === "favourites") {
+      return favourites.has(c.id);
     }
     return !isHidden;
   });
@@ -189,7 +213,7 @@ function App(props) {
       false,
       {
         fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-        lineNumber: 233,
+        lineNumber: 266,
         columnNumber: 25
       },
       this
@@ -197,22 +221,22 @@ function App(props) {
     /* @__PURE__ */ jsxDEV("div", { "aria-live": "polite", children: [
       loading && /* @__PURE__ */ jsxDEV("div", { className: "block-myoverview__loading", role: "status", "aria-busy": "true" }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-        lineNumber: 259,
+        lineNumber: 292,
         columnNumber: 33
       }, this),
       error && /* @__PURE__ */ jsxDEV("p", { className: "block-myoverview__error", children: error }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-        lineNumber: 261,
+        lineNumber: 294,
         columnNumber: 39
       }, this)
     ] }, void 0, true, {
       fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-      lineNumber: 257,
+      lineNumber: 290,
       columnNumber: 25
     }, this),
     hasNoCourses && /* @__PURE__ */ jsxDEV(EmptyState, { zerostate }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-      lineNumber: 263,
+      lineNumber: 296,
       columnNumber: 42
     }, this),
     !hasNoCourses && !loading && !error && /* @__PURE__ */ jsxDEV(Fragment, { children: [
@@ -228,7 +252,7 @@ function App(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-          lineNumber: 266,
+          lineNumber: 299,
           columnNumber: 33
         },
         this
@@ -244,31 +268,31 @@ function App(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-          lineNumber: 272,
+          lineNumber: 305,
           columnNumber: 33
         },
         this
       )
     ] }, void 0, true, {
       fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-      lineNumber: 265,
+      lineNumber: 298,
       columnNumber: 29
     }, this)
   ] }, void 0, true, {
     fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-    lineNumber: 232,
+    lineNumber: 265,
     columnNumber: 21
   }, this) }, void 0, false, {
     fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-    lineNumber: 228,
+    lineNumber: 261,
     columnNumber: 17
   }, this) }, void 0, false, {
     fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-    lineNumber: 227,
+    lineNumber: 260,
     columnNumber: 13
   }, this) }, void 0, false, {
     fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-    lineNumber: 226,
+    lineNumber: 259,
     columnNumber: 9
   }, this);
 }

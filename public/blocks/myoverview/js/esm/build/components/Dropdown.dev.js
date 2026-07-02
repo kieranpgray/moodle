@@ -12,7 +12,9 @@ function Dropdown({
   onSelect,
   active,
   showLabel = false,
-  menuTitle
+  menuTitle,
+  tooltip,
+  groupOf
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
@@ -84,22 +86,22 @@ function Dropdown({
         "aria-haspopup": "menu",
         "aria-expanded": open,
         "aria-label": triggerAriaLabel ?? label,
-        "data-tooltip": label,
+        "data-tooltip": tooltip ?? label,
         onClick: () => setOpen((v) => !v),
         children: [
           /* @__PURE__ */ jsxDEV(Icon, { name: icon }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 145,
+            lineNumber: 153,
             columnNumber: 17
           }, this),
           showLabel && /* @__PURE__ */ jsxDEV("span", { className: "local-co-toolbtn__label", children: selected?.label ?? label }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 146,
+            lineNumber: 154,
             columnNumber: 31
           }, this),
           showLabel && /* @__PURE__ */ jsxDEV(Icon, { name: "chevron-down", className: "local-co-toolbtn__caret" }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 147,
+            lineNumber: 155,
             columnNumber: 31
           }, this)
         ]
@@ -108,7 +110,7 @@ function Dropdown({
       true,
       {
         fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-        lineNumber: 135,
+        lineNumber: 143,
         columnNumber: 13
       },
       this
@@ -124,46 +126,49 @@ function Dropdown({
         children: [
           menuTitle && /* @__PURE__ */ jsxDEV("div", { className: "local-co-menu__group-label", "aria-hidden": "true", children: menuTitle }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 158,
+            lineNumber: 166,
             columnNumber: 25
           }, this),
-          /* @__PURE__ */ jsxDEV("div", { role: "group", "aria-label": menuTitle ?? label, children: options.map((opt) => /* @__PURE__ */ jsxDEV(
-            "button",
-            {
-              type: "button",
-              role: "menuitemradio",
-              "aria-checked": opt.value === current,
-              className: `local-co-menu__item${opt.value === current ? " is-selected" : ""}`,
-              onClick: () => {
-                onSelect(opt.value);
-                setOpen(false);
-                triggerRef.current?.focus();
+          /* @__PURE__ */ jsxDEV("div", { role: "group", "aria-label": menuTitle ?? label, children: options.map((opt, i) => {
+            const groupEnd = !!groupOf && i < options.length - 1 && groupOf(opt.value) !== groupOf(options[i + 1].value);
+            return /* @__PURE__ */ jsxDEV(
+              "button",
+              {
+                type: "button",
+                role: "menuitemradio",
+                "aria-checked": opt.value === current,
+                className: `local-co-menu__item${opt.value === current ? " is-selected" : ""}${groupEnd ? " local-co-menu__item--group-end" : ""}`,
+                onClick: () => {
+                  onSelect(opt.value);
+                  setOpen(false);
+                  triggerRef.current?.focus();
+                },
+                children: [
+                  opt.icon && /* @__PURE__ */ jsxDEV(Icon, { name: opt.icon, className: "local-co-menu__icon" }, void 0, false, {
+                    fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
+                    lineNumber: 186,
+                    columnNumber: 46
+                  }, this),
+                  opt.label,
+                  opt.value === current && /* @__PURE__ */ jsxDEV(Icon, { name: "check", className: "local-co-menu__check" }, void 0, false, {
+                    fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
+                    lineNumber: 188,
+                    columnNumber: 59
+                  }, this)
+                ]
               },
-              children: [
-                opt.icon && /* @__PURE__ */ jsxDEV(Icon, { name: opt.icon, className: "local-co-menu__icon" }, void 0, false, {
-                  fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-                  lineNumber: 174,
-                  columnNumber: 46
-                }, this),
-                opt.label,
-                opt.value === current && /* @__PURE__ */ jsxDEV(Icon, { name: "check", className: "local-co-menu__check" }, void 0, false, {
-                  fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-                  lineNumber: 176,
-                  columnNumber: 59
-                }, this)
-              ]
-            },
-            opt.value,
-            true,
-            {
-              fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-              lineNumber: 162,
-              columnNumber: 29
-            },
-            this
-          )) }, void 0, false, {
+              opt.value,
+              true,
+              {
+                fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
+                lineNumber: 173,
+                columnNumber: 29
+              },
+              this
+            );
+          }) }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 160,
+            lineNumber: 168,
             columnNumber: 21
           }, this)
         ]
@@ -172,14 +177,14 @@ function Dropdown({
       true,
       {
         fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-        lineNumber: 150,
+        lineNumber: 158,
         columnNumber: 17
       },
       this
     )
   ] }, void 0, true, {
     fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-    lineNumber: 134,
+    lineNumber: 142,
     columnNumber: 9
   }, this);
 }

@@ -62,7 +62,7 @@ Feature: The my overview block allows users to easily access their courses
   Scenario: View all (except removed) courses
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "All" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "All courses" "button" in the ".local-co-menu__list" "css_element"
     Then I should see "Course 1" in the "Course overview" "block"
     And I should see "Course 2" in the "Course overview" "block"
     And I should see "Course 3" in the "Course overview" "block"
@@ -98,9 +98,9 @@ Feature: The my overview block allows users to easily access their courses
   Scenario: View all (except removed) courses - w/ persistence
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "All" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "All courses" "button" in the ".local-co-menu__list" "css_element"
     And I reload the page
-    Then I should see "All" in the "Course overview" "block"
+    Then I should see "All courses" in the "Course overview" "block"
     Then I should see "Course 1" in the "Course overview" "block"
     Then I should see "Course 2" in the "Course overview" "block"
     Then I should see "Course 3" in the "Course overview" "block"
@@ -243,7 +243,7 @@ Feature: The my overview block allows users to easily access their courses
   Scenario: View all (except hidden) courses with hide persistent functionality
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "All" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "All courses" "button" in the ".local-co-menu__list" "css_element"
     And I click on ".local-co-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 5')]" "xpath_element"
     And I click on "Remove from view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 5')]" "xpath_element"
     And I reload the page

@@ -94,6 +94,7 @@ export type Strings = {
     filterinprogress: string;
     filterpast: string;
     filterresults: string;
+    filters: string;
     hidecourse: string;
     managecourses: string;
     percentcomplete: string;
@@ -109,6 +110,9 @@ export type Strings = {
     sortshortname: string;
     sortstartdate: string;
     starcourse: string;
+    tooltipfilter: string;
+    tooltipsort: string;
+    tooltipview: string;
     viewcard: string;
     viewlabel: string;
     viewlist: string;
