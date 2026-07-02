@@ -443,6 +443,7 @@ class main implements renderable, templatable {
             'requestcourseurl' => $requestcourseurl,
             'hiddencourseids' => array_map('intval', get_hidden_courses_on_timeline()),
             'zerostate' => $this->get_zero_state_data(),
+            'illustrationurl' => $output->image_url('courses', 'block_myoverview')->out(false),
         ];
 
         return [
@@ -470,7 +471,8 @@ class main implements renderable, templatable {
             'courseprogress' => get_string('courseprogress', 'block_myoverview'),
             'createcourse' => get_string('createcourse', 'block_myoverview'),
             'emptyeducator' => get_string('zero_default_intro', 'block_myoverview'),
-            'emptynoresults' => get_string('zero_default_intro', 'block_myoverview'),
+            'emptynoresults' => get_string('noresults_intro', 'block_myoverview'),
+            'emptynoresultstitle' => get_string('noresults_title', 'block_myoverview'),
             'emptystudent' => get_string('zero_default_intro', 'block_myoverview'),
             'errorloadingcourses' => get_string('errorloadingcourses', 'block_myoverview'),
             'filterall' => get_string('allcourses', 'block_myoverview'),

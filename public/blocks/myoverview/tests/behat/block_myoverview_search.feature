@@ -63,6 +63,16 @@ Feature: My overview block searching
     Then I should see "Course 13" in the "Course overview" "block"
     And I should not see "Course 01" in the "Course overview" "block"
 
+  Scenario: A search with no matches shows the no-results state, not the zero-state
+    Given I am on the "My courses" page logged in as "student1"
+    When I set the field "Search courses" in the "Course overview" "block" to "Nonexistent course zzz"
+    Then I should see "No courses match your search" in the "Course overview" "block"
+    And I should see "Try different keywords or clear your filters to see all courses." in the "Course overview" "block"
+    And I should not see "You're not enrolled in any courses." in the "Course overview" "block"
+    # The search field stays available so the user can recover from the empty result.
+    And "Search courses" "field" should exist in the "Course overview" "block"
+    And I log out
+
   Scenario: Searching keeps the active filter applied
     Given I am on the "My courses" page logged in as "student1"
     # Star two courses and reload so the favourites are loaded from the server.

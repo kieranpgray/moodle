@@ -651,9 +651,12 @@
 }
 
 .local-co-empty__illustration {
-    font-size: 40px;
-    color: var(--co-border-interactive);
     margin-bottom: var(--co-sp-md);
+}
+
+.local-co-empty__illustration img {
+    width: 94px;
+    height: auto;
 }
 
 .local-co-empty__text {

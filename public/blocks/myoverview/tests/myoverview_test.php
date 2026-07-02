@@ -146,4 +146,30 @@ final class myoverview_test extends \advanced_testcase {
         $this->assertStringContainsString('category=' . $category->id, $props['requestcourseurl']);
         $this->assertStringNotContainsString('categoryid=', $props['requestcourseurl']);
     }
+
+    /**
+     * The exported props must carry the shared empty-state illustration URL and the
+     * dedicated no-results copy, distinct from the "not enrolled" zero-state (MDL-88974).
+     */
+    public function test_export_provides_illustration_and_noresults_strings(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+
+        $this->setUser($this->getDataGenerator()->create_user());
+        $PAGE->set_url('/my/courses.php');
+
+        $renderable = new \block_myoverview\output\main(null, null, null);
+        $data = $renderable->export_for_template($PAGE->get_renderer('block_myoverview'));
+        $props = json_decode($data['propsjson'], true);
+
+        // The illustration resolves to the block's courses.svg pix asset.
+        $this->assertArrayHasKey('illustrationurl', $props);
+        $this->assertStringContainsString('block_myoverview', $props['illustrationurl']);
+        $this->assertStringEndsWith('courses', $props['illustrationurl']);
+
+        // No-results copy is wired to its own strings and differs from the student zero-state text.
+        $this->assertEquals(get_string('noresults_title', 'block_myoverview'), $props['strings']['emptynoresultstitle']);
+        $this->assertEquals(get_string('noresults_intro', 'block_myoverview'), $props['strings']['emptynoresults']);
+        $this->assertNotEquals($props['strings']['emptystudent'], $props['strings']['emptynoresults']);
+    }
 }

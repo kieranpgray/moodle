@@ -27,7 +27,6 @@
 
 import {ZeroStateData} from "../types";
 import {useStrings} from "../state";
-import Icon from "./Icon";
 
 type EmptyVariant = "student" | "educator" | "no-results";
 
@@ -35,24 +34,33 @@ type EmptyVariant = "student" | "educator" | "no-results";
 type EmptyStateProps = {
     zerostate?: ZeroStateData;
     variant?: EmptyVariant;
+    /** URL of the shared empty-state illustration (block_myoverview/pix/courses.svg). */
+    illustrationurl: string;
 };
 
 
 /**
  * Render the empty / no-results state.
  *
+ * All states share the same decorative illustration; it carries no meaning (the
+ * title and text do), so it is exposed to assistive tech as empty (alt="").
+ *
  * @param props The rich zero-state data, or a simple variant fallback.
  * @returns The empty-state element.
  */
-export default function EmptyState({zerostate, variant}: EmptyStateProps) {
+export default function EmptyState({zerostate, variant, illustrationurl}: EmptyStateProps) {
     const strings = useStrings();
+
+    const illustration = (
+        <div className="local-co-empty__illustration" aria-hidden="true">
+            <img src={illustrationurl} alt="" />
+        </div>
+    );
 
     if (zerostate) {
         return (
             <div className="local-co-empty" data-variant="zerostate">
-                <div className="local-co-empty__illustration" aria-hidden="true">
-                    <Icon name="book-open" />
-                </div>
+                {illustration}
                 {zerostate.title !== "" && (
                     // H2 keeps a valid heading order after the page's h1 (axe heading-order); the
                     // Figma "H6" look is applied through the local-co-empty__title styles, not the tag.
@@ -81,6 +89,18 @@ export default function EmptyState({zerostate, variant}: EmptyStateProps) {
         );
     }
 
+    // No-results is a rich state (title + text) shown when a search or filter matches
+    // nothing, distinct from the genuine "not enrolled" zero-state (MDL-88974).
+    if (variant === "no-results") {
+        return (
+            <div className="local-co-empty" data-variant="no-results">
+                {illustration}
+                <h2 className="local-co-empty__title">{strings.emptynoresultstitle}</h2>
+                <p className="local-co-empty__text">{strings.emptynoresults}</p>
+            </div>
+        );
+    }
+
     const copy: Record<EmptyVariant, string> = {
         student: strings.emptystudent,
         educator: strings.emptyeducator,
@@ -88,9 +108,7 @@ export default function EmptyState({zerostate, variant}: EmptyStateProps) {
     };
     return (
         <div className="local-co-empty" data-variant={variant ?? "student"}>
-            <div className="local-co-empty__illustration" aria-hidden="true">
-                <Icon name="book-open" />
-            </div>
+            {illustration}
             <p className="local-co-empty__text">{copy[variant ?? "student"]}</p>
         </div>
     );

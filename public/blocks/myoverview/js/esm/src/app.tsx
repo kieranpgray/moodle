@@ -103,6 +103,7 @@ export default function App(props: AppProps) {
     const {
         strings, preferences, config, permissions, role,
         createcourseurl, managecourseurl, requestcourseurl, hiddencourseids, zerostate,
+        illustrationurl,
     } = props;
 
     const [state, dispatch] = useReducer(
@@ -246,10 +247,13 @@ export default function App(props: AppProps) {
     });
 
     const hasNoCourses = !loading && !error && visibleCourses.length === 0;
+    // An active search term or non-default filter is narrowing the list. Used both to keep the
+    // controls visible and to pick the "no results" empty state over the genuine zero-state.
+    const hasActiveQuery = search !== "" || filter !== DEFAULT_FILTER;
     // Hide the search/filter/sort/view controls in a genuine zero-state (no courses and no active
     // search or non-default filter), matching the old block and the Figma zero-state. They stay
     // visible when a search or filter is active so the user can always undo it.
-    const showControls = loading || courses.length > 0 || search !== "" || filter !== DEFAULT_FILTER;
+    const showControls = loading || courses.length > 0 || hasActiveQuery;
     // Client-side pagination over the (hidden-filtered) result set (see the fetch effect above).
     const pageCount = Math.max(1, Math.ceil(visibleCourses.length / PAGE_SIZE));
     const currentPage = Math.min(page, pageCount);
@@ -293,7 +297,11 @@ export default function App(props: AppProps) {
                             )}
                             {error && <p className="block-myoverview__error">{error}</p>}
                         </div>
-                        {hasNoCourses && <EmptyState zerostate={zerostate} />}
+                        {hasNoCourses && (
+                            hasActiveQuery
+                                ? <EmptyState variant="no-results" illustrationurl={illustrationurl} />
+                                : <EmptyState zerostate={zerostate} illustrationurl={illustrationurl} />
+                        )}
                         {!hasNoCourses && !loading && !error && (
                             <>
                                 <CourseList

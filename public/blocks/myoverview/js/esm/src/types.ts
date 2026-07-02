@@ -83,6 +83,7 @@ export type Strings = {
     createcourse: string;
     emptyeducator: string;
     emptynoresults: string;
+    emptynoresultstitle: string;
     emptystudent: string;
     errorloadingcourses: string;
     filterall: string;
@@ -179,6 +180,8 @@ export type LiveAppProps = {
      * not in zerostate.buttons.
      */
     zerostate?: ZeroStateData;
+    /** URL of the shared empty-state illustration (block_myoverview/pix/courses.svg). */
+    illustrationurl: string;
 };
 
 /** Props passed from the Mustache mount point. */
