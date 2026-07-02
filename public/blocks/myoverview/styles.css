@@ -118,13 +118,17 @@
 }
 
 /* Mobile-first: in a narrow container the actions and search each take their own row. They
-   return to sharing a row once the container is wide enough (co-min-768 / co-min-480). */
+   return to sharing a row once the container is wide enough (co-min-768 / co-min-480). The
+   action buttons keep their natural width and wrap onto the next line when they do not fit,
+   rather than being crammed edge-to-edge against the block padding (e.g. in the block drawer). */
 .local-co-toolbar__group--actions {
     width: 100%;
+    flex-wrap: wrap;
 }
 
 .co-min-768 .local-co-toolbar__group--actions {
     width: auto;
+    flex-wrap: nowrap;
 }
 
 .local-co-toolbar__group--search {
