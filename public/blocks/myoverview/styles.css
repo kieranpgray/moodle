@@ -399,16 +399,18 @@
 /* --- Course list layouts --- */
 .local-co-list--card {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* Mobile viewport / narrow block drawer: single column. */
     gap: var(--co-sp-md);
 }
 
-.co-min-576 .local-co-list--card {
-    grid-template-columns: repeat(2, 1fr);
-}
-
-.co-min-992 .local-co-list--card {
-    grid-template-columns: repeat(3, 1fr);
+/* Tablet and desktop viewports show three columns — but only when the block's own container is
+   wide enough (co-min-480), so the narrow block drawer (which never reaches that width tier) stays
+   single-column and looks unchanged. Combining the viewport @media with the container-width class
+   keeps the drawer usable while giving the main page its full three-column layout. */
+@media (min-width: 768px) {
+    .co-min-480 .local-co-list--card {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }
 
 .local-co-list--list,
