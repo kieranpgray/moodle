@@ -172,4 +172,29 @@ final class myoverview_test extends \advanced_testcase {
         $this->assertEquals(get_string('noresults_intro', 'block_myoverview'), $props['strings']['emptynoresults']);
         $this->assertNotEquals($props['strings']['emptystudent'], $props['strings']['emptynoresults']);
     }
+
+    /**
+     * The per-course control labels are parameterised client-side with the course name, so their
+     * source strings must retain the {$a} placeholder for the React app to substitute (MDL-89070).
+     */
+    public function test_percourse_aria_labels_carry_placeholder(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+
+        $this->setUser($this->getDataGenerator()->create_user());
+        $PAGE->set_url('/my/courses.php');
+
+        $renderable = new \block_myoverview\output\main(null, null, null);
+        $data = $renderable->export_for_template($PAGE->get_renderer('block_myoverview'));
+        $props = json_decode($data['propsjson'], true);
+
+        // Star, unstar and overflow-menu labels are ".replace('{$a}', coursename)" in the client.
+        foreach (['actionsfor', 'starcourse', 'removefromstarred'] as $key) {
+            $this->assertStringContainsString(
+                '{$a}',
+                $props['strings'][$key],
+                "String '{$key}' must keep the placeholder for client-side substitution."
+            );
+        }
+    }
 }

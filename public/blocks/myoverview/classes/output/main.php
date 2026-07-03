@@ -463,7 +463,7 @@ class main implements renderable, templatable {
      */
     private function get_strings(): array {
         return [
-            'actionsfor' => get_string('aria:courseactions', 'block_myoverview'),
+            'actionsfor' => get_string('aria:courseactionsfor', 'block_myoverview'),
             'changelayout' => get_string('aria:displaydropdown', 'block_myoverview'),
             'clearsearch' => get_string('clear'),
             'courseactions' => get_string('aria:courseactions', 'block_myoverview'),
