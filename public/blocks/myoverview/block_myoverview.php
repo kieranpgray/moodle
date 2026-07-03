@@ -32,7 +32,6 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class block_myoverview extends block_base {
-
     /**
      * Init.
      */
@@ -70,7 +69,7 @@ class block_myoverview extends block_base {
      * @return array
      */
     public function applicable_formats() {
-        return array('my' => true);
+        return ['my' => true];
     }
 
     /**
@@ -138,4 +137,3 @@ class block_myoverview extends block_base {
         }
     }
 }
-

@@ -13,6 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
  * Unit tests for the block_myoverview implementation of the privacy API.
  *
@@ -72,21 +73,21 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
      * @return array Array of valid user preferences.
      */
     public static function user_preference_provider(): array {
-        return array(
-            array('block_myoverview_user_sort_preference', 'lastaccessed', ''),
-            array('block_myoverview_user_sort_preference', 'title', ''),
-            array('block_myoverview_user_sort_preference', 'shortname', ''),
-            array('block_myoverview_user_grouping_preference', 'allincludinghidden', ''),
-            array('block_myoverview_user_grouping_preference', 'all', ''),
-            array('block_myoverview_user_grouping_preference', 'inprogress', ''),
-            array('block_myoverview_user_grouping_preference', 'future', ''),
-            array('block_myoverview_user_grouping_preference', 'past', ''),
-            array('block_myoverview_user_grouping_preference', 'hidden', ''),
-            array('block_myoverview_user_grouping_preference', 'favourites', ''),
-            array('block_myoverview_user_view_preference', 'card', ''),
-            array('block_myoverview_user_view_preference', 'list', ''),
-            array('block_myoverview_user_view_preference', 'summary', ''),
-        );
+        return [
+            ['block_myoverview_user_sort_preference', 'lastaccessed', ''],
+            ['block_myoverview_user_sort_preference', 'title', ''],
+            ['block_myoverview_user_sort_preference', 'shortname', ''],
+            ['block_myoverview_user_grouping_preference', 'allincludinghidden', ''],
+            ['block_myoverview_user_grouping_preference', 'all', ''],
+            ['block_myoverview_user_grouping_preference', 'inprogress', ''],
+            ['block_myoverview_user_grouping_preference', 'future', ''],
+            ['block_myoverview_user_grouping_preference', 'past', ''],
+            ['block_myoverview_user_grouping_preference', 'hidden', ''],
+            ['block_myoverview_user_grouping_preference', 'favourites', ''],
+            ['block_myoverview_user_view_preference', 'card', ''],
+            ['block_myoverview_user_view_preference', 'list', ''],
+            ['block_myoverview_user_view_preference', 'summary', ''],
+        ];
     }
 
     public function test_export_user_preferences_with_hidden_courses(): void {

@@ -120,6 +120,8 @@ final class myoverview_test extends \advanced_testcase {
      *
      * course/request.php reads the pre-selected category via optional_param('category', ...),
      * so a 'categoryid' key would silently drop the selection. This pins the fix in place.
+     *
+     * @covers \block_myoverview\output\main::export_for_template
      */
     public function test_get_request_course_url_uses_category_param(): void {
         global $CFG, $PAGE;
@@ -150,6 +152,8 @@ final class myoverview_test extends \advanced_testcase {
     /**
      * The exported props must carry the shared empty-state illustration URL and the
      * dedicated no-results copy, distinct from the "not enrolled" zero-state (MDL-88974).
+     *
+     * @covers \block_myoverview\output\main::export_for_template
      */
     public function test_export_provides_illustration_and_noresults_strings(): void {
         global $PAGE;
@@ -176,6 +180,8 @@ final class myoverview_test extends \advanced_testcase {
     /**
      * The per-course control labels are parameterised client-side with the course name, so their
      * source strings must retain the {$a} placeholder for the React app to substitute (MDL-89070).
+     *
+     * @covers \block_myoverview\output\main::export_for_template
      */
     public function test_percourse_aria_labels_carry_placeholder(): void {
         global $PAGE;

@@ -71,11 +71,11 @@ define('BLOCK_MYOVERVIEW_DISPLAY_CATEGORIES_OFF', 'off');
  * @return array[] Array representing current options along with defaults
  */
 function block_myoverview_user_preferences(): array {
-    $preferences['block_myoverview_user_grouping_preference'] = array(
+    $preferences['block_myoverview_user_grouping_preference'] = [
         'null' => NULL_NOT_ALLOWED,
         'default' => BLOCK_MYOVERVIEW_GROUPING_ALL,
         'type' => PARAM_ALPHA,
-        'choices' => array(
+        'choices' => [
             BLOCK_MYOVERVIEW_GROUPING_ALLINCLUDINGHIDDEN,
             BLOCK_MYOVERVIEW_GROUPING_ALL,
             BLOCK_MYOVERVIEW_GROUPING_INPROGRESS,
@@ -84,9 +84,9 @@ function block_myoverview_user_preferences(): array {
             BLOCK_MYOVERVIEW_GROUPING_FAVOURITES,
             BLOCK_MYOVERVIEW_GROUPING_HIDDEN,
             BLOCK_MYOVERVIEW_GROUPING_CUSTOMFIELD,
-        ),
+        ],
         'permissioncallback' => [core_user::class, 'is_current_user'],
-    );
+    ];
 
     $preferences['block_myoverview_user_grouping_customfieldvalue_preference'] = [
         'null' => NULL_ALLOWED,
@@ -95,39 +95,39 @@ function block_myoverview_user_preferences(): array {
         'permissioncallback' => [core_user::class, 'is_current_user'],
     ];
 
-    $preferences['block_myoverview_user_sort_preference'] = array(
+    $preferences['block_myoverview_user_sort_preference'] = [
         'null' => NULL_NOT_ALLOWED,
         'default' => BLOCK_MYOVERVIEW_SORTING_LASTACCESSED,
         'type' => PARAM_ALPHA,
-        'choices' => array(
+        'choices' => [
             BLOCK_MYOVERVIEW_SORTING_TITLE,
             BLOCK_MYOVERVIEW_SORTING_LASTACCESSED,
             BLOCK_MYOVERVIEW_SORTING_SHORTNAME,
             BLOCK_MYOVERVIEW_SORTING_STARTDATE,
-        ),
+        ],
         'permissioncallback' => [core_user::class, 'is_current_user'],
-    );
+    ];
 
-    $preferences['block_myoverview_user_view_preference'] = array(
+    $preferences['block_myoverview_user_view_preference'] = [
         'null' => NULL_NOT_ALLOWED,
         'default' => BLOCK_MYOVERVIEW_VIEW_CARD,
         'type' => PARAM_ALPHA,
-        'choices' => array(
+        'choices' => [
             BLOCK_MYOVERVIEW_VIEW_CARD,
             BLOCK_MYOVERVIEW_VIEW_LIST,
-            BLOCK_MYOVERVIEW_VIEW_SUMMARY
-        ),
+            BLOCK_MYOVERVIEW_VIEW_SUMMARY,
+        ],
         'permissioncallback' => [core_user::class, 'is_current_user'],
-    );
+    ];
 
-    $preferences['/^block_myoverview_hidden_course_(\d)+$/'] = array(
+    $preferences['/^block_myoverview_hidden_course_(\d)+$/'] = [
         'isregex' => true,
-        'choices' => array(0, 1),
+        'choices' => [0, 1],
         'type' => PARAM_INT,
         'null' => NULL_NOT_ALLOWED,
         'default' => 0,
         'permissioncallback' => [core_user::class, 'is_current_user'],
-    );
+    ];
 
     return $preferences;
 }
