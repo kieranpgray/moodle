@@ -38,7 +38,6 @@ require_once($CFG->dirroot . '/blocks/myoverview/lib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class main implements renderable, templatable {
-
     /**
      * Store the grouping preference.
      *
@@ -63,7 +62,7 @@ class main implements renderable, templatable {
     /**
      * Store the display categories config setting.
      *
-     * @var boolean
+     * @var bool
      */
     private $displaycategories;
 
@@ -77,49 +76,49 @@ class main implements renderable, templatable {
     /**
      * Store a course grouping option setting
      *
-     * @var boolean
+     * @var bool
      */
     private $displaygroupingallincludinghidden;
 
     /**
      * Store a course grouping option setting.
      *
-     * @var boolean
+     * @var bool
      */
     private $displaygroupingall;
 
     /**
      * Store a course grouping option setting.
      *
-     * @var boolean
+     * @var bool
      */
     private $displaygroupinginprogress;
 
     /**
      * Store a course grouping option setting.
      *
-     * @var boolean
+     * @var bool
      */
     private $displaygroupingfuture;
 
     /**
      * Store a course grouping option setting.
      *
-     * @var boolean
+     * @var bool
      */
     private $displaygroupingpast;
 
     /**
      * Store a course grouping option setting.
      *
-     * @var boolean
+     * @var bool
      */
     private $displaygroupingfavourites;
 
     /**
      * Store a course grouping option setting.
      *
-     * @var boolean
+     * @var bool
      */
     private $displaygroupinghidden;
 
@@ -164,7 +163,7 @@ class main implements renderable, templatable {
         $config = get_config('block_myoverview');
 
         // Build the course grouping option name to check if the given grouping is enabled afterwards.
-        $groupingconfigname = 'displaygrouping'.$grouping;
+        $groupingconfigname = 'displaygrouping' . $grouping;
         // Check the given grouping and remember it if it is enabled.
         if ($grouping && $config->$groupingconfigname == true) {
             $this->grouping = $grouping;
@@ -175,7 +174,7 @@ class main implements renderable, templatable {
         } else {
             $this->grouping = $this->get_fallback_grouping($config);
         }
-        unset ($groupingconfigname);
+        unset($groupingconfigname);
 
         // Remember which custom field value we were using, if grouping by custom field.
         $this->customfieldvalue = $customfieldvalue;
@@ -221,20 +220,20 @@ class main implements renderable, templatable {
 
         // Check and remember if the grouping selector should be shown at all or not.
         // It will be shown if more than 1 grouping option is enabled.
-        $displaygroupingselectors = array($this->displaygroupingallincludinghidden,
+        $displaygroupingselectors = [$this->displaygroupingallincludinghidden,
                 $this->displaygroupingall,
                 $this->displaygroupinginprogress,
                 $this->displaygroupingfuture,
                 $this->displaygroupingpast,
                 $this->displaygroupingfavourites,
-                $this->displaygroupinghidden);
+                $this->displaygroupinghidden];
         $displaygroupingselectorscount = count(array_filter($displaygroupingselectors));
         if ($displaygroupingselectorscount > 1 || $this->displaygroupingcustomfield) {
             $this->displaygroupingselector = true;
         } else {
             $this->displaygroupingselector = false;
         }
-        unset ($displaygroupingselectors, $displaygroupingselectorscount);
+        unset($displaygroupingselectors, $displaygroupingselectorscount);
     }
     /**
      * Determine the most sensible fallback grouping to use (in cases where the stored selection
@@ -284,7 +283,7 @@ class main implements renderable, templatable {
         if ($config = get_config('block_myoverview', 'layouts')) {
             $this->layouts = explode(',', $config);
         } else {
-            $this->layouts = array(BLOCK_MYOVERVIEW_VIEW_CARD);
+            $this->layouts = [BLOCK_MYOVERVIEW_VIEW_CARD];
         }
     }
 
@@ -314,8 +313,7 @@ class main implements renderable, templatable {
      */
     public function get_formatted_available_layouts_for_export() {
 
-        return array_map(array($this, 'format_layout_for_export'), $this->layouts);
-
+        return array_map([$this, 'format_layout_for_export'], $this->layouts);
     }
 
     /**
@@ -342,12 +340,17 @@ class main implements renderable, templatable {
         if (!$courses) {
             return [];
         }
-        list($csql, $params) = $DB->get_in_or_equal(array_keys($courses), SQL_PARAMS_NAMED);
+        [$csql, $params] = $DB->get_in_or_equal(array_keys($courses), SQL_PARAMS_NAMED);
         $select = "instanceid $csql AND fieldid = :fieldid";
         $params['fieldid'] = $fieldid;
         $distinctablevalue = $DB->sql_compare_text('value');
-        $values = $DB->get_records_select_menu('customfield_data', $select, $params, '',
-            "DISTINCT $distinctablevalue, $distinctablevalue AS value2");
+        $values = $DB->get_records_select_menu(
+            'customfield_data',
+            $select,
+            $params,
+            '',
+            "DISTINCT $distinctablevalue, $distinctablevalue AS value2"
+        );
         \core_collator::asort($values, \core_collator::SORT_NATURAL);
         $values = array_filter($values);
         if (!$values) {
@@ -449,6 +452,12 @@ class main implements renderable, templatable {
         return [
             'propsjson' => json_encode($props, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG),
             'uniqid' => uniqid(),
+            // Favourite-button icon URLs, exposed as CSS custom properties on the app wrapper.
+            // Relative url() paths do not survive Moodle's CSS aggregation, so the resolvable
+            // pix URLs are injected here rather than referenced directly from styles.css.
+            'staroutlineurl' => $output->image_url('star-outline', 'block_myoverview')->out(false),
+            'starfilledurl' => $output->image_url('star-filled', 'block_myoverview')->out(false),
+            'favouriteremoveurl' => $output->image_url('favourite-remove', 'block_myoverview')->out(false),
         ];
     }
 

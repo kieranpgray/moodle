@@ -30,32 +30,32 @@
      */
 
     /* --- Colour aliases → MDS semantic tokens --- */
-    --co-primary:          var(--mds-bg-interactive-primary-default);
-    --co-link:             var(--mds-text-link-primary-default);
-    --co-text:             var(--mds-text-default);
-    --co-subtle:           var(--mds-text-subtle);
-    --co-muted:            var(--mds-text-muted);
-    --co-surface:          var(--mds-bg-surface-default);
-    --co-surface-subtle:   var(--mds-bg-surface-subtle);
-    --co-surface-strong:   var(--mds-bg-surface-strong);
-    --co-border:           var(--mds-border-default);
-    --co-border-subtle:    var(--mds-border-subtle);
+    --co-primary: var(--mds-bg-interactive-primary-default);
+    --co-link: var(--mds-text-link-primary-default);
+    --co-text: var(--mds-text-default);
+    --co-subtle: var(--mds-text-subtle);
+    --co-muted: var(--mds-text-muted);
+    --co-surface: var(--mds-bg-surface-default);
+    --co-surface-subtle: var(--mds-bg-surface-subtle);
+    --co-surface-strong: var(--mds-bg-surface-strong);
+    --co-border: var(--mds-border-default);
+    --co-border-subtle: var(--mds-border-subtle);
     --co-border-interactive: var(--mds-color-gray-500);
-    --co-danger:           var(--mds-text-danger);
+    --co-danger: var(--mds-text-danger);
 
     /* --- Spacing aliases → MDS spacing scale --- */
     --co-sp-xxs: var(--mds-spacing-xxs); /* 0.25rem / 4px  */
-    --co-sp-xs:  var(--mds-spacing-xs);  /* 0.5rem  / 8px  */
-    --co-sp-sm:  var(--mds-spacing-sm);  /* 0.75rem / 12px */
-    --co-sp-md:  var(--mds-spacing-md);  /* 1rem    / 16px */
-    --co-sp-lg:  var(--mds-spacing-lg);  /* 1.25rem / 20px */
-    --co-sp-xl:  var(--mds-spacing-xl);  /* 2rem    / 32px */
+    --co-sp-xs: var(--mds-spacing-xs);  /* 0.5rem  / 8px  */
+    --co-sp-sm: var(--mds-spacing-sm);  /* 0.75rem / 12px */
+    --co-sp-md: var(--mds-spacing-md);  /* 1rem    / 16px */
+    --co-sp-lg: var(--mds-spacing-lg);  /* 1.25rem / 20px */
+    --co-sp-xl: var(--mds-spacing-xl);  /* 2rem    / 32px */
 
     /* --- Radius — no MDS border-radius tokens yet; kept as literals --- */
-    --co-r-xs:   4px;
-    --co-r-sm:   6px;
-    --co-r-md:   8px;
-    --co-r-xl:   16px;
+    --co-r-xs: 4px;
+    --co-r-sm: 6px;
+    --co-r-md: 8px;
+    --co-r-xl: 16px;
     --co-r-pill: 800px;
 
     /* Image block height per Figma (4902:13914): 160px. Not 7rem — that is the legacy */
@@ -727,8 +727,12 @@
 }
 
 @keyframes block-myoverview-loading {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
 }
 
 .block-myoverview__error {
@@ -751,88 +755,88 @@
  */
 
 .block_myoverview .mds-favourite-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--mds-spacing-xs);
-  border: none;
-  border-radius: var(--mds-border-radius-pill);
-  background-color: var(--mds-bg-surface-default);
-  color: var(--mds-text-default);
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease-in-out,
-    color 0.15s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--mds-spacing-xs);
+    border: none;
+    border-radius: var(--mds-border-radius-pill);
+    background-color: var(--mds-bg-surface-default);
+    color: var(--mds-text-default);
+    cursor: pointer;
+    transition:
+        background-color 0.15s ease-in-out,
+        color 0.15s ease-in-out;
 }
 
 .block_myoverview .mds-favourite-button__icon {
-  display: block;
-  inline-size: var(--mds-icons-xs);
-  block-size: var(--mds-icons-xs);
-  background-color: currentColor;
-  mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTMiIGhlaWdodD0iMTMiIHZpZXdCb3g9IjAgMCAxMyAxMyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTYuMTcyMjcgMEM2LjQwNjY0IDAgNi41OTQxNCAwLjE0MDYyNSA2LjY4Nzg5IDAuMzI4MTI1TDguMzA1MDggMy42MzI4MUwxMS44OTEgNC4xNzE4OEMxMi4xMDIgNC4xOTUzMSAxMi4yNjYgNC4zMzU5NCAxMi4zMzYzIDQuNTQ2ODhDMTIuNDA2NiA0Ljc1NzgxIDEyLjM1OTggNC45Njg3NSAxMi4xOTU3IDUuMTMyODFMOS41OTQxNCA3LjcxMDk0TDEwLjIwMzUgMTEuMzQzOEMxMC4yNTA0IDExLjU1NDcgMTAuMTU2NiAxMS43ODkxIDkuOTkyNTggMTEuOTA2MkM5LjgwNTA4IDEyLjAyMzQgOS41NzA3IDEyLjA0NjkgOS4zODMyIDExLjk1MzFMNi4xNzIyNyAxMC4yMTg4TDIuOTg0NzcgMTEuOTUzMUMyLjc3MzgzIDEyLjA0NjkgMi41NjI4OSAxMi4wMjM0IDIuMzc1MzkgMTEuOTA2MkMyLjIxMTMzIDExLjc2NTYgMi4xMTc1OCAxMS41NTQ3IDIuMTY0NDUgMTEuMzQzOEwyLjc3MzgzIDcuNzEwOTRMMC4xNzIyNjYgNS4xMzI4MUMwLjAwODIwMzEyIDQuOTY4NzUgLTAuMDM4NjcxOSA0Ljc1NzgxIDAuMDMxNjQwNiA0LjU0Njg4QzAuMTAxOTUzIDQuMzU5MzggMC4yNjYwMTYgNC4xOTUzMSAwLjQ3Njk1MyA0LjE3MTg4TDQuMDYyODkgMy42MzI4MUw1LjY4MDA4IDAuMzI4MTI1QzUuNzczODMgMC4xNDA2MjUgNS45NjEzMyAwIDYuMTcyMjcgMFpNNi4xNzIyNyAxLjg1MTU2TDQuOTUzNTIgNC40MDYyNUM0Ljg1OTc3IDQuNTcwMzEgNC43MTkxNCA0LjY4NzUgNC41MzE2NCA0LjcxMDk0TDEuNzY2MDIgNS4xMDkzOEwzLjc1ODIgNy4xMDE1NkMzLjg5ODgzIDcuMjQyMTkgMy45NjkxNCA3LjQyOTY5IDMuOTIyMjcgNy41OTM3NUwzLjQ1MzUyIDEwLjQwNjJMNS45MTQ0NSA5LjA5Mzc1QzYuMDc4NTIgOSA2LjI4OTQ1IDkgNi40NTM1MiA5LjA5Mzc1TDguOTE0NDUgMTAuNDA2Mkw4LjQ0NTcgNy42MTcxOUM4LjM5ODgzIDcuNDI5NjkgOC40NjkxNCA3LjI0MjE5IDguNjA5NzcgNy4xMjVMMTAuNjAyIDUuMTA5MzhMNy44MzYzMyA0LjcxMDk0QzcuNjQ4ODMgNC42ODc1IDcuNTA4MiA0LjU3MDMxIDcuNDE0NDUgNC40MDYyNUw2LjE3MjI3IDEuODUxNTZaIiBmaWxsPSIjMUQyMTI1Ii8+Cjwvc3ZnPgo=");
-  mask-repeat: no-repeat;
-  mask-position: center;
-  mask-size: contain;
-  -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTMiIGhlaWdodD0iMTMiIHZpZXdCb3g9IjAgMCAxMyAxMyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTYuMTcyMjcgMEM2LjQwNjY0IDAgNi41OTQxNCAwLjE0MDYyNSA2LjY4Nzg5IDAuMzI4MTI1TDguMzA1MDggMy42MzI4MUwxMS44OTEgNC4xNzE4OEMxMi4xMDIgNC4xOTUzMSAxMi4yNjYgNC4zMzU5NCAxMi4zMzYzIDQuNTQ2ODhDMTIuNDA2NiA0Ljc1NzgxIDEyLjM1OTggNC45Njg3NSAxMi4xOTU3IDUuMTMyODFMOS41OTQxNCA3LjcxMDk0TDEwLjIwMzUgMTEuMzQzOEMxMC4yNTA0IDExLjU1NDcgMTAuMTU2NiAxMS43ODkxIDkuOTkyNTggMTEuOTA2MkM5LjgwNTA4IDEyLjAyMzQgOS41NzA3IDEyLjA0NjkgOS4zODMyIDExLjk1MzFMNi4xNzIyNyAxMC4yMTg4TDIuOTg0NzcgMTEuOTUzMUMyLjc3MzgzIDEyLjA0NjkgMi41NjI4OSAxMi4wMjM0IDIuMzc1MzkgMTEuOTA2MkMyLjIxMTMzIDExLjc2NTYgMi4xMTc1OCAxMS41NTQ3IDIuMTY0NDUgMTEuMzQzOEwyLjc3MzgzIDcuNzEwOTRMMC4xNzIyNjYgNS4xMzI4MUMwLjAwODIwMzEyIDQuOTY4NzUgLTAuMDM4NjcxOSA0Ljc1NzgxIDAuMDMxNjQwNiA0LjU0Njg4QzAuMTAxOTUzIDQuMzU5MzggMC4yNjYwMTYgNC4xOTUzMSAwLjQ3Njk1MyA0LjE3MTg4TDQuMDYyODkgMy42MzI4MUw1LjY4MDA4IDAuMzI4MTI1QzUuNzczODMgMC4xNDA2MjUgNS45NjEzMyAwIDYuMTcyMjcgMFpNNi4xNzIyNyAxLjg1MTU2TDQuOTUzNTIgNC40MDYyNUM0Ljg1OTc3IDQuNTcwMzEgNC43MTkxNCA0LjY4NzUgNC41MzE2NCA0LjcxMDk0TDEuNzY2MDIgNS4xMDkzOEwzLjc1ODIgNy4xMDE1NkMzLjg5ODgzIDcuMjQyMTkgMy45NjkxNCA3LjQyOTY5IDMuOTIyMjcgNy41OTM3NUwzLjQ1MzUyIDEwLjQwNjJMNS45MTQ0NSA5LjA5Mzc1QzYuMDc4NTIgOSA2LjI4OTQ1IDkgNi40NTM1MiA5LjA5Mzc1TDguOTE0NDUgMTAuNDA2Mkw4LjQ0NTcgNy42MTcxOUM4LjM5ODgzIDcuNDI5NjkgOC40NjkxNCA3LjI0MjE5IDguNjA5NzcgNy4xMjVMMTAuNjAyIDUuMTA5MzhMNy44MzYzMyA0LjcxMDk0QzcuNjQ4ODMgNC42ODc1IDcuNTA4MiA0LjU3MDMxIDcuNDE0NDUgNC40MDYyNUw2LjE3MjI3IDEuODUxNTZaIiBmaWxsPSIjMUQyMTI1Ii8+Cjwvc3ZnPgo=");
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  -webkit-mask-size: contain;
+    display: block;
+    inline-size: var(--mds-icons-xs);
+    block-size: var(--mds-icons-xs);
+    background-color: currentColor;
+    mask-image: var(--co-star-outline);
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+    -webkit-mask-image: var(--co-star-outline);
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
 }
 
 .block_myoverview .mds-favourite-button--selected .mds-favourite-button__icon {
-  mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTMiIGhlaWdodD0iMTMiIHZpZXdCb3g9IjAgMCAxMyAxMyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTYuODQ3MDYgMC40MjE4NzVMOC4zNzA1IDMuNTM5MDZMMTEuNzIyMSA0LjAzMTI1QzEyLjAwMzMgNC4wNzgxMiAxMi4yMzc3IDQuMjY1NjIgMTIuMzMxNCA0LjU0Njg4QzEyLjQyNTIgNC44MDQ2OSAxMi4zNTQ5IDUuMTA5MzggMTIuMTQzOSA1LjI5Njg4TDkuNzA2NDMgNy43MTA5NEwxMC4yOTI0IDExLjEzMjhDMTAuMzM5MiAxMS40MTQxIDEwLjIyMjEgMTEuNjk1MyA5Ljk4NzY4IDExLjg1OTRDOS43NTMzMSAxMi4wNDY5IDkuNDQ4NjIgMTIuMDQ2OSA5LjE5MDgxIDExLjkyOTdMNi4xOTA4MSAxMC4zMTI1TDMuMTY3MzcgMTEuOTI5N0MyLjkzMyAxMi4wNDY5IDIuNjI4MzEgMTIuMDQ2OSAyLjM5MzkzIDExLjg1OTRDMi4xNTk1NiAxMS42OTUzIDIuMDQyMzcgMTEuNDE0MSAyLjA4OTI1IDExLjEzMjhMMi42NTE3NSA3LjcxMDk0TDAuMjE0MjQ1IDUuMjk2ODhDMC4wMjY3NDUzIDUuMTA5MzggLTAuMDQzNTY3MiA0LjgwNDY5IDAuMDI2NzQ1MyA0LjU0Njg4QzAuMTIwNDk1IDQuMjY1NjIgMC4zNTQ4NyA0LjA3ODEyIDAuNjM2MTIgNC4wMzEyNUw0LjAxMTEyIDMuNTM5MDZMNS41MTExMiAwLjQyMTg3NUM1LjYyODMxIDAuMTY0MDYyIDUuODg2MTIgMCA2LjE5MDgxIDBDNi40NzIwNiAwIDYuNzI5ODcgMC4xNjQwNjIgNi44NDcwNiAwLjQyMTg3NVoiIGZpbGw9IiMwRjZDQkYiLz4KPC9zdmc+Cg==");
-  -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTMiIGhlaWdodD0iMTMiIHZpZXdCb3g9IjAgMCAxMyAxMyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTYuODQ3MDYgMC40MjE4NzVMOC4zNzA1IDMuNTM5MDZMMTEuNzIyMSA0LjAzMTI1QzEyLjAwMzMgNC4wNzgxMiAxMi4yMzc3IDQuMjY1NjIgMTIuMzMxNCA0LjU0Njg4QzEyLjQyNTIgNC44MDQ2OSAxMi4zNTQ5IDUuMTA5MzggMTIuMTQzOSA1LjI5Njg4TDkuNzA2NDMgNy43MTA5NEwxMC4yOTI0IDExLjEzMjhDMTAuMzM5MiAxMS40MTQxIDEwLjIyMjEgMTEuNjk1MyA5Ljk4NzY4IDExLjg1OTRDOS43NTMzMSAxMi4wNDY5IDkuNDQ4NjIgMTIuMDQ2OSA5LjE5MDgxIDExLjkyOTdMNi4xOTA4MSAxMC4zMTI1TDMuMTY3MzcgMTEuOTI5N0MyLjkzMyAxMi4wNDY5IDIuNjI4MzEgMTIuMDQ2OSAyLjM5MzkzIDExLjg1OTRDMi4xNTk1NiAxMS42OTUzIDIuMDQyMzcgMTEuNDE0MSAyLjA4OTI1IDExLjEzMjhMMi42NTE3NSA3LjcxMDk0TDAuMjE0MjQ1IDUuMjk2ODhDMC4wMjY3NDUzIDUuMTA5MzggLTAuMDQzNTY3MiA0LjgwNDY5IDAuMDI2NzQ1MyA0LjU0Njg4QzAuMTIwNDk1IDQuMjY1NjIgMC4zNTQ4NyA0LjA3ODEyIDAuNjM2MTIgNC4wMzEyNUw0LjAxMTEyIDMuNTM5MDZMNS41MTExMiAwLjQyMTg3NUM1LjYyODMxIDAuMTY0MDYyIDUuODg2MTIgMCA2LjE5MDgxIDBDNi40NzIwNiAwIDYuNzI5ODcgMC4xNjQwNjIgNi44NDcwNiAwLjQyMTg3NVoiIGZpbGw9IiMwRjZDQkYiLz4KPC9zdmc+Cg==");
+    mask-image: var(--co-star-filled);
+    -webkit-mask-image: var(--co-star-filled);
 }
 
 /* Unselected states */
 .block_myoverview .mds-favourite-button:hover:not(:disabled) {
-  background-color: var(--mds-bg-surface-subtle);
-  color: var(--mds-text-subtle);
+    background-color: var(--mds-bg-surface-subtle);
+    color: var(--mds-text-subtle);
 }
 
 .block_myoverview .mds-favourite-button:active:not(:disabled) {
-  background-color: var(--mds-bg-surface-strong);
-  color: var(--mds-text-default);
+    background-color: var(--mds-bg-surface-strong);
+    color: var(--mds-text-default);
 }
 
 /* Selected states */
 .block_myoverview .mds-favourite-button--selected {
-  background-color: var(--mds-bg-surface-default);
-  color: var(--mds-text-link-primary-default);
+    background-color: var(--mds-bg-surface-default);
+    color: var(--mds-text-link-primary-default);
 }
 
 .block_myoverview .mds-favourite-button--selected:hover:not(:disabled) {
-  background-color: var(--mds-bg-surface-subtle);
-  color: var(--mds-text-link-primary-hover);
+    background-color: var(--mds-bg-surface-subtle);
+    color: var(--mds-text-link-primary-hover);
 }
 
 .block_myoverview .mds-favourite-button--selected:active:not(:disabled) {
-  background-color: var(--mds-bg-surface-strong);
-  color: var(--mds-text-link-primary-default);
+    background-color: var(--mds-bg-surface-strong);
+    color: var(--mds-text-link-primary-default);
 }
 
 /* Disabled states */
 .block_myoverview .mds-favourite-button:disabled {
-  background-color: var(--mds-bg-surface-default);
-  color: var(--mds-text-muted);
-  cursor: not-allowed;
+    background-color: var(--mds-bg-surface-default);
+    color: var(--mds-text-muted);
+    cursor: not-allowed;
 }
 
 .block_myoverview .mds-favourite-button--selected:disabled {
-  color: var(--mds-text-link-primary-disabled);
+    color: var(--mds-text-link-primary-disabled);
 }
 
 /* Focus ring */
 .block_myoverview .mds-favourite-button:focus {
-  box-shadow: none;
-  outline: none;
+    box-shadow: none;
+    outline: none;
 }
 
 .block_myoverview .mds-favourite-button:focus-visible {
-  box-shadow: none;
-  outline: var(--mds-stroke-weight-md) solid var(--mds-focus-default);
-  outline-offset: 0;
+    box-shadow: none;
+    outline: var(--mds-stroke-weight-md) solid var(--mds-focus-default);
+    outline-offset: 0;
 }
 
 /*
@@ -847,51 +851,51 @@
  */
 
 .block_myoverview .mds-close-button.btn-close {
-  inline-size: var(--mds-icons-md);
-  block-size: var(--mds-icons-md);
-  padding: 0;
-  border-radius: var(--mds-border-radius-xs);
-  background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQuMTIxMDkgNS44Nzg5MUw4LjIyMjY2IDkuOTgwNDdMNC4xMjEwOSAxNC4xMjExQzMuNjEzMjggMTQuNTg5OCAzLjYxMzI4IDE1LjQxMDIgNC4xMjEwOSAxNS44Nzg5QzQuNTg5ODQgMTYuMzg2NyA1LjQxMDE2IDE2LjM4NjcgNS44Nzg5MSAxNS44Nzg5TDkuOTgwNDcgMTEuNzc3M0wxNC4xMjExIDE1Ljg3ODlDMTQuNTg5OCAxNi4zODY3IDE1LjQxMDIgMTYuMzg2NyAxNS44Nzg5IDE1Ljg3ODlDMTYuMzg2NyAxNS40MTAyIDE2LjM4NjcgMTQuNTg5OCAxNS44Nzg5IDE0LjEyMTFMMTEuNzc3MyA5Ljk4MDQ3TDE1Ljg3ODkgNS44Nzg5MUMxNi4zODY3IDUuNDEwMTYgMTYuMzg2NyA0LjU4OTg0IDE1Ljg3ODkgNC4xMjEwOUMxNS40MTAyIDMuNjEzMjggMTQuNTg5OCAzLjYxMzI4IDE0LjEyMTEgNC4xMjEwOUw5Ljk4MDQ3IDguMjIyNjZMNS44Nzg5MSA0LjEyMTA5QzUuNDEwMTYgMy42MTMyOCA0LjU4OTg0IDMuNjEzMjggNC4xMjEwOSA0LjEyMTA5QzMuNjEzMjggNC41ODk4NCAzLjYxMzI4IDUuNDEwMTYgNC4xMjEwOSA1Ljg3ODkxWiIgZmlsbD0iIzFEMjEyNSIvPgo8L3N2Zz4K");
-  background-size: var(--mds-icons-md) var(--mds-icons-md);
-  opacity: 0.6;
+    inline-size: var(--mds-icons-md);
+    block-size: var(--mds-icons-md);
+    padding: 0;
+    border-radius: var(--mds-border-radius-xs);
+    background-image: var(--co-favourite-remove);
+    background-size: var(--mds-icons-md) var(--mds-icons-md);
+    opacity: 0.6;
 }
 
 .block_myoverview .mds-close-button.btn-close:hover {
-  opacity: 0.75;
+    opacity: 0.75;
 }
 
 .block_myoverview .mds-close-button.btn-close:focus {
-  box-shadow: none;
+    box-shadow: none;
 }
 
 .block_myoverview .mds-close-button.btn-close:focus-visible {
-  outline: var(--mds-stroke-weight-md) solid var(--mds-focus-default);
-  outline-offset: 0;
-  box-shadow: none;
-  opacity: 1;
+    outline: var(--mds-stroke-weight-md) solid var(--mds-focus-default);
+    outline-offset: 0;
+    box-shadow: none;
+    opacity: 1;
 }
 
 .block_myoverview .mds-close-button.btn-close:disabled,
 .block_myoverview .mds-close-button.btn-close.disabled {
-  opacity: 0.25;
+    opacity: 0.25;
 }
 
 .block_myoverview .mds-close-button.btn-close.mds-close-button--sm {
-  inline-size: var(--mds-icons-sm);
-  block-size: var(--mds-icons-sm);
-  background-size: var(--mds-icons-sm) var(--mds-icons-sm);
+    inline-size: var(--mds-icons-sm);
+    block-size: var(--mds-icons-sm);
+    background-size: var(--mds-icons-sm) var(--mds-icons-sm);
 }
 
 .block_myoverview .mds-close-button.btn-close.mds-close-button--md {
-  inline-size: var(--mds-icons-md);
-  block-size: var(--mds-icons-md);
-  background-size: var(--mds-icons-md) var(--mds-icons-md);
+    inline-size: var(--mds-icons-md);
+    block-size: var(--mds-icons-md);
+    background-size: var(--mds-icons-md) var(--mds-icons-md);
 }
 
 .block_myoverview .mds-close-button.btn-close.mds-close-button--lg {
-  inline-size: var(--mds-icons-lg);
-  block-size: var(--mds-icons-lg);
-  background-size: var(--mds-icons-lg) var(--mds-icons-lg);
+    inline-size: var(--mds-icons-lg);
+    block-size: var(--mds-icons-lg);
+    background-size: var(--mds-icons-lg) var(--mds-icons-lg);
 }
 
 /* Hide block edit controls on the My Courses page (same as before). */

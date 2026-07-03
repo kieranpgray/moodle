@@ -25,13 +25,20 @@
     Context variables required for this template:
     * propsjson - JSON-encoded props string passed to the React component
     * uniqid - unique suffix for the mount point id
+    * staroutlineurl - URL of the unselected favourite (outline star) icon
+    * starfilledurl - URL of the selected favourite (filled star) icon
+    * favouriteremoveurl - URL of the favourite hover (remove) icon
 
     Example context (json):
     {
         "propsjson": "...JSON-encoded props string...",
-        "uniqid": "5f9c2a"
+        "uniqid": "5f9c2a",
+        "staroutlineurl": "https://www.example.com/star-outline.svg",
+        "starfilledurl": "https://www.example.com/star-filled.svg",
+        "favouriteremoveurl": "https://www.example.com/favourite-remove.svg"
     }
 }}
+<div class="block-myoverview-app" style="--co-star-outline: url('{{staroutlineurl}}'); --co-star-filled: url('{{starfilledurl}}'); --co-favourite-remove: url('{{favouriteremoveurl}}');">
 {{#react}}
 {
     "component": "@moodle/lms/block_myoverview/app",
@@ -40,3 +47,4 @@
     "class": "block-myoverview"
 }
 {{/react}}
+</div>
