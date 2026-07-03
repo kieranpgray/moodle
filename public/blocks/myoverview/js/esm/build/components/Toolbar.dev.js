@@ -190,7 +190,7 @@ function Toolbar(props) {
         Dropdown,
         {
           label: strings.sortcourses,
-          triggerAriaLabel: `${strings.sortcourses}: ${selectedSort?.label ?? ""}`,
+          triggerAriaLabel: `${strings.tooltipsort}: ${selectedSort?.label ?? ""}`,
           tooltip: strings.tooltipsort,
           icon: "sort",
           options: sortOptions,
@@ -212,7 +212,7 @@ function Toolbar(props) {
         Dropdown,
         {
           label: strings.changelayout,
-          triggerAriaLabel: `${strings.changelayout}: ${selectedView?.label ?? ""}`,
+          triggerAriaLabel: `${strings.tooltipview}: ${selectedView?.label ?? ""}`,
           tooltip: strings.tooltipview,
           icon: currentViewIcon,
           options: viewOptions,

@@ -146,60 +146,60 @@ Feature: The my overview block allows users to easily access their courses
 
   Scenario: List display persistence
     Given I am on the "My courses" page logged in as "student1"
-    And I click on "Display drop-down menu" "button" in the "Course overview" "block"
+    And I click on "View:" "button" in the "Course overview" "block"
     And I click on "List" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
     Then ".block_myoverview .courseoverview-list--list" "css_element" should exist
 
   Scenario: Cards display persistence
     Given I am on the "My courses" page logged in as "student1"
-    And I click on "Display drop-down menu" "button" in the "Course overview" "block"
+    And I click on "View:" "button" in the "Course overview" "block"
     And I click on "List" "button" in the ".courseoverview-menu__list" "css_element"
-    And I click on "Display drop-down menu" "button" in the "Course overview" "block"
+    And I click on "View:" "button" in the "Course overview" "block"
     And I click on "Card" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
     Then ".block_myoverview .courseoverview-list--card" "css_element" should exist
 
   Scenario: Summary display persistence
     Given I am on the "My courses" page logged in as "student1"
-    And I click on "Display drop-down menu" "button" in the "Course overview" "block"
+    And I click on "View:" "button" in the "Course overview" "block"
     And I click on "Summary" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
     Then ".block_myoverview .courseoverview-list--summary" "css_element" should exist
 
   Scenario: Course name sort persistence
     Given I am on the "My courses" page logged in as "student1"
-    And I click on "Sorting drop-down menu" "button" in the "Course overview" "block"
+    And I click on "Sort:" "button" in the "Course overview" "block"
     And I click on "Course name" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
-    Then the "aria-label" attribute of "//button[contains(@aria-label, 'Sorting drop-down menu')]" "xpath_element" should contain "Course name"
+    Then the "aria-label" attribute of "//button[contains(@aria-label, 'Sort:')]" "xpath_element" should contain "Course name"
 
   Scenario: Last accessed sort persistence
     Given I am on the "My courses" page logged in as "student1"
-    And I click on "Sorting drop-down menu" "button" in the "Course overview" "block"
+    And I click on "Sort:" "button" in the "Course overview" "block"
     And I click on "Last accessed" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
-    Then the "aria-label" attribute of "//button[contains(@aria-label, 'Sorting drop-down menu')]" "xpath_element" should contain "Last accessed"
+    Then the "aria-label" attribute of "//button[contains(@aria-label, 'Sort:')]" "xpath_element" should contain "Last accessed"
 
   Scenario: Short name sort persistence
     Given I am on the "My courses" page logged in as "student1"
-    When I click on "Sorting drop-down menu" "button" in the "Course overview" "block"
+    When I click on "Sort:" "button" in the "Course overview" "block"
     Then I should not see "Short name" in the "Course overview" "block"
     When the following config values are set as admin:
       | config               | value |
       | courselistshortnames | 1     |
     And I reload the page
-    And I click on "Sorting drop-down menu" "button" in the "Course overview" "block"
+    And I click on "Sort:" "button" in the "Course overview" "block"
     And I click on "Short name" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
-    Then the "aria-label" attribute of "//button[contains(@aria-label, 'Sorting drop-down menu')]" "xpath_element" should contain "Short name"
+    Then the "aria-label" attribute of "//button[contains(@aria-label, 'Sort:')]" "xpath_element" should contain "Short name"
 
   Scenario: Course start date sort persistence
     Given I am on the "My courses" page logged in as "student1"
-    And I click on "Sorting drop-down menu" "button" in the "Course overview" "block"
+    And I click on "Sort:" "button" in the "Course overview" "block"
     And I click on "Course start date" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
-    Then the "aria-label" attribute of "//button[contains(@aria-label, 'Sorting drop-down menu')]" "xpath_element" should contain "Course start date"
+    Then the "aria-label" attribute of "//button[contains(@aria-label, 'Sort:')]" "xpath_element" should contain "Course start date"
 
   Scenario: View inprogress courses with hide persistent functionality
     Given I am on the "My courses" page logged in as "student1"
@@ -273,7 +273,7 @@ Feature: The my overview block allows users to easily access their courses
     Given the following config values are set as admin:
       | displaycategories | 1 | block_myoverview |
     And I am on the "My courses" page logged in as "student1"
-    And I click on "Display drop-down menu" "button" in the "Course overview" "block"
+    And I click on "View:" "button" in the "Course overview" "block"
     When I click on "Card" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should see "Category 1" in the "Course overview" "block"
 
@@ -281,7 +281,7 @@ Feature: The my overview block allows users to easily access their courses
     Given the following config values are set as admin:
       | displaycategories | 1 | block_myoverview |
     And I am on the "My courses" page logged in as "student1"
-    And I click on "Display drop-down menu" "button" in the "Course overview" "block"
+    And I click on "View:" "button" in the "Course overview" "block"
     When I click on "List" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should see "Category 1" in the "Course overview" "block"
 
@@ -289,7 +289,7 @@ Feature: The my overview block allows users to easily access their courses
     Given the following config values are set as admin:
       | displaycategories | 1 | block_myoverview |
     And I am on the "My courses" page logged in as "student1"
-    And I click on "Display drop-down menu" "button" in the "Course overview" "block"
+    And I click on "View:" "button" in the "Course overview" "block"
     When I click on "Summary" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should see "Category 1" in the "Course overview" "block"
 
@@ -297,7 +297,7 @@ Feature: The my overview block allows users to easily access their courses
     Given the following config values are set as admin:
       | displaycategories | 0 | block_myoverview |
     And I am on the "My courses" page logged in as "student1"
-    And I click on "Display drop-down menu" "button" in the "Course overview" "block"
+    And I click on "View:" "button" in the "Course overview" "block"
     When I click on "Card" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should not see "Category 1" in the "Course overview" "block"
 
@@ -305,7 +305,7 @@ Feature: The my overview block allows users to easily access their courses
     Given the following config values are set as admin:
       | displaycategories | 0 | block_myoverview |
     And I am on the "My courses" page logged in as "student1"
-    And I click on "Display drop-down menu" "button" in the "Course overview" "block"
+    And I click on "View:" "button" in the "Course overview" "block"
     When I click on "List" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should not see "Category 1" in the "Course overview" "block"
 
@@ -313,7 +313,7 @@ Feature: The my overview block allows users to easily access their courses
     Given the following config values are set as admin:
       | displaycategories | 0 | block_myoverview |
     And I am on the "My courses" page logged in as "student1"
-    And I click on "Display drop-down menu" "button" in the "Course overview" "block"
+    And I click on "View:" "button" in the "Course overview" "block"
     When I click on "Summary" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should not see "Category 1" in the "Course overview" "block"
 

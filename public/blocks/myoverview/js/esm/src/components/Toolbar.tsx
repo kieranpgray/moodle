@@ -212,7 +212,7 @@ export default function Toolbar(props: ToolbarProps) {
                 )}
                 <Dropdown<Sort>
                     label={strings.sortcourses}
-                    triggerAriaLabel={`${strings.sortcourses}: ${selectedSort?.label ?? ""}`}
+                    triggerAriaLabel={`${strings.tooltipsort}: ${selectedSort?.label ?? ""}`}
                     tooltip={strings.tooltipsort}
                     icon="sort"
                     options={sortOptions}
@@ -224,7 +224,7 @@ export default function Toolbar(props: ToolbarProps) {
                 {viewOptions.length > 1 && (
                     <Dropdown<View>
                         label={strings.changelayout}
-                        triggerAriaLabel={`${strings.changelayout}: ${selectedView?.label ?? ""}`}
+                        triggerAriaLabel={`${strings.tooltipview}: ${selectedView?.label ?? ""}`}
                         tooltip={strings.tooltipview}
                         icon={currentViewIcon}
                         options={viewOptions}
