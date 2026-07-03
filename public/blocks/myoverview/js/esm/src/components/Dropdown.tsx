@@ -26,7 +26,7 @@
  * @module     block_myoverview/components/Dropdown
  */
 
-import {KeyboardEvent, useEffect, useRef, useState} from "react";
+import {useDismissableMenu} from "../hooks/useDismissableMenu";
 import Icon from "./Icon";
 
 export type DropdownOption<T extends string> = {
@@ -72,71 +72,9 @@ export default function Dropdown<T extends string>({
     label, triggerAriaLabel, icon, options, current, onSelect, active, showLabel = false, menuTitle,
     tooltip, groupOf,
 }: DropdownProps<T>) {
-    const [open, setOpen] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const triggerRef = useRef<HTMLButtonElement>(null);
-    const menuRef = useRef<HTMLDivElement>(null);
+    const {open, setOpen, containerRef, triggerRef, menuRef, handleMenuKeyDown} =
+        useDismissableMenu("menuitemradio");
     const selected = options.find((o) => o.value === current);
-
-    // Focus the first item whenever the menu opens.
-    useEffect(() => {
-        if (open && menuRef.current) {
-            const first = menuRef.current.querySelector<HTMLElement>('[role="menuitemradio"]');
-            first?.focus();
-        }
-    }, [open]);
-
-    // Close on outside click or Escape; Escape also returns focus to trigger.
-    useEffect(() => {
-        if (!open) {
-            return undefined;
-        }
-        const onDocClick = (e: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-                setOpen(false);
-            }
-        };
-        const onKey = (e: globalThis.KeyboardEvent) => {
-            if (e.key === "Escape") {
-                setOpen(false);
-                triggerRef.current?.focus();
-            }
-        };
-        document.addEventListener("click", onDocClick);
-        document.addEventListener("keydown", onKey);
-        return () => {
-            document.removeEventListener("click", onDocClick);
-            document.removeEventListener("keydown", onKey);
-        };
-    }, [open]);
-
-    const handleMenuKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-        const items = Array.from(
-            menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitemradio"]') ?? []
-        );
-        const idx = items.indexOf(document.activeElement as HTMLElement);
-        switch (e.key) {
-            case "ArrowDown":
-                e.preventDefault();
-                items[(idx + 1) % items.length]?.focus();
-                break;
-            case "ArrowUp":
-                e.preventDefault();
-                items[(idx - 1 + items.length) % items.length]?.focus();
-                break;
-            case "Home":
-                e.preventDefault();
-                items[0]?.focus();
-                break;
-            case "End":
-                e.preventDefault();
-                items[items.length - 1]?.focus();
-                break;
-            case "Tab":
-                setOpen(false);
-                break;
-        }
-    };
 
     return (
         <div className="local-co-dropdown" ref={containerRef}>

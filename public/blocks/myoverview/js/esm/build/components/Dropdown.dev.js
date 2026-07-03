@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 import { jsxDEV } from "react/jsx-dev-runtime";
-import { useEffect, useRef, useState } from "react";
+import { useDismissableMenu } from "../hooks/useDismissableMenu";
 import Icon from "./Icon";
 function Dropdown({
   label,
@@ -16,66 +16,8 @@ function Dropdown({
   tooltip,
   groupOf
 }) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef(null);
-  const triggerRef = useRef(null);
-  const menuRef = useRef(null);
+  const { open, setOpen, containerRef, triggerRef, menuRef, handleMenuKeyDown } = useDismissableMenu("menuitemradio");
   const selected = options.find((o) => o.value === current);
-  useEffect(() => {
-    if (open && menuRef.current) {
-      const first = menuRef.current.querySelector('[role="menuitemradio"]');
-      first?.focus();
-    }
-  }, [open]);
-  useEffect(() => {
-    if (!open) {
-      return void 0;
-    }
-    const onDocClick = /* @__PURE__ */ __name((e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setOpen(false);
-      }
-    }, "onDocClick");
-    const onKey = /* @__PURE__ */ __name((e) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
-      }
-    }, "onKey");
-    document.addEventListener("click", onDocClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("click", onDocClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-  const handleMenuKeyDown = /* @__PURE__ */ __name((e) => {
-    const items = Array.from(
-      menuRef.current?.querySelectorAll('[role="menuitemradio"]') ?? []
-    );
-    const idx = items.indexOf(document.activeElement);
-    switch (e.key) {
-      case "ArrowDown":
-        e.preventDefault();
-        items[(idx + 1) % items.length]?.focus();
-        break;
-      case "ArrowUp":
-        e.preventDefault();
-        items[(idx - 1 + items.length) % items.length]?.focus();
-        break;
-      case "Home":
-        e.preventDefault();
-        items[0]?.focus();
-        break;
-      case "End":
-        e.preventDefault();
-        items[items.length - 1]?.focus();
-        break;
-      case "Tab":
-        setOpen(false);
-        break;
-    }
-  }, "handleMenuKeyDown");
   return /* @__PURE__ */ jsxDEV("div", { className: "local-co-dropdown", ref: containerRef, children: [
     /* @__PURE__ */ jsxDEV(
       "button",
@@ -91,17 +33,17 @@ function Dropdown({
         children: [
           /* @__PURE__ */ jsxDEV(Icon, { name: icon }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 153,
+            lineNumber: 91,
             columnNumber: 17
           }, this),
           showLabel && /* @__PURE__ */ jsxDEV("span", { className: "local-co-toolbtn__label", children: selected?.label ?? label }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 154,
+            lineNumber: 92,
             columnNumber: 31
           }, this),
           showLabel && /* @__PURE__ */ jsxDEV(Icon, { name: "chevron-down", className: "local-co-toolbtn__caret" }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 155,
+            lineNumber: 93,
             columnNumber: 31
           }, this)
         ]
@@ -110,7 +52,7 @@ function Dropdown({
       true,
       {
         fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-        lineNumber: 143,
+        lineNumber: 81,
         columnNumber: 13
       },
       this
@@ -126,7 +68,7 @@ function Dropdown({
         children: [
           menuTitle && /* @__PURE__ */ jsxDEV("div", { className: "local-co-menu__group-label", "aria-hidden": "true", children: menuTitle }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 166,
+            lineNumber: 104,
             columnNumber: 25
           }, this),
           /* @__PURE__ */ jsxDEV("div", { role: "group", "aria-label": menuTitle ?? label, children: options.map((opt, i) => {
@@ -146,13 +88,13 @@ function Dropdown({
                 children: [
                   opt.icon && /* @__PURE__ */ jsxDEV(Icon, { name: opt.icon, className: "local-co-menu__icon" }, void 0, false, {
                     fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-                    lineNumber: 186,
+                    lineNumber: 124,
                     columnNumber: 46
                   }, this),
                   opt.label,
                   opt.value === current && /* @__PURE__ */ jsxDEV(Icon, { name: "check", className: "local-co-menu__check" }, void 0, false, {
                     fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-                    lineNumber: 188,
+                    lineNumber: 126,
                     columnNumber: 59
                   }, this)
                 ]
@@ -161,14 +103,14 @@ function Dropdown({
               true,
               {
                 fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-                lineNumber: 173,
+                lineNumber: 111,
                 columnNumber: 29
               },
               this
             );
           }) }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 168,
+            lineNumber: 106,
             columnNumber: 21
           }, this)
         ]
@@ -177,14 +119,14 @@ function Dropdown({
       true,
       {
         fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-        lineNumber: 158,
+        lineNumber: 96,
         columnNumber: 17
       },
       this
     )
   ] }, void 0, true, {
     fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-    lineNumber: 142,
+    lineNumber: 80,
     columnNumber: 9
   }, this);
 }

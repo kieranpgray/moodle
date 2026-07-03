@@ -22,7 +22,7 @@
  * the menu retains Hide/Show course, which drives the "removed from view" filter.
  *
  * Keyboard: Tab closes the menu; Escape closes and returns focus to trigger.
- * Arrow keys are handled but wrap within the single item (future-proofing).
+ * Roving focus is provided by the shared useDismissableMenu hook.
  *
  * Receives isHidden as a prop (resolved by CourseControls from the membership
  * context) so this component subscribes only to the stable callbacks context and
@@ -31,7 +31,7 @@
  * @module     block_myoverview/components/EllipsisMenu
  */
 
-import {KeyboardEvent, useEffect, useRef, useState} from "react";
+import {useDismissableMenu} from "../hooks/useDismissableMenu";
 import {useCourseCallbacks, useStrings} from "../state";
 import Icon from "./Icon";
 
@@ -50,70 +50,8 @@ type EllipsisMenuProps = {
 export default function EllipsisMenu({courseId, courseName, isHidden}: EllipsisMenuProps) {
     const {toggleHidden} = useCourseCallbacks();
     const strings = useStrings();
-    const [open, setOpen] = useState(false);
-    const triggerRef = useRef<HTMLButtonElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const menuRef = useRef<HTMLDivElement>(null);
-
-    // Focus the first item whenever the menu opens.
-    useEffect(() => {
-        if (open && menuRef.current) {
-            const first = menuRef.current.querySelector<HTMLElement>('[role="menuitem"]');
-            first?.focus();
-        }
-    }, [open]);
-
-    // Close on outside click or Escape; Escape returns focus to trigger.
-    useEffect(() => {
-        if (!open) {
-            return undefined;
-        }
-        const onDocClick = (e: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-                setOpen(false);
-            }
-        };
-        const onKey = (e: globalThis.KeyboardEvent) => {
-            if (e.key === "Escape") {
-                setOpen(false);
-                triggerRef.current?.focus();
-            }
-        };
-        document.addEventListener("click", onDocClick);
-        document.addEventListener("keydown", onKey);
-        return () => {
-            document.removeEventListener("click", onDocClick);
-            document.removeEventListener("keydown", onKey);
-        };
-    }, [open]);
-
-    const handleMenuKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-        const items = Array.from(
-            menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []
-        );
-        const idx = items.indexOf(document.activeElement as HTMLElement);
-        switch (e.key) {
-            case "ArrowDown":
-                e.preventDefault();
-                items[(idx + 1) % items.length]?.focus();
-                break;
-            case "ArrowUp":
-                e.preventDefault();
-                items[(idx - 1 + items.length) % items.length]?.focus();
-                break;
-            case "Home":
-                e.preventDefault();
-                items[0]?.focus();
-                break;
-            case "End":
-                e.preventDefault();
-                items[items.length - 1]?.focus();
-                break;
-            case "Tab":
-                setOpen(false);
-                break;
-        }
-    };
+    const {open, setOpen, containerRef, triggerRef, menuRef, handleMenuKeyDown} =
+        useDismissableMenu("menuitem");
 
     const stop = (e: {preventDefault: () => void; stopPropagation: () => void}) => {
         e.preventDefault();

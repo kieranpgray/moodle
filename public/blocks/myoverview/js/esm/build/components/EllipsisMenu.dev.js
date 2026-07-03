@@ -1,71 +1,13 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 import { jsxDEV } from "react/jsx-dev-runtime";
-import { useEffect, useRef, useState } from "react";
+import { useDismissableMenu } from "../hooks/useDismissableMenu";
 import { useCourseCallbacks, useStrings } from "../state";
 import Icon from "./Icon";
 function EllipsisMenu({ courseId, courseName, isHidden }) {
   const { toggleHidden } = useCourseCallbacks();
   const strings = useStrings();
-  const [open, setOpen] = useState(false);
-  const triggerRef = useRef(null);
-  const containerRef = useRef(null);
-  const menuRef = useRef(null);
-  useEffect(() => {
-    if (open && menuRef.current) {
-      const first = menuRef.current.querySelector('[role="menuitem"]');
-      first?.focus();
-    }
-  }, [open]);
-  useEffect(() => {
-    if (!open) {
-      return void 0;
-    }
-    const onDocClick = /* @__PURE__ */ __name((e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setOpen(false);
-      }
-    }, "onDocClick");
-    const onKey = /* @__PURE__ */ __name((e) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
-      }
-    }, "onKey");
-    document.addEventListener("click", onDocClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("click", onDocClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-  const handleMenuKeyDown = /* @__PURE__ */ __name((e) => {
-    const items = Array.from(
-      menuRef.current?.querySelectorAll('[role="menuitem"]') ?? []
-    );
-    const idx = items.indexOf(document.activeElement);
-    switch (e.key) {
-      case "ArrowDown":
-        e.preventDefault();
-        items[(idx + 1) % items.length]?.focus();
-        break;
-      case "ArrowUp":
-        e.preventDefault();
-        items[(idx - 1 + items.length) % items.length]?.focus();
-        break;
-      case "Home":
-        e.preventDefault();
-        items[0]?.focus();
-        break;
-      case "End":
-        e.preventDefault();
-        items[items.length - 1]?.focus();
-        break;
-      case "Tab":
-        setOpen(false);
-        break;
-    }
-  }, "handleMenuKeyDown");
+  const { open, setOpen, containerRef, triggerRef, menuRef, handleMenuKeyDown } = useDismissableMenu("menuitem");
   const stop = /* @__PURE__ */ __name((e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -88,7 +30,7 @@ function EllipsisMenu({ courseId, courseName, isHidden }) {
         },
         children: /* @__PURE__ */ jsxDEV(Icon, { name: "ellipsis-vertical" }, void 0, false, {
           fileName: "public/blocks/myoverview/js/esm/src/components/EllipsisMenu.tsx",
-          lineNumber: 140,
+          lineNumber: 78,
           columnNumber: 17
         }, this)
       },
@@ -96,7 +38,7 @@ function EllipsisMenu({ courseId, courseName, isHidden }) {
       false,
       {
         fileName: "public/blocks/myoverview/js/esm/src/components/EllipsisMenu.tsx",
-        lineNumber: 127,
+        lineNumber: 65,
         columnNumber: 13
       },
       this
@@ -124,7 +66,7 @@ function EllipsisMenu({ courseId, courseName, isHidden }) {
             children: [
               /* @__PURE__ */ jsxDEV(Icon, { name: isHidden ? "eye" : "eye-slash", className: "local-co-menu__icon" }, void 0, false, {
                 fileName: "public/blocks/myoverview/js/esm/src/components/EllipsisMenu.tsx",
-                lineNumber: 161,
+                lineNumber: 99,
                 columnNumber: 25
               }, this),
               isHidden ? strings.showcourse : strings.hidecourse
@@ -134,7 +76,7 @@ function EllipsisMenu({ courseId, courseName, isHidden }) {
           true,
           {
             fileName: "public/blocks/myoverview/js/esm/src/components/EllipsisMenu.tsx",
-            lineNumber: 150,
+            lineNumber: 88,
             columnNumber: 21
           },
           this
@@ -144,14 +86,14 @@ function EllipsisMenu({ courseId, courseName, isHidden }) {
       false,
       {
         fileName: "public/blocks/myoverview/js/esm/src/components/EllipsisMenu.tsx",
-        lineNumber: 143,
+        lineNumber: 81,
         columnNumber: 17
       },
       this
     )
   ] }, void 0, true, {
     fileName: "public/blocks/myoverview/js/esm/src/components/EllipsisMenu.tsx",
-    lineNumber: 126,
+    lineNumber: 64,
     columnNumber: 9
   }, this);
 }
