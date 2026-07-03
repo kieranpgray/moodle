@@ -117,18 +117,13 @@
     flex: 1;
 }
 
-/* Mobile-first: in a narrow container the actions and search each take their own row. They
-   return to sharing a row once the container is wide enough (courseoverview-min-768 / courseoverview-min-480). The
-   action buttons keep their natural width and wrap onto the next line when they do not fit,
-   rather than being crammed edge-to-edge against the block padding (e.g. in the block drawer). */
+/* The educator action buttons always occupy their own row above the search/filter/sort/view row, at
+   every width (Figma 5052-13740 — the tablet layout, confirmed for desktop too). They keep their
+   natural width and wrap onto the next line when they do not all fit, rather than being crammed
+   edge-to-edge against the block padding. */
 .courseoverview-toolbar__group--actions {
     width: 100%;
     flex-wrap: wrap;
-}
-
-.courseoverview-min-768 .courseoverview-toolbar__group--actions {
-    width: auto;
-    flex-wrap: nowrap;
 }
 
 .courseoverview-toolbar__group--search {
@@ -139,28 +134,23 @@
     width: auto;
 }
 
-/* Vertical separator between educator action buttons and search/tools (Figma 4616:15086). */
-.courseoverview-toolbar__divider {
-    width: 1px;
-    height: 24px;
-    background: var(--co-surface-strong);
-    flex-shrink: 0;
-    align-self: center;
+/* Mobile-first: the tools row (filter + sort + view) takes its own line so the filter can grow to
+   fill it. From courseoverview-min-480 it shares the search row and the filter takes a fixed width. */
+.courseoverview-toolbar__group--tools {
+    width: 100%;
 }
 
-/* Mobile-first: the divider only appears once actions and search share a row (courseoverview-min-768). */
-.courseoverview-toolbar__divider {
-    display: none;
-}
-
-.courseoverview-min-768 .courseoverview-toolbar__divider {
-    display: block;
+.courseoverview-min-480 .courseoverview-toolbar__group--tools {
+    width: auto;
 }
 
 /* --- Search --- */
+/* Fill the search group so the field is the widest control on the row (Figma: search flexes while
+   the filter keeps a fixed width). Without width:100% the inline-flex box shrinks to its content. */
 .courseoverview-search {
     position: relative;
-    display: inline-flex;
+    display: flex;
+    width: 100%;
     align-items: center;
 }
 
@@ -175,7 +165,7 @@
 .courseoverview-search__input {
     height: 28px;
     width: 100%;
-    min-width: 200px;
+    min-width: 120px; /* Allow the field to shrink in the narrow block drawer without overflowing. */
     padding: 0 30px 0 28px;
     border: 1px solid var(--co-border-interactive);
     border-radius: var(--co-r-sm); /* Figma: --border-radius/sm = 6px */
@@ -198,6 +188,20 @@
 /* --- Tool buttons / dropdowns --- */
 .courseoverview-dropdown {
     position: relative;
+}
+
+/* The filter dropdown owns the toolbar's flexible width: it grows to fill the tools row on narrow
+   layouts (min-width:0 lets it shrink in the block drawer) and holds a fixed 200px (Figma) once it
+   shares the search row from courseoverview-min-480. The width lives on this wrapper — the direct
+   flex child of the tools row — not on the inner button, whose flex would otherwise be ignored. */
+.courseoverview-dropdown--labelled {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.courseoverview-min-480 .courseoverview-dropdown--labelled {
+    flex: 0 0 200px;
+    min-width: 200px;
 }
 
 .courseoverview-toolbtn {
@@ -236,14 +240,22 @@
     font-size: var(--mds-icons-xs);
 }
 
+/* Fill the sizing wrapper (.courseoverview-dropdown--labelled) and lay the label out against the
+   caret so the selection sits left and the chevron right, like a select control. */
 .courseoverview-toolbtn--labelled {
+    width: 100%;
+    justify-content: space-between;
     padding: 0 var(--co-sp-sm);
 }
 
-/* The filter chip's text label uses the DS paragraph-default size (1rem) to match the other toolbar
-   buttons and the search field. The chip's icon/caret keep the smaller chip font-size. */
+/* The filter's text label uses the DS paragraph-default size (1rem) to match the other toolbar
+   buttons and the search field. The caret keeps the smaller chip font-size. Truncate rather than
+   overflow when the filter is squeezed in a narrow block drawer. */
 .courseoverview-toolbtn__label {
+    overflow: hidden;
     font-size: var(--mds-font-size-paragraph-default);
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .courseoverview-toolbtn:hover {
@@ -335,20 +347,23 @@
     font-size: 14px; /* Figma (4866:65507): $font-size-sm / 14px, medium — matches the menu items */
     font-weight: 500;
     color: var(--co-subtle);
-    margin-bottom: var(--co-sp-xxs);
 }
 
 .courseoverview-menu {
     position: relative;
 }
 
+/* Items run full-bleed so their group separators are straight, edge-to-edge lines (Figma 4616:16251)
+   rather than the inset, rounded borders that per-item padding + radius would produce. overflow:hidden
+   clips the square item corners to the menu's rounded corners (it does not clip the box-shadow). */
 .courseoverview-menu__list {
     position: absolute;
     top: calc(100% + 4px);
     right: 0;
     z-index: 30;
     min-width: 200px;
-    padding: var(--co-sp-xxs);
+    padding: 0;
+    overflow: hidden;
     background: var(--co-surface);
     border: 1px solid var(--co-border);
     border-radius: var(--co-r-md);
@@ -363,6 +378,8 @@
     left: 0;
 }
 
+/* Full-bleed rows (no border-radius) so group separators are straight full-width lines and the hover
+   fill spans the menu width, matching Figma 4616:16251. */
 .courseoverview-menu__item {
     display: flex;
     align-items: center;
@@ -370,7 +387,6 @@
     width: 100%;
     padding: var(--co-sp-xs); /* Figma (4616:16251): 8px on all sides */
     border: 0;
-    border-radius: var(--co-r-sm);
     background: transparent;
     color: var(--co-subtle); /* Figma: --text/subtle */
     font-size: 14px; /* Figma: $font-size-sm */
@@ -380,6 +396,11 @@
 
 .courseoverview-menu__item:hover {
     background: var(--co-surface-subtle);
+}
+
+/* Draw the focus ring inside the full-bleed row so overflow:hidden on the list cannot clip it. */
+.courseoverview-menu__item:focus-visible {
+    outline-offset: -2px;
 }
 
 /* Divider drawn after the last item of a semantic group (Figma menu grouping). */

@@ -28,7 +28,7 @@
  */
 
 import {
-    Config, DEFAULT_FILTER, DEFAULT_SORT, DEFAULT_VIEW, Filter, Permissions, Role, Sort, View,
+    Config, DEFAULT_SORT, DEFAULT_VIEW, Filter, Permissions, Role, Sort, View,
 } from "../types";
 import {useStrings} from "../state";
 import Dropdown from "./Dropdown";
@@ -39,7 +39,7 @@ type ToolbarProps = {
     role: Role;
     permissions: Permissions;
     showControls: boolean;
-    hasnocourses: boolean;
+    iszerostate: boolean;
     view: View;
     filter: Filter;
     sort: Sort;
@@ -71,7 +71,7 @@ const VIEW_ICON: Record<View, string> = {
  */
 export default function Toolbar(props: ToolbarProps) {
     const {
-        showControls, hasnocourses, view, filter, sort, search, config,
+        showControls, iszerostate, view, filter, sort, search, config,
         createcourseurl, managecourseurl, requestcourseurl, customfieldvalue,
         onView, onFilter, onSort, onSearch, onCustomFieldValue,
     } = props;
@@ -157,9 +157,10 @@ export default function Toolbar(props: ToolbarProps) {
 
     // In a genuine zero-state the create/manage CTAs are rendered inside the empty-state card
     // (with context-aware labels), so the toolbar only keeps the persistent Request button there
-    // to avoid duplicate CTAs. Outside the zero-state the toolbar shows all applicable actions.
-    const showManage = !!managecourseurl && !hasnocourses;
-    const showCreate = !!createcourseurl && !hasnocourses;
+    // to avoid duplicate CTAs. A filter/search that matches nothing is NOT a zero-state (its
+    // "no results" card has no CTAs), so the toolbar keeps all applicable actions there.
+    const showManage = !!managecourseurl && !iszerostate;
+    const showCreate = !!createcourseurl && !iszerostate;
     const showRequest = !!requestcourseurl;
     const showActions = showManage || showCreate || showRequest;
 
@@ -184,9 +185,6 @@ export default function Toolbar(props: ToolbarProps) {
                     )}
                 </div>
             )}
-            {showActions && showControls && (
-                <div className="courseoverview-toolbar__divider" aria-hidden="true" />
-            )}
             {showControls && (
             <div className="courseoverview-toolbar__group courseoverview-toolbar__group--search">
                 <SearchInput value={search} onChange={onSearch} />
@@ -200,11 +198,13 @@ export default function Toolbar(props: ToolbarProps) {
                         triggerAriaLabel={`${strings.filterresults}: ${selectedFilter?.label ?? ""}`}
                         tooltip={strings.tooltipfilter}
                         menuTitle={strings.filters}
-                        icon="filter"
                         options={filterOptions}
                         current={currentFilterValue}
                         onSelect={onFilterSelect}
-                        active={filter !== DEFAULT_FILTER}
+                        // The filter shows its current selection as a visible label, so it keeps the
+                        // default outline look rather than adopting the dark active-chip state that
+                        // the icon-only sort/view buttons use to signal a non-default value.
+                        active={false}
                         groupOf={filterGroup}
                         align="start"
                         showLabel

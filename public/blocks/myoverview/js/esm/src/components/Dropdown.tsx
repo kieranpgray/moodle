@@ -41,8 +41,8 @@ type DropdownProps<T extends string> = {
     label: string;
     /** Override for the trigger button's aria-label (e.g. include current selection). */
     triggerAriaLabel?: string;
-    /** Leading icon on the trigger. */
-    icon: string;
+    /** Leading icon on the trigger. Omitted for the labelled filter, which relies on its text. */
+    icon?: string;
     options: DropdownOption<T>[];
     current: T;
     onSelect: (value: T) => void;
@@ -83,7 +83,10 @@ export default function Dropdown<T extends string>({
     const selected = options.find((o) => o.value === current);
 
     return (
-        <div className="courseoverview-dropdown" ref={containerRef}>
+        <div
+            className={`courseoverview-dropdown${showLabel ? " courseoverview-dropdown--labelled" : ""}`}
+            ref={containerRef}
+        >
             <button
                 type="button"
                 ref={triggerRef}
@@ -95,7 +98,7 @@ export default function Dropdown<T extends string>({
                 data-tooltip={tooltip ?? label}
                 onClick={() => setOpen((v) => !v)}
             >
-                <Icon name={icon} />
+                {icon && <Icon name={icon} />}
                 {showLabel && <span className="courseoverview-toolbtn__label">{selected?.label ?? label}</span>}
                 {showLabel && <Icon name="chevron-down" className="courseoverview-toolbtn__caret" />}
             </button>

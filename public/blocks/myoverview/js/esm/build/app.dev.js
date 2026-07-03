@@ -36,7 +36,7 @@ function useSkipFirstEffect(effect, deps) {
   }, deps);
 }
 __name(useSkipFirstEffect, "useSkipFirstEffect");
-const WIDTH_BREAKPOINTS = [480, 576, 768, 992];
+const WIDTH_BREAKPOINTS = [480, 576, 992];
 function useContainerWidthClasses(ref) {
   const [width, setWidth] = useState(0);
   useLayoutEffect(() => {
@@ -93,11 +93,15 @@ function App(props) {
   } = state;
   const [debouncedSearch, setDebouncedSearch] = useState(search);
   useEffect(() => {
+    if (search === "") {
+      setDebouncedSearch("");
+      return void 0;
+    }
     const timer = setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [search]);
   const requestIdRef = useRef(0);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const requestId = ++requestIdRef.current;
     const searching = debouncedSearch.trim() !== "";
     const isCustomField = filter === "customfield";
@@ -183,7 +187,8 @@ function App(props) {
     return !isHidden;
   });
   const hasNoCourses = !loading && !error && visibleCourses.length === 0;
-  const hasActiveQuery = search !== "" || filter !== DEFAULT_FILTER;
+  const hasActiveQuery = debouncedSearch !== "" || filter !== DEFAULT_FILTER;
+  const isZeroState = hasNoCourses && !hasActiveQuery;
   const showControls = loading || courses.length > 0 || hasActiveQuery;
   const pageCount = Math.max(1, Math.ceil(visibleCourses.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -195,7 +200,7 @@ function App(props) {
         role,
         permissions,
         showControls,
-        hasnocourses: hasNoCourses,
+        iszerostate: isZeroState,
         view,
         filter,
         sort,
@@ -215,7 +220,7 @@ function App(props) {
       false,
       {
         fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-        lineNumber: 270,
+        lineNumber: 287,
         columnNumber: 25
       },
       this
@@ -223,26 +228,26 @@ function App(props) {
     /* @__PURE__ */ jsxDEV("div", { "aria-live": "polite", children: [
       loading && /* @__PURE__ */ jsxDEV("div", { className: "block-myoverview__loading", role: "status", "aria-busy": "true" }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-        lineNumber: 296,
+        lineNumber: 313,
         columnNumber: 33
       }, this),
       error && /* @__PURE__ */ jsxDEV("p", { className: "block-myoverview__error", children: error }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-        lineNumber: 298,
+        lineNumber: 315,
         columnNumber: 39
       }, this)
     ] }, void 0, true, {
       fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-      lineNumber: 294,
+      lineNumber: 311,
       columnNumber: 25
     }, this),
     hasNoCourses && (hasActiveQuery ? /* @__PURE__ */ jsxDEV(EmptyState, { variant: "no-results", illustrationurl }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-      lineNumber: 302,
+      lineNumber: 319,
       columnNumber: 35
     }, this) : /* @__PURE__ */ jsxDEV(EmptyState, { zerostate, illustrationurl }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-      lineNumber: 303,
+      lineNumber: 320,
       columnNumber: 35
     }, this)),
     !hasNoCourses && !loading && !error && /* @__PURE__ */ jsxDEV(Fragment, { children: [
@@ -258,7 +263,7 @@ function App(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-          lineNumber: 307,
+          lineNumber: 324,
           columnNumber: 33
         },
         this
@@ -274,31 +279,31 @@ function App(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-          lineNumber: 313,
+          lineNumber: 330,
           columnNumber: 33
         },
         this
       )
     ] }, void 0, true, {
       fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-      lineNumber: 306,
+      lineNumber: 323,
       columnNumber: 29
     }, this)
   ] }, void 0, true, {
     fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-    lineNumber: 269,
+    lineNumber: 286,
     columnNumber: 21
   }, this) }, void 0, false, {
     fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-    lineNumber: 265,
+    lineNumber: 282,
     columnNumber: 17
   }, this) }, void 0, false, {
     fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-    lineNumber: 264,
+    lineNumber: 281,
     columnNumber: 13
   }, this) }, void 0, false, {
     fileName: "public/blocks/myoverview/js/esm/src/app.tsx",
-    lineNumber: 263,
+    lineNumber: 280,
     columnNumber: 9
   }, this);
 }

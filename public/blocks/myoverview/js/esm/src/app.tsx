@@ -63,7 +63,7 @@ function useSkipFirstEffect(effect: () => void, deps: unknown[]) {
 // Container width breakpoints (px). Mobile-first: the base CSS is the narrowest layout and
 // each class widens it. Used instead of CSS @container queries because Moodle's plugin CSS
 // pipeline strips @container/container rules; see styles.css.
-const WIDTH_BREAKPOINTS = [480, 576, 768, 992];
+const WIDTH_BREAKPOINTS = [480, 576, 992];
 
 /**
  * Observe an element's width and return the space-separated `courseoverview-min-<bp>` classes for every
@@ -120,9 +120,15 @@ export default function App(props: AppProps) {
 
     // Debounce the value that triggers a fetch — search itself stays in state
     // immediately so the input stays responsive, but the fetch effect only
-    // reacts once typing pauses.
+    // reacts once typing pauses. Clearing the field skips the debounce so the
+    // full list reloads at once (and the empty-state variant, keyed off
+    // debouncedSearch below, never flips through the zero-state on the way).
     const [debouncedSearch, setDebouncedSearch] = useState(search);
     useEffect(() => {
+        if (search === "") {
+            setDebouncedSearch("");
+            return undefined;
+        }
         const timer = setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS);
         return () => clearTimeout(timer);
     }, [search]);
@@ -134,8 +140,13 @@ export default function App(props: AppProps) {
     // older, slower request overwriting a newer one's result — getCourses() is built on core/ajax's
     // fetchOne, which has no per-call cancellation signal, so a superseded request can't be
     // cancelled, only its result ignored once it resolves.
+    // useLayoutEffect (not useEffect) so SET_LOADING is committed before the browser paints the
+    // render in which the query changed: courses still holds the previous result set at that point,
+    // so a plain post-paint effect would let one frame of the (now stale) empty state show — e.g.
+    // the zero-state flashing between clearing a no-results search and the reload landing. It fires
+    // only when debouncedSearch settles, so it never flashes the spinner mid-typing.
     const requestIdRef = useRef(0);
-    useEffect(() => {
+    useLayoutEffect(() => {
         const requestId = ++requestIdRef.current;
         // A search uses the 'search' classification with a searchvalue (the web service treats
         // classifications as mutually exclusive, so it cannot combine search with a grouping).
@@ -249,7 +260,13 @@ export default function App(props: AppProps) {
     const hasNoCourses = !loading && !error && visibleCourses.length === 0;
     // An active search term or non-default filter is narrowing the list. Used both to keep the
     // controls visible and to pick the "no results" empty state over the genuine zero-state.
-    const hasActiveQuery = search !== "" || filter !== DEFAULT_FILTER;
+    // Keyed off debouncedSearch (not the live input) so it stays in step with the loaded results:
+    // otherwise clearing a no-results search would briefly select the zero-state before the refetch.
+    const hasActiveQuery = debouncedSearch !== "" || filter !== DEFAULT_FILTER;
+    // A genuine zero-state is no courses AND no active query — the case where the empty-state card
+    // renders its own Create/Manage CTAs, so the toolbar hides its duplicates. A filter/search that
+    // matches nothing is NOT a zero-state: its "no results" card has no CTAs, so the toolbar keeps them.
+    const isZeroState = hasNoCourses && !hasActiveQuery;
     // Hide the search/filter/sort/view controls in a genuine zero-state (no courses and no active
     // search or non-default filter), matching the old block and the Figma zero-state. They stay
     // visible when a search or filter is active so the user can always undo it.
@@ -271,7 +288,7 @@ export default function App(props: AppProps) {
                             role={role}
                             permissions={permissions}
                             showControls={showControls}
-                            hasnocourses={hasNoCourses}
+                            iszerostate={isZeroState}
                             view={view}
                             filter={filter}
                             sort={sort}

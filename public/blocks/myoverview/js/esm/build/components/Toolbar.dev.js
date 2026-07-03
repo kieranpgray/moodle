@@ -2,7 +2,6 @@ var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 import { jsxDEV } from "react/jsx-dev-runtime";
 import {
-  DEFAULT_FILTER,
   DEFAULT_SORT,
   DEFAULT_VIEW
 } from "../types";
@@ -17,7 +16,7 @@ const VIEW_ICON = {
 function Toolbar(props) {
   const {
     showControls,
-    hasnocourses,
+    iszerostate,
     view,
     filter,
     sort,
@@ -112,52 +111,47 @@ function Toolbar(props) {
   const selectedFilter = filterOptions.find((o) => o.value === currentFilterValue);
   const selectedSort = sortOptions.find((o) => o.value === sort);
   const selectedView = viewOptions.find((o) => o.value === view);
-  const showManage = !!managecourseurl && !hasnocourses;
-  const showCreate = !!createcourseurl && !hasnocourses;
+  const showManage = !!managecourseurl && !iszerostate;
+  const showCreate = !!createcourseurl && !iszerostate;
   const showRequest = !!requestcourseurl;
   const showActions = showManage || showCreate || showRequest;
   return /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-toolbar", children: [
     showActions && /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-toolbar__group courseoverview-toolbar__group--actions", children: [
       showManage && /* @__PURE__ */ jsxDEV("a", { className: "btn btn-outline-primary btn-sm", href: managecourseurl, children: strings.managecourses }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-        lineNumber: 171,
+        lineNumber: 172,
         columnNumber: 25
       }, this),
       showRequest && /* @__PURE__ */ jsxDEV("a", { className: "btn btn-primary btn-sm", href: requestcourseurl, children: strings.requestcoursebutton }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-        lineNumber: 176,
+        lineNumber: 177,
         columnNumber: 25
       }, this),
       showCreate && /* @__PURE__ */ jsxDEV("a", { className: "btn btn-primary btn-sm", href: createcourseurl, children: [
         /* @__PURE__ */ jsxDEV("i", { className: "fa-solid fa-plus", "aria-hidden": "true" }, void 0, false, {
           fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 182,
+          lineNumber: 183,
           columnNumber: 29
         }, this),
         " ",
         strings.createcourse
       ] }, void 0, true, {
         fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-        lineNumber: 181,
+        lineNumber: 182,
         columnNumber: 25
       }, this)
     ] }, void 0, true, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 169,
-      columnNumber: 17
-    }, this),
-    showActions && showControls && /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-toolbar__divider", "aria-hidden": "true" }, void 0, false, {
-      fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 188,
+      lineNumber: 170,
       columnNumber: 17
     }, this),
     showControls && /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-toolbar__group courseoverview-toolbar__group--search", children: /* @__PURE__ */ jsxDEV(SearchInput, { value: search, onChange: onSearch }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 192,
+      lineNumber: 190,
       columnNumber: 17
     }, this) }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 191,
+      lineNumber: 189,
       columnNumber: 13
     }, this),
     showControls && /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-toolbar__group courseoverview-toolbar__group--tools", children: [
@@ -168,11 +162,10 @@ function Toolbar(props) {
           triggerAriaLabel: `${strings.filterresults}: ${selectedFilter?.label ?? ""}`,
           tooltip: strings.tooltipfilter,
           menuTitle: strings.filters,
-          icon: "filter",
           options: filterOptions,
           current: currentFilterValue,
           onSelect: onFilterSelect,
-          active: filter !== DEFAULT_FILTER,
+          active: false,
           groupOf: filterGroup,
           align: "start",
           showLabel: true
@@ -181,7 +174,7 @@ function Toolbar(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 198,
+          lineNumber: 196,
           columnNumber: 21
         },
         this
@@ -232,12 +225,12 @@ function Toolbar(props) {
       )
     ] }, void 0, true, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-      lineNumber: 196,
+      lineNumber: 194,
       columnNumber: 13
     }, this)
   ] }, void 0, true, {
     fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-    lineNumber: 167,
+    lineNumber: 168,
     columnNumber: 9
   }, this);
 }
