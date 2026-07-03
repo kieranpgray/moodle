@@ -206,6 +206,7 @@ export default function Toolbar(props: ToolbarProps) {
                         onSelect={onFilterSelect}
                         active={filter !== DEFAULT_FILTER}
                         groupOf={filterGroup}
+                        align="start"
                         showLabel
                     />
                 )}

@@ -355,6 +355,14 @@
     box-shadow: 0 6px 18px rgba(29, 33, 37, 0.12);
 }
 
+/* Left-anchored menu (filter). Opens under the button's left edge to match Figma and to stay
+   on-screen when the block is narrow (e.g. the block drawer), where the default right-anchored
+   menu would run off the left of the viewport. Sort/view stay right-anchored. */
+.courseoverview-menu__list--start {
+    right: auto;
+    left: 0;
+}
+
 .courseoverview-menu__item {
     display: flex;
     align-items: center;

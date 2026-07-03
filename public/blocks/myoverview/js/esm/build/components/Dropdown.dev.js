@@ -14,7 +14,8 @@ function Dropdown({
   showLabel = false,
   menuTitle,
   tooltip,
-  groupOf
+  groupOf,
+  align = "end"
 }) {
   const { open, setOpen, containerRef, triggerRef, menuRef, handleMenuKeyDown } = useDismissableMenu("menuitemradio");
   const selected = options.find((o) => o.value === current);
@@ -33,17 +34,17 @@ function Dropdown({
         children: [
           /* @__PURE__ */ jsxDEV(Icon, { name: icon }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 92,
+            lineNumber: 98,
             columnNumber: 17
           }, this),
           showLabel && /* @__PURE__ */ jsxDEV("span", { className: "courseoverview-toolbtn__label", children: selected?.label ?? label }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 93,
+            lineNumber: 99,
             columnNumber: 31
           }, this),
           showLabel && /* @__PURE__ */ jsxDEV(Icon, { name: "chevron-down", className: "courseoverview-toolbtn__caret" }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 94,
+            lineNumber: 100,
             columnNumber: 31
           }, this)
         ]
@@ -52,7 +53,7 @@ function Dropdown({
       true,
       {
         fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-        lineNumber: 81,
+        lineNumber: 87,
         columnNumber: 13
       },
       this
@@ -60,7 +61,7 @@ function Dropdown({
     open && /* @__PURE__ */ jsxDEV(
       "div",
       {
-        className: "courseoverview-menu__list",
+        className: `courseoverview-menu__list${align === "start" ? " courseoverview-menu__list--start" : ""}`,
         role: "menu",
         "aria-label": label,
         ref: menuRef,
@@ -68,7 +69,7 @@ function Dropdown({
         children: [
           menuTitle && /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-menu__group-label", "aria-hidden": "true", children: menuTitle }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 105,
+            lineNumber: 111,
             columnNumber: 25
           }, this),
           /* @__PURE__ */ jsxDEV("div", { role: "group", "aria-label": menuTitle ?? label, children: options.map((opt, i) => {
@@ -88,13 +89,13 @@ function Dropdown({
                 children: [
                   opt.icon && /* @__PURE__ */ jsxDEV(Icon, { name: opt.icon, className: "courseoverview-menu__icon" }, void 0, false, {
                     fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-                    lineNumber: 125,
+                    lineNumber: 131,
                     columnNumber: 46
                   }, this),
                   opt.label,
                   opt.value === current && /* @__PURE__ */ jsxDEV(Icon, { name: "check", className: "courseoverview-menu__check" }, void 0, false, {
                     fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-                    lineNumber: 127,
+                    lineNumber: 133,
                     columnNumber: 59
                   }, this)
                 ]
@@ -103,14 +104,14 @@ function Dropdown({
               true,
               {
                 fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-                lineNumber: 112,
+                lineNumber: 118,
                 columnNumber: 29
               },
               this
             );
           }) }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 107,
+            lineNumber: 113,
             columnNumber: 21
           }, this)
         ]
@@ -119,14 +120,14 @@ function Dropdown({
       true,
       {
         fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-        lineNumber: 97,
+        lineNumber: 103,
         columnNumber: 17
       },
       this
     )
   ] }, void 0, true, {
     fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-    lineNumber: 80,
+    lineNumber: 86,
     columnNumber: 9
   }, this);
 }

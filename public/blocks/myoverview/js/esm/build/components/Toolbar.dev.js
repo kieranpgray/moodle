@@ -174,6 +174,7 @@ function Toolbar(props) {
           onSelect: onFilterSelect,
           active: filter !== DEFAULT_FILTER,
           groupOf: filterGroup,
+          align: "start",
           showLabel: true
         },
         void 0,
@@ -202,7 +203,7 @@ function Toolbar(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 212,
+          lineNumber: 213,
           columnNumber: 17
         },
         this
@@ -224,7 +225,7 @@ function Toolbar(props) {
         false,
         {
           fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
-          lineNumber: 224,
+          lineNumber: 225,
           columnNumber: 21
         },
         this

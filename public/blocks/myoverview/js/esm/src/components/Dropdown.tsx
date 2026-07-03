@@ -59,6 +59,12 @@ type DropdownProps<T extends string> = {
      * item whose group differs from the next item's group (Figma menu grouping).
      */
     groupOf?: (value: T) => string;
+    /**
+     * Horizontal anchor for the open menu. "end" (default) aligns the menu to the
+     * trigger's right edge; "start" aligns to the left edge — used for the filter
+     * button so its menu stays on-screen in the narrow block drawer.
+     */
+    align?: "start" | "end";
 };
 
 
@@ -70,7 +76,7 @@ type DropdownProps<T extends string> = {
  */
 export default function Dropdown<T extends string>({
     label, triggerAriaLabel, icon, options, current, onSelect, active, showLabel = false, menuTitle,
-    tooltip, groupOf,
+    tooltip, groupOf, align = "end",
 }: DropdownProps<T>) {
     const {open, setOpen, containerRef, triggerRef, menuRef, handleMenuKeyDown} =
         useDismissableMenu("menuitemradio");
@@ -95,7 +101,7 @@ export default function Dropdown<T extends string>({
             </button>
             {open && (
                 <div
-                    className="courseoverview-menu__list"
+                    className={`courseoverview-menu__list${align === "start" ? " courseoverview-menu__list--start" : ""}`}
                     role="menu"
                     aria-label={label}
                     ref={menuRef}
