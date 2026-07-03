@@ -10,18 +10,18 @@ function CourseItem({ course, view, role, displaycategories }) {
   return /* @__PURE__ */ jsxDEV(
     "article",
     {
-      className: `local-co-card local-co-card--${view}`,
+      className: `courseoverview-card courseoverview-card--${view}`,
       "data-courseid": course.id,
       "aria-labelledby": titleId,
       children: [
-        /* @__PURE__ */ jsxDEV("div", { className: "local-co-card__body", children: [
-          /* @__PURE__ */ jsxDEV("div", { className: "local-co-card__text", children: [
-            /* @__PURE__ */ jsxDEV("a", { id: titleId, className: "local-co-card__title stretched-link", href: course.viewurl, children: course.fullnamedisplay }, void 0, false, {
+        /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-card__body", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-card__text", children: [
+            /* @__PURE__ */ jsxDEV("a", { id: titleId, className: "courseoverview-card__title stretched-link", href: course.viewurl, children: course.fullnamedisplay }, void 0, false, {
               fileName: "public/blocks/myoverview/js/esm/src/components/CourseItem.tsx",
               lineNumber: 63,
               columnNumber: 21
             }, this),
-            displaycategories && course.coursecategory && /* @__PURE__ */ jsxDEV("div", { className: "local-co-card__category", children: course.coursecategory }, void 0, false, {
+            displaycategories && course.coursecategory && /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-card__category", children: course.coursecategory }, void 0, false, {
               fileName: "public/blocks/myoverview/js/esm/src/components/CourseItem.tsx",
               lineNumber: 67,
               columnNumber: 25
@@ -31,7 +31,7 @@ function CourseItem({ course, view, role, displaycategories }) {
             lineNumber: 62,
             columnNumber: 17
           }, this),
-          view === "summary" && course.summary !== "" && /* @__PURE__ */ jsxDEV("p", { className: "local-co-card__summary", children: course.summary }, void 0, false, {
+          view === "summary" && course.summary !== "" && /* @__PURE__ */ jsxDEV("p", { className: "courseoverview-card__summary", children: course.summary }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/CourseItem.tsx",
             lineNumber: 71,
             columnNumber: 21
@@ -46,7 +46,7 @@ function CourseItem({ course, view, role, displaycategories }) {
           lineNumber: 61,
           columnNumber: 13
         }, this),
-        /* @__PURE__ */ jsxDEV("div", { className: "local-co-card__media", children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-card__media", children: [
           /* @__PURE__ */ jsxDEV(CourseImage, { src: course.courseimage }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/CourseItem.tsx",
             lineNumber: 76,

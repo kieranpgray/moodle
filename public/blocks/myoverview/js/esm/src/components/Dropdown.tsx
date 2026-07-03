@@ -77,11 +77,12 @@ export default function Dropdown<T extends string>({
     const selected = options.find((o) => o.value === current);
 
     return (
-        <div className="local-co-dropdown" ref={containerRef}>
+        <div className="courseoverview-dropdown" ref={containerRef}>
             <button
                 type="button"
                 ref={triggerRef}
-                className={`local-co-toolbtn${active ? " is-active" : ""}${showLabel ? " local-co-toolbtn--labelled" : ""}`}
+                className={`courseoverview-toolbtn${active ? " is-active" : ""}`
+                    + `${showLabel ? " courseoverview-toolbtn--labelled" : ""}`}
                 aria-haspopup="menu"
                 aria-expanded={open}
                 aria-label={triggerAriaLabel ?? label}
@@ -89,19 +90,19 @@ export default function Dropdown<T extends string>({
                 onClick={() => setOpen((v) => !v)}
             >
                 <Icon name={icon} />
-                {showLabel && <span className="local-co-toolbtn__label">{selected?.label ?? label}</span>}
-                {showLabel && <Icon name="chevron-down" className="local-co-toolbtn__caret" />}
+                {showLabel && <span className="courseoverview-toolbtn__label">{selected?.label ?? label}</span>}
+                {showLabel && <Icon name="chevron-down" className="courseoverview-toolbtn__caret" />}
             </button>
             {open && (
                 <div
-                    className="local-co-menu__list"
+                    className="courseoverview-menu__list"
                     role="menu"
                     aria-label={label}
                     ref={menuRef}
                     onKeyDown={handleMenuKeyDown}
                 >
                     {menuTitle && (
-                        <div className="local-co-menu__group-label" aria-hidden="true">{menuTitle}</div>
+                        <div className="courseoverview-menu__group-label" aria-hidden="true">{menuTitle}</div>
                     )}
                     <div role="group" aria-label={menuTitle ?? label}>
                         {options.map((opt, i) => {
@@ -113,17 +114,17 @@ export default function Dropdown<T extends string>({
                                 type="button"
                                 role="menuitemradio"
                                 aria-checked={opt.value === current}
-                                className={`local-co-menu__item${opt.value === current ? " is-selected" : ""}`
-                                    + `${groupEnd ? " local-co-menu__item--group-end" : ""}`}
+                                className={`courseoverview-menu__item${opt.value === current ? " is-selected" : ""}`
+                                    + `${groupEnd ? " courseoverview-menu__item--group-end" : ""}`}
                                 onClick={() => {
                                     onSelect(opt.value);
                                     setOpen(false);
                                     triggerRef.current?.focus();
                                 }}
                             >
-                                {opt.icon && <Icon name={opt.icon} className="local-co-menu__icon" />}
+                                {opt.icon && <Icon name={opt.icon} className="courseoverview-menu__icon" />}
                                 {opt.label}
-                                {opt.value === current && <Icon name="check" className="local-co-menu__check" />}
+                                {opt.value === current && <Icon name="check" className="courseoverview-menu__check" />}
                             </button>
                             );
                         })}

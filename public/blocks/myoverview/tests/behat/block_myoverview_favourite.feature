@@ -27,26 +27,26 @@ Feature: The my overview block allows users to favourite their courses
 
   Scenario: Favourite a course on a course card
     Given I am on the "My courses" page logged in as "student1"
-    When I click on ".mds-favourite-button" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
+    When I click on ".mds-favourite-button" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 2')]" "xpath_element"
     And I reload the page
-    Then "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]//button[@aria-pressed='true']" "xpath_element" should exist
-    And "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 1')]//button[@aria-pressed='false']" "xpath_element" should exist
-    And "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 3')]//button[@aria-pressed='false']" "xpath_element" should exist
+    Then "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 2')]//button[@aria-pressed='true']" "xpath_element" should exist
+    And "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 1')]//button[@aria-pressed='false']" "xpath_element" should exist
+    And "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 3')]//button[@aria-pressed='false']" "xpath_element" should exist
 
   Scenario: Star a course and switch display to list
     Given I am on the "My courses" page logged in as "student1"
-    When I click on ".mds-favourite-button" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 5')]" "xpath_element"
+    When I click on ".mds-favourite-button" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 5')]" "xpath_element"
     And I click on "Display drop-down menu" "button" in the "Course overview" "block"
     And I click on "List" "button" in the "Course overview" "block"
-    Then "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 5')]//button[@aria-pressed='true']" "xpath_element" should exist
-    And "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 1')]//button[@aria-pressed='false']" "xpath_element" should exist
-    And "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 3')]//button[@aria-pressed='false']" "xpath_element" should exist
+    Then "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 5')]//button[@aria-pressed='true']" "xpath_element" should exist
+    And "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 1')]//button[@aria-pressed='false']" "xpath_element" should exist
+    And "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 3')]//button[@aria-pressed='false']" "xpath_element" should exist
 
   Scenario: Star a course and switch display to summary
     Given I am on the "My courses" page logged in as "student1"
-    When I click on ".mds-favourite-button" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 5')]" "xpath_element"
+    When I click on ".mds-favourite-button" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 5')]" "xpath_element"
     And I click on "Display drop-down menu" "button" in the "Course overview" "block"
     And I click on "Summary" "button" in the "Course overview" "block"
-    Then "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 5')]//button[@aria-pressed='true']" "xpath_element" should exist
-    And "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 1')]//button[@aria-pressed='false']" "xpath_element" should exist
-    And "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 3')]//button[@aria-pressed='false']" "xpath_element" should exist
+    Then "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 5')]//button[@aria-pressed='true']" "xpath_element" should exist
+    And "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 1')]//button[@aria-pressed='false']" "xpath_element" should exist
+    And "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 3')]//button[@aria-pressed='false']" "xpath_element" should exist

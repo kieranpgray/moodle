@@ -116,8 +116,8 @@ function Toolbar(props) {
   const showCreate = !!createcourseurl && !hasnocourses;
   const showRequest = !!requestcourseurl;
   const showActions = showManage || showCreate || showRequest;
-  return /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar", children: [
-    showActions && /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__group local-co-toolbar__group--actions", children: [
+  return /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-toolbar", children: [
+    showActions && /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-toolbar__group courseoverview-toolbar__group--actions", children: [
       showManage && /* @__PURE__ */ jsxDEV("a", { className: "btn btn-outline-primary btn-sm", href: managecourseurl, children: strings.managecourses }, void 0, false, {
         fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
         lineNumber: 171,
@@ -146,12 +146,12 @@ function Toolbar(props) {
       lineNumber: 169,
       columnNumber: 17
     }, this),
-    showActions && showControls && /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__divider", "aria-hidden": "true" }, void 0, false, {
+    showActions && showControls && /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-toolbar__divider", "aria-hidden": "true" }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
       lineNumber: 188,
       columnNumber: 17
     }, this),
-    showControls && /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__group local-co-toolbar__group--search", children: /* @__PURE__ */ jsxDEV(SearchInput, { value: search, onChange: onSearch }, void 0, false, {
+    showControls && /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-toolbar__group courseoverview-toolbar__group--search", children: /* @__PURE__ */ jsxDEV(SearchInput, { value: search, onChange: onSearch }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/Toolbar.tsx",
       lineNumber: 192,
       columnNumber: 17
@@ -160,7 +160,7 @@ function Toolbar(props) {
       lineNumber: 191,
       columnNumber: 13
     }, this),
-    showControls && /* @__PURE__ */ jsxDEV("div", { className: "local-co-toolbar__group local-co-toolbar__group--tools", children: [
+    showControls && /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-toolbar__group courseoverview-toolbar__group--tools", children: [
       filterOptions.length > 1 && /* @__PURE__ */ jsxDEV(
         Dropdown,
         {

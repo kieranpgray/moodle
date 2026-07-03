@@ -6,7 +6,7 @@ import StarButton from "./StarButton";
 import EllipsisMenu from "./EllipsisMenu";
 function CourseControls({ course }) {
   const { favourites, hidden } = useCourseMemberships();
-  return /* @__PURE__ */ jsxDEV("div", { className: "local-co-controls", children: [
+  return /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-controls", children: [
     /* @__PURE__ */ jsxDEV(
       StarButton,
       {

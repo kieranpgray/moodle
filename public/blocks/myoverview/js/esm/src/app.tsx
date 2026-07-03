@@ -66,7 +66,7 @@ function useSkipFirstEffect(effect: () => void, deps: unknown[]) {
 const WIDTH_BREAKPOINTS = [480, 576, 768, 992];
 
 /**
- * Observe an element's width and return the space-separated `co-min-<bp>` classes for every
+ * Observe an element's width and return the space-separated `courseoverview-min-<bp>` classes for every
  * breakpoint it currently meets, so the layout responds to the block's own width (e.g. the
  * narrow block drawer) rather than the viewport.
  *
@@ -90,7 +90,7 @@ function useContainerWidthClasses(ref: React.RefObject<HTMLElement>): string {
         observer.observe(el);
         return () => observer.disconnect();
     }, [ref]);
-    return WIDTH_BREAKPOINTS.filter((bp) => width >= bp).map((bp) => `co-min-${bp}`).join(" ");
+    return WIDTH_BREAKPOINTS.filter((bp) => width >= bp).map((bp) => `courseoverview-min-${bp}`).join(" ");
 }
 
 /**

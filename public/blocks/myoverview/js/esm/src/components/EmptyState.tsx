@@ -52,28 +52,28 @@ export default function EmptyState({zerostate, variant, illustrationurl}: EmptyS
     const strings = useStrings();
 
     const illustration = (
-        <div className="local-co-empty__illustration" aria-hidden="true">
+        <div className="courseoverview-empty__illustration" aria-hidden="true">
             <img src={illustrationurl} alt="" />
         </div>
     );
 
     if (zerostate) {
         return (
-            <div className="local-co-empty" data-variant="zerostate">
+            <div className="courseoverview-empty" data-variant="zerostate">
                 {illustration}
                 {zerostate.title !== "" && (
                     // H2 keeps a valid heading order after the page's h1 (axe heading-order); the
-                    // Figma "H6" look is applied through the local-co-empty__title styles, not the tag.
-                    <h2 className="local-co-empty__title">{zerostate.title}</h2>
+                    // Figma "H6" look is applied through the courseoverview-empty__title styles, not the tag.
+                    <h2 className="courseoverview-empty__title">{zerostate.title}</h2>
                 )}
                 {zerostate.intro !== "" && (
                     <p
-                        className="local-co-empty__text"
+                        className="courseoverview-empty__text"
                         dangerouslySetInnerHTML={{__html: zerostate.intro}}
                     />
                 )}
                 {zerostate.buttons.length > 0 && (
-                    <div className="local-co-empty__actions">
+                    <div className="courseoverview-empty__actions">
                         {zerostate.buttons.map((button) => (
                             <a
                                 key={button.url}
@@ -93,10 +93,10 @@ export default function EmptyState({zerostate, variant, illustrationurl}: EmptyS
     // nothing, distinct from the genuine "not enrolled" zero-state (MDL-88974).
     if (variant === "no-results") {
         return (
-            <div className="local-co-empty" data-variant="no-results">
+            <div className="courseoverview-empty" data-variant="no-results">
                 {illustration}
-                <h2 className="local-co-empty__title">{strings.emptynoresultstitle}</h2>
-                <p className="local-co-empty__text">{strings.emptynoresults}</p>
+                <h2 className="courseoverview-empty__title">{strings.emptynoresultstitle}</h2>
+                <p className="courseoverview-empty__text">{strings.emptynoresults}</p>
             </div>
         );
     }
@@ -107,9 +107,9 @@ export default function EmptyState({zerostate, variant, illustrationurl}: EmptyS
         "no-results": strings.emptynoresults,
     };
     return (
-        <div className="local-co-empty" data-variant={variant ?? "student"}>
+        <div className="courseoverview-empty" data-variant={variant ?? "student"}>
             {illustration}
-            <p className="local-co-empty__text">{copy[variant ?? "student"]}</p>
+            <p className="courseoverview-empty__text">{copy[variant ?? "student"]}</p>
         </div>
     );
 }

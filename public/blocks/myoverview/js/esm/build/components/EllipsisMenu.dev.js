@@ -13,13 +13,13 @@ function EllipsisMenu({ courseId, courseName, isHidden }) {
     e.stopPropagation();
   }, "stop");
   const actionsLabel = strings.actionsfor.replace("{$a}", courseName);
-  return /* @__PURE__ */ jsxDEV("div", { className: "local-co-menu", ref: containerRef, children: [
+  return /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-menu", ref: containerRef, children: [
     /* @__PURE__ */ jsxDEV(
       "button",
       {
         type: "button",
         ref: triggerRef,
-        className: "local-co-iconbtn",
+        className: "courseoverview-iconbtn",
         "aria-haspopup": "menu",
         "aria-expanded": open,
         "aria-label": actionsLabel,
@@ -46,7 +46,7 @@ function EllipsisMenu({ courseId, courseName, isHidden }) {
     open && /* @__PURE__ */ jsxDEV(
       "div",
       {
-        className: "local-co-menu__list",
+        className: "courseoverview-menu__list",
         role: "menu",
         "aria-label": actionsLabel,
         ref: menuRef,
@@ -56,7 +56,7 @@ function EllipsisMenu({ courseId, courseName, isHidden }) {
           {
             type: "button",
             role: "menuitem",
-            className: "local-co-menu__item",
+            className: "courseoverview-menu__item",
             onClick: (e) => {
               stop(e);
               toggleHidden(courseId);
@@ -64,7 +64,7 @@ function EllipsisMenu({ courseId, courseName, isHidden }) {
               triggerRef.current?.focus();
             },
             children: [
-              /* @__PURE__ */ jsxDEV(Icon, { name: isHidden ? "eye" : "eye-slash", className: "local-co-menu__icon" }, void 0, false, {
+              /* @__PURE__ */ jsxDEV(Icon, { name: isHidden ? "eye" : "eye-slash", className: "courseoverview-menu__icon" }, void 0, false, {
                 fileName: "public/blocks/myoverview/js/esm/src/components/EllipsisMenu.tsx",
                 lineNumber: 99,
                 columnNumber: 25

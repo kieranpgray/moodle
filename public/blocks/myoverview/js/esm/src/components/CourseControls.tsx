@@ -45,7 +45,7 @@ type CourseControlsProps = {
 export default function CourseControls({course}: CourseControlsProps) {
     const {favourites, hidden} = useCourseMemberships();
     return (
-        <div className="local-co-controls">
+        <div className="courseoverview-controls">
             <StarButton
                 courseId={course.id}
                 courseName={course.fullnamedisplay}

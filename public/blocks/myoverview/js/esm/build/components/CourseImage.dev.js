@@ -6,12 +6,12 @@ function CourseImage({ src, className = "" }) {
   const [errored, setErrored] = useState(false);
   useEffect(() => setErrored(false), [src]);
   const showImage = src !== null && !errored;
-  return /* @__PURE__ */ jsxDEV("div", { className: `local-co-image ${showImage ? "" : "local-co-image--empty"} ${className}`.trim(), children: showImage && /* @__PURE__ */ jsxDEV(
+  return /* @__PURE__ */ jsxDEV("div", { className: `courseoverview-image ${showImage ? "" : "courseoverview-image--empty"} ${className}`.trim(), children: showImage && /* @__PURE__ */ jsxDEV(
     "img",
     {
       src,
       alt: "",
-      className: "local-co-image__img",
+      className: "courseoverview-image__img",
       loading: "lazy",
       onError: () => setErrored(true)
     },

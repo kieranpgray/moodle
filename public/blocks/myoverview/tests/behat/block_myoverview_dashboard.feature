@@ -31,7 +31,7 @@ Feature: The my overview block allows users to easily access their courses
   Scenario: View past courses
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "Past" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "Past" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should see "Course 1" in the "Course overview" "block"
     And I should not see "Course 2" in the "Course overview" "block"
     And I should not see "Course 3" in the "Course overview" "block"
@@ -41,7 +41,7 @@ Feature: The my overview block allows users to easily access their courses
   Scenario: View future courses
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "Future" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "Future" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should see "Course 5" in the "Course overview" "block"
     And I should not see "Course 1" in the "Course overview" "block"
     And I should not see "Course 2" in the "Course overview" "block"
@@ -51,7 +51,7 @@ Feature: The my overview block allows users to easily access their courses
   Scenario: View inprogress courses
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "In progress" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "In progress" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should see "Course 2" in the "Course overview" "block"
     Then I should see "Course 3" in the "Course overview" "block"
     Then I should see "Course 4" in the "Course overview" "block"
@@ -62,7 +62,7 @@ Feature: The my overview block allows users to easily access their courses
   Scenario: View all (except removed) courses
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "All courses" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "All courses" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should see "Course 1" in the "Course overview" "block"
     And I should see "Course 2" in the "Course overview" "block"
     And I should see "Course 3" in the "Course overview" "block"
@@ -76,7 +76,7 @@ Feature: The my overview block allows users to easily access their courses
       | displaygroupingallincludinghidden | 1     | block_myoverview |
     And I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "All (including removed from view)" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "All (including removed from view)" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should see "Course 1" in the "Course overview" "block"
     Then I should see "Course 2" in the "Course overview" "block"
     Then I should see "Course 3" in the "Course overview" "block"
@@ -86,7 +86,7 @@ Feature: The my overview block allows users to easily access their courses
   Scenario: View inprogress courses - test persistence
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    And I click on "In progress" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "In progress" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
     Then I should see "In progress" in the "Course overview" "block"
     Then I should see "Course 2" in the "Course overview" "block"
@@ -98,7 +98,7 @@ Feature: The my overview block allows users to easily access their courses
   Scenario: View all (except removed) courses - w/ persistence
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "All courses" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "All courses" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
     Then I should see "All courses" in the "Course overview" "block"
     Then I should see "Course 1" in the "Course overview" "block"
@@ -110,7 +110,7 @@ Feature: The my overview block allows users to easily access their courses
   Scenario: View past courses - w/ persistence
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "Past" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "Past" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
     Then I should see "Past" in the "Course overview" "block"
     Then I should see "Course 1" in the "Course overview" "block"
@@ -122,7 +122,7 @@ Feature: The my overview block allows users to easily access their courses
   Scenario: View future courses - w/ persistence
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "Future" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "Future" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
     Then I should see "Future" in the "Course overview" "block"
     Then I should see "Course 5" in the "Course overview" "block"
@@ -133,9 +133,9 @@ Feature: The my overview block allows users to easily access their courses
 
   Scenario: View favourite courses - w/ persistence
     Given I am on the "My courses" page logged in as "student1"
-    And I click on ".mds-favourite-button" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
+    And I click on ".mds-favourite-button" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 2')]" "xpath_element"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "Starred" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "Starred" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
     Then I should see "Starred" in the "Course overview" "block"
     And I should see "Course 2" in the "Course overview" "block"
@@ -147,37 +147,37 @@ Feature: The my overview block allows users to easily access their courses
   Scenario: List display persistence
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Display drop-down menu" "button" in the "Course overview" "block"
-    And I click on "List" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "List" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
-    Then ".block_myoverview .local-co-list--list" "css_element" should exist
+    Then ".block_myoverview .courseoverview-list--list" "css_element" should exist
 
   Scenario: Cards display persistence
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Display drop-down menu" "button" in the "Course overview" "block"
-    And I click on "List" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "List" "button" in the ".courseoverview-menu__list" "css_element"
     And I click on "Display drop-down menu" "button" in the "Course overview" "block"
-    And I click on "Card" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "Card" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
-    Then ".block_myoverview .local-co-list--card" "css_element" should exist
+    Then ".block_myoverview .courseoverview-list--card" "css_element" should exist
 
   Scenario: Summary display persistence
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Display drop-down menu" "button" in the "Course overview" "block"
-    And I click on "Summary" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "Summary" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
-    Then ".block_myoverview .local-co-list--summary" "css_element" should exist
+    Then ".block_myoverview .courseoverview-list--summary" "css_element" should exist
 
   Scenario: Course name sort persistence
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Sorting drop-down menu" "button" in the "Course overview" "block"
-    And I click on "Course name" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "Course name" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
     Then the "aria-label" attribute of "//button[contains(@aria-label, 'Sorting drop-down menu')]" "xpath_element" should contain "Course name"
 
   Scenario: Last accessed sort persistence
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Sorting drop-down menu" "button" in the "Course overview" "block"
-    And I click on "Last accessed" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "Last accessed" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
     Then the "aria-label" attribute of "//button[contains(@aria-label, 'Sorting drop-down menu')]" "xpath_element" should contain "Last accessed"
 
@@ -190,23 +190,23 @@ Feature: The my overview block allows users to easily access their courses
       | courselistshortnames | 1     |
     And I reload the page
     And I click on "Sorting drop-down menu" "button" in the "Course overview" "block"
-    And I click on "Short name" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "Short name" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
     Then the "aria-label" attribute of "//button[contains(@aria-label, 'Sorting drop-down menu')]" "xpath_element" should contain "Short name"
 
   Scenario: Course start date sort persistence
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Sorting drop-down menu" "button" in the "Course overview" "block"
-    And I click on "Course start date" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "Course start date" "button" in the ".courseoverview-menu__list" "css_element"
     And I reload the page
     Then the "aria-label" attribute of "//button[contains(@aria-label, 'Sorting drop-down menu')]" "xpath_element" should contain "Course start date"
 
   Scenario: View inprogress courses with hide persistent functionality
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "In progress" "button" in the ".local-co-menu__list" "css_element"
-    And I click on ".local-co-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
-    And I click on "Remove from view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 2')]" "xpath_element"
+    When I click on "In progress" "button" in the ".courseoverview-menu__list" "css_element"
+    And I click on ".courseoverview-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 2')]" "xpath_element"
+    And I click on "Remove from view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 2')]" "xpath_element"
     And I reload the page
     Then I should see "Course 3" in the "Course overview" "block"
     Then I should see "Course 4" in the "Course overview" "block"
@@ -217,9 +217,9 @@ Feature: The my overview block allows users to easily access their courses
   Scenario: View past courses with hide persistent functionality
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "Past" "button" in the ".local-co-menu__list" "css_element"
-    And I click on ".local-co-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 1')]" "xpath_element"
-    And I click on "Remove from view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 1')]" "xpath_element"
+    When I click on "Past" "button" in the ".courseoverview-menu__list" "css_element"
+    And I click on ".courseoverview-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 1')]" "xpath_element"
+    And I click on "Remove from view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 1')]" "xpath_element"
     And I reload the page
     Then I should not see "Course 1" in the "Course overview" "block"
     And I should not see "Course 2" in the "Course overview" "block"
@@ -230,9 +230,9 @@ Feature: The my overview block allows users to easily access their courses
   Scenario: View future courses with hide persistent functionality
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "Future" "button" in the ".local-co-menu__list" "css_element"
-    And I click on ".local-co-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 5')]" "xpath_element"
-    And I click on "Remove from view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 5')]" "xpath_element"
+    When I click on "Future" "button" in the ".courseoverview-menu__list" "css_element"
+    And I click on ".courseoverview-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 5')]" "xpath_element"
+    And I click on "Remove from view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 5')]" "xpath_element"
     And I reload the page
     Then I should not see "Course 5" in the "Course overview" "block"
     And I should not see "Course 1" in the "Course overview" "block"
@@ -243,9 +243,9 @@ Feature: The my overview block allows users to easily access their courses
   Scenario: View all (except hidden) courses with hide persistent functionality
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "All courses" "button" in the ".local-co-menu__list" "css_element"
-    And I click on ".local-co-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 5')]" "xpath_element"
-    And I click on "Remove from view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 5')]" "xpath_element"
+    When I click on "All courses" "button" in the ".courseoverview-menu__list" "css_element"
+    And I click on ".courseoverview-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 5')]" "xpath_element"
+    And I click on "Remove from view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 5')]" "xpath_element"
     And I reload the page
     Then I should not see "Course 5" in the "Course overview" "block"
     And I should see "Course 1" in the "Course overview" "block"
@@ -259,9 +259,9 @@ Feature: The my overview block allows users to easily access their courses
       | displaygroupingallincludinghidden | 1     | block_myoverview |
     And I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "All (including removed from view)" "button" in the ".local-co-menu__list" "css_element"
-    And I click on ".local-co-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 5')]" "xpath_element"
-    And I click on "Remove from view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 5')]" "xpath_element"
+    When I click on "All (including removed from view)" "button" in the ".courseoverview-menu__list" "css_element"
+    And I click on ".courseoverview-iconbtn" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 5')]" "xpath_element"
+    And I click on "Remove from view" "button" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 5')]" "xpath_element"
     And I reload the page
     Then I should see "Course 5" in the "Course overview" "block"
     And I should see "Course 1" in the "Course overview" "block"
@@ -274,7 +274,7 @@ Feature: The my overview block allows users to easily access their courses
       | displaycategories | 1 | block_myoverview |
     And I am on the "My courses" page logged in as "student1"
     And I click on "Display drop-down menu" "button" in the "Course overview" "block"
-    When I click on "Card" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "Card" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should see "Category 1" in the "Course overview" "block"
 
   Scenario: Show course category in list display
@@ -282,7 +282,7 @@ Feature: The my overview block allows users to easily access their courses
       | displaycategories | 1 | block_myoverview |
     And I am on the "My courses" page logged in as "student1"
     And I click on "Display drop-down menu" "button" in the "Course overview" "block"
-    When I click on "List" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "List" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should see "Category 1" in the "Course overview" "block"
 
   Scenario: Show course category in summary display with displaycategories on
@@ -290,7 +290,7 @@ Feature: The my overview block allows users to easily access their courses
       | displaycategories | 1 | block_myoverview |
     And I am on the "My courses" page logged in as "student1"
     And I click on "Display drop-down menu" "button" in the "Course overview" "block"
-    When I click on "Summary" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "Summary" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should see "Category 1" in the "Course overview" "block"
 
   Scenario: Hide course category in cards display
@@ -298,7 +298,7 @@ Feature: The my overview block allows users to easily access their courses
       | displaycategories | 0 | block_myoverview |
     And I am on the "My courses" page logged in as "student1"
     And I click on "Display drop-down menu" "button" in the "Course overview" "block"
-    When I click on "Card" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "Card" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should not see "Category 1" in the "Course overview" "block"
 
   Scenario: Hide course category in list display
@@ -306,7 +306,7 @@ Feature: The my overview block allows users to easily access their courses
       | displaycategories | 0 | block_myoverview |
     And I am on the "My courses" page logged in as "student1"
     And I click on "Display drop-down menu" "button" in the "Course overview" "block"
-    When I click on "List" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "List" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should not see "Category 1" in the "Course overview" "block"
 
   Scenario: Show course category in summary display with displaycategories off
@@ -314,7 +314,7 @@ Feature: The my overview block allows users to easily access their courses
       | displaycategories | 0 | block_myoverview |
     And I am on the "My courses" page logged in as "student1"
     And I click on "Display drop-down menu" "button" in the "Course overview" "block"
-    When I click on "Summary" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "Summary" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should not see "Category 1" in the "Course overview" "block"
 
   Scenario: Users with no permissions do not see any persistent CTA on the dashboard when enrolled in a course

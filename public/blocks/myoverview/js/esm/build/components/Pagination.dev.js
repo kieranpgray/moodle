@@ -5,7 +5,7 @@ import { Pagination as DSPagination } from "@moodlehq/design-system";
 import { useStrings } from "../state";
 function Pagination({ page, pageCount, onPage }) {
   const strings = useStrings();
-  return /* @__PURE__ */ jsxDEV("div", { className: "local-co-pagination", children: /* @__PURE__ */ jsxDEV(
+  return /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-pagination", children: /* @__PURE__ */ jsxDEV(
     DSPagination,
     {
       totalPages: pageCount,

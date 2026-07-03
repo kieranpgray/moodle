@@ -25,7 +25,7 @@ Feature: Course overview block show users their progress on courses
   Scenario: Course progress percentage should not be displayed if completion is not enabled
     Given I am on the "My courses" page logged in as "student1"
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    When I click on "All courses" "button" in the ".local-co-menu__list" "css_element"
+    When I click on "All courses" "button" in the ".courseoverview-menu__list" "css_element"
     Then I should not see "0%" in the "Course overview" "block"
 
   Scenario: User complete activity and verify his progress

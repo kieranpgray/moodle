@@ -54,25 +54,25 @@ export default function CourseItem({course, view, role, displaycategories}: Cour
 
     return (
         <article
-            className={`local-co-card local-co-card--${view}`}
+            className={`courseoverview-card courseoverview-card--${view}`}
             data-courseid={course.id}
             aria-labelledby={titleId}
         >
-            <div className="local-co-card__body">
-                <div className="local-co-card__text">
-                    <a id={titleId} className="local-co-card__title stretched-link" href={course.viewurl}>
+            <div className="courseoverview-card__body">
+                <div className="courseoverview-card__text">
+                    <a id={titleId} className="courseoverview-card__title stretched-link" href={course.viewurl}>
                         {course.fullnamedisplay}
                     </a>
                     {displaycategories && course.coursecategory && (
-                        <div className="local-co-card__category">{course.coursecategory}</div>
+                        <div className="courseoverview-card__category">{course.coursecategory}</div>
                     )}
                 </div>
                 {view === "summary" && course.summary !== "" && (
-                    <p className="local-co-card__summary">{course.summary}</p>
+                    <p className="courseoverview-card__summary">{course.summary}</p>
                 )}
                 {showProgress && <ProgressIndicator progress={course.progress as number} />}
             </div>
-            <div className="local-co-card__media">
+            <div className="courseoverview-card__media">
                 <CourseImage src={course.courseimage} />
                 <CourseControls course={course} />
             </div>

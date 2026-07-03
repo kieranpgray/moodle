@@ -164,9 +164,9 @@ export default function Toolbar(props: ToolbarProps) {
     const showActions = showManage || showCreate || showRequest;
 
     return (
-        <div className="local-co-toolbar">
+        <div className="courseoverview-toolbar">
             {showActions && (
-                <div className="local-co-toolbar__group local-co-toolbar__group--actions">
+                <div className="courseoverview-toolbar__group courseoverview-toolbar__group--actions">
                     {showManage && (
                         <a className="btn btn-outline-primary btn-sm" href={managecourseurl as string}>
                             {strings.managecourses}
@@ -185,15 +185,15 @@ export default function Toolbar(props: ToolbarProps) {
                 </div>
             )}
             {showActions && showControls && (
-                <div className="local-co-toolbar__divider" aria-hidden="true" />
+                <div className="courseoverview-toolbar__divider" aria-hidden="true" />
             )}
             {showControls && (
-            <div className="local-co-toolbar__group local-co-toolbar__group--search">
+            <div className="courseoverview-toolbar__group courseoverview-toolbar__group--search">
                 <SearchInput value={search} onChange={onSearch} />
             </div>
             )}
             {showControls && (
-            <div className="local-co-toolbar__group local-co-toolbar__group--tools">
+            <div className="courseoverview-toolbar__group courseoverview-toolbar__group--tools">
                 {filterOptions.length > 1 && (
                     <Dropdown<string>
                         label={strings.filterresults}

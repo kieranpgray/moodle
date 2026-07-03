@@ -8,13 +8,13 @@ import Icon from "./Icon";
 function SearchInput({ value, onChange }) {
   const strings = useStrings();
   const inputId = useId();
-  return /* @__PURE__ */ jsxDEV("div", { className: "local-co-search", children: [
+  return /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-search", children: [
     /* @__PURE__ */ jsxDEV("label", { htmlFor: inputId, className: "visually-hidden", children: strings.searchcourses }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/SearchInput.tsx",
       lineNumber: 47,
       columnNumber: 13
     }, this),
-    /* @__PURE__ */ jsxDEV(Icon, { name: "magnifying-glass", className: "local-co-search__icon" }, void 0, false, {
+    /* @__PURE__ */ jsxDEV(Icon, { name: "magnifying-glass", className: "courseoverview-search__icon" }, void 0, false, {
       fileName: "public/blocks/myoverview/js/esm/src/components/SearchInput.tsx",
       lineNumber: 48,
       columnNumber: 13
@@ -24,7 +24,7 @@ function SearchInput({ value, onChange }) {
       {
         id: inputId,
         type: "text",
-        className: "local-co-search__input",
+        className: "courseoverview-search__input",
         placeholder: strings.search,
         "aria-label": strings.searchcourses,
         value,
@@ -44,7 +44,7 @@ function SearchInput({ value, onChange }) {
       {
         "aria-label": strings.clearsearch,
         size: "sm",
-        className: "local-co-search__clear",
+        className: "courseoverview-search__clear",
         onClick: () => onChange("")
       },
       void 0,

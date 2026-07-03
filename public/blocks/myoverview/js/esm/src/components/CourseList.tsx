@@ -40,7 +40,7 @@ type CourseListProps = {
  */
 export default function CourseList({courses, view, role, displaycategories}: CourseListProps) {
     return (
-        <div className={`local-co-list local-co-list--${view}`}>
+        <div className={`courseoverview-list courseoverview-list--${view}`}>
             {courses.map((course) => (
                 <CourseItem
                     key={course.id}

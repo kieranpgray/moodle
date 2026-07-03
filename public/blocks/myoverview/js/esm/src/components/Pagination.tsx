@@ -38,7 +38,7 @@ type PaginationProps = {
 export default function Pagination({page, pageCount, onPage}: PaginationProps) {
     const strings = useStrings();
     return (
-        <div className="local-co-pagination">
+        <div className="courseoverview-pagination">
             <DSPagination
                 totalPages={pageCount}
                 currentPage={page}

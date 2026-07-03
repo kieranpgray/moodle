@@ -3,7 +3,7 @@ var __name = (target, value) => __defProp(target, "name", { value, configurable:
 import { jsxDEV } from "react/jsx-dev-runtime";
 import CourseItem from "./CourseItem";
 function CourseList({ courses, view, role, displaycategories }) {
-  return /* @__PURE__ */ jsxDEV("div", { className: `local-co-list local-co-list--${view}`, children: courses.map((course) => /* @__PURE__ */ jsxDEV(
+  return /* @__PURE__ */ jsxDEV("div", { className: `courseoverview-list courseoverview-list--${view}`, children: courses.map((course) => /* @__PURE__ */ jsxDEV(
     CourseItem,
     {
       course,

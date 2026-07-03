@@ -54,7 +54,7 @@ function useContainerWidthClasses(ref) {
     observer.observe(el);
     return () => observer.disconnect();
   }, [ref]);
-  return WIDTH_BREAKPOINTS.filter((bp) => width >= bp).map((bp) => `co-min-${bp}`).join(" ");
+  return WIDTH_BREAKPOINTS.filter((bp) => width >= bp).map((bp) => `courseoverview-min-${bp}`).join(" ");
 }
 __name(useContainerWidthClasses, "useContainerWidthClasses");
 function App(props) {

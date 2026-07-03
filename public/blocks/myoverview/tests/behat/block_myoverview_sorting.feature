@@ -34,7 +34,7 @@ Feature: The my overview block allows users to easily sort their courses
     Given I am on the "Course 5" course page logged in as "student1"
     When I am on the "My courses" page
     And I click on "Sorting drop-down menu" "button" in the "Course overview" "block"
-    And I click on "<dropdownstring>" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "<dropdownstring>" "button" in the ".courseoverview-menu__list" "css_element"
     Then "<coursebefore>" "text" should appear before "<courseafter>" "text" in the "Course overview" "block"
 
     Examples:

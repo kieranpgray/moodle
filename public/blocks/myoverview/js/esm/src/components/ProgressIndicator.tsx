@@ -45,7 +45,7 @@ export default function ProgressIndicator({progress}: ProgressIndicatorProps) {
             labelVariant="inline"
             title={strings.courseprogress}
             count={strings.percentcomplete.replace("{$a}", String(clamped))}
-            className="local-co-progress"
+            className="courseoverview-progress"
         />
     );
 }

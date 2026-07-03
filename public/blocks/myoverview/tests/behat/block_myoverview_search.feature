@@ -76,13 +76,13 @@ Feature: My overview block searching
   Scenario: Searching keeps the active filter applied
     Given I am on the "My courses" page logged in as "student1"
     # Star two courses and reload so the favourites are loaded from the server.
-    And I click on ".mds-favourite-button" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 01')]" "xpath_element"
-    And I click on ".mds-favourite-button" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' local-co-card ') and contains(.,'Course 02')]" "xpath_element"
+    And I click on ".mds-favourite-button" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 01')]" "xpath_element"
+    And I click on ".mds-favourite-button" "css_element" in the "//article[contains(concat(' ', normalize-space(@class), ' '), ' courseoverview-card ') and contains(.,'Course 02')]" "xpath_element"
     And I reload the page
     And I wait until "Course 01" "text" exists
     # Apply the Starred filter.
     And I click on "Grouping drop-down menu" "button" in the "Course overview" "block"
-    And I click on "Starred" "button" in the ".local-co-menu__list" "css_element"
+    And I click on "Starred" "button" in the ".courseoverview-menu__list" "css_element"
     And I should see "Course 01" in the "Course overview" "block"
     And I should see "Course 02" in the "Course overview" "block"
     And I should not see "Course 03" in the "Course overview" "block"

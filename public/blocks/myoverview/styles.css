@@ -23,9 +23,9 @@
 .block-myoverview {
     /*
      * The layout responds to the block's own width (not the viewport) so it is usable in
-     * the narrow block drawer. Width tiers are applied as co-min-<bp> classes by a
+     * the narrow block drawer. Width tiers are applied as courseoverview-min-<bp> classes by a
      * ResizeObserver in app.tsx and the rules below are mobile-first (base = narrowest
-     * layout, each co-min-<bp> widens it). CSS @container queries would be cleaner but
+     * layout, each courseoverview-min-<bp> widens it). CSS @container queries would be cleaner but
      * Moodle's plugin-CSS pipeline strips @container/container declarations.
      */
 
@@ -98,7 +98,7 @@
 }
 
 /* --- Toolbar --- */
-.local-co-toolbar {
+.courseoverview-toolbar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -106,41 +106,41 @@
     margin-bottom: var(--co-sp-md);
 }
 
-.local-co-toolbar__group {
+.courseoverview-toolbar__group {
     display: flex;
     align-items: center;
     gap: var(--co-sp-xs);
 }
 
 /* Search expands to fill available space between actions and tools. */
-.local-co-toolbar__group--search {
+.courseoverview-toolbar__group--search {
     flex: 1;
 }
 
 /* Mobile-first: in a narrow container the actions and search each take their own row. They
-   return to sharing a row once the container is wide enough (co-min-768 / co-min-480). The
+   return to sharing a row once the container is wide enough (courseoverview-min-768 / courseoverview-min-480). The
    action buttons keep their natural width and wrap onto the next line when they do not fit,
    rather than being crammed edge-to-edge against the block padding (e.g. in the block drawer). */
-.local-co-toolbar__group--actions {
+.courseoverview-toolbar__group--actions {
     width: 100%;
     flex-wrap: wrap;
 }
 
-.co-min-768 .local-co-toolbar__group--actions {
+.courseoverview-min-768 .courseoverview-toolbar__group--actions {
     width: auto;
     flex-wrap: nowrap;
 }
 
-.local-co-toolbar__group--search {
+.courseoverview-toolbar__group--search {
     width: 100%;
 }
 
-.co-min-480 .local-co-toolbar__group--search {
+.courseoverview-min-480 .courseoverview-toolbar__group--search {
     width: auto;
 }
 
 /* Vertical separator between educator action buttons and search/tools (Figma 4616:15086). */
-.local-co-toolbar__divider {
+.courseoverview-toolbar__divider {
     width: 1px;
     height: 24px;
     background: var(--co-surface-strong);
@@ -148,23 +148,23 @@
     align-self: center;
 }
 
-/* Mobile-first: the divider only appears once actions and search share a row (co-min-768). */
-.local-co-toolbar__divider {
+/* Mobile-first: the divider only appears once actions and search share a row (courseoverview-min-768). */
+.courseoverview-toolbar__divider {
     display: none;
 }
 
-.co-min-768 .local-co-toolbar__divider {
+.courseoverview-min-768 .courseoverview-toolbar__divider {
     display: block;
 }
 
 /* --- Search --- */
-.local-co-search {
+.courseoverview-search {
     position: relative;
     display: inline-flex;
     align-items: center;
 }
 
-.local-co-search__icon {
+.courseoverview-search__icon {
     position: absolute;
     left: var(--co-sp-sm);
     color: var(--co-muted);
@@ -172,7 +172,7 @@
     font-size: 12px;
 }
 
-.local-co-search__input {
+.courseoverview-search__input {
     height: 28px;
     width: 100%;
     min-width: 200px;
@@ -184,23 +184,23 @@
     font-size: 16px; /* Figma: $font-size-body; intentionally larger than chip buttons */
 }
 
-.local-co-search__input:focus-visible {
+.courseoverview-search__input:focus-visible {
     outline: 2px solid var(--co-primary);
     outline-offset: 1px;
 }
 
-.local-co-search__clear {
+.courseoverview-search__clear {
     position: absolute;
     right: var(--co-sp-xs);
     flex-shrink: 0;
 }
 
 /* --- Tool buttons / dropdowns --- */
-.local-co-dropdown {
+.courseoverview-dropdown {
     position: relative;
 }
 
-.local-co-toolbtn {
+.courseoverview-toolbtn {
     display: inline-flex;
     align-items: center;
     gap: var(--co-sp-xs);
@@ -219,7 +219,7 @@
 /* Constrain the design-system Button (Bootstrap .btn) to the 28px toolbar height. The label uses
    the DS paragraph-default size (1rem) to match the search field and the design system; the icon
    gap matches the DS Button (--mds-spacing-xs). */
-.local-co-toolbar .btn {
+.courseoverview-toolbar .btn {
     display: inline-flex;
     align-items: center;
     gap: var(--co-sp-xs);
@@ -232,44 +232,44 @@
 
 /* Keep the leading icon (e.g. the Create "+") on the DS icon token rather than scaling it up with
    the label — the DS sizes button icons independently of the label. */
-.local-co-toolbar .btn i {
+.courseoverview-toolbar .btn i {
     font-size: var(--mds-icons-xs);
 }
 
-.local-co-toolbtn--labelled {
+.courseoverview-toolbtn--labelled {
     padding: 0 var(--co-sp-sm);
 }
 
 /* The filter chip's text label uses the DS paragraph-default size (1rem) to match the other toolbar
    buttons and the search field. The chip's icon/caret keep the smaller chip font-size. */
-.local-co-toolbtn__label {
+.courseoverview-toolbtn__label {
     font-size: var(--mds-font-size-paragraph-default);
 }
 
-.local-co-toolbtn:hover {
+.courseoverview-toolbtn:hover {
     background: var(--co-surface-subtle);
     border-color: var(--co-muted);
     color: var(--co-text);
 }
 
 /* Pressed state. */
-.local-co-toolbtn:active {
+.courseoverview-toolbtn:active {
     background: var(--co-surface-strong);
     border-color: var(--co-border-interactive);
     color: var(--co-text);
 }
 
-.local-co-toolbtn.is-active:active {
+.courseoverview-toolbtn.is-active:active {
     background: color-mix(in srgb, #000 12%, var(--mds-border-interactive-secondary-active));
 }
 
 /* CSS tooltip for icon-only tool buttons (replaces native browser title tooltip). */
-.local-co-toolbtn[data-tooltip] {
+.courseoverview-toolbtn[data-tooltip] {
     position: relative;
     overflow: visible;
 }
 
-.local-co-toolbtn[data-tooltip]::after {
+.courseoverview-toolbtn[data-tooltip]::after {
     content: attr(data-tooltip);
     position: absolute;
     bottom: calc(100% + 6px);
@@ -289,47 +289,47 @@
     z-index: 300;
 }
 
-.local-co-toolbtn[data-tooltip]:hover::after {
+.courseoverview-toolbtn[data-tooltip]:hover::after {
     opacity: 1;
 }
 
-.local-co-toolbtn:focus-visible,
-.local-co-iconbtn:focus-visible,
-.local-co-menu__item:focus-visible,
-.local-co-pagination__page:focus-visible,
-.local-co-pagination__nav:focus-visible,
-.local-co-card__title:focus-visible {
+.courseoverview-toolbtn:focus-visible,
+.courseoverview-iconbtn:focus-visible,
+.courseoverview-menu__item:focus-visible,
+.courseoverview-pagination__page:focus-visible,
+.courseoverview-pagination__nav:focus-visible,
+.courseoverview-card__title:focus-visible {
     outline: 2px solid var(--co-primary);
     outline-offset: 2px;
 }
 
 /* Active state: a setting differs from its default (MDL-88972).
    Figma (4866:65941/65440/66058): --border/interactive/secondary/active bg, --text/inverse text. */
-.local-co-toolbtn.is-active {
+.courseoverview-toolbtn.is-active {
     background: var(--mds-border-interactive-secondary-active); /* #495057 */
     border-color: var(--mds-border-interactive-secondary-active);
     color: var(--mds-text-inverse); /* #f8f9fa */
 }
 
-.local-co-toolbtn.is-active:hover {
+.courseoverview-toolbtn.is-active:hover {
     background: var(--mds-border-interactive-secondary-active);
     border-color: var(--mds-border-interactive-secondary-active);
     color: var(--mds-text-inverse);
 }
 
-.local-co-toolbtn__caret {
+.courseoverview-toolbtn__caret {
     font-size: 10px;
     color: var(--co-muted);
 }
 
 /* Caret inherits inverse colour when button is in active state. */
-.local-co-toolbtn.is-active .local-co-toolbtn__caret {
+.courseoverview-toolbtn.is-active .courseoverview-toolbtn__caret {
     color: var(--mds-text-inverse);
 }
 
 /* --- Menus (dropdown + ellipsis) --- */
 /* Group label header inside a dropdown menu (Figma 4866:65906 / 4866:65507). */
-.local-co-menu__group-label {
+.courseoverview-menu__group-label {
     padding: var(--co-sp-xs) var(--co-sp-sm);
     border-bottom: 1px solid var(--co-border-interactive);
     font-size: 14px; /* Figma (4866:65507): $font-size-sm / 14px, medium — matches the menu items */
@@ -338,11 +338,11 @@
     margin-bottom: var(--co-sp-xxs);
 }
 
-.local-co-menu {
+.courseoverview-menu {
     position: relative;
 }
 
-.local-co-menu__list {
+.courseoverview-menu__list {
     position: absolute;
     top: calc(100% + 4px);
     right: 0;
@@ -355,7 +355,7 @@
     box-shadow: 0 6px 18px rgba(29, 33, 37, 0.12);
 }
 
-.local-co-menu__item {
+.courseoverview-menu__item {
     display: flex;
     align-items: center;
     gap: var(--co-sp-xs);
@@ -370,58 +370,58 @@
     cursor: pointer;
 }
 
-.local-co-menu__item:hover {
+.courseoverview-menu__item:hover {
     background: var(--co-surface-subtle);
 }
 
 /* Divider drawn after the last item of a semantic group (Figma menu grouping). */
-.local-co-menu__item--group-end {
+.courseoverview-menu__item--group-end {
     border-bottom: 1px solid var(--co-border-interactive); /* Figma: --border/interactive/secondary/default */
 }
 
-.local-co-menu__item.is-selected {
+.courseoverview-menu__item.is-selected {
     color: var(--co-link); /* Figma: --text/link/primary */
     font-weight: 500;
 }
 
-.local-co-menu__check {
+.courseoverview-menu__check {
     margin-left: auto;
     color: var(--co-link);
     font-size: var(--mds-icons-sm); /* Figma: --icons/sm / 16px */
 }
 
-.local-co-menu__icon {
+.courseoverview-menu__icon {
     width: 16px;
     text-align: center;
     color: var(--co-muted);
 }
 
 /* --- Course list layouts --- */
-.local-co-list--card {
+.courseoverview-list--card {
     display: grid;
     grid-template-columns: 1fr; /* Mobile viewport / narrow block drawer: single column. */
     gap: var(--co-sp-md);
 }
 
 /* Tablet and desktop viewports show three columns — but only when the block's own container is
-   wide enough (co-min-480), so the narrow block drawer (which never reaches that width tier) stays
+   wide enough (courseoverview-min-480), so the narrow block drawer (which never reaches that width tier) stays
    single-column and looks unchanged. Combining the viewport @media with the container-width class
    keeps the drawer usable while giving the main page its full three-column layout. */
 @media (min-width: 768px) {
-    .co-min-480 .local-co-list--card {
+    .courseoverview-min-480 .courseoverview-list--card {
         grid-template-columns: repeat(3, 1fr);
     }
 }
 
-.local-co-list--list,
-.local-co-list--summary {
+.courseoverview-list--list,
+.courseoverview-list--summary {
     display: flex;
     flex-direction: column;
     gap: var(--co-sp-sm);
 }
 
 /* --- Course card (shared) --- */
-.local-co-card {
+.courseoverview-card {
     position: relative;
     background: var(--co-surface);
     border: 1px solid var(--co-border);
@@ -429,25 +429,25 @@
     padding: var(--co-sp-md);
 }
 
-.local-co-card:hover {
+.courseoverview-card:hover {
     box-shadow: 0 4px 12px rgba(29, 33, 37, 0.1);
 }
 
-.local-co-card__body {
+.courseoverview-card__body {
     display: flex;
     flex-direction: column;
     gap: var(--co-sp-xs); /* Figma (4902:13914): --spacing/xs = 8px between body children */
     min-width: 0;
 }
 
-.local-co-card__text {
+.courseoverview-card__text {
     display: flex;
     flex-direction: column;
     gap: var(--co-sp-xxs); /* Figma: 4px between title and category. */
     min-width: 0;
 }
 
-.local-co-card__title {
+.courseoverview-card__title {
     color: var(--co-link);
     font-size: 16px;
     font-weight: 500;
@@ -456,12 +456,12 @@
     word-break: break-word;
 }
 
-.local-co-card__title:hover {
+.courseoverview-card__title:hover {
     text-decoration: underline;
 }
 
 /* Stretched link makes the whole card clickable (MDL-88971). */
-.local-co-card__title.stretched-link::after {
+.courseoverview-card__title.stretched-link::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -469,13 +469,13 @@
 }
 
 
-.local-co-card__category {
+.courseoverview-card__category {
     font-size: 14px;
     line-height: 17.4px;
     color: var(--co-muted);
 }
 
-.local-co-card__summary {
+.courseoverview-card__summary {
     margin: 0;
     font-size: 14px;
     color: var(--co-subtle);
@@ -483,11 +483,11 @@
 
 
 /* --- Image block (MDL-88967) --- */
-.local-co-card__media {
+.courseoverview-card__media {
     position: relative;
 }
 
-.local-co-image {
+.courseoverview-image {
     height: var(--co-image-h);
     border-radius: var(--co-r-sm);
     overflow: hidden;
@@ -495,7 +495,7 @@
 }
 
 /* Checkerboard fallback when no image is set. */
-.local-co-image--empty {
+.courseoverview-image--empty {
     background-image:
         linear-gradient(45deg, #e4e8ec 25%, transparent 25%),
         linear-gradient(-45deg, #e4e8ec 25%, transparent 25%),
@@ -505,7 +505,7 @@
     background-position: 0 0, 0 10px, 10px -10px, -10px 0;
 }
 
-.local-co-image__img {
+.courseoverview-image__img {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -513,7 +513,7 @@
 }
 
 /* --- Card controls (star + ellipsis), top-right (MDL-88968/88969) --- */
-.local-co-controls {
+.courseoverview-controls {
     position: absolute;
     top: var(--co-sp-xs);
     right: var(--co-sp-xs);
@@ -525,7 +525,7 @@
 /* --- Star / FavouriteButton sizing override ---
    The DS FavouriteButton fills a transparent circle; constrain it to the
    same 28px footprint as the legacy icon button so card-overlay layout is unchanged. */
-.local-co-iconbtn {
+.courseoverview-iconbtn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -540,34 +540,34 @@
     font-size: 12px;
 }
 
-.local-co-iconbtn:hover {
+.courseoverview-iconbtn:hover {
     background: var(--co-surface-subtle);
 }
 
-.local-co-controls .mds-favourite-button {
+.courseoverview-controls .mds-favourite-button {
     width: 28px;
     height: 28px;
     border-radius: var(--mds-border-radius-pill); /* MDS pill = circular at 28px */
 }
 
 /* --- Card view layout (image on top, body below) --- */
-.local-co-card--card {
+.courseoverview-card--card {
     display: grid;
     grid-template-areas: "media" "body";
     gap: var(--co-sp-md);
 }
 
-.local-co-card--card .local-co-card__media {
+.courseoverview-card--card .courseoverview-card__media {
     grid-area: media;
 }
 
-.local-co-card--card .local-co-card__body {
+.courseoverview-card--card .courseoverview-card__body {
     grid-area: body;
 }
 
 /* --- List & summary view layout (image left, body right) --- */
-.local-co-card--list,
-.local-co-card--summary {
+.courseoverview-card--list,
+.courseoverview-card--summary {
     display: grid;
     grid-template-areas: "media body";
     gap: var(--co-sp-lg); /* Figma: --spacing/lg = 20px between image and body */
@@ -575,52 +575,52 @@
 }
 
 /* Mobile-first: narrow image columns by default (scaled for the drawer/narrow container),
-   widening to the Figma sizes once the container is wide enough (co-min-576). */
-.local-co-card--list {
+   widening to the Figma sizes once the container is wide enough (courseoverview-min-576). */
+.courseoverview-card--list {
     grid-template-columns: 72px 1fr; /* scaled from 120px at 60% */
 }
 
-.local-co-card--summary {
+.courseoverview-card--summary {
     grid-template-columns: 56px 1fr; /* scaled from 93px at 60% */
 }
 
-.co-min-576 .local-co-card--list {
+.courseoverview-min-576 .courseoverview-card--list {
     grid-template-columns: 120px 1fr; /* Figma (4866:65954): 7.5rem image column */
 }
 
-.co-min-576 .local-co-card--summary {
+.courseoverview-min-576 .courseoverview-card--summary {
     grid-template-columns: 93px 1fr; /* Figma (4866:66077): 5.8125rem image column */
 }
 
-.local-co-card--list .local-co-card__media,
-.local-co-card--summary .local-co-card__media {
+.courseoverview-card--list .courseoverview-card__media,
+.courseoverview-card--summary .courseoverview-card__media {
     grid-area: media;
-    /* Static positioning so .local-co-controls (position:absolute) escapes to
-       .local-co-card (position:relative) and anchors at the card's top-right
+    /* Static positioning so .courseoverview-controls (position:absolute) escapes to
+       .courseoverview-card (position:relative) and anchors at the card's top-right
        instead of the image column's top-right. */
     position: static;
 }
 
-.local-co-card--list .local-co-card__body,
-.local-co-card--summary .local-co-card__body {
+.courseoverview-card--list .courseoverview-card__body,
+.courseoverview-card--summary .courseoverview-card__body {
     grid-area: body;
     /* Reserve space at the right for the controls that float over the card. */
     padding-right: 72px;
 }
 
-.local-co-card--summary .local-co-card__body {
+.courseoverview-card--summary .courseoverview-card__body {
     gap: var(--co-sp-md); /* Figma (4866:66077): 16px between text group and description */
 }
 
-.local-co-card--list .local-co-image {
+.courseoverview-card--list .courseoverview-image {
     height: 64px; /* scaled from 80px at 80% */
 }
 
-.co-min-576 .local-co-card--list .local-co-image {
+.courseoverview-min-576 .courseoverview-card--list .courseoverview-image {
     height: 80px; /* Figma (4866:65954): 5rem */
 }
 
-.local-co-card--summary .local-co-image {
+.courseoverview-card--summary .courseoverview-image {
     /* aspect-ratio enforces 1:1 at any column width — prevents empty placeholder
        from stretching to body height when no course image is present. */
     height: auto;
@@ -630,43 +630,43 @@
 /* --- Progress (MDL-88970) ---
    DS ProgressBar owns internal layout; this just constrains the wrapper width
    inside the card body so the track doesn't stretch beyond the text column. */
-.local-co-progress {
+.courseoverview-progress {
     width: 100%;
 }
 
 /* --- Pagination (MDL-88977) ---
    Internal styles are owned by the DS Pagination component.
    This wrapper only provides top margin and centering. */
-.local-co-pagination {
+.courseoverview-pagination {
     display: flex;
     justify-content: center;
     margin-top: var(--co-sp-lg);
 }
 
 /* --- Empty / no-results states --- */
-.local-co-empty {
+.courseoverview-empty {
     text-align: center;
     padding: var(--co-sp-xl) var(--co-sp-md);
     color: var(--co-muted);
 }
 
-.local-co-empty__illustration {
+.courseoverview-empty__illustration {
     margin-bottom: var(--co-sp-md);
 }
 
-.local-co-empty__illustration img {
+.courseoverview-empty__illustration img {
     width: 94px;
     height: auto;
 }
 
-.local-co-empty__text {
+.courseoverview-empty__text {
     margin: 0 auto;
     max-width: 36rem;
     font-size: 16px;
 }
 
 /* --- Rich zero-state (server-built) additions --- */
-.local-co-empty__title {
+.courseoverview-empty__title {
     margin: 0 0 var(--co-sp-xs);
     font-size: 16px;
     font-weight: 500;
@@ -675,11 +675,11 @@
 
 /* Underline links inside the zero-state intro so they are distinguishable from the
    surrounding muted text without relying on colour (axe link-in-text-block). */
-.local-co-empty__text a {
+.courseoverview-empty__text a {
     text-decoration: underline;
 }
 
-.local-co-empty__actions {
+.courseoverview-empty__actions {
     display: flex;
     flex-wrap: wrap;
     gap: var(--co-sp-xs);

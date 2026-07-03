@@ -43,12 +43,12 @@ export default function CourseImage({src, className = ""}: CourseImageProps) {
     const showImage = src !== null && !errored;
 
     return (
-        <div className={`local-co-image ${showImage ? "" : "local-co-image--empty"} ${className}`.trim()}>
+        <div className={`courseoverview-image ${showImage ? "" : "courseoverview-image--empty"} ${className}`.trim()}>
             {showImage && (
                 <img
                     src={src as string}
                     alt=""
-                    className="local-co-image__img"
+                    className="courseoverview-image__img"
                     loading="lazy"
                     onError={() => setErrored(true)}
                 />

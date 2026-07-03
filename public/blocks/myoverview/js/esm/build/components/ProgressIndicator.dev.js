@@ -13,7 +13,7 @@ function ProgressIndicator({ progress }) {
       labelVariant: "inline",
       title: strings.courseprogress,
       count: strings.percentcomplete.replace("{$a}", String(clamped)),
-      className: "local-co-progress"
+      className: "courseoverview-progress"
     },
     void 0,
     false,

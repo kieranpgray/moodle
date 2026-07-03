@@ -18,13 +18,13 @@ function Dropdown({
 }) {
   const { open, setOpen, containerRef, triggerRef, menuRef, handleMenuKeyDown } = useDismissableMenu("menuitemradio");
   const selected = options.find((o) => o.value === current);
-  return /* @__PURE__ */ jsxDEV("div", { className: "local-co-dropdown", ref: containerRef, children: [
+  return /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-dropdown", ref: containerRef, children: [
     /* @__PURE__ */ jsxDEV(
       "button",
       {
         type: "button",
         ref: triggerRef,
-        className: `local-co-toolbtn${active ? " is-active" : ""}${showLabel ? " local-co-toolbtn--labelled" : ""}`,
+        className: `courseoverview-toolbtn${active ? " is-active" : ""}${showLabel ? " courseoverview-toolbtn--labelled" : ""}`,
         "aria-haspopup": "menu",
         "aria-expanded": open,
         "aria-label": triggerAriaLabel ?? label,
@@ -33,17 +33,17 @@ function Dropdown({
         children: [
           /* @__PURE__ */ jsxDEV(Icon, { name: icon }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 91,
+            lineNumber: 92,
             columnNumber: 17
           }, this),
-          showLabel && /* @__PURE__ */ jsxDEV("span", { className: "local-co-toolbtn__label", children: selected?.label ?? label }, void 0, false, {
-            fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 92,
-            columnNumber: 31
-          }, this),
-          showLabel && /* @__PURE__ */ jsxDEV(Icon, { name: "chevron-down", className: "local-co-toolbtn__caret" }, void 0, false, {
+          showLabel && /* @__PURE__ */ jsxDEV("span", { className: "courseoverview-toolbtn__label", children: selected?.label ?? label }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
             lineNumber: 93,
+            columnNumber: 31
+          }, this),
+          showLabel && /* @__PURE__ */ jsxDEV(Icon, { name: "chevron-down", className: "courseoverview-toolbtn__caret" }, void 0, false, {
+            fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
+            lineNumber: 94,
             columnNumber: 31
           }, this)
         ]
@@ -60,15 +60,15 @@ function Dropdown({
     open && /* @__PURE__ */ jsxDEV(
       "div",
       {
-        className: "local-co-menu__list",
+        className: "courseoverview-menu__list",
         role: "menu",
         "aria-label": label,
         ref: menuRef,
         onKeyDown: handleMenuKeyDown,
         children: [
-          menuTitle && /* @__PURE__ */ jsxDEV("div", { className: "local-co-menu__group-label", "aria-hidden": "true", children: menuTitle }, void 0, false, {
+          menuTitle && /* @__PURE__ */ jsxDEV("div", { className: "courseoverview-menu__group-label", "aria-hidden": "true", children: menuTitle }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 104,
+            lineNumber: 105,
             columnNumber: 25
           }, this),
           /* @__PURE__ */ jsxDEV("div", { role: "group", "aria-label": menuTitle ?? label, children: options.map((opt, i) => {
@@ -79,22 +79,22 @@ function Dropdown({
                 type: "button",
                 role: "menuitemradio",
                 "aria-checked": opt.value === current,
-                className: `local-co-menu__item${opt.value === current ? " is-selected" : ""}${groupEnd ? " local-co-menu__item--group-end" : ""}`,
+                className: `courseoverview-menu__item${opt.value === current ? " is-selected" : ""}${groupEnd ? " courseoverview-menu__item--group-end" : ""}`,
                 onClick: () => {
                   onSelect(opt.value);
                   setOpen(false);
                   triggerRef.current?.focus();
                 },
                 children: [
-                  opt.icon && /* @__PURE__ */ jsxDEV(Icon, { name: opt.icon, className: "local-co-menu__icon" }, void 0, false, {
+                  opt.icon && /* @__PURE__ */ jsxDEV(Icon, { name: opt.icon, className: "courseoverview-menu__icon" }, void 0, false, {
                     fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-                    lineNumber: 124,
+                    lineNumber: 125,
                     columnNumber: 46
                   }, this),
                   opt.label,
-                  opt.value === current && /* @__PURE__ */ jsxDEV(Icon, { name: "check", className: "local-co-menu__check" }, void 0, false, {
+                  opt.value === current && /* @__PURE__ */ jsxDEV(Icon, { name: "check", className: "courseoverview-menu__check" }, void 0, false, {
                     fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-                    lineNumber: 126,
+                    lineNumber: 127,
                     columnNumber: 59
                   }, this)
                 ]
@@ -103,14 +103,14 @@ function Dropdown({
               true,
               {
                 fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-                lineNumber: 111,
+                lineNumber: 112,
                 columnNumber: 29
               },
               this
             );
           }) }, void 0, false, {
             fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-            lineNumber: 106,
+            lineNumber: 107,
             columnNumber: 21
           }, this)
         ]
@@ -119,7 +119,7 @@ function Dropdown({
       true,
       {
         fileName: "public/blocks/myoverview/js/esm/src/components/Dropdown.tsx",
-        lineNumber: 96,
+        lineNumber: 97,
         columnNumber: 17
       },
       this

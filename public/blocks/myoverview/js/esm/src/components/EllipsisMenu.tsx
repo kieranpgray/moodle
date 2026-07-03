@@ -61,11 +61,11 @@ export default function EllipsisMenu({courseId, courseName, isHidden}: EllipsisM
     const actionsLabel = strings.actionsfor.replace("{$a}", courseName);
 
     return (
-        <div className="local-co-menu" ref={containerRef}>
+        <div className="courseoverview-menu" ref={containerRef}>
             <button
                 type="button"
                 ref={triggerRef}
-                className="local-co-iconbtn"
+                className="courseoverview-iconbtn"
                 aria-haspopup="menu"
                 aria-expanded={open}
                 aria-label={actionsLabel}
@@ -79,7 +79,7 @@ export default function EllipsisMenu({courseId, courseName, isHidden}: EllipsisM
             </button>
             {open && (
                 <div
-                    className="local-co-menu__list"
+                    className="courseoverview-menu__list"
                     role="menu"
                     aria-label={actionsLabel}
                     ref={menuRef}
@@ -88,7 +88,7 @@ export default function EllipsisMenu({courseId, courseName, isHidden}: EllipsisM
                     <button
                         type="button"
                         role="menuitem"
-                        className="local-co-menu__item"
+                        className="courseoverview-menu__item"
                         onClick={(e) => {
                             stop(e);
                             toggleHidden(courseId);
@@ -96,7 +96,7 @@ export default function EllipsisMenu({courseId, courseName, isHidden}: EllipsisM
                             triggerRef.current?.focus();
                         }}
                     >
-                        <Icon name={isHidden ? "eye" : "eye-slash"} className="local-co-menu__icon" />
+                        <Icon name={isHidden ? "eye" : "eye-slash"} className="courseoverview-menu__icon" />
                         {isHidden ? strings.showcourse : strings.hidecourse}
                     </button>
                 </div>
