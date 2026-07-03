@@ -58,15 +58,6 @@ define('BLOCK_MYOVERVIEW_VIEW_LIST', 'list');
 define('BLOCK_MYOVERVIEW_VIEW_SUMMARY', 'summary');
 
 /**
- * Constants for the user paging preferences
- */
-define('BLOCK_MYOVERVIEW_PAGING_12', 12);
-define('BLOCK_MYOVERVIEW_PAGING_24', 24);
-define('BLOCK_MYOVERVIEW_PAGING_48', 48);
-define('BLOCK_MYOVERVIEW_PAGING_96', 96);
-define('BLOCK_MYOVERVIEW_PAGING_ALL', 0);
-
-/**
  * Constants for the admin category display setting
  */
 define('BLOCK_MYOVERVIEW_DISPLAY_CATEGORIES_ON', 'on');
@@ -135,20 +126,6 @@ function block_myoverview_user_preferences(): array {
         'type' => PARAM_INT,
         'null' => NULL_NOT_ALLOWED,
         'default' => 0,
-        'permissioncallback' => [core_user::class, 'is_current_user'],
-    );
-
-    $preferences['block_myoverview_user_paging_preference'] = array(
-        'null' => NULL_NOT_ALLOWED,
-        'default' => BLOCK_MYOVERVIEW_PAGING_12,
-        'type' => PARAM_INT,
-        'choices' => array(
-            BLOCK_MYOVERVIEW_PAGING_12,
-            BLOCK_MYOVERVIEW_PAGING_24,
-            BLOCK_MYOVERVIEW_PAGING_48,
-            BLOCK_MYOVERVIEW_PAGING_96,
-            BLOCK_MYOVERVIEW_PAGING_ALL
-        ),
         'permissioncallback' => [core_user::class, 'is_current_user'],
     );
 
