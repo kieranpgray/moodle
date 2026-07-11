@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTOTYPE — Book + Course Linear Navigation (throwaway, not for merge)</title>
+
+<!-- Noto Sans (matches --mds-font-family-base) + Font Awesome, via CDN.
+     Needs network on first open; degrades to system font offline. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+  /*
+    THROWAWAY PROTOTYPE — Book content type read experience + Course Linear
+    Navigation (CLN). Grounded in the Moodle Design System (MDS): the :root
+    block below is a verbatim-value subset of
+    node_modules/@moodlehq/design-system/dist/tokens/css/* (primitives resolved),
+    and ALL component CSS is authored against --mds-* tokens (no eyeballed hex).
+    CLN (course/format .../linearnavigation) replaces the book's own prev/next
+    (mod/book main_action_menu). Delete once reviewed (NOTES at bottom).
+  */
+
+  :root{
+    /* ---- MDS primitives (dist/tokens/css/primitives.css, resolved) ---- */
+    --mds-color-blue-50:#e7f0f9; --mds-color-blue-500:#0f6cbf; --mds-color-blue-600:#0c5699; --mds-color-blue-700:#094173;
+    --mds-color-cyan-100:#cce6ea; --mds-color-cyan-500:#008196;
+    --mds-color-pink-100:#f8d1e3; --mds-color-pink-500:#db1a74;
+    --mds-color-orange-100:#ffe3d1; --mds-color-orange-600:#cc5e13;
+    --mds-color-green-50:#ebf2ea; --mds-color-green-500:#357a32;
+    --mds-color-red-50:#faeae9; --mds-color-red-500:#ca3120; --mds-color-red-600:#a2271a; --mds-color-red-800:#791d13;
+    --mds-color-gray-100:#f8f9fa; --mds-color-gray-200:#e9ecef; --mds-color-gray-300:#dee2e6;
+    --mds-color-gray-400:#ced4da; --mds-color-gray-500:#8f959e; --mds-color-gray-600:#6a737b;
+    --mds-color-gray-700:#495057; --mds-color-gray-800:#343a40; --mds-color-gray-900:#1d2125; --mds-color-gray-white:#fff;
+
+    /* ---- MDS semantic (dist/tokens/css/colors.css) ---- */
+    --mds-text-default:var(--mds-color-gray-900);
+    --mds-text-subtle:var(--mds-color-gray-700);
+    --mds-text-muted:var(--mds-color-gray-600);
+    --mds-text-inverse:var(--mds-color-gray-white);
+    --mds-text-danger:var(--mds-color-red-500);
+    --mds-text-feedback-success:var(--mds-color-green-500);
+    --mds-bg-surface-default:var(--mds-color-gray-white);
+    --mds-bg-surface-subtle:var(--mds-color-gray-100);
+    --mds-bg-surface-strong:var(--mds-color-gray-200);
+    --mds-border-default:var(--mds-color-gray-300);
+    --mds-border-subtle:var(--mds-color-gray-200);
+    --mds-border-interactive-secondary-default:var(--mds-color-gray-500);
+    --mds-bg-interactive-primary-default:var(--mds-color-blue-500);
+    --mds-bg-interactive-primary-hover:var(--mds-color-blue-600);
+    --mds-bg-interactive-primary-active:var(--mds-color-blue-700);
+    --mds-bg-interactive-primary-default-light:var(--mds-color-blue-50);
+    --mds-bg-nav-pill-selected:var(--mds-color-gray-200);
+    --mds-bg-feedback-success-light:var(--mds-color-green-50);
+    /* activity-icon categories */
+    --mds-activity-icon-assessment-bg:var(--mds-color-pink-100);   --mds-activity-icon-assessment-icon:var(--mds-color-pink-500);
+    --mds-activity-icon-communication-bg:var(--mds-color-orange-100); --mds-activity-icon-communication-icon:var(--mds-color-orange-600);
+    --mds-activity-icon-file-bg:var(--mds-color-cyan-100);         --mds-activity-icon-file-icon:var(--mds-color-cyan-500);
+
+    /* ---- MDS spacing (dist/tokens/css/spacing.css) ---- */
+    --mds-spacing-xxs:.25rem; --mds-spacing-xs:.5rem; --mds-spacing-sm:.75rem;
+    --mds-spacing-md:1rem; --mds-spacing-lg:1.25rem; --mds-spacing-xl:2rem; --mds-spacing-xxl:3rem;
+
+    /* ---- MDS radius (dist/tokens/css/borders.css) ---- */
+    --mds-border-radius-xs:.25rem; --mds-border-radius-sm:.375rem; --mds-border-radius-md:.5rem;
+    --mds-border-radius-lg:.75rem; --mds-border-radius-xl:1rem; --mds-border-radius-pill:50rem;
+
+    /* ---- MDS typography (dist/tokens/css/typography.css) ---- */
+    --mds-font-family-base:"Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mds-font-size-headings-1:2.5rem;  --mds-line-height-headings-1:3rem;
+    --mds-font-size-headings-3:1.75rem; --mds-line-height-headings-3:2.25rem;
+    --mds-font-size-headings-4:1.5rem;  --mds-line-height-headings-4:2rem;
+    --mds-font-size-headings-5:1.25rem; --mds-line-height-headings-5:1.75rem;
+    --mds-font-size-headings-6:1rem;    --mds-line-height-headings-6:1.5rem;
+    --mds-font-size-paragraph-default:1rem;   --mds-line-height-paragraph-default:1.5rem;
+    --mds-font-size-paragraph-lead:1.25rem;   --mds-line-height-paragraph-lead:1.875rem;
+    --mds-font-size-paragraph-small:.875rem;  --mds-line-height-paragraph-small:1.0875rem;
+    --mds-font-weight-regular:400; --mds-font-weight-medium:500; --mds-font-weight-semibold:600; --mds-font-weight-bold:700;
+
+    /* ---- token aliases so the ported forum Course-Blocks CSS resolves ---- */
+    --mds-color-indigo-500:#6610f2;
+    --mds-font-size-heading-6:1rem; --mds-font-size-body:1rem; --mds-font-size-small:.875rem;
+    --mds-text-link-primary:var(--mds-color-blue-500);
+    --mds-typography-font-weight-regular:400; --mds-typography-font-weight-medium:500;
+    --mds-typography-font-weight-semibold:600; --mds-typography-font-weight-bold:700;
+    --mds-bg-interactive-secondary-hover:var(--mds-color-gray-400);
+    --mds-stroke-weight-sm:1px;
+
+    /* ---- local layout (not visual tokens) ---- */
+    --shell-max:1440px; --shell-pad:2.5rem;
+    --nav-h:64px; --footer-h:64px;
+    --ci-width:300px; --cb-width:315px; --btn:40px;
+    --content-max:873px;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    font-family:var(--mds-font-family-base);
+    color:var(--mds-text-default);
+    background:var(--mds-bg-surface-default);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{ color:var(--mds-bg-interactive-primary-default); text-decoration:none; }
+  button{ font-family:inherit; }
+
+  .shell{ max-width:var(--shell-max); margin:0 auto; padding:0 var(--shell-pad); }
+
+  /* =====================  TOP NAV  ===================== */
+  .topbar{ position:sticky; top:0; z-index:40; background:var(--mds-bg-surface-subtle); border-bottom:1px solid var(--mds-border-subtle); }
+  .topbar-inner{ height:var(--nav-h); display:flex; align-items:center; justify-content:space-between; gap:var(--mds-spacing-md); }
+  .nav-left{ display:flex; align-items:center; gap:2rem; min-width:0; }
+  .brand{ display:flex; align-items:center; gap:.5rem; height:40px; }
+  .brand .mark{ font-size:26px; }
+  .brand .word b{ display:block; font-weight:var(--mds-font-weight-bold); font-size:17px; letter-spacing:.2px; line-height:1; }
+  .brand .word span{ display:block; font-size:11px; letter-spacing:2px; color:var(--mds-text-subtle); }
+  .nav-pills{ display:flex; align-items:center; gap:var(--mds-spacing-xxs); }
+  .nav-pill{ display:flex; align-items:center; gap:var(--mds-spacing-xxs); padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
+    border-radius:var(--mds-border-radius-md); border:none; background:transparent;
+    font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); color:var(--mds-text-subtle); cursor:pointer; white-space:nowrap; }
+  .nav-pill .dot{ width:4px; height:4px; border-radius:50%; background:var(--mds-bg-interactive-primary-default); }
+  .nav-pill.selected{ background:var(--mds-bg-nav-pill-selected); color:var(--mds-text-default); }
+  .burger{ display:none; width:var(--btn); height:var(--btn); border:none; background:transparent; border-radius:var(--mds-border-radius-sm);
+    cursor:pointer; color:var(--mds-text-default); font-size:20px; align-items:center; justify-content:center; }
+  .burger:hover{ background:var(--mds-bg-surface-strong); }
+  .nav-right{ display:flex; align-items:center; gap:var(--mds-spacing-xs); }
+  .nav-right-group{ display:flex; align-items:center; gap:var(--mds-spacing-md); }
+  .search{ display:flex; align-items:center; gap:var(--mds-spacing-xs); width:256px; height:36px; padding:0 var(--mds-spacing-sm);
+    background:var(--mds-bg-surface-strong); border-radius:var(--mds-border-radius-md); color:var(--mds-text-subtle); font-size:var(--mds-font-size-paragraph-small); }
+  .search i{ font-size:12px; }
+  .search-icon-btn{ display:none; width:36px; height:36px; border:none; background:transparent; border-radius:var(--mds-border-radius-md);
+    color:var(--mds-text-subtle); cursor:pointer; align-items:center; justify-content:center; }
+  .editmode{ display:flex; align-items:center; gap:var(--mds-spacing-xs); }
+  .editmode .label{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); white-space:nowrap; }
+  .switch{ width:32px; height:16px; border-radius:var(--mds-border-radius-pill); background:var(--mds-bg-interactive-primary-default);
+    position:relative; border:none; cursor:pointer; flex:0 0 auto; }
+  .switch::after{ content:""; position:absolute; top:2px; left:18px; width:12px; height:12px; border-radius:50%; background:#fff; transition:left .15s ease; }
+  .switch[aria-pressed="false"]{ background:var(--mds-border-interactive-secondary-default); }
+  .switch[aria-pressed="false"]::after{ left:2px; }
+  .icon-btn{ width:28px; height:28px; border:none; background:transparent; border-radius:var(--mds-border-radius-sm);
+    color:var(--mds-text-subtle); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .icon-btn:hover{ background:var(--mds-bg-surface-strong); }
+  .nav-icons{ display:flex; align-items:center; gap:var(--mds-spacing-xs); }
+  .nav-divider{ width:1px; height:24px; background:var(--mds-bg-surface-strong); }
+  .profile{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:0 var(--mds-spacing-xs); border-radius:var(--mds-border-radius-pill); cursor:pointer; }
+  .profile:hover{ background:var(--mds-bg-surface-strong); }
+  .avatar{ width:32px; height:32px; border-radius:50%; flex:0 0 auto; border:1px solid var(--mds-border-default);
+    background:linear-gradient(135deg,#f0a878,#c9805a); display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:var(--mds-font-weight-semibold); }
+  .profile .pname{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); }
+  .profile .fa-chevron-down{ font-size:8px; color:var(--mds-text-subtle); }
+
+  /* =====================  PAGE LAYOUT  ===================== */
+  .layout{ display:flex; align-items:flex-start; padding-top:var(--mds-spacing-lg);
+    padding-bottom:calc(var(--footer-h) + 2rem); min-height:calc(100vh - var(--nav-h)); position:relative; }
+
+  .toggle-col{ flex:0 0 auto; width:var(--btn); margin-right:.75rem; align-self:stretch; display:flex; justify-content:center; }
+  body.ci-open .toggle-col{ width:0; margin-right:0; overflow:hidden; }
+  .ci-toggle{ width:var(--btn); height:var(--btn); border:none; cursor:pointer; border-radius:var(--mds-border-radius-sm);
+    background:var(--mds-bg-surface-strong); display:flex; align-items:center; justify-content:center; }
+  .ci-toggle:hover{ background:var(--mds-border-default); }
+  .ci-toggle.sticky{ position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); }
+  .ci-toggle.contained{ background:transparent; }
+  .ci-toggle.contained:hover{ background:rgba(0,0,0,.06); }
+  .sidebar-icon{ width:20px; height:16px; display:block; }
+
+  /* course index drawer (grey card) */
+  .drawer{ flex:0 0 auto; width:0; overflow:hidden; position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg));
+    align-self:flex-start; transition:width .32s cubic-bezier(.4,0,.2,1); }
+  body.ci-open #drawer{ width:var(--ci-width); }
+  .ci-card{ width:var(--ci-width); background:var(--mds-bg-surface-strong); border-radius:var(--mds-border-radius-md);
+    padding:0 var(--mds-spacing-sm) var(--mds-spacing-md);
+    max-height:calc(100vh - var(--nav-h) - 2 * var(--mds-spacing-lg)); overflow-x:hidden; overflow-y:auto;
+    transform:translateX(-100%); transition:transform .32s cubic-bezier(.4,0,.2,1); }
+  body.ci-open .ci-card{ transform:translateX(0); }
+  .ci-header{ display:flex; align-items:center; justify-content:space-between; height:53px; padding-left:var(--mds-spacing-md); padding-top:var(--mds-spacing-xs); }
+  .ci-title{ font-size:var(--mds-font-size-headings-6); font-weight:var(--mds-font-weight-semibold); }
+  .ci-divider{ height:1px; background:var(--mds-border-default); }
+
+  .ci-section{ margin-top:var(--mds-spacing-xxs); }
+  .ci-sec-head{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:var(--mds-spacing-sm); border:none; background:none; width:100%;
+    cursor:pointer; text-align:left; border-radius:var(--mds-border-radius-sm); }
+  .ci-sec-head:hover{ background:rgba(0,0,0,.04); }
+  .ci-sec-head .chev{ width:10px; font-size:8px; color:var(--mds-text-muted); flex:0 0 auto; text-align:center; transition:transform .15s ease; }
+  .ci-sec-head .txt{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ci-section.collapsed .chev{ transform:rotate(-90deg); }
+  .ci-section.collapsed .ci-activities{ display:none; }
+
+  .ci-activities{ padding-left:var(--mds-spacing-md); display:flex; flex-direction:column; gap:var(--mds-spacing-xxs); }
+  .ci-row{ display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
+    border-radius:var(--mds-border-radius-sm); cursor:pointer; min-width:0; border:none; background:none; width:100%; text-align:left; }
+  .ci-row:hover{ background:rgba(0,0,0,.04); }
+  .ci-row.current{ background:var(--mds-bg-interactive-primary-default); }
+  .ci-row.current .txt, .ci-row.current .num, .ci-row.current .act-icon{ color:#fff; }
+  .ci-row.current .act-icon{ background:rgba(255,255,255,.22); }
+  .ci-row .txt{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); color:var(--mds-text-subtle);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  /* MDS activity-icon (small tile): radius-lg + category bg/icon */
+  .act-icon{ flex:0 0 auto; width:22px; height:22px; border-radius:var(--mds-border-radius-lg);
+    display:flex; align-items:center; justify-content:center; font-size:11px; }
+  .act-icon.file{ background:var(--mds-activity-icon-file-bg); color:var(--mds-activity-icon-file-icon); }
+  .act-icon.communication{ background:var(--mds-activity-icon-communication-bg); color:var(--mds-activity-icon-communication-icon); }
+  .act-icon.assessment{ background:var(--mds-activity-icon-assessment-bg); color:var(--mds-activity-icon-assessment-icon); }
+
+  /* book row (expandable) + chapters */
+  .ci-book-chevron{ width:12px; border:none; background:none; padding:0; cursor:pointer; color:var(--mds-text-muted); font-size:9px; flex:0 0 auto; transition:transform .15s ease; }
+  .ci-bookwrap.collapsed .ci-book-chevron{ transform:rotate(-90deg); }
+  .ci-bookwrap.collapsed .ci-chapters{ display:none; }
+  .ci-chapters{ padding-left:26px; display:flex; flex-direction:column; gap:1px; }
+  .ci-chapter{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
+    border-radius:var(--mds-border-radius-sm); cursor:pointer; min-width:0; border:none; background:none; width:100%; text-align:left; }
+  .ci-chapter:hover{ background:rgba(0,0,0,.04); }
+  .ci-chapter.current{ background:var(--mds-bg-interactive-primary-default); }
+  .ci-chapter.current .num, .ci-chapter.current .txt{ color:#fff; }
+  .ci-chapter .num{ color:var(--mds-text-muted); font-size:var(--mds-font-size-paragraph-small); flex:0 0 auto; min-width:14px; }
+  .ci-chapter .txt{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+
+  /* =====================  CONTENT (reading view)  ===================== */
+  .content-col{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:center; padding:0 var(--shell-pad); }
+  .content{ width:100%; max-width:var(--content-max); }
+  .breadcrumb{ color:var(--mds-text-muted); font-size:var(--mds-font-size-paragraph-small); margin-bottom:var(--mds-spacing-sm); display:flex; gap:.4rem; flex-wrap:wrap; }
+  .breadcrumb a{ color:var(--mds-bg-interactive-primary-default); }
+  .book-eyebrow{ display:flex; align-items:center; gap:var(--mds-spacing-xs); color:var(--mds-text-muted);
+    font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); text-transform:uppercase; letter-spacing:.4px; margin-bottom:var(--mds-spacing-xs); }
+  .reading h1{ margin:0 0 var(--mds-spacing-md); font-size:var(--mds-font-size-headings-1); line-height:var(--mds-line-height-headings-1);
+    font-weight:var(--mds-font-weight-bold); letter-spacing:-.5px; }
+  .reading h2{ margin:var(--mds-spacing-xl) 0 var(--mds-spacing-xs); font-size:var(--mds-font-size-headings-5); line-height:var(--mds-line-height-headings-5); font-weight:var(--mds-font-weight-bold); }
+  .reading h3{ margin:var(--mds-spacing-lg) 0 var(--mds-spacing-xs); font-size:var(--mds-font-size-headings-6); line-height:var(--mds-line-height-headings-6); font-weight:var(--mds-font-weight-semibold); }
+
+  /* ---- forum-style activity header (mirrors PROTOTYPE-forum.html .forum-header):
+     activity-icon tile + title + description subtitle + Manage (educator).
+     The book's "tabs" (Book/Settings/Import chapter/More) collapse into Manage. */
+  .act-header{ display:flex; gap:var(--mds-spacing-md); align-items:flex-start; margin-bottom:var(--mds-spacing-lg); }
+  .act-tile{ width:48px; height:48px; flex:0 0 auto; border-radius:var(--mds-border-radius-md); display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .act-tile.file{ background:var(--mds-activity-icon-file-bg); color:var(--mds-activity-icon-file-icon); }
+  .act-tile.communication{ background:var(--mds-activity-icon-communication-bg); color:var(--mds-activity-icon-communication-icon); }
+  .act-tile.assessment{ background:var(--mds-activity-icon-assessment-bg); color:var(--mds-activity-icon-assessment-icon); }
+  .act-header .h-main{ flex:1; min-width:0; }
+  .act-header .h-title{ margin:0; font-size:var(--mds-font-size-headings-3); line-height:var(--mds-line-height-headings-3); font-weight:var(--mds-font-weight-bold); letter-spacing:-.2px; }
+  .act-header .h-desc{ margin:var(--mds-spacing-xxs) 0 0; color:var(--mds-text-muted); font-size:var(--mds-font-size-paragraph-small); }
+  .act-header .h-actions{ flex:0 0 auto; display:flex; gap:var(--mds-spacing-xs); align-items:flex-start; }
+
+  /* MDS Button (secondary) + Manage, educator/edit-mode only */
+  .btn{ display:inline-flex; align-items:center; gap:var(--mds-spacing-xs); border:1px solid transparent; border-radius:var(--mds-border-radius-sm); padding:var(--mds-spacing-xs) var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); cursor:pointer; white-space:nowrap; }
+  .btn-secondary{ background:var(--mds-bg-surface-default); color:var(--mds-text-subtle); border-color:var(--mds-border-default); }
+  .btn-secondary:hover{ background:var(--mds-bg-surface-subtle); }
+  .manage-btn{ display:none; }
+  body.edit-on .manage-btn{ display:inline-flex; }
+
+  /* chapter heading (content-level, sits below the book header) */
+  .reading .chapter-title{ margin:0 0 var(--mds-spacing-md); font-size:var(--mds-font-size-headings-4); line-height:var(--mds-line-height-headings-4); font-weight:var(--mds-font-weight-semibold); letter-spacing:-.2px; }
+  .reading .chapter-title .chapter-num{ color:var(--mds-text-muted); font-weight:var(--mds-font-weight-bold); }
+
+  /* Manage dropdown */
+  .manage-menu{ position:fixed; z-index:80; min-width:210px; background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md); box-shadow:0 8px 28px rgba(0,0,0,.16); padding:6px; display:none; }
+  .manage-menu.show{ display:block; }
+  .manage-menu .menu-label{ font-size:.6875rem; text-transform:uppercase; letter-spacing:.4px; color:var(--mds-text-muted); padding:6px 10px 3px; }
+  .manage-menu .menu-item{ display:flex; align-items:center; gap:10px; width:100%; padding:8px 10px; border:none; background:none; cursor:pointer; font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-default); border-radius:var(--mds-border-radius-sm); text-align:left; }
+  .manage-menu .menu-item:hover{ background:var(--mds-bg-surface-subtle); }
+  .manage-menu .menu-item i{ width:16px; text-align:center; color:var(--mds-text-muted); }
+  .reading p{ margin:0 0 var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-default); line-height:var(--mds-line-height-paragraph-default); color:var(--mds-text-default); }
+  .reading p.lead{ font-size:var(--mds-font-size-paragraph-lead); line-height:var(--mds-line-height-paragraph-lead); color:var(--mds-text-subtle); }
+  .reading ul, .reading ol{ margin:0 0 var(--mds-spacing-md); padding-left:1.4rem; }
+  .reading li{ font-size:var(--mds-font-size-paragraph-default); line-height:var(--mds-line-height-paragraph-default); margin-bottom:.35rem; }
+  .reading .figure{ height:220px; border-radius:var(--mds-border-radius-md); margin:var(--mds-spacing-md) 0;
+    background:linear-gradient(120deg,#3a6ea5,#4c8caf 40%,#2e5a7a); display:flex; align-items:center; justify-content:center; color:#fff; }
+  .reading .figure .placard{ background:#e9dcc3; color:var(--mds-color-gray-900); transform:rotate(-4deg); padding:12px 20px; border-radius:4px; font-weight:var(--mds-font-weight-bold); box-shadow:0 8px 24px rgba(0,0,0,.3); text-align:center; }
+  .reading .figure .placard span{ display:block; color:var(--mds-activity-icon-file-icon); }
+  .callout{ border:1px solid var(--mds-border-default); border-left:4px solid var(--mds-bg-interactive-primary-default);
+    background:var(--mds-bg-surface-subtle); border-radius:var(--mds-border-radius-md); padding:var(--mds-spacing-md); margin:var(--mds-spacing-md) 0; }
+  .callout p:last-child{ margin-bottom:0; }
+  /* activity stub view */
+  .stub-hero{ display:flex; align-items:center; gap:var(--mds-spacing-md); padding:var(--mds-spacing-md); border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-lg); background:var(--mds-bg-surface-subtle); margin-bottom:var(--mds-spacing-md); }
+  .stub-hero .act-icon{ width:44px; height:44px; font-size:18px; }
+  .badge-type{ font-size:.6875rem; font-weight:var(--mds-font-weight-bold); color:var(--mds-text-muted); letter-spacing:.5px; }
+
+  /* =====================  CLN STICKY FOOTER  ===================== */
+  .cln-footer{ position:fixed; left:0; right:0; bottom:0; height:var(--footer-h); z-index:30;
+    background:var(--mds-bg-surface-default); border-top:1px solid var(--mds-border-subtle); }
+  .cln-shell{ display:flex; height:100%; max-width:var(--shell-max); margin:0 auto; padding:0 var(--shell-pad); }
+  .cln-indexspacer{ flex:0 0 auto; width:0; transition:width .32s cubic-bezier(.4,0,.2,1); }
+  body.ci-open:not(.ci-overlay) .cln-indexspacer{ width:var(--ci-width); }
+  body:not(.ci-open):not(.ci-overlay) .cln-indexspacer{ width:calc(var(--btn) + .75rem); }
+  .cln-region{ flex:1 1 auto; min-width:0; display:flex; justify-content:center; padding:0 var(--shell-pad); }
+  .cln-rightspacer{ flex:0 0 auto; width:0; transition:width .3s cubic-bezier(.4,0,.2,1); }
+  body.cb-open:not(.cb-overlay) .cln-rightspacer{ width:var(--cb-width); }
+  .cln-bar{ width:100%; max-width:var(--content-max); display:flex; align-items:center; gap:var(--mds-spacing-md); }
+  /* OPTION 1: footer shows only the generic "Previous"/"Next" (faithful to
+     current CLN). The target item name is surfaced as a hover/focus TOOLTIP
+     (.t), so the footer stays clean and never truncates. */
+  .cln-link{ position:relative; display:inline-flex; align-items:center; gap:var(--mds-spacing-xs); border:none; background:none; cursor:pointer;
+    color:var(--mds-bg-interactive-primary-default); font-size:var(--mds-font-size-paragraph-default); padding:var(--mds-spacing-xxs) 0; }
+  .cln-link:disabled{ color:var(--mds-color-gray-500); cursor:default; }
+  .cln-link > span[aria-hidden]{ flex:0 0 auto; }
+  .cln-link .lbl .k{ white-space:nowrap; font-weight:var(--mds-font-weight-semibold); }
+  .cln-link:not(:disabled):hover .k{ text-decoration:underline; }
+  .cln-link.next{ text-align:right; }
+  /* tooltip */
+  .cln-link .lbl .t{
+    position:absolute; bottom:calc(100% + 10px); z-index:60;
+    background:var(--mds-color-gray-900); color:#fff;
+    padding:.4rem .6rem; border-radius:var(--mds-border-radius-sm);
+    font-size:var(--mds-font-size-paragraph-small); line-height:1.35;
+    white-space:normal; width:max-content; max-width:240px;
+    box-shadow:0 6px 18px rgba(0,0,0,.22);
+    opacity:0; pointer-events:none; transition:opacity .12s ease;
+  }
+  .cln-link.prev .lbl .t{ left:0; }
+  .cln-link.next .lbl .t{ right:0; }
+  .cln-link .lbl .t::after{ content:""; position:absolute; top:100%; width:8px; height:8px;
+    background:var(--mds-color-gray-900); transform:translateY(-50%) rotate(45deg); }
+  .cln-link.prev .lbl .t::after{ left:16px; }
+  .cln-link.next .lbl .t::after{ right:16px; }
+  .cln-link:hover .lbl .t, .cln-link:focus-visible .lbl .t{ opacity:1; }
+  .cln-link:disabled .lbl .t{ display:none; }
+  .cln-right{ display:flex; align-items:center; gap:var(--mds-spacing-lg); margin-left:auto; }
+  .completion{ display:inline-flex; align-items:center; gap:var(--mds-spacing-xs); font-size:var(--mds-font-size-paragraph-small);
+    border:1px solid var(--mds-border-default); background:var(--mds-bg-surface-default); color:var(--mds-text-subtle);
+    padding:var(--mds-spacing-xxs) var(--mds-spacing-sm); border-radius:var(--mds-border-radius-pill); cursor:pointer; white-space:nowrap; }
+  .completion.done{ background:var(--mds-bg-feedback-success-light); border-color:var(--mds-color-green-500); color:var(--mds-text-feedback-success); }
+
+  /* overlay backdrop */
+  .backdrop{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:46; }
+  body.ci-overlay.ci-open .backdrop{ display:block; }
+
+  /* dev hint */
+  .hint{ position:fixed; bottom:calc(var(--footer-h) + 10px); left:16px; z-index:50; pointer-events:none; max-width:260px;
+    background:var(--mds-bg-surface-subtle); border:1px solid var(--mds-border-default); color:var(--mds-text-muted);
+    font-size:.6875rem; padding:6px 9px; border-radius:var(--mds-border-radius-sm); line-height:1.4; }
+
+  /* ===================  RIGHT "COURSE BLOCKS" DRAWER  ===================
+     Ported verbatim (styling + behaviour) from PROTOTYPE-forum.html. Pushes on
+     wide desktop; overlays <=1200; toggle floats <=768. */
+  .toggle-col-right{ flex:0 0 auto; width:var(--btn); margin-left:var(--mds-spacing-sm); display:flex; justify-content:center; }
+  body.cb-open .toggle-col-right{ width:0; margin-left:0; overflow:hidden; }
+  .blocks-btn{ width:var(--btn); height:var(--btn); border:none; cursor:pointer; border-radius:var(--mds-border-radius-sm); background:var(--mds-bg-surface-strong); color:var(--mds-text-subtle); display:flex; align-items:center; justify-content:center; position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); }
+  .blocks-btn:hover{ background:var(--mds-bg-interactive-secondary-hover); }
+  .drawer-right{ flex:0 0 auto; width:0; overflow:hidden; position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); align-self:flex-start; transition:width .3s cubic-bezier(.4,0,.2,1); }
+  body.cb-open .drawer-right{ width:var(--cb-width); }
+  .cb-card{ width:var(--cb-width); background:var(--mds-bg-surface-subtle); border-radius:var(--mds-border-radius-md); padding:0 var(--mds-spacing-sm) var(--mds-spacing-md); transform:translateX(100%); transition:transform .3s cubic-bezier(.4,0,.2,1); }
+  body.cb-open .cb-card{ transform:translateX(0); }
+  .cb-header{ display:flex; flex-direction:column; align-items:flex-start; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-xs) 0 var(--mds-spacing-sm); }
+  .cb-close{ width:40px; height:40px; border:none; cursor:pointer; border-radius:var(--mds-border-radius-md); background:var(--mds-bg-surface-strong); display:flex; align-items:center; justify-content:center; }
+  .cb-close:hover{ background:var(--mds-bg-interactive-secondary-hover); }
+  .cb-title{ font-size:var(--mds-font-size-heading-6); font-weight:var(--mds-typography-font-weight-semibold); }
+  .cb-block{ background:var(--mds-bg-surface-default); border:var(--mds-stroke-weight-sm) solid var(--mds-border-subtle); border-radius:var(--mds-border-radius-sm); padding:var(--mds-spacing-sm) 0; margin-bottom:var(--mds-spacing-xs); }
+  .cb-block-head{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:0 var(--mds-spacing-md); }
+  .cb-block-head .grip{ color:var(--mds-text-muted); font-size:12px; }
+  .cb-block-title{ font-size:var(--mds-font-size-heading-6); font-weight:var(--mds-typography-font-weight-medium); color:var(--mds-text-subtle); }
+  .cb-block-divider{ height:var(--mds-stroke-weight-sm); background:var(--mds-border-subtle); margin:var(--mds-spacing-sm) 0; }
+  .cb-block-body{ padding:0 var(--mds-spacing-md); font-size:var(--mds-font-size-small); }
+  .cb-block-body p{ margin:0 0 var(--mds-spacing-sm); color:var(--mds-text-muted); }
+  .cb-block-body a{ color:var(--mds-text-link-primary); }
+  .cb-teacher{ display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:0 var(--mds-spacing-md); }
+  .cb-teacher .name{ font-size:var(--mds-font-size-body); color:var(--mds-text-default); }
+  .cb-teacher .role{ font-size:var(--mds-font-size-small); color:var(--mds-text-muted); margin-top:2px; }
+  .cb-avatar{ width:48px; height:48px; flex:0 0 auto; border-radius:50%; background:var(--mds-color-indigo-500); color:#fff; font-weight:var(--mds-typography-font-weight-semibold); font-size:16px; display:flex; align-items:center; justify-content:center; border:var(--mds-stroke-weight-sm) solid var(--mds-border-default); }
+  body.cb-overlay.cb-open .backdrop{ display:block; }
+
+  /* A CLOSED overlay drawer is still position:fixed and would cover the screen,
+     swallowing clicks meant for the floating toggles / Manage / content. Make
+     it click-through when closed; interactive only when open. */
+  body.ci-overlay #drawer{ pointer-events:none; }
+  body.ci-overlay.ci-open #drawer{ pointer-events:auto; }
+  body.cb-overlay .drawer-right{ pointer-events:none; }
+  body.cb-overlay.cb-open .drawer-right{ pointer-events:auto; }
+
+  /* ===================  EDIT / CREATE MODE (throwaway extension)  ===================
+     Inline edit-in-place authoring, a dedicated Settings page, plus Import and
+     Delete dialogs. Every field mirrors mod/book 1:1 (mod_form.php +
+     edit_form.php + tool/importhtml) — nothing here that isn't available today. */
+
+  /* ---- TOC authoring controls (hover/focus revealed) ---- */
+  .ci-chapter-row{ display:flex; align-items:center; gap:2px; border-radius:var(--mds-border-radius-sm); }
+  .ci-chapter-row .ci-chapter{ flex:1 1 auto; }
+  .ci-ch-grip, .ci-ch-kebab{ flex:0 0 auto; width:20px; height:26px; border:none; background:none; cursor:pointer;
+    color:var(--mds-text-muted); font-size:11px; display:none; align-items:center; justify-content:center; border-radius:var(--mds-border-radius-xs); }
+  .ci-ch-grip{ cursor:grab; }
+  .ci-ch-kebab:hover{ background:rgba(0,0,0,.08); color:var(--mds-text-default); }
+  body.edit-on .ci-ch-grip, body.edit-on .ci-ch-kebab{ display:flex; opacity:0; transition:opacity .12s ease; }
+  body.edit-on .ci-chapter-row:hover .ci-ch-grip, body.edit-on .ci-chapter-row:hover .ci-ch-kebab,
+  body.edit-on .ci-chapter-row:focus-within .ci-ch-grip, body.edit-on .ci-chapter-row:focus-within .ci-ch-kebab{ opacity:1; }
+  .ci-chapter-row.ci-hidden .ci-chapter .txt{ opacity:.5; font-style:italic; }
+  .ci-chapter-row.ci-hidden .ci-chapter .num::after{ content:" (hidden)"; font-size:.7rem; }
+
+  .ci-empty-note{ padding:var(--mds-spacing-xs) var(--mds-spacing-sm); color:var(--mds-text-muted); font-size:var(--mds-font-size-paragraph-small); font-style:italic; }
+
+  /* ---- inline edit-in-place (chapter content) ---- */
+  .ch-edit-bar{ display:none; }
+  body.edit-on .ch-edit-bar{ display:block; margin-bottom:var(--mds-spacing-md); }
+  .rte-toolbar{ display:flex; align-items:center; gap:2px; flex-wrap:wrap; padding:var(--mds-spacing-xxs);
+    border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-sm) var(--mds-border-radius-sm) 0 0;
+    background:var(--mds-bg-surface-subtle); }
+  .rte-btn{ width:30px; height:30px; border:none; background:none; cursor:pointer; border-radius:var(--mds-border-radius-xs);
+    color:var(--mds-text-subtle); font-size:13px; display:flex; align-items:center; justify-content:center; }
+  .rte-btn:hover{ background:var(--mds-bg-surface-strong); color:var(--mds-text-default); }
+  .rte-sep{ width:1px; height:20px; background:var(--mds-border-default); margin:0 4px; }
+  .ch-meta{ display:flex; align-items:center; gap:var(--mds-spacing-md); flex-wrap:wrap; padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
+    border:1px solid var(--mds-border-default); border-top:none; border-radius:0 0 var(--mds-border-radius-sm) var(--mds-border-radius-sm);
+    background:var(--mds-bg-surface-default); font-size:var(--mds-font-size-paragraph-small); }
+  .subch-toggle{ display:inline-flex; align-items:center; gap:var(--mds-spacing-xs); color:var(--mds-text-subtle); cursor:pointer; }
+  .subch-toggle input{ margin:0; }
+  .subch-toggle.disabled{ opacity:.55; cursor:not-allowed; }
+  .subch-note{ color:var(--mds-text-muted); font-size:.75rem; }
+  .ch-tags{ display:inline-flex; align-items:center; gap:var(--mds-spacing-xxs); flex-wrap:wrap; color:var(--mds-text-muted); }
+  .tag-pill{ display:inline-flex; align-items:center; gap:4px; background:var(--mds-bg-surface-strong); color:var(--mds-text-subtle);
+    padding:2px var(--mds-spacing-xs); border-radius:var(--mds-border-radius-pill); font-size:.75rem; }
+  .tag-add{ border:1px dashed var(--mds-border-default); background:none; color:var(--mds-text-muted); cursor:pointer;
+    padding:2px var(--mds-spacing-xs); border-radius:var(--mds-border-radius-pill); font-size:.75rem; }
+
+  body.edit-on .chapter-title.editable, body.edit-on .editable-body{ outline:none; border-radius:var(--mds-border-radius-sm);
+    transition:box-shadow .12s ease, background .12s ease; }
+  body.edit-on .chapter-title.editable{ padding:2px 6px; margin-left:-6px; }
+  body.edit-on .chapter-title.editable:hover, body.edit-on .editable-body:hover{ background:var(--mds-bg-surface-subtle); }
+  body.edit-on .chapter-title.editable:focus, body.edit-on .editable-body:focus{ background:var(--mds-bg-surface-default);
+    box-shadow:0 0 0 2px var(--mds-bg-interactive-primary-default); }
+  body.edit-on .editable-body{ padding:var(--mds-spacing-xs) var(--mds-spacing-sm); margin-left:calc(-1 * var(--mds-spacing-sm)); min-height:120px; }
+  [contenteditable][data-placeholder]:empty::before{ content:attr(data-placeholder); color:var(--mds-text-muted); }
+  .edit-affordance-hint{ display:none; }
+  body.edit-on .edit-affordance-hint{ display:inline-flex; align-items:center; gap:6px; font-size:.75rem; color:var(--mds-text-muted);
+    background:var(--mds-bg-surface-subtle); border:1px solid var(--mds-border-subtle); padding:2px 8px; border-radius:var(--mds-border-radius-pill); margin-bottom:var(--mds-spacing-sm); }
+  .newch-actions{ display:flex; gap:var(--mds-spacing-xs); margin-top:var(--mds-spacing-lg); }
+
+  /* ---- reading-view "Edit" affordance (per-chapter, edit mode only) ---- */
+  .chapter-head-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:var(--mds-spacing-md); margin-bottom:var(--mds-spacing-md); }
+  .chapter-head-row .chapter-title{ margin:0; }
+  .chapter-edit-btn{ flex:0 0 auto; }
+
+  /* ---- framed "Editing chapter" panel (explicit per-chapter editor) ---- */
+  .chapter-editor{ border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-lg);
+    background:var(--mds-bg-surface-default); overflow:hidden; margin-bottom:var(--mds-spacing-lg);
+    box-shadow:0 1px 3px rgba(0,0,0,.06); }
+  .chapter-editor-head{ display:flex; align-items:center; justify-content:space-between; gap:var(--mds-spacing-md);
+    padding:var(--mds-spacing-sm) var(--mds-spacing-md); background:var(--mds-bg-interactive-primary-default-light);
+    border-bottom:1px solid var(--mds-border-subtle); }
+  .ce-label{ display:inline-flex; align-items:center; gap:var(--mds-spacing-xs); font-size:var(--mds-font-size-paragraph-small);
+    font-weight:var(--mds-font-weight-semibold); color:var(--mds-bg-interactive-primary-default); text-transform:uppercase; letter-spacing:.4px; }
+  .ce-actions{ display:flex; gap:var(--mds-spacing-xs); }
+  .ce-body{ padding:var(--mds-spacing-md); }
+  .ce-body .field:last-child{ margin-bottom:0; }
+
+  /* ---- empty state ---- */
+  .empty-state{ text-align:center; padding:var(--mds-spacing-xxl) var(--mds-spacing-md); border:1px dashed var(--mds-border-default);
+    border-radius:var(--mds-border-radius-lg); background:var(--mds-bg-surface-subtle); }
+  .empty-state .es-icon{ width:64px; height:64px; margin:0 auto var(--mds-spacing-md); border-radius:var(--mds-border-radius-lg);
+    background:var(--mds-activity-icon-file-bg); color:var(--mds-activity-icon-file-icon); display:flex; align-items:center; justify-content:center; font-size:26px; }
+  .empty-state h2{ margin:0 0 var(--mds-spacing-xs); font-size:var(--mds-font-size-headings-5); font-weight:var(--mds-font-weight-bold); }
+  .empty-state p{ margin:0 auto var(--mds-spacing-lg); color:var(--mds-text-muted); max-width:420px; }
+  .empty-actions{ display:flex; gap:var(--mds-spacing-xs); justify-content:center; flex-wrap:wrap; }
+
+  /* ---- buttons (primary / danger / ghost, extend .btn) ---- */
+  .btn-primary{ background:var(--mds-bg-interactive-primary-default); color:#fff; border-color:transparent; }
+  .btn-primary:hover{ background:var(--mds-bg-interactive-primary-hover); }
+  .btn-danger{ background:var(--mds-color-red-500); color:#fff; border-color:transparent; }
+  .btn-danger:hover{ background:var(--mds-color-red-600); }
+  .btn-ghost{ background:none; border-color:transparent; color:var(--mds-text-subtle); }
+  .btn-ghost:hover{ background:var(--mds-bg-surface-subtle); }
+
+  /* ---- Settings (dedicated page) ---- */
+  .settings-view{ display:none; width:100%; max-width:980px; }
+  body.mode-settings #reading{ display:none; }
+  body.mode-settings .settings-view{ display:block; }
+  body.mode-settings .cln-footer{ display:none; }
+  body.mode-settings .toggle-col-right, body.mode-settings .drawer-right{ display:none; }
+  .settings-head{ margin-bottom:var(--mds-spacing-lg); }
+  .settings-eyebrow{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); color:var(--mds-text-muted);
+    text-transform:uppercase; letter-spacing:.4px; margin-bottom:var(--mds-spacing-xxs); display:flex; align-items:center; gap:var(--mds-spacing-xs); }
+  .settings-head h1{ margin:0; font-size:var(--mds-font-size-headings-3); line-height:var(--mds-line-height-headings-3); font-weight:var(--mds-font-weight-bold); letter-spacing:-.2px; }
+  .settings-body{ display:grid; grid-template-columns:200px 1fr; gap:var(--mds-spacing-xl); align-items:start; }
+  .settings-nav{ position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); display:flex; flex-direction:column; gap:2px; }
+  .settings-nav a{ padding:var(--mds-spacing-xs) var(--mds-spacing-sm); border-radius:var(--mds-border-radius-sm); cursor:pointer;
+    font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); color:var(--mds-text-subtle); border-left:2px solid transparent; }
+  .settings-nav a:hover{ background:var(--mds-bg-surface-subtle); }
+  .settings-nav a.active{ color:var(--mds-bg-interactive-primary-default); border-left-color:var(--mds-bg-interactive-primary-default); background:var(--mds-bg-interactive-primary-default-light); }
+  .settings-form{ min-width:0; }
+  .set-section{ margin-bottom:var(--mds-spacing-xl); scroll-margin-top:calc(var(--nav-h) + var(--mds-spacing-lg)); }
+  .set-section > h2{ margin:0 0 var(--mds-spacing-md); font-size:var(--mds-font-size-headings-6); font-weight:var(--mds-font-weight-bold);
+    padding-bottom:var(--mds-spacing-xs); border-bottom:1px solid var(--mds-border-subtle); }
+  .field{ margin-bottom:var(--mds-spacing-md); }
+  .field > label.flabel{ display:block; font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-semibold);
+    color:var(--mds-text-default); margin-bottom:var(--mds-spacing-xxs); }
+  .field .req{ color:var(--mds-text-danger); margin-left:2px; }
+  .field .fhelp{ font-size:.8125rem; color:var(--mds-text-muted); margin-top:var(--mds-spacing-xxs); }
+  .input, .select, .textarea{ width:100%; font-family:inherit; font-size:var(--mds-font-size-paragraph-default); color:var(--mds-text-default);
+    background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-sm); padding:var(--mds-spacing-xs) var(--mds-spacing-sm); }
+  .input:focus, .select:focus, .textarea:focus{ outline:none; border-color:var(--mds-bg-interactive-primary-default); box-shadow:0 0 0 2px rgba(15,108,191,.18); }
+  .select{ appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' stroke='%236a737b' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; background-size:12px 12px; padding-right:32px; }
+  .checkline{ display:flex; align-items:flex-start; gap:var(--mds-spacing-xs); font-size:var(--mds-font-size-paragraph-default); color:var(--mds-text-default); }
+  .checkline input{ margin-top:3px; }
+
+  /* faux rich text editor (Description) */
+  .rte{ border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-sm); }
+  .rte .rte-toolbar{ border:none; border-bottom:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-sm) var(--mds-border-radius-sm) 0 0; }
+  .rte .rte-area{ min-height:96px; padding:var(--mds-spacing-sm); font-size:var(--mds-font-size-paragraph-default); outline:none; }
+  .rte .rte-area:empty::before{ content:attr(data-placeholder); color:var(--mds-text-muted); }
+
+  /* segmented control + numbering preview */
+  .numbering-field{ display:grid; grid-template-columns:1fr 220px; gap:var(--mds-spacing-md); align-items:start; }
+  .segmented{ display:inline-flex; border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-sm); overflow:hidden; }
+  .segmented button{ border:none; background:var(--mds-bg-surface-default); cursor:pointer; padding:var(--mds-spacing-xs) var(--mds-spacing-md);
+    font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); color:var(--mds-text-subtle); border-right:1px solid var(--mds-border-default); }
+  .segmented button:last-child{ border-right:none; }
+  .segmented button.active{ background:var(--mds-bg-interactive-primary-default); color:#fff; }
+  .num-preview{ border:1px solid var(--mds-border-subtle); border-radius:var(--mds-border-radius-sm); background:var(--mds-bg-surface-subtle); padding:var(--mds-spacing-sm); }
+  .num-preview .np-label{ font-size:.6875rem; text-transform:uppercase; letter-spacing:.4px; color:var(--mds-text-muted); margin-bottom:var(--mds-spacing-xs); }
+  .np-toc{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); }
+  .np-toc div{ padding:2px 0; white-space:nowrap; }
+  .np-toc .np-sub{ padding-left:var(--mds-spacing-md); }
+  .np-toc .np-sub.np-bullet::before{ content:"•  "; }
+
+  /* toggle switch (settings size) */
+  .switch-lg{ width:40px; height:22px; border-radius:var(--mds-border-radius-pill); background:var(--mds-border-interactive-secondary-default);
+    position:relative; border:none; cursor:pointer; flex:0 0 auto; }
+  .switch-lg::after{ content:""; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff; transition:left .15s ease; }
+  .switch-lg[aria-pressed="true"]{ background:var(--mds-bg-interactive-primary-default); }
+  .switch-lg[aria-pressed="true"]::after{ left:20px; }
+  .toggle-field{ display:flex; align-items:flex-start; justify-content:space-between; gap:var(--mds-spacing-md); }
+  .toggle-field .tf-main{ min-width:0; }
+
+  /* restriction / competency represented chips */
+  .chip-row{ display:flex; align-items:center; gap:var(--mds-spacing-xs); flex-wrap:wrap; }
+  .chip{ display:inline-flex; align-items:center; gap:var(--mds-spacing-xs); background:var(--mds-bg-surface-subtle); border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-sm); padding:var(--mds-spacing-xs) var(--mds-spacing-sm); font-size:var(--mds-font-size-paragraph-small); }
+  .chip .x{ color:var(--mds-text-muted); cursor:pointer; }
+  .add-link{ display:inline-flex; align-items:center; gap:6px; border:none; background:none; cursor:pointer; color:var(--mds-bg-interactive-primary-default);
+    font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); padding:var(--mds-spacing-xs) 0; }
+
+  .settings-actions{ display:flex; gap:var(--mds-spacing-xs); padding:var(--mds-spacing-md) 0 var(--mds-spacing-xxl); border-top:1px solid var(--mds-border-subtle);
+    margin-top:var(--mds-spacing-md); position:sticky; bottom:0; background:var(--mds-bg-surface-default); }
+
+  /* ---- modals (Import + Delete) ---- */
+  .modal-overlay{ display:none; position:fixed; inset:0; z-index:90; background:rgba(0,0,0,.45); align-items:center; justify-content:center; padding:var(--mds-spacing-md); }
+  .modal-overlay.show{ display:flex; }
+  .modal{ width:100%; max-width:540px; background:var(--mds-bg-surface-default); border-radius:var(--mds-border-radius-lg); box-shadow:0 20px 60px rgba(0,0,0,.3); overflow:hidden; }
+  .modal-sm{ max-width:440px; }
+  .modal-head{ display:flex; align-items:center; justify-content:space-between; padding:var(--mds-spacing-md); border-bottom:1px solid var(--mds-border-subtle); }
+  .modal-head h2{ margin:0; font-size:var(--mds-font-size-headings-6); font-weight:var(--mds-font-weight-bold); }
+  .modal-close{ width:32px; height:32px; border:none; background:none; cursor:pointer; border-radius:var(--mds-border-radius-sm); color:var(--mds-text-muted); }
+  .modal-close:hover{ background:var(--mds-bg-surface-subtle); }
+  .modal-body{ padding:var(--mds-spacing-md); }
+  .modal-body p{ margin:0 0 var(--mds-spacing-sm); }
+  .modal-foot{ display:flex; justify-content:flex-end; gap:var(--mds-spacing-xs); padding:var(--mds-spacing-md); border-top:1px solid var(--mds-border-subtle); background:var(--mds-bg-surface-subtle); }
+  .filepicker{ border:2px dashed var(--mds-border-default); border-radius:var(--mds-border-radius-md); background:var(--mds-bg-surface-subtle);
+    padding:var(--mds-spacing-xl); text-align:center; color:var(--mds-text-muted); cursor:pointer; }
+  .filepicker:hover{ border-color:var(--mds-bg-interactive-primary-default); }
+  .filepicker i{ font-size:24px; color:var(--mds-text-muted); }
+  .filepicker .fp-main{ display:block; margin-top:var(--mds-spacing-xs); color:var(--mds-text-subtle); font-size:var(--mds-font-size-paragraph-small); }
+
+  /* ---- dev state switcher (throwaway) ---- */
+  .devswitch{ position:fixed; right:16px; bottom:calc(var(--footer-h) + 12px); z-index:85; background:var(--mds-color-gray-900); color:#fff;
+    border-radius:var(--mds-border-radius-md); padding:8px 10px; box-shadow:0 8px 28px rgba(0,0,0,.28); font-size:.75rem; display:flex; align-items:center; gap:8px; }
+  .devswitch label{ opacity:.7; }
+  .devswitch select{ font-family:inherit; font-size:.75rem; border:none; border-radius:var(--mds-border-radius-xs); padding:4px 6px; background:#fff; color:var(--mds-color-gray-900); }
+  body.mode-settings .devswitch{ bottom:16px; }
+
+  @media (max-width:900px){
+    .settings-body{ grid-template-columns:1fr; }
+    .settings-nav{ position:static; flex-direction:row; flex-wrap:wrap; }
+    .settings-nav a, .settings-nav a.active{ border-left:none; }
+    .numbering-field{ grid-template-columns:1fr; }
+    .num-preview{ max-width:280px; }
+  }
+
+  /* =====================  RESPONSIVE  ===================== */
+  @media (max-width:1024px){
+    :root{ --shell-pad:1.5rem; }
+    .burger{ display:flex; }
+    .nav-left .brand, .nav-left .nav-pills{ display:none; }
+  }
+  /* right blocks drawer overlays below 1200 so both sidebars never squeeze content */
+  @media (max-width:1200px){
+    body.cb-overlay .drawer-right{ position:fixed; right:0; top:var(--nav-h); height:calc(100vh - var(--nav-h)); width:auto !important; z-index:47; padding:var(--mds-spacing-md); margin:0; }
+    body.cb-overlay .cb-card{ height:100%; overflow-y:auto; }
+    body.cb-overlay:not(.cb-open) .cb-card{ transform:translateX(360px); }
+    body.cb-overlay .toggle-col-right{ width:var(--btn); margin-left:var(--mds-spacing-sm); }
+    .cln-rightspacer{ display:none; }
+  }
+  @media (max-width:768px){
+    /* both drawer toggles float at the corners so content spans full width
+       (.layout prefix beats the base .ci-toggle.sticky / .blocks-btn rules) */
+    .toggle-col, .toggle-col-right{ width:0 !important; margin:0 !important; overflow:visible; }
+    .layout .ci-toggle, .layout .blocks-btn{ position:fixed; top:calc(var(--nav-h) + var(--mds-spacing-xs)); z-index:30; box-shadow:0 1px 4px rgba(0,0,0,.12); }
+    .layout .ci-toggle{ left:var(--mds-spacing-sm); }
+    .layout .blocks-btn{ right:var(--mds-spacing-sm); }
+    .layout{ padding-top:calc(var(--btn) + var(--mds-spacing-md)); }
+    /* left index overlay */
+    body.ci-overlay #drawer{ position:fixed; left:0; top:var(--nav-h); height:calc(100vh - var(--nav-h)); width:auto !important; z-index:47; padding:16px; margin:0; }
+    body.ci-overlay .ci-card{ width:300px; max-width:85vw; height:100%; overflow-y:auto; transform:translateX(-360px); transition:transform .3s cubic-bezier(.4,0,.2,1); }
+    body.ci-overlay.ci-open .ci-card{ transform:translateX(0); }
+    .hint{ display:none; }
+    .cln-indexspacer, .cln-rightspacer{ display:none; }
+    .cln-region{ padding:0; }
+    /* footer stays clean: short generic labels + completion icon-only */
+    .cln-bar{ gap:.5rem; }
+    .completion .ctext{ display:none; }
+  }
+  @media (max-width:767px){
+    :root{ --shell-pad:1rem; }
+    .search{ display:none; }
+    .search-icon-btn{ display:flex; }
+    .editmode .label{ display:none; }
+    .profile .pname, .profile .fa-chevron-down{ display:none; }
+    .content-col{ padding:0 1rem; }
+    .act-header{ flex-wrap:wrap; }
+    .act-header .h-actions{ order:3; width:100%; }
+    .reading h1{ font-size:2rem; line-height:2.4rem; }
+  }
+</style>
+</head>
+<body class="ci-open edit-on">
+
+  <!-- ===== TOP NAV ===== -->
+  <header class="topbar">
+    <div class="topbar-inner shell">
+      <div class="nav-left">
+        <button class="burger" id="burger" aria-label="Open site navigation"><i class="fa-solid fa-bars"></i></button>
+        <div class="brand"><span class="mark"><i class="fa-solid fa-leaf"></i></span><span class="word"><b>Fleetwood</b><span>UNIVERSITY</span></span></div>
+        <nav class="nav-pills"><button class="nav-pill selected"><span class="dot"></span>Dashboard</button><button class="nav-pill">Site Administration</button></nav>
+      </div>
+      <div class="nav-right">
+        <div class="nav-right-group">
+          <div class="search"><i class="fa-solid fa-magnifying-glass"></i><span>Search…</span></div>
+          <button class="search-icon-btn" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+          <div class="editmode"><span class="label">Edit mode</span><button class="switch" id="editSwitch" aria-pressed="true" aria-label="Edit mode"></button></div>
+          <div class="nav-icons"><button class="icon-btn" aria-label="Notifications"><i class="fa-regular fa-bell"></i></button><button class="icon-btn" aria-label="Messages"><i class="fa-regular fa-comment"></i></button></div>
+        </div>
+        <div class="nav-divider"></div>
+        <div class="profile"><span class="avatar">S</span><span class="pname">Sarah</span><i class="fa-solid fa-chevron-down"></i></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== PAGE ===== -->
+  <div class="layout shell">
+    <div class="toggle-col">
+      <button class="ci-toggle sticky" id="openBtn" title="Open course index" aria-label="Open course index">
+        <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="drawer" id="drawer">
+      <div class="ci-card">
+        <div class="ci-header">
+          <span class="ci-title">Course Index</span>
+          <button class="ci-toggle contained" id="closeBtn" title="Close course index" aria-label="Close course index">
+            <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/>
+            </svg>
+          </button>
+        </div>
+        <div class="ci-divider"></div>
+        <div id="sections"></div>
+      </div>
+    </div>
+
+    <main class="content-col">
+      <div class="content reading" id="reading"><!-- rendered by JS --></div>
+
+      <!-- ===== SETTINGS (dedicated create/edit page) — mirrors mod_form.php ===== -->
+      <section class="settings-view" id="settingsView">
+        <div class="settings-head" id="settingsHead"><!-- breadcrumb + activity header (with Manage) populated by JS --></div>
+        <div class="settings-body">
+          <nav class="settings-nav" id="settingsNav">
+            <a data-goto="sec-basics" class="active">Basics</a>
+            <a data-goto="sec-appearance">Appearance</a>
+            <a data-goto="sec-access">Access &amp; visibility</a>
+            <a data-goto="sec-restrict">Restrict access</a>
+            <a data-goto="sec-completion">Activity completion</a>
+            <a data-goto="sec-tags">Tags</a>
+            <a data-goto="sec-competencies">Competencies</a>
+          </nav>
+          <form class="settings-form" onsubmit="return false">
+
+            <div class="set-section" id="sec-basics">
+              <h2>Basics</h2>
+              <div class="field">
+                <label class="flabel" for="fName">Name<span class="req">*</span></label>
+                <input class="input" id="fName" type="text" maxlength="1333" placeholder="e.g. Course Syllabus &amp; Study Guide">
+              </div>
+              <div class="field">
+                <label class="flabel">Description</label>
+                <div class="rte">
+                  <div class="rte-toolbar" aria-label="Formatting">
+                    <button type="button" class="rte-btn" data-cmd="bold" title="Bold"><i class="fa-solid fa-bold"></i></button>
+                    <button type="button" class="rte-btn" data-cmd="italic" title="Italic"><i class="fa-solid fa-italic"></i></button>
+                    <span class="rte-sep"></span>
+                    <button type="button" class="rte-btn" data-cmd="insertUnorderedList" title="Bulleted list"><i class="fa-solid fa-list-ul"></i></button>
+                    <button type="button" class="rte-btn" data-cmd="insertOrderedList" title="Numbered list"><i class="fa-solid fa-list-ol"></i></button>
+                    <span class="rte-sep"></span>
+                    <button type="button" class="rte-btn" data-cmd="createLink" title="Link"><i class="fa-solid fa-link"></i></button>
+                  </div>
+                  <div class="rte-area" contenteditable data-placeholder="Describe what this book covers…"></div>
+                </div>
+              </div>
+              <div class="field">
+                <label class="checkline"><input type="checkbox" id="fShowDesc"> <span>Display description on course page<div class="fhelp">If enabled, the description above is shown on the course page just below the link to the book.</div></span></label>
+              </div>
+            </div>
+
+            <div class="set-section" id="sec-appearance">
+              <h2>Appearance</h2>
+              <div class="field">
+                <label class="flabel">Chapter formatting</label>
+                <div class="numbering-field">
+                  <div>
+                    <div class="segmented" id="numberingSeg" role="tablist">
+                      <button type="button" data-num="0">None</button>
+                      <button type="button" data-num="1" class="active">Numbers</button>
+                      <button type="button" data-num="2">Bullets</button>
+                      <button type="button" data-num="3">Indented</button>
+                    </div>
+                    <div class="fhelp">How chapter and subchapter titles are formatted in the table of contents.</div>
+                  </div>
+                  <div class="num-preview">
+                    <div class="np-label">Table of contents preview</div>
+                    <div class="np-toc" id="numPreview"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="field">
+                <div class="toggle-field">
+                  <div class="tf-main">
+                    <label class="flabel" style="margin-bottom:2px">Custom titles</label>
+                    <div class="fhelp">When on, the chapter title is <strong>not</strong> shown as a heading above the content — you can write a different (perhaps longer) title as part of the content itself.</div>
+                  </div>
+                  <button type="button" class="switch-lg" id="fCustomTitles" aria-pressed="false" aria-label="Custom titles"></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="set-section" id="sec-access">
+              <h2>Access &amp; visibility</h2>
+              <div class="field">
+                <label class="flabel" for="fVisible">Availability</label>
+                <select class="select" id="fVisible">
+                  <option value="show">Show on course page</option>
+                  <option value="hide">Hide on course page</option>
+                  <option value="stealth">Make available but don't show on course page</option>
+                </select>
+                <div class="fhelp">Hidden activities are not visible to students. "Make available" lets you link to it without listing it in the course.</div>
+              </div>
+              <div class="field">
+                <label class="flabel" for="fIdnumber">ID number</label>
+                <input class="input" id="fIdnumber" type="text" placeholder="Optional">
+                <div class="fhelp">Provides a way of identifying the activity for grade calculation and reporting. Leave blank if not used.</div>
+              </div>
+              <div class="fhelp"><em>Group mode, grade and ratings are intentionally omitted — the book activity does not support them.</em></div>
+            </div>
+
+            <div class="set-section" id="sec-restrict">
+              <h2>Restrict access</h2>
+              <div class="field">
+                <div class="chip-row" style="margin-bottom:var(--mds-spacing-xs)">
+                  <span class="chip"><i class="fa-solid fa-calendar-day" style="color:var(--mds-text-muted)"></i> From 1 March 2026 <span class="x" data-remove-chip>✕</span></span>
+                </div>
+                <button type="button" class="add-link"><i class="fa-solid fa-plus"></i> Add restriction…</button>
+                <div class="fhelp">Limit access by date, grade, group, user profile or other conditions. Students who don't meet them can be shown the activity greyed-out or hidden entirely.</div>
+              </div>
+            </div>
+
+            <div class="set-section" id="sec-completion">
+              <h2>Activity completion</h2>
+              <div class="field">
+                <label class="flabel" for="fCompletion">Completion tracking</label>
+                <select class="select" id="fCompletion">
+                  <option value="0">None</option>
+                  <option value="1">Students must manually mark the activity as done</option>
+                  <option value="2" selected>Add requirements</option>
+                </select>
+              </div>
+              <div class="field" id="completionConditions">
+                <label class="checkline"><input type="checkbox" checked disabled> <span>View the activity<div class="fhelp">Viewing is the only completion requirement the book supports — there is no grade to require.</div></span></label>
+              </div>
+            </div>
+
+            <div class="set-section" id="sec-tags">
+              <h2>Tags</h2>
+              <div class="field">
+                <label class="flabel">Tags</label>
+                <div class="ch-tags" style="padding:var(--mds-spacing-xs) 0">
+                  <span class="tag-pill">study skills <i class="fa-solid fa-xmark" style="cursor:pointer"></i></span>
+                  <span class="tag-pill">orientation <i class="fa-solid fa-xmark" style="cursor:pointer"></i></span>
+                  <button type="button" class="tag-add"><i class="fa-solid fa-plus"></i> Add tag</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="set-section" id="sec-competencies">
+              <h2>Competencies</h2>
+              <div class="field">
+                <label class="flabel">Course competencies</label>
+                <div class="chip-row" style="margin-bottom:var(--mds-spacing-xs)">
+                  <span class="chip">Independent study <span class="x" data-remove-chip>✕</span></span>
+                </div>
+                <button type="button" class="add-link"><i class="fa-solid fa-plus"></i> Add competencies…</button>
+              </div>
+              <div class="field">
+                <label class="flabel" for="fCompAction">Upon activity completion</label>
+                <select class="select" id="fCompAction">
+                  <option>Do nothing</option>
+                  <option>Attach evidence</option>
+                  <option>Send for review</option>
+                  <option>Complete the competency</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- trailing scroll room so every section can reach the highlight line -->
+            <div class="set-scroll-spacer" id="setScrollSpacer" aria-hidden="true"></div>
+
+            <div class="settings-actions">
+              <button type="button" class="btn btn-primary" data-settings-save><i class="fa-solid fa-check"></i> Save and display</button>
+              <button type="button" class="btn btn-secondary" data-settings-save>Save and return to course</button>
+              <button type="button" class="btn btn-ghost" data-settings-cancel>Cancel</button>
+            </div>
+
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <!-- right "Course Blocks" drawer (ported from PROTOTYPE-forum.html) -->
+    <div class="drawer drawer-right" id="drawerRight">
+      <div class="cb-card">
+        <div class="cb-header">
+          <button class="cb-close" id="cbClose" aria-label="Close course blocks">
+            <svg width="20" height="16" viewBox="0 0 20 16" style="transform:scaleX(-1)"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+          </button>
+          <span class="cb-title">Course Blocks</span>
+        </div>
+        <div class="cb-block">
+          <div class="cb-block-head"><span class="grip"><i class="fa-solid fa-grip-vertical"></i></span><span class="cb-block-title">Licence</span></div>
+          <div class="cb-block-divider"></div>
+          <div class="cb-block-body"><p>This Creative Commons course, created by Mary, is available on</p><a href="#">MoodleNet: Effective Memory Techniques</a></div>
+        </div>
+        <div class="cb-block">
+          <div class="cb-block-head"><span class="cb-block-title">Your teacher</span></div>
+          <div class="cb-block-divider"></div>
+          <div class="cb-teacher"><span class="cb-avatar">MS</span><div><div class="name">Mr. Sanders</div><div class="role">Senior Lecturer, Mount Orange</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="toggle-col-right">
+      <button class="blocks-btn" id="cbOpen" aria-label="Open course blocks">
+        <svg width="20" height="16" viewBox="0 0 20 16" style="transform:scaleX(-1)"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== CLN STICKY FOOTER (replaces the book's own prev/next) ===== -->
+  <footer class="cln-footer" aria-label="Course navigation">
+    <div class="cln-shell">
+      <div class="cln-indexspacer"></div>
+      <div class="cln-region">
+        <div class="cln-bar">
+          <button class="cln-link prev" id="clnPrev">
+            <span aria-hidden="true"><i class="fa-solid fa-chevron-left"></i></span>
+            <span class="lbl"><span class="k">Previous</span><span class="t" id="clnPrevT"></span></span>
+          </button>
+          <div class="cln-right">
+            <button class="completion" id="completion"><i class="fa-regular fa-circle"></i> <span class="ctext">Mark as done</span></button>
+            <button class="cln-link next" id="clnNext">
+              <span class="lbl"><span class="k">Next</span><span class="t" id="clnNextT"></span></span>
+              <span aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="cln-rightspacer"></div>
+    </div>
+  </footer>
+
+  <div class="manage-menu" id="manageMenu" role="menu"></div>
+  <div class="manage-menu" id="chapterMenu" role="menu"></div>
+  <div class="backdrop" id="backdrop"></div>
+  <div class="hint">CLN sticky footer steps through the book's chapters (nested in the index) and on into the neighbouring activities. Resize ≤768 for the overlay index.</div>
+
+  <!-- ===== Import chapters modal (mirrors tool/importhtml import_form.php) ===== -->
+  <div class="modal-overlay" id="importModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+      <div class="modal-head">
+        <h2 id="importTitle">Import chapter</h2>
+        <button class="modal-close" data-close-modal="importModal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label class="flabel" for="importType">Type</label>
+          <select class="select" id="importType">
+            <option value="2" selected>Each HTML file represents one chapter</option>
+            <option value="1">Each folder represents one chapter</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="flabel">Zip file<span class="req">*</span></label>
+          <div class="filepicker" id="importDrop">
+            <i class="fa-solid fa-file-zipper"></i>
+            <span class="fp-main">Drag a .zip here, or click to choose a file</span>
+          </div>
+          <div class="fhelp">Select a zip file containing HTML files and optional multimedia. Add "_sub" to the end of a file or folder name to import it as a subchapter.</div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close-modal="importModal">Cancel</button>
+        <button class="btn btn-primary" data-close-modal="importModal"><i class="fa-solid fa-file-import"></i> Import</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Delete chapter confirmation (mirrors delete.php copy) ===== -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="deleteTitle">
+      <div class="modal-head">
+        <h2 id="deleteTitle">Delete chapter</h2>
+        <button class="modal-close" data-close-modal="deleteModal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p id="deleteMsg">Do you really want to delete this chapter?</p>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close-modal="deleteModal">Cancel</button>
+        <button class="btn btn-danger" data-close-modal="deleteModal"><i class="fa-solid fa-trash-can"></i> Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== dev state switcher (throwaway — jump between create/edit states) ===== -->
+  <div class="devswitch">
+    <label for="devState">State</label>
+    <select id="devState">
+      <option value="read">Reading (student)</option>
+      <option value="workspace" selected>Workspace — edit mode</option>
+      <option value="empty">Workspace — empty book</option>
+      <option value="settings-create">Settings — create</option>
+      <option value="settings-edit">Settings — edit</option>
+      <option value="import">Import chapters dialog</option>
+      <option value="delete">Delete confirmation</option>
+    </select>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  var BOOK = "Course Syllabus & Study Guide";
+  var BOOK_DESC = "Everything you need to know about how this course is run and assessed.";
+
+  // Linear sequence for the "Introduction" section: neighbour activity → book
+  // chapters (nested in the index) → neighbour activity. CLN walks this list.
+  var ITEMS = [
+    { kind:"activity", cat:"file", icon:"fa-file-pdf", badge:"PDF", title:"Course Syllabus & Reading List",
+      desc:"A downloadable PDF with the full syllabus, key dates and the required reading list.",
+      body:"<div class='stub-hero'><span class='act-icon file'><i class='fa-solid fa-file-pdf'></i></span><div><div style='font-weight:600'>Course Syllabus.pdf <span class='badge-type'>PDF</span></div><div style='color:var(--mds-text-muted);font-size:var(--mds-font-size-paragraph-small)'>2.4 MB · updated last week</div></div></div>"
+      + "<p>Open or download the file to view it. (Activity stub — shown to prove CLN steps out of the book into neighbouring activities.)</p>" },
+
+    { kind:"chapter", n:1, title:"Course Overview",
+      body:"<p class='lead'>Biology 101 is a one-semester introduction to the science of life. By the end you should be able to explain how living systems are organised from molecules to ecosystems.</p>"
+      + "<div class='figure'><div class='placard'>CLIMATE<span>JUSTICE</span>NOW!</div></div>"
+      + "<h2>What you'll study</h2><p>The course moves from the smallest units of life up to whole ecosystems, building each idea on the last:</p>"
+      + "<ul><li>The chemistry that makes life possible</li><li>Cell structure and how cells stay alive</li><li>Membranes, transport and homeostasis</li><li>Enzymes, metabolism and energy</li><li>Genetics, inheritance and evolution</li></ul>"
+      + "<h3>How to use this guide</h3><p>Work through the chapters in order using the <strong>Next</strong> button below. Your place is saved, and each chapter links to the activities that go with it.</p>"
+      + "<div class='callout'><p><strong>Tip:</strong> the course index on the left mirrors these chapters — you can jump straight to any of them.</p></div>" },
+
+    { kind:"chapter", n:2, title:"Learning Outcomes & Objectives",
+      body:"<p class='lead'>By the end of Biology 101 you will be able to:</p>"
+      + "<ol><li>Describe the hierarchical organisation of living systems, from atoms to biosphere.</li>"
+      + "<li>Explain how cell structure supports function across cell types.</li>"
+      + "<li>Predict the direction of passive and active transport across membranes.</li>"
+      + "<li>Interpret simple genetic crosses and explain patterns of inheritance.</li>"
+      + "<li>Relate natural selection to observable adaptation and biodiversity.</li></ol>"
+      + "<p>Each outcome maps to one or more assessed activities listed in the schedule.</p>" },
+
+    { kind:"chapter", n:3, title:"Assessment & Grading Policy",
+      body:"<p>Your final grade is made up of four components. Late submissions lose 5% per day unless an extension is agreed in advance.</p>"
+      + "<ul><li><strong>Weekly quizzes — 20%.</strong> Best 8 of 10 count.</li>"
+      + "<li><strong>Fieldwork report — 25%.</strong> Due end of Week 8.</li>"
+      + "<li><strong>Practical skills — 15%.</strong> Assessed in labs.</li>"
+      + "<li><strong>Final examination — 40%.</strong> Covers all chapters.</li></ul>"
+      + "<div class='callout'><p>A passing grade requires at least 50% overall <em>and</em> a minimum of 40% in the final examination.</p></div>" },
+
+    { kind:"chapter", n:4, title:"Weekly Schedule & Required Readings",
+      body:"<p>Readings should be completed <em>before</em> the matching week's tutorial.</p>"
+      + "<ul><li><strong>Weeks 1–2:</strong> The chemistry of life — Chapter 2 of the set text.</li>"
+      + "<li><strong>Weeks 3–5:</strong> Cell structure & function — Chapter 4.</li>"
+      + "<li><strong>Weeks 6–7:</strong> Membranes & transport — Chapter 5.</li>"
+      + "<li><strong>Weeks 8–10:</strong> Enzymes & metabolism — Chapter 6.</li>"
+      + "<li><strong>Weeks 11–12:</strong> Genetics & evolution — Chapters 9–11.</li></ul>" },
+
+    { kind:"chapter", n:5, title:"Academic Integrity Guidelines",
+      body:"<p class='lead'>Your work must be your own. We take academic integrity seriously and use similarity detection on all written submissions.</p>"
+      + "<h3>Expectations</h3><p>Reference every source you draw on, don't share answers to assessed quizzes, and don't submit work generated wholesale by others (including AI tools) as your own.</p>"
+      + "<p>If you're unsure whether collaboration is allowed for a task, ask before you submit. Breaches are handled under the university's academic misconduct policy.</p>" },
+
+    { kind:"activity", cat:"communication", icon:"fa-comments", badge:"FORUM", title:"Introductions & Ice Breaker Discussion Forum",
+      desc:"Say hello to the class and tell us what got you interested in biology.",
+      body:"<div class='stub-hero'><span class='act-icon communication'><i class='fa-solid fa-comments'></i></span><div><div style='font-weight:600'>Open forum</div><div style='color:var(--mds-text-muted);font-size:var(--mds-font-size-paragraph-small)'>24 discussions · everyone can post</div></div></div>"
+      + "<p>Post one introduction and reply to at least two classmates. (Activity stub — shows CLN continuing past the last chapter.)</p>" },
+  ];
+
+  // Other (collapsed) sections for context in the index.
+  var OTHER_SECTIONS = ["The Chemistry of Life", "Cell Structure & Function", "Membranes & Transport", "Enzymes & Metabolism"];
+
+  var current = 1; // start on chapter 1 (Course Overview)
+  var bookEmpty = false, pendingNew = false, pendingNewIsFirst = false, numbering = "1", chapterEditing = false;
+  function firstChapterIndex(){ for(var i=0;i<ITEMS.length;i++){ if(ITEMS[i].kind === "chapter") return i; } return 1; }
+
+  /* ---------- render course index ---------- */
+  function icon(it){ return '<span class="act-icon '+it.cat+'"><i class="fa-solid '+it.icon+'"></i></span>'; }
+  function renderIndex(){
+    var html = '<div class="ci-section"><button class="ci-sec-head"><span class="chev"><i class="fa-solid fa-chevron-down"></i></span><span class="txt">Introduction</span></button><div class="ci-activities">';
+    ITEMS.forEach(function(it, i){
+      if(it.kind === "activity"){
+        html += '<button class="ci-row" data-i="'+i+'">'+icon(it)+'<span class="txt">'+it.title+'</span></button>';
+      } else if(it.n === 1){
+        // book row (chapter 1 is the book's first chapter) — render the book wrapper with all chapters
+        html += '<div class="ci-bookwrap">'
+          + '<div class="ci-row" style="cursor:default">'
+            + '<button class="ci-book-chevron" title="Collapse chapters"><i class="fa-solid fa-chevron-down"></i></button>'
+            + '<span class="act-icon file"><i class="fa-solid fa-book"></i></span>'
+            + '<span class="txt">'+BOOK+'</span>'
+          + '</div>'
+          + '<div class="ci-chapters">';
+        if(bookEmpty){
+          html += '<div class="ci-empty-note">No chapters yet</div>';
+        } else {
+          ITEMS.forEach(function(c, ci){ if(c.kind === "chapter"){
+            html += '<div class="ci-chapter-row" data-ch="'+ci+'">'
+              + '<span class="ci-ch-grip" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i></span>'
+              + '<button class="ci-chapter" data-i="'+ci+'"><span class="num">'+c.n+'</span><span class="txt">'+c.title+'</span></button>'
+              + '<button class="ci-ch-kebab" data-ch-menu="'+ci+'" title="Chapter actions" aria-label="Chapter actions"><i class="fa-solid fa-ellipsis-vertical"></i></button>'
+              + '</div>';
+          }});
+        }
+        html += '</div>'
+          + '</div>';
+      }
+    });
+    html += '</div></div>';
+    OTHER_SECTIONS.forEach(function(t){
+      html += '<div class="ci-section collapsed"><button class="ci-sec-head"><span class="chev"><i class="fa-solid fa-chevron-down"></i></span><span class="txt">'+t+'</span></button><div class="ci-activities"></div></div>';
+    });
+    document.getElementById("sections").innerHTML = html;
+
+    document.querySelectorAll(".ci-sec-head").forEach(function(h){
+      h.addEventListener("click", function(){ h.closest(".ci-section").classList.toggle("collapsed"); });
+    });
+    document.querySelector(".ci-book-chevron").addEventListener("click", function(e){ e.stopPropagation(); this.closest(".ci-bookwrap").classList.toggle("collapsed"); });
+    document.querySelectorAll("[data-i]").forEach(function(el){
+      el.addEventListener("click", function(){ go(parseInt(el.dataset.i, 10)); if(document.body.classList.contains("ci-overlay")) body.classList.remove("ci-open"); });
+    });
+    // edit-mode TOC controls (per-chapter kebab menu)
+    document.querySelectorAll("[data-ch-menu]").forEach(function(k){
+      k.addEventListener("click", function(e){ e.stopPropagation(); openChapterMenu(k, parseInt(k.dataset.chMenu, 10)); });
+    });
+  }
+
+  /* ---------- render reading view + breadcrumb + highlight + footer ---------- */
+  var reading = document.getElementById("reading");
+  // forum-style header: [icon tile] + [title + description] + [Manage] (edit mode)
+  function headerHTML(cat, glyph, title, desc){
+    return '<div class="act-header">'
+      + '<div class="act-tile ' + cat + '"><i class="fa-solid ' + glyph + '"></i></div>'
+      + '<div class="h-main"><h1 class="h-title">' + title + '</h1><p class="h-desc">' + desc + '</p></div>'
+      + '<div class="h-actions"><button class="btn btn-secondary manage-btn" data-manage title="Manage this book">Manage <i class="fa-solid fa-chevron-down" style="font-size:10px"></i></button></div>'
+      + '</div>';
+  }
+  function rteBtns(){
+    return '<button type="button" class="rte-btn" data-cmd="bold" title="Bold"><i class="fa-solid fa-bold"></i></button>'
+      + '<button type="button" class="rte-btn" data-cmd="italic" title="Italic"><i class="fa-solid fa-italic"></i></button>'
+      + '<span class="rte-sep"></span>'
+      + '<button type="button" class="rte-btn" data-cmd="insertUnorderedList" title="Bulleted list"><i class="fa-solid fa-list-ul"></i></button>'
+      + '<button type="button" class="rte-btn" data-cmd="insertOrderedList" title="Numbered list"><i class="fa-solid fa-list-ol"></i></button>'
+      + '<span class="rte-sep"></span>'
+      + '<button type="button" class="rte-btn" data-cmd="createLink" title="Link"><i class="fa-solid fa-link"></i></button>';
+  }
+  // A clearly-framed "Editing chapter" panel — the exact edit_form.php fields
+  // (title, subchapter, content, tags) in order, with the rich-text toolbar
+  // docked onto the content box and explicit Save/Cancel. Used for editing an
+  // existing chapter AND for adding a new one.
+  function chapterEditorHTML(o){
+    return '<div class="chapter-editor">'
+      + '<div class="chapter-editor-head">'
+        + '<span class="ce-label"><i class="fa-solid fa-pen-to-square"></i> ' + o.label + '</span>'
+        + '<div class="ce-actions">'
+          + '<button type="button" class="btn btn-primary" data-ch-save><i class="fa-solid fa-check"></i> Save changes</button>'
+          + '<button type="button" class="btn btn-ghost" data-ch-cancel>Cancel</button>'
+        + '</div>'
+      + '</div>'
+      + '<div class="ce-body">'
+        + '<div class="field"><label class="flabel" for="ceTitle">Chapter title<span class="req">*</span></label>'
+          + '<input class="input" id="ceTitle" type="text" maxlength="1333" value="' + (o.titleVal || "") + '" placeholder="Chapter title"></div>'
+        + '<div class="field"><label class="subch-toggle' + (o.isFirst ? " disabled" : "") + '"><input type="checkbox" ' + (o.isFirst ? "disabled" : "") + (o.subchapter ? " checked" : "") + '> Subchapter</label>'
+          + (o.isFirst ? ' <span class="subch-note">(Only available once the first chapter has been created)</span>' : "") + '</div>'
+        + '<div class="field"><label class="flabel">Content<span class="req">*</span></label>'
+          + '<div class="rte"><div class="rte-toolbar">' + rteBtns() + '</div>'
+          + '<div class="rte-area" id="ceBody" contenteditable data-placeholder="Write the chapter content…">' + (o.bodyHTML || "") + '</div></div></div>'
+        + '<div class="field"><label class="flabel">Tags</label>'
+          + '<div class="ch-tags" style="padding:var(--mds-spacing-xxs) 0"><span class="tag-pill">biology <i class="fa-solid fa-xmark" style="cursor:pointer"></i></span>'
+          + '<button type="button" class="tag-add"><i class="fa-solid fa-plus"></i> Add</button></div></div>'
+      + '</div>'
+    + '</div>';
+  }
+  function render(){
+    var edit = document.body.classList.contains("edit-on");
+
+    // (1) transient "new chapter" editor
+    if(pendingNew){ renderNewChapter(); return; }
+
+    // (2) empty book state
+    if(bookEmpty){
+      reading.innerHTML = '<div class="breadcrumb"><a href="#">Biology 101</a> / ' + BOOK + '</div>'
+        + headerHTML('file', 'fa-book', BOOK, BOOK_DESC)
+        + '<div class="empty-state"><div class="es-icon"><i class="fa-solid fa-book"></i></div>'
+        + '<h2>This book is empty</h2>'
+        + '<p>No content has been added to this book yet. Add a chapter to get started, or import chapters from a zip of HTML files.</p>'
+        + '<div class="empty-actions">'
+        + '<button class="btn btn-primary" data-add-first><i class="fa-solid fa-plus"></i> Add your first chapter</button>'
+        + '<button class="btn btn-secondary" data-import-open><i class="fa-solid fa-file-import"></i> Import chapters</button>'
+        + '</div></div>';
+      reading.querySelector("[data-add-first]").addEventListener("click", function(){ newChapter(true); });
+      reading.querySelector("[data-import-open]").addEventListener("click", function(){ openModal("importModal"); });
+      window.scrollTo(0,0);
+      updateHighlight();
+      updateFooter();
+      return;
+    }
+
+    // (3) normal reading / inline-editable chapter
+    var it = ITEMS[current];
+    var crumb, hdr, content;
+    if(it.kind === "chapter"){
+      crumb = '<a href="#">Biology 101</a> / <a href="#">' + BOOK + '</a> / ' + it.title;
+      hdr = headerHTML('file', 'fa-book', BOOK, BOOK_DESC);
+      if(edit && chapterEditing){
+        content = chapterEditorHTML({ label:"Editing chapter", titleVal:it.title, bodyHTML:it.body, isFirst:current === firstChapterIndex() });
+      } else {
+        var editBtn = edit ? '<button type="button" class="btn btn-secondary chapter-edit-btn" data-ch-edit-inline title="Edit this chapter"><i class="fa-solid fa-pen"></i> Edit</button>' : '';
+        content = '<div class="chapter-head-row"><h2 class="chapter-title"><span class="chapter-num">' + it.n + '.</span> ' + it.title + '</h2>' + editBtn + '</div>' + it.body;
+      }
+    } else {
+      crumb = '<a href="#">Biology 101</a> / ' + it.title;
+      hdr = headerHTML(it.cat, it.icon, it.title, it.desc);
+      content = it.body;
+    }
+    reading.innerHTML = '<div class="breadcrumb">' + crumb + '</div>' + hdr + content;
+    window.scrollTo(0,0);
+    wireChapterEditControls();
+    updateHighlight();
+    updateFooter();
+  }
+  // wire the reading-view Edit button and the editor-panel Save/Cancel
+  function wireChapterEditControls(){
+    var eb = reading.querySelector("[data-ch-edit-inline]");
+    if(eb) eb.addEventListener("click", function(){ chapterEditing = true; render(); });
+    var sv = reading.querySelector("[data-ch-save]");
+    if(sv) sv.addEventListener("click", function(){ chapterEditing = false; render(); });
+    var cn = reading.querySelector("[data-ch-cancel]");
+    if(cn) cn.addEventListener("click", function(){ chapterEditing = false; render(); });
+    if(chapterEditing){ var ti = reading.querySelector("#ceTitle"); if(ti) ti.focus(); }
+  }
+  function renderNewChapter(){
+    reading.innerHTML = '<div class="breadcrumb"><a href="#">Biology 101</a> / <a href="#">' + BOOK + '</a> / New chapter</div>'
+      + headerHTML('file', 'fa-book', BOOK, BOOK_DESC)
+      + chapterEditorHTML({ label:"Add new chapter", titleVal:"", bodyHTML:"", isFirst:pendingNewIsFirst });
+    reading.querySelector("[data-ch-save]").addEventListener("click", saveNewChapter);
+    reading.querySelector("[data-ch-cancel]").addEventListener("click", cancelNewChapter);
+    var t = reading.querySelector("#ceTitle"); if(t) t.focus();
+    window.scrollTo(0,0);
+    updateHighlight();
+    updateFooter();
+  }
+  function newChapter(isFirst){
+    pendingNew = true; pendingNewIsFirst = !!isFirst;
+    setEdit(true);
+    if(document.body.classList.contains("ci-overlay")) body.classList.remove("ci-open");
+    renderIndex(); render();
+  }
+  function saveNewChapter(){
+    pendingNew = false;
+    if(bookEmpty){ bookEmpty = false; current = firstChapterIndex(); }
+    renderIndex(); render();
+  }
+  function cancelNewChapter(){ pendingNew = false; renderIndex(); render(); }
+  function updateHighlight(){
+    document.querySelectorAll(".ci-row, .ci-chapter").forEach(function(el){ el.classList.remove("current"); });
+    var el = document.querySelector('[data-i="'+current+'"]');
+    if(el) el.classList.add("current");
+  }
+  function updateFooter(){
+    var prev = current > 0 ? ITEMS[current-1] : null;
+    var next = current < ITEMS.length-1 ? ITEMS[current+1] : null;
+    var prevBtn = document.getElementById("clnPrev"), nextBtn = document.getElementById("clnNext");
+    prevBtn.disabled = !prev; nextBtn.disabled = !next;
+    document.getElementById("clnPrevT").textContent = prev ? label(prev) : "";
+    document.getElementById("clnNextT").textContent = next ? label(next) : "";
+    // keep direction context for screen readers (the visible word is hidden in option 3)
+    prevBtn.setAttribute("aria-label", prev ? ("Previous: " + label(prev)) : "Previous");
+    nextBtn.setAttribute("aria-label", next ? ("Next: " + label(next)) : "Next");
+  }
+  function label(it){ return it.kind === "chapter" ? (it.n + ". " + it.title) : it.title; }
+
+  function go(i){ current = Math.max(0, Math.min(ITEMS.length-1, i)); chapterEditing = false; render(); }
+
+  document.getElementById("clnPrev").addEventListener("click", function(){ if(current>0) go(current-1); });
+  document.getElementById("clnNext").addEventListener("click", function(){ if(current<ITEMS.length-1) go(current+1); });
+
+  /* ---------- completion (book-level, cosmetic) ---------- */
+  var comp = document.getElementById("completion");
+  comp.addEventListener("click", function(){
+    var done = comp.classList.toggle("done");
+    comp.innerHTML = done ? '<i class="fa-solid fa-check"></i> <span class="ctext">Done</span>' : '<i class="fa-regular fa-circle"></i> <span class="ctext">Mark as done</span>';
+  });
+
+  /* ---------- both drawers: open/close + responsive (ported from forum) ---------- */
+  var body = document.body;
+  var backdrop = document.getElementById("backdrop");
+  function ciOverlay(){ return body.classList.contains("ci-overlay"); }
+  function cbOverlay(){ return body.classList.contains("cb-overlay"); }
+  document.getElementById("openBtn").addEventListener("click", function(){ body.classList.add("ci-open"); if(ciOverlay() && cbOverlay()) body.classList.remove("cb-open"); });
+  document.getElementById("closeBtn").addEventListener("click", function(){ body.classList.remove("ci-open"); });
+  document.getElementById("cbOpen").addEventListener("click", function(){ body.classList.add("cb-open"); if(cbOverlay() && ciOverlay()) body.classList.remove("ci-open"); });
+  document.getElementById("cbClose").addEventListener("click", function(){ body.classList.remove("cb-open"); });
+  backdrop.addEventListener("click", function(){ if(ciOverlay()) body.classList.remove("ci-open"); if(cbOverlay()) body.classList.remove("cb-open"); });
+  document.getElementById("burger").addEventListener("click", function(){ alert("Site navigation — placeholder (not the subject of this prototype)."); });
+
+  var mqLeft = window.matchMedia("(max-width:768px)");    // course index: overlay <=768
+  var mqRight = window.matchMedia("(max-width:1200px)");  // course blocks: overlay <=1200
+  function applyMode(){
+    body.classList.toggle("ci-overlay", mqLeft.matches);
+    body.classList.toggle("cb-overlay", mqRight.matches);
+    if(mqLeft.matches) body.classList.remove("ci-open"); else body.classList.add("ci-open");
+    if(mqRight.matches) body.classList.remove("cb-open"); // blocks start closed unless they can push (desktop)
+  }
+  mqLeft.addEventListener("change", applyMode); mqRight.addEventListener("change", applyMode);
+
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape"){ if(ciOverlay()) body.classList.remove("ci-open"); if(cbOverlay()) body.classList.remove("cb-open"); } });
+
+  /* ---------- edit mode toggle → shows the educator "Manage" button ---------- */
+  var editSwitch = document.getElementById("editSwitch");
+  function setEdit(on){
+    body.classList.toggle("edit-on", on);
+    editSwitch.setAttribute("aria-pressed", on ? "true" : "false");
+    if(!on) chapterEditing = false;
+  }
+  editSwitch.addEventListener("click", function(){
+    var on = editSwitch.getAttribute("aria-pressed") === "true";
+    setEdit(!on);
+    closeManage();
+    if(!body.classList.contains("mode-settings")){ renderIndex(); render(); }
+  });
+
+  /* ---------- Manage dropdown (the book's tabs/settings collapsed into one) ---------- */
+  var manageMenu = document.getElementById("manageMenu");
+  function closeManage(){ manageMenu.classList.remove("show"); }
+  document.addEventListener("click", function(e){
+    var btn = e.target.closest("[data-manage]");
+    if(btn){
+      e.preventDefault(); e.stopPropagation();
+      manageMenu.innerHTML = '<div class="menu-label">Manage book</div>'
+        + '<button class="menu-item" data-m="settings"><i class="fa-solid fa-gear"></i> Settings</button>'
+        + '<button class="menu-item" data-m="import"><i class="fa-solid fa-file-import"></i> Import chapter</button>'
+        + '<button class="menu-item" data-m="print"><i class="fa-solid fa-print"></i> Print book</button>'
+        + '<button class="menu-item" data-m="export"><i class="fa-solid fa-file-export"></i> Download IMS content package</button>'
+        + '<button class="menu-item" data-m="perms"><i class="fa-solid fa-user-shield"></i> Permissions</button>'
+        + '<button class="menu-item" data-m="backup"><i class="fa-solid fa-box-archive"></i> Backup</button>';
+      manageMenu.classList.add("show");
+      var r = btn.getBoundingClientRect(), mw = manageMenu.offsetWidth, mh = manageMenu.offsetHeight;
+      var top = r.bottom + 4; if(top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
+      manageMenu.style.top = top + "px";
+      manageMenu.style.left = Math.max(8, Math.min(r.right - mw, window.innerWidth - mw - 8)) + "px";
+      return;
+    }
+    var mi = e.target.closest("#manageMenu .menu-item");
+    if(mi){
+      closeManage();
+      if(mi.dataset.m === "settings") openSettings(false);
+      else if(mi.dataset.m === "import") openModal("importModal");
+      return;
+    }
+    if(!manageMenu.contains(e.target)) closeManage();
+  });
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape") closeManage(); });
+
+  /* ---------- chapter kebab menu (TOC) ---------- */
+  var chapterMenu = document.getElementById("chapterMenu");
+  var chapterMenuIdx = null;
+  function closeChapterMenu(){ chapterMenu.classList.remove("show"); chapterMenuIdx = null; }
+  function openChapterMenu(anchor, idx){
+    chapterMenuIdx = idx;
+    var row = anchor.closest(".ci-chapter-row");
+    var hidden = row && row.classList.contains("ci-hidden");
+    chapterMenu.innerHTML = '<div class="menu-label">Chapter</div>'
+      + '<button class="menu-item" data-c="edit"><i class="fa-solid fa-pen"></i> Edit chapter</button>'
+      + '<button class="menu-item" data-c="hide"><i class="fa-solid fa-' + (hidden ? "eye" : "eye-slash") + '"></i> ' + (hidden ? "Show" : "Hide") + ' chapter</button>'
+      + '<button class="menu-item" data-c="add"><i class="fa-solid fa-plus"></i> Add new chapter after</button>'
+      + '<button class="menu-item" data-c="delete" style="color:var(--mds-text-danger)"><i class="fa-solid fa-trash-can" style="color:var(--mds-text-danger)"></i> Delete chapter</button>';
+    chapterMenu.classList.add("show");
+    var r = anchor.getBoundingClientRect(), mw = chapterMenu.offsetWidth, mh = chapterMenu.offsetHeight;
+    var top = r.bottom + 4; if(top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
+    chapterMenu.style.top = top + "px";
+    chapterMenu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - mw - 8)) + "px";
+  }
+  chapterMenu.addEventListener("click", function(e){
+    var mi = e.target.closest(".menu-item"); if(!mi) return;
+    var c = mi.dataset.c, idx = chapterMenuIdx;
+    closeChapterMenu();
+    if(c === "edit"){ go(idx); chapterEditing = true; render(); }
+    else if(c === "hide"){ var row = document.querySelector('.ci-chapter-row[data-ch="' + idx + '"]'); if(row) row.classList.toggle("ci-hidden"); }
+    else if(c === "add"){ newChapter(false); }
+    else if(c === "delete"){ openDelete(idx); }
+  });
+  document.addEventListener("click", function(e){
+    if(chapterMenu.classList.contains("show") && !chapterMenu.contains(e.target) && !e.target.closest("[data-ch-menu]")) closeChapterMenu();
+  });
+
+  /* ---------- modals (Import + Delete) ---------- */
+  function openModal(id){ document.getElementById(id).classList.add("show"); }
+  function closeModals(){ document.querySelectorAll(".modal-overlay").forEach(function(o){ o.classList.remove("show"); }); }
+  function openDelete(idx){
+    document.getElementById("deleteMsg").textContent = "Do you really want to delete this chapter?";
+    openModal("deleteModal");
+  }
+  document.querySelectorAll("[data-close-modal]").forEach(function(b){
+    b.addEventListener("click", function(){ document.getElementById(b.dataset.closeModal).classList.remove("show"); });
+  });
+  document.querySelectorAll(".modal-overlay").forEach(function(o){
+    o.addEventListener("click", function(e){ if(e.target === o) o.classList.remove("show"); });
+  });
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape"){ closeChapterMenu(); closeModals(); } });
+
+  /* ---------- rich-text toolbars (inline chapter + settings description) ---------- */
+  document.addEventListener("mousedown", function(e){ if(e.target.closest(".rte-btn")) e.preventDefault(); });
+  document.addEventListener("click", function(e){
+    var b = e.target.closest(".rte-btn"); if(!b) return;
+    var cmd = b.dataset.cmd;
+    if(cmd === "createLink"){ var url = prompt("Link URL:", "https://"); if(url) document.execCommand("createLink", false, url); }
+    else document.execCommand(cmd, false, null);
+  });
+
+  /* ---------- Settings page ---------- */
+  var settingsCreate = false;
+  function setActiveNav(id){
+    document.querySelectorAll("#settingsNav a").forEach(function(x){ x.classList.toggle("active", x.dataset.goto === id); });
+  }
+  function settingsHeaderTitle(){
+    var v = (document.getElementById("fName").value || "").trim();
+    return settingsCreate ? (v || "New Book") : BOOK;
+  }
+  // Settings reuses the SAME activity header (icon + title + Manage) as the reading/
+  // workspace views, with a breadcrumb that reflects the Settings context.
+  function renderSettingsHead(){
+    var crumb = settingsCreate
+      ? '<a href="#">Biology 101</a> / <a href="#">Add an activity</a> / Book settings'
+      : '<a href="#">Biology 101</a> / <a href="#">' + BOOK + '</a> / Settings';
+    var desc = settingsCreate ? "Set up the book, then add chapters." : BOOK_DESC;
+    document.getElementById("settingsHead").innerHTML =
+      '<div class="breadcrumb">' + crumb + '</div>' + headerHTML("file", "fa-book", settingsHeaderTitle(), desc);
+  }
+  function openSettings(create){
+    settingsCreate = !!create;
+    body.classList.add("mode-settings");
+    var rte = document.querySelector("#settingsView .rte-area");
+    if(create){
+      document.getElementById("fName").value = "";
+      rte.innerHTML = "";
+      document.getElementById("fShowDesc").checked = false;
+    } else {
+      document.getElementById("fName").value = BOOK;
+      rte.innerHTML = "<p>" + BOOK_DESC + "</p>";
+      document.getElementById("fShowDesc").checked = true;
+    }
+    renderSettingsHead();
+    setActiveNav("sec-basics");
+    sizeSettingsSpacer();
+    window.scrollTo(0,0);
+  }
+  // live-update the header title as the Name is typed (create flow)
+  document.getElementById("fName").addEventListener("input", function(){
+    if(!body.classList.contains("mode-settings")) return;
+    var t = document.querySelector("#settingsHead .h-title");
+    if(t) t.textContent = settingsHeaderTitle();
+  });
+  // scrollspy: the active section-nav item tracks what's scrolled into view
+  // A section becomes active as its top crosses the upper third of the viewport.
+  // Using a fraction (not a fixed 120px) keeps the required trailing space modest.
+  function settingsTopLine(){ return Math.round(window.innerHeight * 0.35); }
+  function updateSettingsScrollspy(){
+    if(!body.classList.contains("mode-settings")) return;
+    var secs = document.querySelectorAll("#settingsView .set-section");
+    if(!secs.length) return;
+    var line = settingsTopLine(), activeId = secs[0].id;
+    secs.forEach(function(sec){ if(sec.getBoundingClientRect().top <= line) activeId = sec.id; });
+    setActiveNav(activeId);
+  }
+  // Size the trailing spacer so the LAST (shortest) section can still scroll up to
+  // the highlight line — otherwise the short bottom sections share one scroll
+  // position and the nav skips them.
+  function sizeSettingsSpacer(){
+    var sp = document.getElementById("setScrollSpacer"); if(!sp) return;
+    var secs = document.querySelectorAll("#settingsView .set-section"); if(!secs.length) return;
+    var last = secs[secs.length - 1];
+    var actions = document.querySelector("#settingsView .settings-actions");
+    var need = window.innerHeight - last.offsetHeight - (actions ? actions.offsetHeight : 0) - settingsTopLine();
+    sp.style.height = Math.max(0, need) + "px";
+  }
+  window.addEventListener("scroll", updateSettingsScrollspy, { passive:true });
+  window.addEventListener("resize", function(){ sizeSettingsSpacer(); updateSettingsScrollspy(); });
+  function leaveSettings(){
+    body.classList.remove("mode-settings");
+    devState.value = "workspace"; bookEmpty = false; pendingNew = false; setEdit(true);
+    if(ITEMS[current].kind !== "chapter") current = firstChapterIndex();
+    renderIndex(); render();
+  }
+  document.querySelectorAll("[data-settings-save]").forEach(function(b){ b.addEventListener("click", leaveSettings); });
+  document.querySelector("[data-settings-cancel]").addEventListener("click", leaveSettings);
+  document.querySelectorAll("#settingsNav a").forEach(function(a){
+    a.addEventListener("click", function(){
+      var t = document.getElementById(a.dataset.goto); if(!t) return;
+      // land the section on the same highlight line the scrollspy uses, so click
+      // and scroll always agree on which item is active.
+      var y = t.getBoundingClientRect().top + window.scrollY - settingsTopLine();
+      window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+      setActiveNav(a.dataset.goto);
+    });
+  });
+  // numbering segmented control + live TOC preview
+  function renderNumPreview(){
+    var np = document.getElementById("numPreview"); if(!np) return;
+    function row(t, c){ return '<div class="' + (c || "") + '">' + t + '</div>'; }
+    var n = String(numbering), html;
+    if(n === "1"){ html = row("1&nbsp;&nbsp;Course Overview") + row("1.1&nbsp;&nbsp;Overview details", "np-sub") + row("2&nbsp;&nbsp;Learning Outcomes"); }
+    else if(n === "2"){ html = row("Course Overview") + row("Overview details", "np-sub np-bullet") + row("Learning Outcomes"); }
+    else if(n === "3"){ html = row("Course Overview") + row("Overview details", "np-sub") + row("Learning Outcomes"); }
+    else { html = row("Course Overview") + row("Overview details") + row("Learning Outcomes"); }
+    np.innerHTML = html;
+  }
+  document.querySelectorAll("#numberingSeg button").forEach(function(b){
+    b.addEventListener("click", function(){
+      document.querySelectorAll("#numberingSeg button").forEach(function(x){ x.classList.remove("active"); });
+      b.classList.add("active"); numbering = b.dataset.num; renderNumPreview();
+    });
+  });
+  var fCustom = document.getElementById("fCustomTitles");
+  fCustom.addEventListener("click", function(){ fCustom.setAttribute("aria-pressed", fCustom.getAttribute("aria-pressed") === "true" ? "false" : "true"); });
+  var fCompletion = document.getElementById("fCompletion");
+  fCompletion.addEventListener("change", function(){ document.getElementById("completionConditions").style.display = fCompletion.value === "2" ? "block" : "none"; });
+  document.querySelectorAll("[data-remove-chip]").forEach(function(x){ x.addEventListener("click", function(){ var c = x.closest(".chip"); if(c) c.remove(); }); });
+
+  /* ---------- dev state switcher (throwaway) ---------- */
+  var devState = document.getElementById("devState");
+  function ensureChapter(){ if(ITEMS[current].kind !== "chapter") current = firstChapterIndex(); }
+  function setState(s){
+    closeManage(); closeChapterMenu(); closeModals();
+    body.classList.remove("mode-settings");
+    pendingNew = false; chapterEditing = false;
+    if(s === "read"){ bookEmpty = false; setEdit(false); ensureChapter(); renderIndex(); render(); }
+    else if(s === "workspace"){ bookEmpty = false; setEdit(true); ensureChapter(); renderIndex(); render(); }
+    else if(s === "empty"){ bookEmpty = true; setEdit(true); renderIndex(); render(); }
+    else if(s === "settings-create"){ setEdit(true); renderIndex(); render(); openSettings(true); }
+    else if(s === "settings-edit"){ setEdit(true); renderIndex(); render(); openSettings(false); }
+    else if(s === "import"){ bookEmpty = false; setEdit(true); ensureChapter(); renderIndex(); render(); openModal("importModal"); }
+    else if(s === "delete"){ bookEmpty = false; setEdit(true); ensureChapter(); renderIndex(); render(); openDelete(current); }
+  }
+  devState.addEventListener("change", function(){ setState(devState.value); });
+
+  renderIndex();
+  applyMode();
+  renderNumPreview();
+  render();
+})();
+</script>
+
+<!--
+NOTES (fill in once reviewed, then delete this file):
+
+Prototype: Book reading experience + Course Linear Navigation (CLN).
+- Grounded in MDS: :root is a resolved subset of @moodlehq/design-system tokens;
+  all CSS uses --mds-* (no eyeballed hex). Fixes drift vs the base prototype:
+  H1 = MDS headings-1 (40px/48), body = paragraph-default (16), activity-icon
+  category colours (book/file = cyan, forum = communication orange), danger =
+  red-500, completion = success green.
+- CLN sticky footer REPLACES the book's own prev/next (mod/book main_action_menu).
+  It walks one linear list: neighbour activity → book chapters (nested in the
+  index) → neighbour activity, mirroring course_navigation's recursive expansion
+  of delegated sections. Footer is fixed, capped to content width, and displaced
+  by the open index drawer.
+- Real path: model chapters as a delegated section so CLN steps through them with
+  no book-specific code; drop main_action_menu + book_add_fake_block.
+
+EDIT / CREATE MODE (extension) — a modern authoring experience for teachers,
+re-expressing every field the book has today with nothing added:
+- Grounded 1:1 in code: mod_form.php (Name, Description + show-on-course,
+  Chapter formatting/numbering None|Numbers|Bullets|Indented, Custom titles,
+  and the standard_coursemodule_elements SUBSET that book_supports() actually
+  declares — no groups/grade/ratings, view-only completion), edit_form.php
+  (chapter title, subchapter frozen on page 1 with the real notice, content,
+  tags), tool/importhtml (type = per-directory / per-file zip + filepicker),
+  delete.php (confirm copy), show.php (hide/show).
+- Inline edit-in-place: in edit mode the chapter title + body become
+  contenteditable with an MDS rich-text toolbar (execCommand — fine for a
+  throwaway); the subchapter toggle + tags sit in a thin affordance bar.
+- Left TOC gains hover/focus-revealed authoring controls (grip to reorder +
+  kebab → Edit / Hide / Add after / Delete) and a foot with Add chapter /
+  Import chapters; empty-book state offers Add first chapter / Import.
+- Settings is a dedicated two-column page (sticky section nav + live TOC
+  preview for numbering), serving both Create ("Add a new Book") and Edit.
+- Manage dropdown is the home for the real book-level secondary pages
+  (Settings / Import / Print / Export IMS / Permissions / Backup); Import +
+  Delete are built as MDS dialogs, the rest are entries.
+- Dev "State" switcher (bottom-right, throwaway) jumps between all states.
+- Real path: replace the mform stack + per-page chapter forms + inline TOC icon
+  actions with one authoring surface; keep server-side validation/capabilities
+  (mod/book:edit) — the inline editors map to the same edit_form fields.
+
+Answer: <fill in after review>
+-->
+</body>
+</html>

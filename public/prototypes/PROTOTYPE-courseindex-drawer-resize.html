@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTOTYPE — Course page uplift (throwaway, not for merge)</title>
+
+<!-- Fonts + icons via CDN for Figma fidelity (see plan Risks: needs network on
+     first open; degrades to system font + missing-glyph boxes offline). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+  /*
+    THROWAWAY PROTOTYPE — high-fidelity pass on the LMS-uplift course page
+    (MDL-87755). Three areas styled to Figma (file rlo17bSNmm9tChVnLgbJa6):
+    top nav (209-2264 / -2260 / 225-3750), course index (225-4000), course
+    page (209-2791). Retains the earlier drawer interaction (content-relative
+    toggle, left->right slide, drag-resize, no 1400px jump). Delete when the
+    design question is answered (NOTES at bottom).
+
+    Confirmed decisions: edit-mode static (Edit toggle cosmetic); course index
+    = overlay/off-canvas below 1024px; long activity names retained so
+    drag-to-widen keeps its payoff.
+  */
+
+  :root{
+    /* spacing */
+    --sp-xxs:4px; --sp-xs:8px; --sp-sm:12px; --sp-md:16px; --sp-lg:20px;
+    /* radius */
+    --r-sm:6px; --r-md:8px; --r-lg:12px; --r-pill:800px;
+    /* color (Figma tokens) */
+    --text-default:#1d2125; --text-subtle:#495057; --text-muted:#6a737b;
+    --bg-subtle:#f8f9fa; --bg-strong:#e9ecef;
+    --border-subtle:#e9ecef; --border-default:#dee2e6; --border-ring:#8f959e;
+    --primary:#0f6cbf; --primary-dark:#0b5aa0;
+    --surface:#ffffff; --page-bg:#ffffff;
+    --amber-bg:#fdf3e7; --amber-text:#8a5a00;
+    --activity-magenta:#c2185b; --activity-teal:#0f7b8a; --activity-teal-bg:#d7ecef;
+    --ci-row-hover:#e1e4e6; /* course-index row hover bg (for overlaid actions) */
+    /* layout */
+    --shell-max:1440px; --shell-pad:48px;
+    --nav-h:64px;
+    --ci-width:285px; --ci-min:285px; --ci-max:560px;
+    --cb-width:315px;      /* right "Course Blocks" drawer (no resize) */
+    --sitenav-width:300px; /* hamburger site-nav overlay */
+    --content-max:873px;
+    --btn:40px;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    font-family:"Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color:var(--text-default);
+    background:var(--page-bg);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{ color:var(--primary); text-decoration:none; }
+  button{ font-family:inherit; }
+
+  /* shared centered container: both nav inner row and page row use it so
+     their horizontal bounds line up ("nav positioned like page content"). */
+  .shell{
+    max-width:var(--shell-max);
+    margin:0 auto;
+    padding:0 var(--shell-pad);
+  }
+
+  /* =====================  TOP NAV  ===================== */
+  .topbar{
+    position:sticky; top:0; z-index:40;
+    background:var(--bg-subtle);
+    border-bottom:1px solid var(--border-subtle);
+  }
+  .topbar-inner{
+    height:var(--nav-h);
+    display:flex; align-items:center; justify-content:space-between; gap:var(--sp-md);
+  }
+  .nav-left{ display:flex; align-items:center; gap:32px; min-width:0; }
+  .brand{ display:flex; align-items:center; gap:8px; height:40px; }
+  .brand .mark{ font-size:26px; color:var(--text-default); }
+  .brand .word{ line-height:1; }
+  .brand .word b{ display:block; font-weight:800; font-size:17px; letter-spacing:.2px; }
+  .brand .word span{ display:block; font-size:11px; letter-spacing:2px; color:var(--text-subtle); }
+
+  .nav-pills{ display:flex; align-items:center; gap:var(--sp-xxs); }
+  .nav-pill{
+    display:flex; align-items:center; gap:var(--sp-xxs);
+    padding:var(--sp-xs) var(--sp-sm);
+    border-radius:var(--r-md); border:none; background:transparent;
+    font-size:14px; font-weight:500; color:var(--text-subtle); cursor:pointer;
+    white-space:nowrap;
+  }
+  .nav-pill .dot{ width:4px; height:4px; border-radius:50%; background:var(--primary); }
+  .nav-pill.selected{ background:var(--bg-strong); color:var(--text-default); }
+
+  .burger{
+    display:none;
+    width:var(--btn); height:var(--btn); border:none; background:transparent;
+    border-radius:var(--r-sm); cursor:pointer; color:var(--text-default); font-size:20px;
+    align-items:center; justify-content:center;
+  }
+  .burger:hover{ background:var(--bg-strong); }
+
+  .nav-right{ display:flex; align-items:center; gap:var(--sp-xs); }
+  .nav-right-group{ display:flex; align-items:center; gap:var(--sp-md); }
+
+  .search{
+    display:flex; align-items:center; gap:var(--sp-xs);
+    width:256px; height:36px; padding:0 var(--sp-sm);
+    background:var(--bg-strong); border-radius:var(--r-md);
+    color:var(--text-subtle); font-size:14px;
+  }
+  .search i{ font-size:12px; }
+  .search-icon-btn{
+    display:none;
+    width:36px; height:36px; border:none; background:transparent; border-radius:var(--r-md);
+    color:var(--text-subtle); cursor:pointer; align-items:center; justify-content:center;
+  }
+  .search-icon-btn:hover{ background:var(--bg-strong); }
+
+  .editmode{ display:flex; align-items:center; gap:var(--sp-xs); }
+  .editmode .label{ font-size:14px; color:var(--text-subtle); white-space:nowrap; }
+  .switch{
+    width:32px; height:16px; border-radius:var(--r-pill); background:var(--primary);
+    position:relative; border:none; cursor:pointer; flex:0 0 auto;
+  }
+  .switch::after{
+    content:""; position:absolute; top:2px; left:18px; width:12px; height:12px;
+    border-radius:50%; background:#fff; transition:left .15s ease;
+  }
+  .switch[aria-pressed="false"]{ background:var(--border-ring); }
+  .switch[aria-pressed="false"]::after{ left:2px; }
+
+  .icon-btn{
+    width:28px; height:28px; border:none; background:transparent; border-radius:var(--r-sm);
+    color:var(--text-subtle); font-size:12px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .icon-btn:hover{ background:var(--bg-strong); }
+  .nav-icons{ display:flex; align-items:center; gap:var(--sp-xs); }
+
+  .nav-divider{ width:1px; height:24px; background:var(--bg-strong); }
+
+  .profile{
+    display:flex; align-items:center; gap:var(--sp-xs);
+    padding:0 var(--sp-xs); border-radius:var(--r-pill); cursor:pointer;
+  }
+  .profile:hover{ background:var(--bg-strong); }
+  .avatar{
+    width:32px; height:32px; border-radius:50%; flex:0 0 auto;
+    border:1px solid var(--border-default);
+    background:linear-gradient(135deg,#f0a878,#c9805a);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:12px; font-weight:600;
+  }
+  .profile .pname{ font-size:14px; font-weight:500; color:var(--text-default); }
+  .profile .fa-chevron-down{ font-size:8px; color:var(--text-subtle); }
+
+  /* =====================  PAGE LAYOUT  ===================== */
+  .layout{
+    display:flex; align-items:flex-start;
+    padding-top:var(--sp-lg); padding-bottom:64px;
+    min-height:calc(100vh - var(--nav-h));
+    position:relative;
+  }
+
+  /* floating open-toggle column (shown when index closed).
+     align-self:stretch gives the sticky button vertical range to stick. */
+  .toggle-col{
+    flex:0 0 auto; width:var(--btn); margin-right:12px; align-self:stretch;
+    display:flex; justify-content:center;
+  }
+  body.ci-open .toggle-col{ width:0; margin-right:0; overflow:hidden; }
+
+  .ci-toggle{
+    width:var(--btn); height:var(--btn); border:none; cursor:pointer;
+    border-radius:var(--r-sm); background:var(--bg-strong);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .ci-toggle:hover{ background:var(--border-default); }
+  .ci-toggle.sticky{ position:sticky; top:calc(var(--nav-h) + var(--sp-lg)); }
+  .ci-toggle.contained{ background:transparent; }
+  .ci-toggle.contained:hover{ background:rgba(0,0,0,.06); }
+  .sidebar-icon{ width:20px; height:16px; display:block; }
+
+  /* course index drawer (grey rounded card) — sticky so it stays in view on scroll */
+  .drawer{
+    flex:0 0 auto; width:0; overflow:hidden;
+    position:sticky; top:calc(var(--nav-h) + var(--sp-lg)); align-self:flex-start;
+    transition:width .32s cubic-bezier(.4,0,.2,1);
+  }
+  body.ci-open #drawer{ width:var(--ci-width); }
+  .ci-card{
+    width:var(--ci-width); background:var(--bg-strong); border-radius:var(--r-md);
+    padding:0 var(--sp-sm) var(--sp-md);
+    max-height:calc(100vh - var(--nav-h) - 2 * var(--sp-lg)); overflow-x:hidden; overflow-y:auto;
+    transform:translateX(-100%); transition:transform .32s cubic-bezier(.4,0,.2,1);
+  }
+  body.ci-open .ci-card{ transform:translateX(0); }
+
+  .ci-header{
+    display:flex; align-items:center; justify-content:space-between;
+    height:53px; padding-left:var(--sp-md); padding-top:var(--sp-xs);
+  }
+  .ci-title{ font-size:16px; font-weight:600; color:var(--text-default); }
+  .ci-divider{ height:1px; background:var(--border-default); margin:0 -0; }
+
+  .ci-collapseall{
+    display:flex; align-items:center; gap:var(--sp-xs);
+    padding:var(--sp-xs) var(--sp-sm); margin-top:var(--sp-xs);
+    background:none; border:none; cursor:pointer;
+    color:var(--text-muted); font-size:14px;
+  }
+  .ci-collapseall i{ font-size:12px; }
+
+  .ci-section{ }
+  .ci-sec-head{
+    display:flex; align-items:center; gap:var(--sp-xs);
+    padding:var(--sp-sm) var(--sp-sm); border:none; background:none; width:100%;
+    cursor:pointer; text-align:left; border-radius:var(--r-sm);
+  }
+  .ci-sec-head:hover{ background:rgba(0,0,0,.04); }
+  .ci-sec-head .chev{ width:10px; font-size:8px; color:var(--text-muted); flex:0 0 auto; text-align:center; transition:transform .15s ease; }
+  .ci-sec-head .txt{ font-size:14px; font-weight:500; color:var(--text-default); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ci-section.collapsed .chev{ transform:rotate(-90deg); }
+  .ci-section.collapsed .ci-activities{ display:none; }
+
+  .ci-activities{ padding-left:var(--sp-md); display:flex; flex-direction:column; gap:var(--sp-xxs); }
+  .ci-activity{
+    display:flex; align-items:center; gap:var(--sp-sm); padding:var(--sp-sm);
+    border-radius:var(--r-sm); cursor:pointer; min-width:0;
+  }
+  .ci-activity:hover{ background:rgba(0,0,0,.04); }
+  .ci-check{
+    width:16px; height:16px; border-radius:50%; flex:0 0 auto;
+    border:1px solid var(--border-ring);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .ci-check.done{ background:var(--primary); border-color:var(--primary); color:#fff; font-size:9px; }
+  .ci-acticon{ font-size:14px; color:var(--activity-magenta); flex:0 0 auto; }
+  .ci-activity .txt{
+    font-size:14px; font-weight:500; color:var(--text-subtle);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
+  }
+  .ci-subsection{ padding-left:var(--sp-md); }
+
+  /* ============ inline row edit controls (Confluence-style) ============
+     Revealed on hover/focus, EDIT MODE ONLY (body.edit-on). All course-index
+     rows (section / activity / book / chapter) get a trailing cluster:
+     drag grip · + add · … more. Reorder is by dragging the row.
+     (--ci-row-hover is defined in :root — card bg + row hover overlay, so the
+     overlaid actions cover the truncated name cleanly.) */
+  .ci-secrow{ position:relative; display:flex; align-items:center; }
+  .ci-secrow .ci-sec-head{ flex:1 1 auto; width:auto; min-width:0; }
+  .ci-activity, .ci-chapter{ position:relative; }
+
+  /* leading drag handle at the row's left edge (before icon/text).
+     Space is reserved in edit mode (so nothing jumps on hover); the grip
+     fades from dim to full when the row is hovered. */
+  .ci-grip{
+    flex:0 0 auto; width:0; overflow:hidden; opacity:0;
+    border:none; background:none; padding:0; cursor:grab;
+    color:var(--text-muted); font-size:12px; border-radius:3px;
+    display:flex; align-items:center; justify-content:center;
+    transition:opacity .1s ease;
+  }
+  /* reserve the handle column in edit mode so nothing shifts on hover, but keep
+     the grip HIDDEN until the row is hovered or a control in it is focused
+     (keyboard). */
+  body.edit-on .ci-grip{ width:16px; margin-right:2px; }
+  body.edit-on .ci-secrow:hover .ci-grip,
+  body.edit-on .ci-secrow:focus-within .ci-grip,
+  body.edit-on .ci-activity:hover .ci-grip,
+  body.edit-on .ci-activity:focus-within .ci-grip,
+  body.edit-on .ci-chapter:hover .ci-grip,
+  body.edit-on .ci-chapter:focus-within .ci-grip,
+  body.edit-on .ci-grip:focus-visible,
+  body.edit-on [data-row].dragging .ci-grip{ opacity:1; }
+  body.edit-on .ci-grip:focus-visible{ outline:2px solid var(--primary); outline-offset:1px; }
+
+  .ci-row-actions{
+    position:absolute; top:50%; right:4px; transform:translateY(-50%);
+    display:flex; align-items:center; gap:1px;
+    background:var(--ci-row-hover);
+    opacity:0; pointer-events:none; transition:opacity .1s ease;
+  }
+  .ci-row-actions::before{ /* soft fade so it doesn't hard-edge the name */
+    content:""; position:absolute; left:-14px; top:0; bottom:0; width:14px;
+    background:linear-gradient(90deg, rgba(225,228,230,0), var(--ci-row-hover));
+  }
+  /* reveal only in edit mode, on row hover or when a control has focus */
+  body.edit-on .ci-secrow:hover .ci-row-actions,
+  body.edit-on .ci-secrow:focus-within .ci-row-actions,
+  body.edit-on .ci-activity:hover .ci-row-actions,
+  body.edit-on .ci-activity:focus-within .ci-row-actions,
+  body.edit-on .ci-chapter:hover .ci-row-actions,
+  body.edit-on .ci-chapter:focus-within .ci-row-actions,
+  body.edit-on .ci-row-actions:focus-within,
+  body.edit-on .ci-row-actions.menu-open{ opacity:1; pointer-events:auto; }
+  /* keep student view clean: no grip cursor / draggable affordance off edit */
+  body:not(.edit-on) [data-row]{ cursor:pointer; }
+
+  .ci-actbtn{
+    width:22px; height:22px; border:none; background:transparent; border-radius:4px;
+    color:var(--text-muted); font-size:12px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+  }
+  .ci-actbtn:hover{ background:rgba(0,0,0,.12); color:var(--text-default); }
+  .ci-actbtn:focus-visible{ outline:2px solid var(--primary); outline-offset:1px; }
+  body.edit-on [data-row].dragging{ opacity:.4; }
+  body.edit-on [data-row].dragging .ci-row-actions{ opacity:0; }
+
+  /* book row (expandable) + its chapters (the migrated TOC) */
+  .ci-bookwrap{ }
+  .ci-book-chevron{
+    width:12px; border:none; background:none; padding:0; cursor:pointer;
+    color:var(--text-muted); font-size:9px; flex:0 0 auto; text-align:center;
+    transition:transform .15s ease;
+  }
+  .ci-bookwrap.collapsed .ci-book-chevron{ transform:rotate(-90deg); }
+  .ci-bookwrap.collapsed .ci-chapters{ display:none; }
+  .ci-book .ci-acticon{ color:var(--activity-teal); }
+  .ci-chapters{ padding-left:26px; display:flex; flex-direction:column; gap:1px; }
+  .ci-chapter{
+    display:flex; align-items:center; gap:var(--sp-xs);
+    padding:7px var(--sp-sm); border-radius:var(--r-sm); cursor:pointer; min-width:0;
+  }
+  .ci-chapter:hover{ background:rgba(0,0,0,.04); }
+  .ci-chapter .num{ color:var(--text-muted); font-size:13px; flex:0 0 auto; min-width:14px; }
+  .ci-chapter .txt{
+    font-size:14px; color:var(--text-subtle);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
+  }
+  .ci-chapter.hiddenrow .txt, .ci-activity.hiddenrow .txt{ color:var(--text-muted); font-style:italic; }
+
+  /* popup menu (shared by + add and … more) */
+  .ci-menu{
+    position:fixed; z-index:80; min-width:190px; max-width:260px;
+    background:var(--surface); border:1px solid var(--border-default);
+    border-radius:var(--r-md); box-shadow:0 8px 28px rgba(0,0,0,.16);
+    padding:6px; display:none;
+  }
+  .ci-menu.show{ display:block; }
+  .ci-menu-label{ font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-muted); padding:6px 10px 3px; }
+  .ci-menu-item{
+    display:flex; align-items:center; gap:10px; width:100%;
+    padding:8px 10px; border:none; background:none; cursor:pointer;
+    font-size:14px; color:var(--text-default); border-radius:var(--r-sm); text-align:left;
+  }
+  .ci-menu-item:hover{ background:var(--bg-subtle); }
+  .ci-menu-item i{ width:16px; text-align:center; color:var(--text-muted); font-size:13px; flex:0 0 auto; }
+  .ci-menu-item.danger{ color:#b02a37; }
+  .ci-menu-item.danger i{ color:#b02a37; }
+  .ci-menu-sep{ height:1px; background:var(--border-subtle); margin:5px 4px; }
+
+  /* resize handle */
+  .resize-handle{
+    position:absolute; top:0; right:0; width:8px; height:100%;
+    cursor:col-resize; z-index:5;
+  }
+  body:not(.ci-open) .resize-handle, body.ci-overlay .resize-handle{ display:none; }
+  .resize-handle::after{
+    content:""; position:absolute; top:0; bottom:0; left:3px; width:2px;
+    background:transparent; transition:background .12s ease;
+  }
+  .resize-handle:hover::after, .resize-handle.dragging::after{ background:var(--primary); }
+  body.dragging{ cursor:col-resize !important; user-select:none; }
+  .width-readout{
+    position:absolute; bottom:12px; right:12px; font-size:11px;
+    background:var(--text-default); color:#fff; padding:2px 6px; border-radius:4px;
+    opacity:0; pointer-events:none; transition:opacity .15s ease;
+  }
+  .width-readout.show{ opacity:.92; }
+
+  /* =====================  COURSE CONTENT  =====================
+     content-col fills the space between the index and the blocks button;
+     its children are capped at --content-max and centred, so the page reads
+     centered in the available width (matches main-branch behaviour) instead
+     of pinned to the left. */
+  .content-col{
+    flex:1 1 auto; min-width:0;
+    display:flex; flex-direction:column; align-items:center;
+    padding:0 40px;
+  }
+  .content-col > *{ width:100%; max-width:var(--content-max); }
+
+  .course-header{ margin-bottom:var(--sp-md); }
+  .title-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+  .title-row h1{ margin:0; font-size:30px; font-weight:800; letter-spacing:-.3px; }
+  .bulk-actions{ display:flex; align-items:center; gap:6px; color:var(--text-subtle); font-size:14px; font-weight:500; white-space:nowrap; margin-top:8px; cursor:pointer; }
+
+  /* course-content tabs = nav-pill style (Figma 2295-39652):
+     selected = grey pill + 4px blue dot; unselected = plain muted text. */
+  .course-nav{ display:flex; align-items:center; gap:8px; margin-top:20px; }
+  .course-tabs-scroll{ position:relative; flex:1 1 auto; min-width:0; }
+  .course-tabs{
+    display:flex; align-items:center; gap:4px;
+    overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none;
+  }
+  .course-tabs::-webkit-scrollbar{ display:none; }
+  .course-tabs .tab{
+    display:flex; align-items:center; gap:4px; flex:0 0 auto;
+    padding:8px 12px; border-radius:var(--r-md);
+    font-size:14px; font-weight:500; color:var(--text-subtle);
+    background:none; border:none; cursor:pointer; white-space:nowrap;
+  }
+  .course-tabs .tab:hover{ background:var(--bg-subtle); }
+  .course-tabs .tab.active{ background:var(--bg-strong); color:var(--text-default); }
+  .course-tabs .tab .dot{ width:4px; height:4px; border-radius:50%; background:var(--primary); flex:0 0 auto; }
+  .course-tabs .tab .fa-chevron-down{ font-size:9px; }
+  /* edge fades hint that tabs scroll horizontally (mobile) */
+  .course-tabs-scroll::before, .course-tabs-scroll::after{
+    content:""; position:absolute; top:0; bottom:0; width:32px; pointer-events:none;
+    opacity:0; transition:opacity .18s ease; z-index:1;
+  }
+  .course-tabs-scroll::before{ left:0; background:linear-gradient(to right, var(--page-bg), transparent); }
+  .course-tabs-scroll::after{ right:0; background:linear-gradient(to left, var(--page-bg), transparent); }
+  .course-tabs-scroll.more-left::before{ opacity:1; }
+  .course-tabs-scroll.more-right::after{ opacity:1; }
+  .course-nav .collapse-all{
+    flex:0 0 auto; display:flex; align-items:center; gap:6px;
+    color:var(--text-subtle); font-size:13px; background:none; border:none; cursor:pointer;
+  }
+
+  .progress-wrap{ margin-top:16px; }
+  .progress-top{ display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px; }
+  .progress-top .lbl{ font-weight:600; }
+  .progress-top .val{ color:var(--text-subtle); }
+  .progress-track{ height:8px; border-radius:var(--r-pill); background:var(--bg-strong); overflow:hidden; }
+  .progress-fill{ height:100%; width:44%; background:var(--primary); border-radius:var(--r-pill); }
+
+  /* section cards */
+  .section-card{
+    background:var(--surface); border:1px solid var(--border-default);
+    border-radius:var(--r-lg); margin-top:16px; overflow:hidden;
+  }
+  .sec-collapsed{ display:flex; align-items:center; gap:12px; padding:18px 20px; cursor:pointer; }
+  .sec-collapsed .chev{ color:var(--text-subtle); font-size:12px; width:16px; text-align:center; }
+  .sec-collapsed .htitle{ font-size:18px; font-weight:700; }
+
+  .add-content-divider{
+    display:flex; align-items:center; gap:16px; margin:8px 0;
+  }
+  .add-content-divider .line{ flex:1; height:1px; background:var(--border-default); }
+  .pill-btn{
+    display:inline-flex; align-items:center; gap:6px; padding:6px 12px;
+    background:var(--bg-subtle); border:1px solid var(--border-default);
+    border-radius:var(--r-pill); font-size:13px; color:var(--text-subtle);
+    cursor:pointer; white-space:nowrap;
+  }
+
+  .sec-expanded{ padding:20px; }
+  .sec-exp-head{ display:flex; align-items:flex-start; gap:12px; }
+  .sec-exp-head .left-icons{ display:flex; align-items:center; gap:8px; flex:0 0 auto; padding-top:2px; }
+  .checkbox{ width:16px; height:16px; border:1.5px solid var(--border-ring); border-radius:4px; }
+  .sec-icon{ width:26px; height:26px; border-radius:6px; background:var(--bg-strong); display:flex; align-items:center; justify-content:center; color:var(--text-subtle); font-size:12px; }
+  .sec-exp-head .chev{ color:var(--text-subtle); font-size:12px; }
+  .sec-exp-head .body{ flex:1; min-width:0; }
+  .sec-exp-head .htitle{ font-size:18px; font-weight:700; margin:0; }
+  .sec-exp-head .desc{ margin:8px 0 0; color:var(--text-subtle); font-size:14px; line-height:1.55; }
+  .kebab{ background:none; border:none; color:var(--text-subtle); cursor:pointer; padding:6px; font-size:14px; }
+
+  .hero-img{
+    height:200px; border-radius:var(--r-md); margin:16px 0 4px;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.25)),
+      linear-gradient(120deg,#3a6ea5,#4c8caf 40%,#2e5a7a);
+    display:flex; align-items:center; justify-content:center; color:#fff;
+    position:relative; overflow:hidden;
+  }
+  .hero-img .placard{
+    background:#e9dcc3; color:#1d2125; transform:rotate(-4deg);
+    padding:14px 22px; border-radius:4px; font-weight:800; letter-spacing:1px;
+    box-shadow:0 8px 24px rgba(0,0,0,.3); font-size:22px; text-align:center; line-height:1.1;
+  }
+  .hero-img .placard span{ display:block; color:#0f7b8a; }
+
+  /* activity item cards */
+  .activity-item{ border-top:1px solid var(--border-subtle); padding:20px 4px; }
+  .ai-main{ display:flex; align-items:flex-start; gap:12px; }
+  .ai-grip{ color:var(--text-muted); font-size:14px; padding-top:8px; cursor:grab; }
+  .ai-icon{
+    width:36px; height:36px; border-radius:var(--r-md); flex:0 0 auto;
+    background:var(--activity-teal-bg); color:var(--activity-teal);
+    display:flex; align-items:center; justify-content:center; font-size:15px;
+  }
+  .ai-body{ flex:1; min-width:0; }
+  .ai-titlerow{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .ai-title{ font-size:15px; font-weight:700; }
+  .ai-title.link{ color:var(--primary); }
+  .badge-type{ font-size:11px; font-weight:700; color:var(--text-muted); letter-spacing:.5px; }
+  .ai-desc{ margin:4px 0 0; color:var(--text-subtle); font-size:13px; }
+  .completion-pill{
+    margin-left:auto; display:inline-flex; align-items:center; gap:6px;
+    padding:5px 10px; border:1px solid var(--border-default); border-radius:var(--r-pill);
+    font-size:12px; color:var(--text-subtle); background:var(--surface); cursor:pointer; white-space:nowrap;
+  }
+  .completion-pill .fa-circle{ font-size:9px; }
+
+  .ai-meta{ margin-top:10px; padding-left:48px; display:flex; flex-direction:column; gap:8px; }
+  .chip{
+    display:inline-flex; align-items:center; gap:6px; padding:4px 8px;
+    border-radius:var(--r-sm); font-size:12px; white-space:nowrap;
+  }
+  .chip.grey{ background:var(--bg-strong); color:var(--text-subtle); }
+  .chip.date{ color:var(--text-subtle); }
+  .chip.date.close{ background:var(--amber-bg); color:var(--amber-text); }
+  .meta-row{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .restriction{
+    display:flex; align-items:center; gap:8px; padding:10px 12px;
+    background:var(--bg-subtle); border:1px solid var(--border-subtle); border-radius:var(--r-md);
+    font-size:13px; color:var(--text-subtle);
+  }
+  .restriction .fa-lock{ font-size:11px; }
+  .restriction .txt{ flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .restriction .showmore{ color:var(--primary); font-size:13px; white-space:nowrap; cursor:pointer; }
+
+  /* subsection (Assessments) */
+  .subsection{ margin-top:16px; border-top:1px solid var(--border-subtle); padding-top:8px; }
+  .subsec-head{ display:flex; align-items:center; gap:12px; padding:12px 4px; }
+  .subsec-head .sec-icon{ width:26px; height:26px; }
+  .subsec-head .chev{ color:var(--text-subtle); font-size:12px; }
+  .subsec-head .stitle{ font-size:16px; font-weight:700; }
+  .subsec-head .kebab{ margin-left:auto; }
+  .subsec-activities{ padding-left:8px; }
+  .activity-item.small{ padding:14px 4px; }
+  .activity-item.small .ai-meta{ margin-top:8px; }
+
+  .add-new-section{
+    margin-top:20px; border:1.5px dashed var(--border-default); border-radius:var(--r-lg);
+    padding:28px; text-align:center; color:var(--text-subtle); cursor:pointer;
+  }
+  .add-new-section .circle{
+    width:28px; height:28px; border-radius:50%; background:var(--bg-strong);
+    display:inline-flex; align-items:center; justify-content:center; color:var(--text-subtle);
+    margin-bottom:8px; font-size:12px;
+  }
+  .add-new-section .lbl{ display:block; font-size:12px; }
+
+  /* ---- right "Course Blocks" drawer (push on desktop, no drag handle) ---- */
+  .toggle-col-right{ flex:0 0 auto; width:var(--btn); margin-left:12px; align-self:stretch; display:flex; justify-content:center; }
+  body.cb-open .toggle-col-right{ width:0; margin-left:0; overflow:hidden; }
+  .blocks-btn{
+    position:sticky; top:calc(var(--nav-h) + var(--sp-lg));
+    width:var(--btn); height:var(--btn); border:none; border-radius:var(--r-sm);
+    background:var(--bg-strong); color:var(--text-subtle);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .blocks-btn:hover{ background:var(--border-default); }
+
+  .drawer-right{
+    flex:0 0 auto; width:0; overflow:hidden;
+    position:sticky; top:calc(var(--nav-h) + var(--sp-lg)); align-self:flex-start;
+    transition:width .32s cubic-bezier(.4,0,.2,1);
+  }
+  body.cb-open .drawer-right{ width:var(--cb-width); }
+  .cb-card{
+    width:var(--cb-width); padding:0 var(--sp-sm) var(--sp-md);
+    background:var(--bg-subtle); border-radius:var(--r-md);
+    max-height:calc(100vh - var(--nav-h) - 2 * var(--sp-lg)); overflow-x:hidden; overflow-y:auto;
+    transform:translateX(100%); transition:transform .32s cubic-bezier(.4,0,.2,1);
+  }
+  body.cb-open .cb-card{ transform:translateX(0); }
+  .cb-header{ display:flex; flex-direction:column; align-items:flex-start; gap:var(--sp-sm); padding:var(--sp-xs) 0 var(--sp-sm); }
+  .cb-header .cb-close{
+    width:45px; height:45px; border:none; cursor:pointer; border-radius:var(--r-md);
+    background:var(--bg-strong); display:flex; align-items:center; justify-content:center;
+  }
+  .cb-header .cb-close:hover{ background:var(--border-default); }
+  .cb-title{ font-size:16px; font-weight:600; color:var(--text-default); }
+  .cb-body{ display:flex; flex-direction:column; gap:var(--sp-xs); }
+  .cb-block{ background:var(--surface); border:1px solid var(--border-subtle); border-radius:var(--r-sm); padding:var(--sp-sm) 0; }
+  .cb-block-head{ display:flex; align-items:center; gap:var(--sp-xs); padding:0 var(--sp-md); }
+  .cb-block-head .grip{
+    width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    color:var(--text-muted); font-size:12px;
+  }
+  .cb-block-title{ font-size:16px; font-weight:500; color:var(--text-subtle); }
+  .cb-block-divider{ height:1px; background:var(--border-subtle); margin:var(--sp-sm) 0; }
+  .cb-block-body{ padding:0 var(--sp-md); font-size:14px; }
+  .cb-block-body p{ margin:0 0 12px; color:var(--text-muted); line-height:1.5; }
+  .cb-block-body a{ color:var(--primary); }
+  .cb-teacher{ display:flex; align-items:center; gap:12px; padding:0 var(--sp-md); }
+  .cb-teacher .avatar-lg{
+    width:62px; height:62px; border-radius:50%; flex:0 0 auto;
+    background:linear-gradient(135deg,#8a9aa8,#5a6b7a); display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:20px; font-weight:600;
+  }
+  .cb-teacher .name{ font-size:16px; color:var(--text-default); }
+  .cb-teacher .role{ font-size:14px; color:var(--text-muted); margin-top:4px; }
+
+  /* ---- hamburger site-nav overlay ---- */
+  .sitenav{
+    position:fixed; left:0; top:var(--nav-h); height:calc(100vh - var(--nav-h));
+    width:var(--sitenav-width); max-width:85vw; background:var(--surface); z-index:47;
+    border-right:1px solid var(--border-default); box-shadow:8px 0 24px rgba(0,0,0,.10);
+    transform:translateX(-105%); transition:transform .3s cubic-bezier(.4,0,.2,1);
+    padding:var(--sp-sm); overflow-y:auto;
+  }
+  body.nav-open .sitenav{ transform:translateX(0); }
+  .sitenav-item{
+    display:flex; align-items:center; gap:12px; width:100%;
+    padding:12px 14px; border:none; background:none; cursor:pointer; text-align:left;
+    border-radius:var(--r-md); font-size:15px; font-weight:500; color:var(--text-subtle);
+  }
+  .sitenav-item i{ width:18px; text-align:center; color:var(--text-muted); }
+  .sitenav-item:hover{ background:var(--bg-subtle); }
+  .sitenav-item.active{ background:var(--bg-strong); color:var(--text-default); }
+
+  /* backdrop for any overlay */
+  .backdrop{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:46;
+  }
+  body.nav-open .backdrop,
+  body.ci-overlay.ci-open .backdrop,
+  body.cb-overlay.cb-open .backdrop{ display:block; }
+
+  /* debug + hint */
+  /* dev aids — click to dismiss so they don't sit over the design in review */
+  .debug{
+    position:fixed; bottom:16px; right:14px; z-index:60; cursor:pointer;
+    background:rgba(29,33,37,.92); color:#fff; font-size:11px; line-height:1.6;
+    padding:8px 10px; border-radius:8px; font-variant-numeric:tabular-nums;
+  }
+  .debug b{ color:#8fd0ff; }
+  .hint{
+    position:fixed; bottom:16px; left:16px; z-index:60; cursor:pointer;
+    max-width:260px; background:rgba(255,255,255,.92); border:1px solid var(--border-default);
+    color:var(--text-muted); font-size:11px; padding:6px 9px; border-radius:6px; line-height:1.4;
+  }
+  body.hide-dev .debug, body.hide-dev .hint{ display:none; }
+
+  /* =====================  RESPONSIVE  =====================
+     Two independent breakpoints:
+       - nav burger + hidden logo/pills at <=1024px
+       - sidebars (index + blocks) switch push -> overlay at <=768px
+     So tablet (769-1024) keeps inline/push sidebars with a burger nav. */
+  @media (max-width:1024px){
+    :root{ --shell-pad:24px; }
+    .burger{ display:flex; }
+    .nav-left .brand, .nav-left .nav-pills{ display:none; }
+    .content-col{ padding:0 24px; }
+  }
+
+  /* sidebars overlay from 768px or less. The WHOLE drawer (position:fixed)
+     slides off-screen when closed — not just the inner card — otherwise the
+     closed drawer's fixed box stays over the content and intercepts taps on
+     the toggle buttons (that was the "button does nothing on mobile" bug). */
+  @media (max-width:768px){
+    /* left course index overlay (scope to #drawer so the right drawer,
+       which also has class .drawer, isn't captured) */
+    body.ci-overlay #drawer{
+      position:fixed; left:0; top:var(--nav-h); height:calc(100vh - var(--nav-h));
+      width:auto !important; z-index:47; padding:16px; margin:0;
+      transform:translateX(-110%); transition:transform .3s cubic-bezier(.4,0,.2,1);
+    }
+    body.ci-overlay.ci-open #drawer{ transform:translateX(0); }
+    body.ci-overlay .ci-card{
+      width:300px; max-width:85vw; height:100%; max-height:none; overflow-y:auto;
+      transform:none;
+    }
+    body.ci-overlay .toggle-col{ width:var(--btn); margin-right:12px; overflow:visible; }
+
+    /* right course-blocks overlay (mirrors the left) */
+    body.cb-overlay .drawer-right{
+      position:fixed; right:0; top:var(--nav-h); height:calc(100vh - var(--nav-h));
+      width:auto !important; z-index:47; padding:16px; margin:0;
+      transform:translateX(110%); transition:transform .3s cubic-bezier(.4,0,.2,1);
+    }
+    body.cb-overlay.cb-open .drawer-right{ transform:translateX(0); }
+    body.cb-overlay .cb-card{
+      width:300px; max-width:85vw; height:100%; max-height:none; overflow-y:auto;
+      transform:none;
+    }
+    body.cb-overlay .toggle-col-right{ width:var(--btn); margin-left:12px; overflow:visible; }
+  }
+
+  @media (max-width:767px){
+    :root{ --shell-pad:16px; }
+    .search{ display:none; }
+    .search-icon-btn{ display:flex; }
+    .editmode .label{ display:none; }
+    .profile .pname, .profile .fa-chevron-down{ display:none; }
+    .nav-right-group{ gap:var(--sp-sm); }
+    .content-col{ min-width:0; padding:0 16px; }
+    .title-row h1{ font-size:24px; }
+    .course-nav .collapse-all .ca-label{ display:none; } /* icon-only on mobile */
+    .ai-meta{ padding-left:0; }
+  }
+</style>
+</head>
+<body class="ci-open edit-on">
+
+  <!-- ===== TOP NAV ===== -->
+  <header class="topbar">
+    <div class="topbar-inner shell">
+      <div class="nav-left">
+        <button class="burger" id="burger" aria-label="Open site navigation"><i class="fa-solid fa-bars"></i></button>
+        <div class="brand">
+          <span class="mark"><i class="fa-solid fa-leaf"></i></span>
+          <span class="word"><b>Fleetwood</b><span>UNIVERSITY</span></span>
+        </div>
+        <nav class="nav-pills">
+          <button class="nav-pill selected"><span class="dot"></span>Dashboard</button>
+          <button class="nav-pill">Site Administration</button>
+        </nav>
+      </div>
+      <div class="nav-right">
+        <div class="nav-right-group">
+          <div class="search"><i class="fa-solid fa-magnifying-glass"></i><span>Search…</span></div>
+          <button class="search-icon-btn" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+          <div class="editmode">
+            <span class="label">Edit mode</span>
+            <button class="switch" id="editSwitch" aria-pressed="true" aria-label="Edit mode"></button>
+          </div>
+          <div class="nav-icons">
+            <button class="icon-btn" aria-label="Notifications"><i class="fa-regular fa-bell"></i></button>
+            <button class="icon-btn" aria-label="Messages"><i class="fa-regular fa-comment"></i></button>
+          </div>
+        </div>
+        <div class="nav-divider"></div>
+        <div class="profile">
+          <span class="avatar">S</span>
+          <span class="pname">Sarah</span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== PAGE ===== -->
+  <div class="layout shell">
+
+    <!-- floating open-toggle (shown when index closed) -->
+    <div class="toggle-col">
+      <button class="ci-toggle sticky" id="openBtn"
+        data-toggler="drawers" data-action="toggle" data-target="theme_boost-drawers-courseindex"
+        title="Open course index" aria-label="Open course index">
+        <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- course index drawer -->
+    <div class="drawer" id="drawer">
+      <div class="ci-card">
+        <div class="ci-header">
+          <span class="ci-title">Course Index</span>
+          <button class="ci-toggle contained" id="closeBtn"
+            data-toggler="drawers" data-action="toggle" data-target="theme_boost-drawers-courseindex"
+            title="Close course index" aria-label="Close course index">
+            <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/>
+            </svg>
+          </button>
+        </div>
+        <div class="ci-divider"></div>
+        <button class="ci-collapseall"><i class="fa-solid fa-down-left-and-up-right-to-center"></i>Collapse all</button>
+        <div id="sections"></div>
+      </div>
+      <div class="resize-handle" id="resizeHandle"></div>
+      <div class="width-readout" id="widthReadout">285px</div>
+    </div>
+
+    <!-- main course content -->
+    <main class="content-col">
+      <div class="course-header">
+        <div class="title-row">
+          <h1>Climate change</h1>
+          <span class="bulk-actions">Bulk actions <i class="fa-solid fa-pencil"></i></span>
+        </div>
+        <div class="course-nav">
+          <div class="course-tabs-scroll" id="tabsScroll">
+            <div class="course-tabs">
+              <button class="tab active"><span class="dot"></span>Course</button>
+              <button class="tab">Settings</button>
+              <button class="tab">Participants</button>
+              <button class="tab">Grades</button>
+              <button class="tab">Activities</button>
+              <button class="tab">More <i class="fa-solid fa-chevron-down"></i></button>
+            </div>
+          </div>
+          <button class="collapse-all"><i class="fa-solid fa-down-left-and-up-right-to-center"></i><span class="ca-label">Collapse all</span></button>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-top"><span class="lbl">Course Progress</span><span class="val">7/16</span></div>
+          <div class="progress-track"><div class="progress-fill"></div></div>
+        </div>
+      </div>
+
+      <!-- collapsed section -->
+      <div class="section-card">
+        <div class="sec-collapsed"><i class="fa-solid fa-chevron-right chev"></i><span class="htitle">Heading</span></div>
+      </div>
+
+      <div class="add-content-divider"><span class="line"></span><button class="pill-btn"><i class="fa-solid fa-plus"></i> Add content</button><span class="line"></span></div>
+
+      <!-- collapsed section -->
+      <div class="section-card">
+        <div class="sec-collapsed"><i class="fa-solid fa-chevron-right chev"></i><span class="htitle">Heading</span></div>
+      </div>
+
+      <!-- expanded section -->
+      <div class="section-card">
+        <div class="sec-expanded">
+          <div class="sec-exp-head">
+            <div class="left-icons">
+              <span class="checkbox"></span>
+              <span class="sec-icon"><i class="fa-regular fa-file-lines"></i></span>
+              <i class="fa-solid fa-chevron-down chev"></i>
+            </div>
+            <div class="body">
+              <h2 class="htitle">Heading</h2>
+              <p class="desc">In this module, we'll explore how climate change affects the ecosystems, species, and ultimately, the delicate balance of life on Earth. Through discussions, case studies, and real-world examples, you will understand the challenges and opportunities of preserving biodiversity in a rapidly changing climate.</p>
+            </div>
+            <button class="kebab"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+          </div>
+
+          <div class="hero-img"><div class="placard">CLIMATE<span>JUSTICE</span>NOW!</div></div>
+
+          <!-- large activity item -->
+          <div class="activity-item">
+            <div class="ai-main">
+              <i class="fa-solid fa-grip-vertical ai-grip"></i>
+              <span class="ai-icon"><i class="fa-solid fa-file-arrow-up"></i></span>
+              <div class="ai-body">
+                <div class="ai-titlerow">
+                  <span class="ai-title">Course Syllabus &amp; Reading List</span>
+                  <span class="badge-type">PDF</span>
+                </div>
+                <p class="ai-desc">Please submit a detailed reflection of approx 500 words</p>
+              </div>
+              <button class="completion-pill"><i class="fa-regular fa-circle"></i> Completion <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></button>
+            </div>
+            <div class="ai-meta">
+              <span class="chip grey"><i class="fa-solid fa-eye-slash"></i> Hidden from students <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></span>
+              <div class="meta-row">
+                <span class="chip date"><i class="fa-regular fa-calendar"></i> Opens: Monday, 14 January, 8.30 AM</span>
+                <span class="chip date close"><i class="fa-regular fa-clock"></i> Closes: Monday, 30 January, 8.30 AM</span>
+              </div>
+              <div class="restriction">
+                <i class="fa-solid fa-lock"></i>
+                <span class="txt"><b>Not available unless:</b> The previous activity with completion is marked complete, You achieve a score…</span>
+                <span class="showmore">Show more <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- large activity item -->
+          <div class="activity-item">
+            <div class="ai-main">
+              <i class="fa-solid fa-grip-vertical ai-grip"></i>
+              <span class="ai-icon"><i class="fa-solid fa-file-arrow-up"></i></span>
+              <div class="ai-body">
+                <div class="ai-titlerow">
+                  <span class="ai-title">Course Syllabus &amp; Reading List</span>
+                  <span class="badge-type">PDF</span>
+                </div>
+                <p class="ai-desc">Please submit a detailed reflection of approx 500 words</p>
+              </div>
+              <button class="completion-pill"><i class="fa-regular fa-circle"></i> Completion <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></button>
+            </div>
+            <div class="ai-meta">
+              <span class="chip grey"><i class="fa-solid fa-eye-slash"></i> Hidden from students <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></span>
+              <div class="meta-row">
+                <span class="chip date"><i class="fa-regular fa-calendar"></i> Opens: Monday, 14 January, 8.30 AM</span>
+                <span class="chip date close"><i class="fa-regular fa-clock"></i> Closes: Monday, 30 January, 8.30 AM</span>
+              </div>
+              <div class="restriction">
+                <i class="fa-solid fa-lock"></i>
+                <span class="txt"><b>Not available unless:</b> The previous activity with completion is marked complete, You achieve a score…</span>
+                <span class="showmore">Show more <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- subsection: Assessments -->
+          <div class="subsection">
+            <div class="subsec-head">
+              <span class="sec-icon"><i class="fa-solid fa-list-check"></i></span>
+              <i class="fa-solid fa-chevron-down chev"></i>
+              <span class="stitle">Assessments</span>
+              <button class="kebab"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            </div>
+            <div class="subsec-activities">
+              <div class="activity-item small">
+                <div class="ai-main">
+                  <span class="ai-icon"><i class="fa-solid fa-file-arrow-up"></i></span>
+                  <div class="ai-body">
+                    <div class="ai-titlerow"><span class="ai-title link">Course Syllabus &amp; Reading List</span> <i class="fa-solid fa-pencil" style="font-size:11px;color:var(--text-muted)"></i></div>
+                    <p class="ai-desc">Submit your 500-word reflection on the readings</p>
+                  </div>
+                  <button class="completion-pill"><i class="fa-regular fa-circle"></i> Completion <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></button>
+                </div>
+                <div class="ai-meta">
+                  <div class="meta-row">
+                    <span class="chip date"><i class="fa-regular fa-calendar"></i> Opens: Monday, 14 January, 8.30 AM</span>
+                    <span class="chip date close"><i class="fa-regular fa-clock"></i> Closes: Monday, 30 January, 8.30 AM</span>
+                  </div>
+                </div>
+              </div>
+              <div class="activity-item small">
+                <div class="ai-main">
+                  <span class="ai-icon"><i class="fa-solid fa-file-arrow-up"></i></span>
+                  <div class="ai-body">
+                    <div class="ai-titlerow"><span class="ai-title link">Course Syllabus &amp; Reading List</span> <span class="badge-type">PDF</span></div>
+                    <p class="ai-desc">Submit your 500-word reflection on the readings</p>
+                  </div>
+                  <button class="completion-pill"><i class="fa-regular fa-circle"></i> Completion <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></button>
+                </div>
+                <div class="ai-meta">
+                  <div class="meta-row">
+                    <span class="chip date"><i class="fa-regular fa-calendar"></i> Opens: Monday, 14 January, 8.30 AM</span>
+                    <span class="chip date close"><i class="fa-regular fa-clock"></i> Closes: Monday, 30 January, 8.30 AM</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="add-content-divider"><span class="line"></span><button class="pill-btn"><i class="fa-solid fa-plus"></i> Add content</button><span class="line"></span></div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="add-content-divider"><span class="line"></span><button class="pill-btn"><i class="fa-solid fa-plus"></i> Add section</button><span class="line"></span></div>
+
+      <div class="add-new-section">
+        <span class="circle"><i class="fa-solid fa-pencil"></i></span>
+        <span class="lbl">Add new section</span>
+      </div>
+    </main>
+
+    <!-- right "Course Blocks" drawer (push on desktop, overlay <=768) -->
+    <div class="drawer drawer-right" id="drawerRight">
+      <div class="cb-card">
+        <div class="cb-header">
+          <button class="cb-close" id="closeRightBtn" title="Close course blocks" aria-label="Close course blocks">
+            <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg" style="transform:scaleX(-1)">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/>
+            </svg>
+          </button>
+          <span class="cb-title">Course Blocks</span>
+        </div>
+        <div class="cb-body">
+          <div class="cb-block">
+            <div class="cb-block-head"><span class="grip"><i class="fa-solid fa-grip-vertical"></i></span><span class="cb-block-title">Licence</span></div>
+            <div class="cb-block-divider"></div>
+            <div class="cb-block-body">
+              <p>This Creative Commons course, created by Mary, is available on</p>
+              <a href="#">MoodleNet: Effective Memory Techniques</a>
+            </div>
+          </div>
+          <div class="cb-block">
+            <div class="cb-block-head"><span class="cb-block-title">Your teacher</span></div>
+            <div class="cb-block-divider"></div>
+            <div class="cb-teacher">
+              <span class="avatar-lg">MS</span>
+              <div>
+                <div class="name">Mr. Sanders</div>
+                <div class="role">Senior Lecturer, Mount Orange</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- right toggle column (blocks button, shown when right drawer closed) -->
+    <div class="toggle-col-right">
+      <button class="blocks-btn" id="openRightBtn" title="Open course blocks" aria-label="Open course blocks">
+        <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg" style="transform:scaleX(-1)">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- hamburger site-navigation overlay -->
+  <nav class="sitenav" id="sitenav" aria-label="Site navigation">
+    <button class="sitenav-item active"><i class="fa-solid fa-house"></i> Home</button>
+    <button class="sitenav-item"><i class="fa-solid fa-gauge"></i> Dashboard</button>
+    <button class="sitenav-item"><i class="fa-solid fa-graduation-cap"></i> My courses</button>
+    <button class="sitenav-item"><i class="fa-solid fa-gear"></i> Site administration</button>
+  </nav>
+
+  <div class="ci-menu" id="ciMenu" role="menu"></div>
+  <div class="backdrop" id="backdrop"></div>
+  <div class="debug" id="debug" title="Click to hide dev overlays"></div>
+  <div class="hint" title="Click to hide dev overlays">Edit mode on → hover any course-index row for <b>+</b> (add) / <b>…</b> (more) and drag to reorder. The book expands to its chapters (TOC now inline). Toggle Edit mode to see the clean student view. <b>(click to hide)</b></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---- course index data. One book activity carries a `chapters` array —
+     its TOC now lives inline in the index instead of the right sidebar. ---- */
+  var SECTIONS = [
+    { title:"Introduction", items:[
+      { t:"Course Syllabus & Reading List — Week 1 Orientation Pack", done:true },
+      { t:"Course Syllabus & Study Guide", book:true, chapters:[
+        "Course Overview",
+        "Learning Outcomes & Objectives",
+        "Assessment & Grading Policy",
+        "Weekly Schedule & Required Readings",
+        "Academic Integrity Guidelines"
+      ]},
+      { t:"Introductions & Ice Breaker Discussion Forum Activity", done:true }
+    ]},
+    { title:"Ecosystem vulnerability", collapsed:true, items:[
+      { t:"Formative Assessment: Photosynthesis and Cellular Respiration Quiz (Attempt 2 of 3)" },
+      { t:"Lecture Recording: Introduction to Organelles and Their Functions" }
+    ]},
+    { title:"Impact on biodiversity", items:[
+      { t:"Fieldwork Report Template: Local Ecosystem Biodiversity Survey Submission" },
+      { t:"Sample Text: Membrane Transport Mechanisms and Osmoregulation Reading" },
+      { t:"Example Entry: Great Barrier Reef Conservation Case Study Interactive Map" }
+    ], sub:{ title:"Assessments", items:[
+      { t:"Placeholder: Punnett Square Practice Problems Set B (Due Friday Week 6)" },
+      { t:"Placeholder: Natural Selection Simulation Interactive Module v3" }
+    ]}}
+  ];
+
+  // Leading drag handle (left edge, before the icon/text).
+  var GRIP = '<button class="ci-grip" aria-label="Drag to reorder" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i></button>';
+
+  // Trailing hover cluster: + add · … more.
+  // addtype: 'section' (activity/resource chooser) | 'chapter' (book chapters only).
+  function actionsHTML(rowtype, addtype){
+    return '<div class="ci-row-actions">'
+      + '<button class="ci-actbtn" data-menu="add" data-addtype="' + addtype + '" title="Add"><i class="fa-solid fa-plus"></i></button>'
+      + '<button class="ci-actbtn" data-menu="more" data-rowtype="' + rowtype + '" title="More"><i class="fa-solid fa-ellipsis"></i></button>'
+      + '</div>';
+  }
+
+  function bookRow(it){
+    var chapters = it.chapters.map(function(ch, i){
+      return '<div class="ci-chapter" data-row data-rowtype="chapter">'
+        + GRIP
+        + '<span class="num">' + (i + 1) + '</span>'
+        + '<span class="txt">' + ch + '</span>'
+        + actionsHTML('chapter', 'chapter')
+        + '</div>';
+    }).join('');
+    return '<div class="ci-bookwrap" data-row data-rowtype="book">'
+      + '<div class="ci-activity ci-book">'
+        + GRIP
+        + '<button class="ci-book-chevron" title="Expand chapters"><i class="fa-solid fa-chevron-down"></i></button>'
+        + '<i class="fa-solid fa-book ci-acticon"></i>'
+        + '<span class="txt">' + it.t + '</span>'
+        + actionsHTML('book', 'chapter')
+      + '</div>'
+      + '<div class="ci-chapters">' + chapters + '</div>'
+      + '</div>';
+  }
+
+  function activityRow(it){
+    if(it.book) return bookRow(it);
+    var check = it.done
+      ? '<span class="ci-check done"><i class="fa-solid fa-check"></i></span>'
+      : '<span class="ci-check"></span>';
+    return '<div class="ci-activity" data-row data-rowtype="activity">' + GRIP + check
+      + '<i class="fa-regular fa-file-lines ci-acticon"></i>'
+      + '<span class="txt">' + it.t + '</span>'
+      + actionsHTML('activity', 'section')
+      + '</div>';
+  }
+
+  function sectionHead(title){
+    return '<div class="ci-secrow">'
+      + GRIP
+      + '<button class="ci-sec-head"><span class="chev"><i class="fa-solid fa-chevron-down"></i></span><span class="txt">' + title + '</span></button>'
+      + actionsHTML('section', 'section')
+      + '</div>';
+  }
+
+  function renderSections(){
+    var html = "";
+    SECTIONS.forEach(function(sec){
+      html += '<div class="ci-section' + (sec.collapsed ? ' collapsed' : '') + '" data-row data-rowtype="section">';
+      html += sectionHead(sec.title);
+      html += '<div class="ci-activities">';
+      sec.items.forEach(function(it){ html += activityRow(it); });
+      if(sec.sub){
+        html += '<div class="ci-section">'; // subsection: not top-level reorderable
+        html += sectionHead(sec.sub.title);
+        html += '<div class="ci-activities ci-subsection">';
+        sec.sub.items.forEach(function(it){ html += activityRow(it); });
+        html += '</div></div>';
+      }
+      html += '</div></div>';
+    });
+    document.getElementById("sections").innerHTML = html;
+
+    // section / book collapse toggles
+    document.querySelectorAll(".ci-sec-head").forEach(function(h){
+      h.addEventListener("click", function(){ h.closest(".ci-section").classList.toggle("collapsed"); });
+    });
+    document.querySelectorAll(".ci-book-chevron").forEach(function(c){
+      c.addEventListener("click", function(e){ e.stopPropagation(); c.closest(".ci-bookwrap").classList.toggle("collapsed"); });
+    });
+
+    // drag-to-reorder, scoped per list (sections, each activity list, each chapter list)
+    enableReorder(document.getElementById("sections"));
+    document.querySelectorAll(".ci-activities").forEach(enableReorder);
+    document.querySelectorAll(".ci-chapters").forEach(enableReorder);
+  }
+
+  /* ---- lightweight drag-reorder within a single list ---- */
+  function enableReorder(container){
+    var dragEl = null;
+    function rows(){ return [].slice.call(container.children).filter(function(c){ return c.matches && c.matches('[data-row]'); }); }
+    rows().forEach(function(row){
+      row.setAttribute('draggable', 'true');
+      row.addEventListener('dragstart', function(e){
+        if(!document.body.classList.contains('edit-on')){ e.preventDefault(); return; }
+        e.stopPropagation();
+        dragEl = row; row.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        try{ e.dataTransfer.setData('text/plain', ''); }catch(_){}
+      });
+      row.addEventListener('dragend', function(e){
+        e.stopPropagation(); row.classList.remove('dragging'); dragEl = null;
+        // keep book chapter numbers in sync with their new order
+        if(container.classList.contains('ci-chapters')){
+          container.querySelectorAll('.ci-chapter .num').forEach(function(n, i){ n.textContent = i + 1; });
+        }
+      });
+    });
+    container.addEventListener('dragover', function(e){
+      if(!dragEl) return;
+      e.preventDefault();
+      var after = afterElement(e.clientY);
+      if(after == null) container.appendChild(dragEl);
+      else container.insertBefore(dragEl, after);
+    });
+    function afterElement(y){
+      var els = rows().filter(function(el){ return el !== dragEl; });
+      var closest = { offset: -Infinity, el: null };
+      els.forEach(function(el){
+        var box = el.getBoundingClientRect();
+        var offset = y - box.top - box.height / 2;
+        if(offset < 0 && offset > closest.offset) closest = { offset: offset, el: el };
+      });
+      return closest.el;
+    }
+  }
+
+  renderSections();
+
+  /* ---- + add / … more popup menu (shared) ---- */
+  var ciMenu = document.getElementById("ciMenu");
+  var menuOwner = null;
+  function renderItems(items){
+    return items.map(function(it){
+      if(it[0] === 'sep') return '<div class="ci-menu-sep"></div>';
+      return '<button class="ci-menu-item' + (it[2] ? ' danger' : '') + '"><i class="fa-solid ' + it[0] + '"></i>' + it[1] + '</button>';
+    }).join('');
+  }
+  function moreMenu(rowtype){
+    var items;
+    if(rowtype === 'section') items = [['fa-pen','Edit section name'],['fa-eye-slash','Hide section'],['fa-copy','Duplicate'],['sep'],['fa-trash','Delete section',1]];
+    else if(rowtype === 'book') items = [['fa-gear','Edit settings'],['fa-eye-slash','Hide from students'],['fa-copy','Duplicate'],['sep'],['fa-trash','Delete',1]];
+    else if(rowtype === 'chapter') items = [['fa-pen','Edit chapter'],['fa-eye-slash','Hide chapter'],['sep'],['fa-trash','Delete chapter',1]];
+    else items = [['fa-gear','Edit settings'],['fa-eye-slash','Hide from students'],['fa-copy','Duplicate'],['fa-indent','Move right'],['sep'],['fa-trash','Delete',1]];
+    return renderItems(items);
+  }
+  function addMenu(addtype){
+    if(addtype === 'chapter'){
+      return '<div class="ci-menu-label">Add to book</div>' + renderItems([['fa-file-lines','Add chapter'],['fa-indent','Add subchapter']]);
+    }
+    return '<div class="ci-menu-label">Add activity or resource</div>' + renderItems([
+      ['fa-pen-to-square','Assignment'],['fa-book','Book'],['fa-comments','Forum'],
+      ['fa-file-lines','Page'],['fa-list-check','Quiz'],['fa-link','URL'],['sep'],['fa-ellipsis','More…']
+    ]);
+  }
+  function closeMenu(){ ciMenu.classList.remove('show'); if(menuOwner){ menuOwner.classList.remove('menu-open'); menuOwner = null; } }
+  document.addEventListener('click', function(e){
+    var trigger = e.target.closest('[data-menu]');
+    if(trigger){
+      e.preventDefault(); e.stopPropagation();
+      var kind = trigger.dataset.menu;
+      ciMenu.innerHTML = kind === 'add' ? addMenu(trigger.dataset.addtype) : moreMenu(trigger.dataset.rowtype);
+      ciMenu.classList.add('show');
+      if(menuOwner) menuOwner.classList.remove('menu-open');
+      menuOwner = trigger.closest('.ci-row-actions'); if(menuOwner) menuOwner.classList.add('menu-open');
+      var r = trigger.getBoundingClientRect();
+      var mw = ciMenu.offsetWidth, mh = ciMenu.offsetHeight;
+      var left = Math.min(r.left, window.innerWidth - mw - 8);
+      var top = r.bottom + 4; if(top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
+      ciMenu.style.left = Math.max(8, left) + 'px';
+      ciMenu.style.top = top + 'px';
+      return;
+    }
+    if(e.target.closest('.ci-menu-item')){ closeMenu(); return; } // demo: item just closes
+    if(!ciMenu.contains(e.target)) closeMenu();
+  });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMenu(); });
+
+  /* ---- element refs ---- */
+  var body = document.body;
+  var backdrop = document.getElementById("backdrop");
+  var debugEl = document.getElementById("debug"); // assigned early: updateDebug() runs during applyMode() below
+  var openBtn = document.getElementById("openBtn");
+  var closeBtn = document.getElementById("closeBtn");
+
+  /* ---- left course index open/close ---- */
+  function setLeft(open){
+    body.classList.toggle("ci-open", open);
+    if(open && body.classList.contains("cb-overlay")) body.classList.remove("cb-open"); // one overlay at a time
+    updateDebug();
+  }
+  openBtn.addEventListener("click", function(){ setLeft(true); });
+  closeBtn.addEventListener("click", function(){ setLeft(false); });
+
+  /* ---- right course blocks open/close ---- */
+  function setRight(open){
+    body.classList.toggle("cb-open", open);
+    if(open && body.classList.contains("ci-overlay")) body.classList.remove("ci-open"); // one overlay at a time
+    updateDebug();
+  }
+  document.getElementById("openRightBtn").addEventListener("click", function(){ setRight(true); });
+  document.getElementById("closeRightBtn").addEventListener("click", function(){ setRight(false); });
+
+  /* ---- hamburger site-nav overlay ---- */
+  function setNav(open){ body.classList.toggle("nav-open", open); }
+  document.getElementById("burger").addEventListener("click", function(){ setNav(true); });
+
+  /* ---- backdrop + Esc close whatever is open ---- */
+  function closeOverlays(){
+    setNav(false);
+    if(body.classList.contains("ci-overlay")) body.classList.remove("ci-open");
+    if(body.classList.contains("cb-overlay")) body.classList.remove("cb-open");
+    updateDebug();
+  }
+  backdrop.addEventListener("click", closeOverlays);
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape") closeOverlays(); });
+
+  /* ---- overlay vs push at 768px (sidebars); nav burger is separate at 1024 ---- */
+  var mq = window.matchMedia("(max-width:768px)");
+  function applyMode(){
+    var overlay = mq.matches;
+    body.classList.toggle("ci-overlay", overlay);
+    body.classList.toggle("cb-overlay", overlay);
+    if(overlay){
+      // both sidebars are overlays: start closed
+      body.classList.remove("ci-open");
+      body.classList.remove("cb-open");
+    } else {
+      // inline/push: left index open by default, right blocks closed
+      body.classList.add("ci-open");
+      body.classList.remove("nav-open");
+    }
+    updateDebug();
+  }
+  mq.addEventListener("change", applyMode);
+  applyMode();
+
+  /* ---- edit mode toggle (cosmetic) ---- */
+  var editSwitch = document.getElementById("editSwitch");
+  editSwitch.addEventListener("click", function(){
+    var on = editSwitch.getAttribute("aria-pressed") === "true";
+    editSwitch.setAttribute("aria-pressed", on ? "false" : "true");
+    document.body.classList.toggle("edit-on", !on); // reveal/hide course-index row controls
+  });
+
+  /* ---- drag to resize (desktop push mode only) ---- */
+  var handle = document.getElementById("resizeHandle");
+  var readout = document.getElementById("widthReadout");
+  var MIN = 285, MAX = 560;
+  var dragging = false, startX = 0, startWidth = 0;
+
+  function setWidth(px){
+    px = Math.max(MIN, Math.min(MAX, px));
+    document.documentElement.style.setProperty("--ci-width", px + "px");
+    readout.textContent = Math.round(px) + "px";
+    updateDebug();
+  }
+  handle.addEventListener("mousedown", function(e){
+    if(body.classList.contains("ci-overlay")) return;
+    dragging = true; startX = e.clientX;
+    startWidth = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ci-width"));
+    handle.classList.add("dragging"); body.classList.add("dragging"); readout.classList.add("show");
+    e.preventDefault();
+  });
+  window.addEventListener("mousemove", function(e){ if(dragging) setWidth(startWidth + (e.clientX - startX)); });
+  window.addEventListener("mouseup", function(){
+    if(!dragging) return;
+    dragging = false; handle.classList.remove("dragging"); body.classList.remove("dragging");
+    setTimeout(function(){ readout.classList.remove("show"); }, 400);
+  });
+  handle.addEventListener("dblclick", function(){ setWidth(285); });
+
+  /* ---- course tabs: horizontal scroll fade affordance ---- */
+  var tabsScroll = document.getElementById("tabsScroll");
+  var tabsInner = tabsScroll.querySelector(".course-tabs");
+  function updateTabFades(){
+    var sl = tabsInner.scrollLeft;
+    var max = tabsInner.scrollWidth - tabsInner.clientWidth;
+    tabsScroll.classList.toggle("more-left", sl > 2);
+    tabsScroll.classList.toggle("more-right", sl < max - 2);
+  }
+  tabsInner.addEventListener("scroll", updateTabFades, { passive:true });
+  window.addEventListener("resize", updateTabFades);
+  updateTabFades();
+
+  /* ---- debug ---- */
+  function updateDebug(){
+    var vw = window.innerWidth;
+    var w = Math.round(parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ci-width")));
+    var mode = body.classList.contains("ci-overlay") ? "overlay" : "push";
+    var left = body.classList.contains("ci-open") ? "open" : "closed";
+    var right = body.classList.contains("cb-open") ? "open" : "closed";
+    debugEl.innerHTML =
+      "viewport: <b>" + vw + "px</b> · mode: <b>" + mode + "</b><br>" +
+      "index: <b>" + left + "</b> (" + w + "px) · blocks: <b>" + right + "</b>";
+  }
+  window.addEventListener("resize", updateDebug);
+  updateDebug();
+
+  /* click either dev overlay to hide both */
+  document.querySelector(".debug").addEventListener("click", function(){ body.classList.add("hide-dev"); });
+  document.querySelector(".hint").addEventListener("click", function(){ body.classList.add("hide-dev"); });
+})();
+</script>
+
+<!--
+NOTES (fill in once reviewed, then delete this file):
+
+Question answered by this pass: does the high-fidelity uplift (Figma top nav
++ grey-card course index + edit-mode course page) read correctly, and does it
+hold up responsively (desktop / tablet burger + overlay index / mobile)?
+
+Confirmed decisions baked in: long activity names kept for the truncation story.
+
+Inline course-index editing (this pass — moving the book TOC into the index):
+The Edit toggle is now FUNCTIONAL (toggles body.edit-on). In edit mode, hovering
+any index row (section / activity / book / chapter) reveals a trailing cluster:
+drag grip · + (add) · … (more), Confluence-style. The + menu is CONTEXT-AWARE —
+a section/activity shows the activity/resource chooser; a book or chapter shows
+"Add chapter / Add subchapter" only. The … menu mirrors the current controls
+(section: hide/duplicate/delete; activity: +move; chapter: edit/hide/delete —
+same actions as book_get_toc's teacher TOC). Reorder = drag the row (no up/down
+arrows); chapter numbers re-sync after a drop. The book activity expands to show
+its chapters (the TOC) as nested rows — replacing the right-sidebar fake block.
+Edit off = clean student navigation (controls hidden).
+
+Real-implementation grounding (for the eventual MDL work):
+- Sections/activities can reuse the existing controlmenu + open-chooser (`+`) and
+  the same courseeditor mutations (cmHide/cmDelete/cmDuplicate/cmMove/addModule);
+  drag already exists in the index (cm extends DndCmItem). Main open question:
+  content/actions.js delegates within the content region only — the index needs
+  an index-scoped dispatcher or unified selectors.
+- Book chapters are the real lift: they're book-internal (book_chapters), edited
+  by legacy full-page endpoints (move/edit/delete/show.php) and shown via
+  book_add_fake_block (right sidebar). North-star path = model chapters as a
+  delegated section (sectiondelegatemodule, as mod_subsection does) so they
+  become first-class reactive index rows; then remove the fake block.
+
+Sidebars (this pass): left Course Index + right Course Blocks both PUSH content
+on desktop (content centred between them) and OVERLAY with a backdrop at
+<=768px. Right drawer has NO drag handle (fixed 315px); left keeps drag-resize.
+The nav hamburger (shown <=1024px) opens a separate site-navigation overlay.
+One overlay open at a time; backdrop / Esc close them.
+
+Note: scope left-drawer rules to #drawer — the right drawer also carries class
+.drawer, so `body.ci-open .drawer` / `body.ci-overlay .drawer` would otherwise
+capture it (this bit us: right overlay rendered on the left).
+
+Retained from earlier rounds: content-relative toggle (flush to shell's left
+edge, no 1400px jump), left->right slide, centred content column.
+
+Dependencies: Google Fonts (Noto Sans + Roboto) + Font Awesome 6 via CDN —
+needs network on first open; degrades to system font + glyph boxes offline.
+
+Answer: <fill in after review>
+-->
+</body>
+</html>
