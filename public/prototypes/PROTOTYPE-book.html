@@ -91,7 +91,7 @@
     /* ---- local layout (not visual tokens) ---- */
     --shell-max:1440px; --shell-pad:2.5rem;
     --nav-h:64px; --footer-h:64px;
-    --ci-width:300px; --cb-width:315px; --btn:40px;
+    --ci-width:300px; --ci-min:285px; --ci-max:560px; --cb-width:315px; --btn:40px;
     --content-max:873px;
   }
 
@@ -180,16 +180,18 @@
   .ci-divider{ height:1px; background:var(--mds-border-default); }
 
   .ci-section{ margin-top:var(--mds-spacing-xxs); }
+  .ci-secrow{ position:relative; display:flex; align-items:center; }
+  .ci-secrow .ci-sec-head{ flex:1 1 auto; width:auto; min-width:0; }
   .ci-sec-head{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:var(--mds-spacing-sm); border:none; background:none; width:100%;
     cursor:pointer; text-align:left; border-radius:var(--mds-border-radius-sm); }
   .ci-sec-head:hover{ background:rgba(0,0,0,.04); }
   .ci-sec-head .chev{ width:10px; font-size:8px; color:var(--mds-text-muted); flex:0 0 auto; text-align:center; transition:transform .15s ease; }
   .ci-sec-head .txt{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .ci-section.collapsed .chev{ transform:rotate(-90deg); }
-  .ci-section.collapsed .ci-activities{ display:none; }
+  .ci-section.collapsed > .ci-activities{ display:none; }
 
   .ci-activities{ padding-left:var(--mds-spacing-md); display:flex; flex-direction:column; gap:var(--mds-spacing-xxs); }
-  .ci-row{ display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
+  .ci-row{ position:relative; display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
     border-radius:var(--mds-border-radius-sm); cursor:pointer; min-width:0; border:none; background:none; width:100%; text-align:left; }
   .ci-row:hover{ background:rgba(0,0,0,.04); }
   .ci-row.current{ background:var(--mds-bg-interactive-primary-default); }
@@ -288,6 +290,10 @@
   .cln-rightspacer{ flex:0 0 auto; width:0; transition:width .3s cubic-bezier(.4,0,.2,1); }
   body.cb-open:not(.cb-overlay) .cln-rightspacer{ width:var(--cb-width); }
   .cln-bar{ width:100%; max-width:var(--content-max); display:flex; align-items:center; gap:var(--mds-spacing-md); }
+  /* when editing/adding a chapter, the footer content becomes a Save bar */
+  .cln-editbar{ display:none; width:100%; max-width:var(--content-max); align-items:center; justify-content:flex-end; gap:var(--mds-spacing-xs); }
+  body.ch-editing .cln-bar{ display:none; }
+  body.ch-editing .cln-editbar{ display:flex; }
   /* OPTION 1: footer shows only the generic "Previous"/"Next" (faithful to
      current CLN). The target item name is surfaced as a hover/focus TOOLTIP
      (.t), so the footer stays clean and never truncates. */
@@ -327,9 +333,9 @@
   body.ci-overlay.ci-open .backdrop{ display:block; }
 
   /* dev hint */
-  .hint{ position:fixed; bottom:calc(var(--footer-h) + 10px); left:16px; z-index:50; pointer-events:none; max-width:260px;
-    background:var(--mds-bg-surface-subtle); border:1px solid var(--mds-border-default); color:var(--mds-text-muted);
-    font-size:.6875rem; padding:6px 9px; border-radius:var(--mds-border-radius-sm); line-height:1.4; }
+  /* the old CLN hint note is superseded by the annotations layer (its corner is
+     now the State switcher's); hidden to avoid the clash. */
+  .hint{ display:none; }
 
   /* ===================  RIGHT "COURSE BLOCKS" DRAWER  ===================
      Ported verbatim (styling + behaviour) from PROTOTYPE-forum.html. Pushes on
@@ -373,19 +379,83 @@
      Delete dialogs. Every field mirrors mod/book 1:1 (mod_form.php +
      edit_form.php + tool/importhtml) — nothing here that isn't available today. */
 
-  /* ---- TOC authoring controls (hover/focus revealed) ---- */
-  .ci-chapter-row{ display:flex; align-items:center; gap:2px; border-radius:var(--mds-border-radius-sm); }
+  /* ==== course-index authoring controls (adopted from the drawer-resize prototype):
+     leading grip + trailing +/… cluster on EVERY row, revealed on hover/focus in
+     edit mode. Chapter clusters are fully wired; section/activity ones are cosmetic. */
+  .ci-chapter-row{ position:relative; display:flex; align-items:center; gap:2px; border-radius:var(--mds-border-radius-sm); }
   .ci-chapter-row .ci-chapter{ flex:1 1 auto; }
-  .ci-ch-grip, .ci-ch-kebab{ flex:0 0 auto; width:20px; height:26px; border:none; background:none; cursor:pointer;
-    color:var(--mds-text-muted); font-size:11px; display:none; align-items:center; justify-content:center; border-radius:var(--mds-border-radius-xs); }
-  .ci-ch-grip{ cursor:grab; }
-  .ci-ch-kebab:hover{ background:rgba(0,0,0,.08); color:var(--mds-text-default); }
-  body.edit-on .ci-ch-grip, body.edit-on .ci-ch-kebab{ display:flex; opacity:0; transition:opacity .12s ease; }
-  body.edit-on .ci-chapter-row:hover .ci-ch-grip, body.edit-on .ci-chapter-row:hover .ci-ch-kebab,
-  body.edit-on .ci-chapter-row:focus-within .ci-ch-grip, body.edit-on .ci-chapter-row:focus-within .ci-ch-kebab{ opacity:1; }
+
+  /* leading drag grip — reserved (16px) in edit mode, faded until row hover/focus */
+  .ci-grip{ flex:0 0 auto; width:0; overflow:hidden; opacity:0; border:none; background:none; padding:0; cursor:grab;
+    color:var(--mds-text-muted); font-size:11px; display:flex; align-items:center; justify-content:center; border-radius:var(--mds-border-radius-xs); transition:opacity .1s ease; }
+  body.edit-on .ci-grip{ width:16px; margin-right:2px; }
+  body.edit-on .ci-secrow:hover .ci-grip, body.edit-on .ci-secrow:focus-within .ci-grip,
+  body.edit-on .ci-row:hover .ci-grip, body.edit-on .ci-row:focus-within .ci-grip,
+  body.edit-on .ci-chapter-row:hover .ci-grip, body.edit-on .ci-chapter-row:focus-within .ci-grip,
+  body.edit-on [data-row].dragging .ci-grip{ opacity:1; }
+
+  /* trailing hover cluster (+ add · … more) — absolute, with a soft fade over the name */
+  .ci-secrow, .ci-row, .ci-chapter-row{ --row-bg:var(--mds-bg-surface-strong); }
+  .ci-row-actions{ position:absolute; top:50%; right:4px; transform:translateY(-50%); display:none; align-items:center; gap:1px;
+    background:var(--row-bg); opacity:0; pointer-events:none; transition:opacity .12s ease; }
+  .ci-row-actions::before{ content:""; position:absolute; left:-14px; top:0; bottom:0; width:14px;
+    background:linear-gradient(90deg, transparent, var(--row-bg)); }
+  body.edit-on .ci-row-actions{ display:flex; }
+  body.edit-on .ci-secrow:hover .ci-row-actions, body.edit-on .ci-secrow:focus-within .ci-row-actions,
+  body.edit-on .ci-row:hover .ci-row-actions, body.edit-on .ci-row:focus-within .ci-row-actions,
+  body.edit-on .ci-chapter-row:hover .ci-row-actions, body.edit-on .ci-chapter-row:focus-within .ci-row-actions,
+  body.edit-on .ci-row-actions.menu-open{ opacity:1; pointer-events:auto; }
+  .ci-actbtn{ flex:0 0 auto; width:22px; height:22px; border:none; background:transparent; border-radius:var(--mds-border-radius-xs);
+    color:var(--mds-text-muted); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .ci-actbtn:hover{ background:rgba(0,0,0,.12); color:var(--mds-text-default); }
+  body.edit-on [data-row].dragging{ opacity:.4; }
+  body.edit-on [data-row].dragging .ci-row-actions{ opacity:0; }
+
+  /* cluster + grip blend into the current (blue) row */
+  .ci-row.current, .ci-chapter-row:has(.ci-chapter.current){ --row-bg:var(--mds-bg-interactive-primary-default); }
+  .ci-row.current .ci-actbtn, .ci-chapter-row:has(.ci-chapter.current) .ci-actbtn{ color:rgba(255,255,255,.92); }
+  .ci-row.current .ci-actbtn:hover, .ci-chapter-row:has(.ci-chapter.current) .ci-actbtn:hover{ background:rgba(255,255,255,.22); color:#fff; }
+  .ci-row.current .ci-grip, .ci-chapter-row:has(.ci-chapter.current) .ci-grip{ color:rgba(255,255,255,.85); }
+
   .ci-chapter-row.ci-hidden .ci-chapter .txt{ opacity:.5; font-style:italic; }
   .ci-chapter-row.ci-hidden .ci-chapter .num::after{ content:" (hidden)"; font-size:.7rem; }
 
+  /* ---- drag-to-resize the course index width ---- */
+  .resize-handle{ position:absolute; top:0; right:0; width:8px; height:100%; cursor:col-resize; z-index:5; }
+  body:not(.ci-open) .resize-handle, body.ci-overlay .resize-handle{ display:none; }
+  .resize-handle::after{ content:""; position:absolute; top:0; bottom:0; left:3px; width:2px; background:transparent; transition:background .12s ease; }
+  .resize-handle:hover::after, .resize-handle.dragging::after, .resize-handle:focus-visible::after{ background:var(--mds-bg-interactive-primary-default); }
+  .resize-handle:focus-visible{ outline:2px solid var(--mds-bg-interactive-primary-default); outline-offset:-1px; }
+  body.ci-dragging{ cursor:col-resize !important; user-select:none; }
+  .width-readout{ position:absolute; top:8px; right:12px; z-index:6; background:var(--mds-color-gray-900); color:#fff;
+    font-size:.6875rem; padding:2px 6px; border-radius:var(--mds-border-radius-xs); opacity:0; transition:opacity .12s ease; pointer-events:none; }
+  .width-readout.show{ opacity:1; }
+
+  /* ---- "Collapse all" ---- */
+  .ci-collapseall{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
+    margin-top:var(--mds-spacing-xxs); background:none; border:none; cursor:pointer; color:var(--mds-text-muted);
+    font-size:var(--mds-font-size-paragraph-small); border-radius:var(--mds-border-radius-sm); }
+  .ci-collapseall:hover{ background:rgba(0,0,0,.04); color:var(--mds-text-default); }
+  .ci-collapseall i{ font-size:11px; }
+
+  /* ---- shared popup menu for section/activity/book + and … (cosmetic) ---- */
+  .ci-menu{ position:fixed; z-index:80; min-width:190px; max-width:260px; background:var(--mds-bg-surface-default);
+    border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md); box-shadow:0 8px 28px rgba(0,0,0,.16); padding:6px; display:none; }
+  .ci-menu.show{ display:block; }
+  .ci-menu-label{ font-size:.6875rem; text-transform:uppercase; letter-spacing:.4px; color:var(--mds-text-muted); padding:6px 10px 3px; }
+  .ci-menu-item{ display:flex; align-items:center; gap:10px; width:100%; padding:8px 10px; border:none; background:none; cursor:pointer;
+    font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-default); border-radius:var(--mds-border-radius-sm); text-align:left; }
+  .ci-menu-item:hover{ background:var(--mds-bg-surface-subtle); }
+  .ci-menu-item i{ width:16px; text-align:center; color:var(--mds-text-muted); font-size:13px; flex:0 0 auto; }
+  .ci-menu-item.danger{ color:var(--mds-text-danger); }
+  .ci-menu-item.danger i{ color:var(--mds-text-danger); }
+  .ci-menu-sep{ height:1px; background:var(--mds-border-subtle); margin:5px 4px; }
+  .ci-toast{ position:fixed; left:50%; bottom:calc(var(--footer-h) + 16px); transform:translateX(-50%) translateY(8px); z-index:95;
+    background:var(--mds-color-gray-900); color:#fff; font-size:var(--mds-font-size-paragraph-small); padding:8px 14px;
+    border-radius:var(--mds-border-radius-pill); box-shadow:0 8px 24px rgba(0,0,0,.28); opacity:0; pointer-events:none; transition:opacity .15s ease, transform .15s ease; }
+  .ci-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .ci-chapter-row.ci-sub{ padding-left:var(--mds-spacing-md); }
   .ci-empty-note{ padding:var(--mds-spacing-xs) var(--mds-spacing-sm); color:var(--mds-text-muted); font-size:var(--mds-font-size-paragraph-small); font-style:italic; }
 
   /* ---- inline edit-in-place (chapter content) ---- */
@@ -462,7 +532,11 @@
   /* ---- Settings (dedicated page) ---- */
   .settings-view{ display:none; width:100%; max-width:980px; }
   body.mode-settings #reading{ display:none; }
-  body.mode-settings .settings-view{ display:block; }
+  /* fill the viewport height so the sticky Save footer is pushed to the bottom,
+     matching the quiz settings save (flex column + flexing body + sticky footer) */
+  body.mode-settings .settings-view{ display:flex; flex-direction:column; min-height:calc(100vh - var(--nav-h) - var(--mds-spacing-lg)); }
+  body.mode-settings .settings-body{ flex:1 0 auto; }
+  body.mode-settings .layout{ padding-bottom:0; }
   body.mode-settings .cln-footer{ display:none; }
   body.mode-settings .toggle-col-right, body.mode-settings .drawer-right{ display:none; }
   .settings-head{ margin-bottom:var(--mds-spacing-lg); }
@@ -528,8 +602,11 @@
   .add-link{ display:inline-flex; align-items:center; gap:6px; border:none; background:none; cursor:pointer; color:var(--mds-bg-interactive-primary-default);
     font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); padding:var(--mds-spacing-xs) 0; }
 
-  .settings-actions{ display:flex; gap:var(--mds-spacing-xs); padding:var(--mds-spacing-md) 0 var(--mds-spacing-xxl); border-top:1px solid var(--mds-border-subtle);
-    margin-top:var(--mds-spacing-md); position:sticky; bottom:0; background:var(--mds-bg-surface-default); }
+  /* sticky Save footer — same implementation as the quiz settings save: a
+     content-width bar pinned to the bottom of the viewport while editing. */
+  .settings-actions{ position:sticky; bottom:0; z-index:20; display:flex; gap:var(--mds-spacing-xs); justify-content:flex-end;
+    padding:var(--mds-spacing-sm) 0; margin-top:var(--mds-spacing-lg); border-top:1px solid var(--mds-border-default);
+    background:var(--mds-bg-surface-default); }
 
   /* ---- modals (Import + Delete) ---- */
   .modal-overlay{ display:none; position:fixed; inset:0; z-index:90; background:rgba(0,0,0,.45); align-items:center; justify-content:center; padding:var(--mds-spacing-md); }
@@ -549,12 +626,45 @@
   .filepicker i{ font-size:24px; color:var(--mds-text-muted); }
   .filepicker .fp-main{ display:block; margin-top:var(--mds-spacing-xs); color:var(--mds-text-subtle); font-size:var(--mds-font-size-paragraph-small); }
 
-  /* ---- dev state switcher (throwaway) ---- */
-  .devswitch{ position:fixed; right:16px; bottom:calc(var(--footer-h) + 12px); z-index:85; background:var(--mds-color-gray-900); color:#fff;
-    border-radius:var(--mds-border-radius-md); padding:8px 10px; box-shadow:0 8px 28px rgba(0,0,0,.28); font-size:.75rem; display:flex; align-items:center; gap:8px; }
-  .devswitch label{ opacity:.7; }
-  .devswitch select{ font-family:inherit; font-size:.75rem; border:none; border-radius:var(--mds-border-radius-xs); padding:4px 6px; background:#fff; color:var(--mds-color-gray-900); }
-  body.mode-settings .devswitch{ bottom:16px; }
+  /* ---- dev "State" switcher (throwaway) — visible toggle buttons, no dropdown;
+     bottom-left, aligned with the course-index left edge (left set in JS). ---- */
+  .devswitch{ position:fixed; left:var(--shell-pad); bottom:calc(var(--footer-h) + 12px); z-index:85; width:238px;
+    background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md);
+    box-shadow:0 8px 28px rgba(0,0,0,.16); padding:var(--mds-spacing-sm); }
+  .devswitch h5{ margin:0 0 6px; font-size:.625rem; text-transform:uppercase; letter-spacing:.5px; color:var(--mds-text-muted); }
+  .devrow{ display:flex; flex-wrap:wrap; gap:4px; }
+  .devbtn{ border:1px solid var(--mds-border-default); background:var(--mds-bg-surface-subtle); border-radius:var(--mds-border-radius-xs);
+    padding:4px 8px; cursor:pointer; font-family:inherit; font-size:.6875rem; color:var(--mds-text-subtle); font-weight:var(--mds-font-weight-medium); }
+  .devbtn:hover{ background:var(--mds-bg-surface-strong); }
+  .devbtn.on{ background:var(--mds-bg-interactive-primary-default); color:#fff; border-color:transparent; }
+
+  /* ---- annotations (blue walkthrough callouts, matching the course-index
+     drawer-resize prototype: dashed pulsing ring on the target + blue callout
+     with a close button, and a centered Hide/Show annotations toggle) ---- */
+  .anno-layer{ position:fixed; inset:0; z-index:60; pointer-events:none; }
+  body:not(.annotations-on) .anno-layer{ display:none; }
+  .anno-ring{ position:fixed; border:2px dashed var(--mds-bg-interactive-primary-default); border-radius:8px;
+    box-shadow:0 0 0 3px rgba(15,108,191,.16); pointer-events:none; animation:annoPulse 1.9s ease-in-out infinite; }
+  @keyframes annoPulse{ 0%,100%{ box-shadow:0 0 0 3px rgba(15,108,191,.16); } 50%{ box-shadow:0 0 0 8px rgba(15,108,191,.06); } }
+  .anno-card{ position:fixed; width:220px; background:var(--mds-bg-interactive-primary-default); color:#fff;
+    border-radius:10px; padding:10px 12px 11px; font-size:12px; line-height:1.45; box-shadow:0 10px 28px rgba(0,0,0,.28); pointer-events:auto; }
+  .anno-badge{ position:absolute; top:-11px; left:-11px; width:23px; height:23px; border-radius:50%; background:#fff;
+    color:var(--mds-bg-interactive-primary-default); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,.25); }
+  .anno-title{ font-weight:700; font-size:12px; display:flex; align-items:center; gap:6px; margin:0 16px 3px 0; }
+  .anno-title i{ font-size:12px; }
+  .anno-body{ color:rgba(255,255,255,.92); }
+  .anno-close{ position:absolute; top:5px; right:6px; border:none; background:none; cursor:pointer; color:rgba(255,255,255,.85); font-size:13px; line-height:1; padding:3px; }
+  .anno-close:hover{ color:#fff; }
+
+  .anno-toggle{ position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:71;
+    background:var(--mds-bg-interactive-primary-default); color:#fff; border:none; border-radius:999px;
+    padding:9px 16px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,.25); display:flex; align-items:center; gap:8px; }
+  .anno-toggle:hover{ background:var(--mds-bg-interactive-primary-hover); }
+  .anno-toggle i{ font-size:12px; }
+  body:not(.annotations-on) .anno-toggle{ background:var(--mds-text-subtle); }
+  /* reveal the (hover-only) course-index kebab while annotating so the ring lands on a visible target */
+  body.annotations-on.edit-on .ci-chapter-row .ci-row-actions{ opacity:1 !important; pointer-events:auto; }
 
   @media (max-width:900px){
     .settings-body{ grid-template-columns:1fr; }
@@ -610,7 +720,7 @@
   }
 </style>
 </head>
-<body class="ci-open edit-on">
+<body class="ci-open edit-on annotations-on">
 
   <!-- ===== TOP NAV ===== -->
   <header class="topbar">
@@ -654,8 +764,12 @@
           </button>
         </div>
         <div class="ci-divider"></div>
+        <button class="ci-collapseall" id="collapseAll"><i class="fa-solid fa-down-left-and-up-right-to-center"></i> <span id="collapseAllLabel">Collapse all</span></button>
         <div id="sections"></div>
       </div>
+      <!-- drag-to-resize the index (desktop/push only) -->
+      <div class="resize-handle" id="resizeHandle" tabindex="0" role="separator" aria-orientation="vertical" aria-label="Resize course index (arrow keys)" aria-valuemin="285" aria-valuemax="560" aria-valuenow="300"></div>
+      <div class="width-readout" id="widthReadout">300px</div>
     </div>
 
     <main class="content-col">
@@ -813,13 +927,14 @@
             <!-- trailing scroll room so every section can reach the highlight line -->
             <div class="set-scroll-spacer" id="setScrollSpacer" aria-hidden="true"></div>
 
-            <div class="settings-actions">
-              <button type="button" class="btn btn-primary" data-settings-save><i class="fa-solid fa-check"></i> Save and display</button>
-              <button type="button" class="btn btn-secondary" data-settings-save>Save and return to course</button>
-              <button type="button" class="btn btn-ghost" data-settings-cancel>Cancel</button>
-            </div>
-
           </form>
+        </div>
+
+        <!-- sticky Save footer (spans the content width; pinned to the viewport bottom) -->
+        <div class="settings-actions">
+          <button type="button" class="btn btn-ghost" data-settings-cancel>Cancel</button>
+          <button type="button" class="btn btn-secondary" data-settings-save>Save and return to course</button>
+          <button type="button" class="btn btn-primary" data-settings-save><i class="fa-solid fa-check"></i> Save and display</button>
         </div>
       </section>
     </main>
@@ -870,6 +985,11 @@
             </button>
           </div>
         </div>
+        <!-- while editing/adding a chapter, the footer becomes the Save bar (primary rightmost) -->
+        <div class="cln-editbar" id="clnEditbar">
+          <button type="button" class="btn btn-ghost" id="chCancelBtn">Cancel</button>
+          <button type="button" class="btn btn-primary" id="chSaveBtn"><i class="fa-solid fa-check"></i> Save changes</button>
+        </div>
       </div>
       <div class="cln-rightspacer"></div>
     </div>
@@ -877,6 +997,9 @@
 
   <div class="manage-menu" id="manageMenu" role="menu"></div>
   <div class="manage-menu" id="chapterMenu" role="menu"></div>
+  <div class="ci-menu" id="ciMenu" role="menu"></div>
+  <!-- placeholder toast for cosmetic (demo-only) course-index actions -->
+  <div class="ci-toast" id="ciToast" aria-live="polite"></div>
   <div class="backdrop" id="backdrop"></div>
   <div class="hint">CLN sticky footer steps through the book's chapters (nested in the index) and on into the neighbouring activities. Resize ≤768 for the overlay index.</div>
 
@@ -923,23 +1046,54 @@
       </div>
       <div class="modal-foot">
         <button class="btn btn-ghost" data-close-modal="deleteModal">Cancel</button>
-        <button class="btn btn-danger" data-close-modal="deleteModal"><i class="fa-solid fa-trash-can"></i> Delete</button>
+        <button class="btn btn-danger" data-confirm-delete><i class="fa-solid fa-trash-can"></i> Delete</button>
       </div>
     </div>
   </div>
 
   <!-- ===== dev state switcher (throwaway — jump between create/edit states) ===== -->
-  <div class="devswitch">
-    <label for="devState">State</label>
-    <select id="devState">
-      <option value="read">Reading (student)</option>
-      <option value="workspace" selected>Workspace — edit mode</option>
-      <option value="empty">Workspace — empty book</option>
-      <option value="settings-create">Settings — create</option>
-      <option value="settings-edit">Settings — edit</option>
-      <option value="import">Import chapters dialog</option>
-      <option value="delete">Delete confirmation</option>
-    </select>
+  <div class="devswitch" id="devSwitch">
+    <h5>State</h5>
+    <div class="devrow" id="devStates">
+      <button class="devbtn" data-state="read">View mode</button>
+      <button class="devbtn on" data-state="workspace">Edit mode</button>
+      <button class="devbtn" data-state="empty">Empty book</button>
+      <button class="devbtn" data-state="settings-create">Settings: create</button>
+      <button class="devbtn" data-state="settings-edit">Settings: edit</button>
+      <button class="devbtn" data-state="import">Import dialog</button>
+      <button class="devbtn" data-state="delete">Delete dialog</button>
+    </div>
+  </div>
+
+  <!-- ===== annotations (removable explainer callouts) ===== -->
+  <button class="anno-toggle" id="annoToggle" title="Show or hide the explainer annotations">
+    <i class="fa-solid fa-location-dot"></i> <span id="annoToggleLabel">Hide annotations</span>
+  </button>
+  <div class="anno-layer" id="annoLayer">
+    <div class="anno-card" data-anno="kebab" data-target=".ci-chapters .ci-chapter-row [data-ch-menu]" data-side="right">
+      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+      <div class="anno-badge">1</div>
+      <div class="anno-title"><i class="fa-solid fa-ellipsis-vertical"></i> Chapter actions menu</div>
+      <div class="anno-body">A new in-line menu to <strong>add, edit, hide or delete</strong> a chapter directly from the course index — no separate chapter-management page.</div>
+    </div>
+    <div class="anno-card" data-anno="manage" data-target=".manage-btn" data-side="left">
+      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+      <div class="anno-badge">2</div>
+      <div class="anno-title"><i class="fa-solid fa-gear"></i> Manage</div>
+      <div class="anno-body">All of the book's admin settings — Settings, Import, Print, Export, Permissions, Backup — consolidated into one dropdown, replacing the old row of tabs.</div>
+    </div>
+    <div class="anno-card" data-anno="cln" data-target=".cln-bar" data-side="top">
+      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+      <div class="anno-badge">3</div>
+      <div class="anno-title"><i class="fa-solid fa-arrow-right-arrow-left"></i> Course Linear Navigation</div>
+      <div class="anno-body">Chapters are stepped through with the course's sticky <strong>Previous / Next</strong> footer — which also carries on into neighbouring activities — instead of the book's own left/right arrow buttons.</div>
+    </div>
+    <div class="anno-card" data-anno="state" data-target=".devswitch" data-side="top">
+      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+      <div class="anno-badge">4</div>
+      <div class="anno-title"><i class="fa-solid fa-flask"></i> Prototype state switcher</div>
+      <div class="anno-body">A demo-only control (not a real feature) to preview the book's states — reading, edit workspace, empty book, create/edit settings, and the Import &amp; Delete dialogs.</div>
+    </div>
   </div>
 
 <script>
@@ -1005,57 +1159,153 @@
   var OTHER_SECTIONS = ["The Chemistry of Life", "Cell Structure & Function", "Membranes & Transport", "Enzymes & Metabolism"];
 
   var current = 1; // start on chapter 1 (Course Overview)
-  var bookEmpty = false, pendingNew = false, pendingNewIsFirst = false, numbering = "1", chapterEditing = false;
+  var bookEmpty = false, pendingNew = false, pendingNewIsFirst = false, pendingNewSub = false, numbering = "1", chapterEditing = false;
+  var pendingAfterIdx = null, deleteIdx = null;
   function firstChapterIndex(){ for(var i=0;i<ITEMS.length;i++){ if(ITEMS[i].kind === "chapter") return i; } return 1; }
+  function hasChapters(){ return ITEMS.some(function(it){ return it.kind === "chapter"; }); }
+  // chapters carry a flat sequential number; recompute after any add/delete
+  function renumberChapters(){ var n = 0; ITEMS.forEach(function(it){ if(it.kind === "chapter"){ n++; it.n = n; } }); }
 
-  /* ---------- render course index ---------- */
+  /* ---------- render course index (adopted from the drawer-resize prototype) ---------- */
   function icon(it){ return '<span class="act-icon '+it.cat+'"><i class="fa-solid '+it.icon+'"></i></span>'; }
+  var GRIP = '<span class="ci-grip" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i></span>';
+  // cosmetic +/… cluster for section / activity / book rows (demo-only menus)
+  function cosmeticActions(rowtype, addtype){
+    return '<div class="ci-row-actions">'
+      + '<button class="ci-actbtn" data-menu="add" data-addtype="'+addtype+'" data-rowtype="'+rowtype+'" title="Add"><i class="fa-solid fa-plus"></i></button>'
+      + '<button class="ci-actbtn" data-menu="more" data-rowtype="'+rowtype+'" title="More"><i class="fa-solid fa-ellipsis-vertical"></i></button>'
+      + '</div>';
+  }
+  function secHeadHTML(title){
+    return '<div class="ci-secrow">' + GRIP
+      + '<button class="ci-sec-head"><span class="chev"><i class="fa-solid fa-chevron-down"></i></span><span class="txt">'+title+'</span></button>'
+      + cosmeticActions('section','section')
+      + '</div>';
+  }
+  // the book row (with its chapters) — stable anchor so it survives 0 chapters.
+  // Book row + is REAL (append a chapter); its … is cosmetic. Chapter +/⋮ are REAL.
+  function bookRowHTML(){
+    var h = '<div class="ci-bookwrap" data-row data-rowtype="book">'
+      + '<div class="ci-row ci-book" style="cursor:default">'
+        + GRIP
+        + '<button class="ci-book-chevron" title="Collapse chapters"><i class="fa-solid fa-chevron-down"></i></button>'
+        + '<span class="act-icon file"><i class="fa-solid fa-book"></i></span>'
+        + '<span class="txt">'+BOOK+'</span>'
+        + '<div class="ci-row-actions">'
+          + '<button class="ci-actbtn" data-menu="add" data-addtype="chapter" data-book="1" title="Add"><i class="fa-solid fa-plus"></i></button>'
+          + '<button class="ci-actbtn" data-menu="more" data-rowtype="book" title="More"><i class="fa-solid fa-ellipsis-vertical"></i></button>'
+        + '</div>'
+      + '</div>'
+      + '<div class="ci-chapters">';
+    if(bookEmpty || !hasChapters()){
+      h += '<div class="ci-empty-note">No chapters yet</div>';
+    } else {
+      ITEMS.forEach(function(c, ci){ if(c.kind === "chapter"){
+        h += '<div class="ci-chapter-row'+(c.subchapter ? ' ci-sub' : '')+'" data-row data-rowtype="chapter" data-ch="'+ci+'">'
+          + GRIP
+          + '<button class="ci-chapter" data-i="'+ci+'"><span class="num">'+c.n+'</span><span class="txt">'+c.title+'</span></button>'
+          + '<div class="ci-row-actions">'
+            + '<button class="ci-actbtn" data-menu="add" data-addtype="chapter" data-ch="'+ci+'" title="Add" aria-label="Add"><i class="fa-solid fa-plus"></i></button>'
+            + '<button class="ci-actbtn" data-ch-menu="'+ci+'" title="Chapter actions" aria-label="Chapter actions"><i class="fa-solid fa-ellipsis-vertical"></i></button>'
+          + '</div>'
+          + '</div>';
+      }});
+    }
+    h += '</div></div>';
+    return h;
+  }
+  function activityRowHTML(it, i){
+    return '<div class="ci-row" data-i="'+i+'" data-row data-rowtype="activity">'
+      + GRIP + icon(it) + '<span class="txt">'+it.title+'</span>'
+      + cosmeticActions('activity','section')
+      + '</div>';
+  }
   function renderIndex(){
-    var html = '<div class="ci-section"><button class="ci-sec-head"><span class="chev"><i class="fa-solid fa-chevron-down"></i></span><span class="txt">Introduction</span></button><div class="ci-activities">';
+    var html = '<div class="ci-section" data-row data-rowtype="section">' + secHeadHTML("Introduction") + '<div class="ci-activities">';
+    var chaptersExist = hasChapters(), bookRendered = false;
     ITEMS.forEach(function(it, i){
       if(it.kind === "activity"){
-        html += '<button class="ci-row" data-i="'+i+'">'+icon(it)+'<span class="txt">'+it.title+'</span></button>';
-      } else if(it.n === 1){
-        // book row (chapter 1 is the book's first chapter) — render the book wrapper with all chapters
-        html += '<div class="ci-bookwrap">'
-          + '<div class="ci-row" style="cursor:default">'
-            + '<button class="ci-book-chevron" title="Collapse chapters"><i class="fa-solid fa-chevron-down"></i></button>'
-            + '<span class="act-icon file"><i class="fa-solid fa-book"></i></span>'
-            + '<span class="txt">'+BOOK+'</span>'
-          + '</div>'
-          + '<div class="ci-chapters">';
-        if(bookEmpty){
-          html += '<div class="ci-empty-note">No chapters yet</div>';
-        } else {
-          ITEMS.forEach(function(c, ci){ if(c.kind === "chapter"){
-            html += '<div class="ci-chapter-row" data-ch="'+ci+'">'
-              + '<span class="ci-ch-grip" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i></span>'
-              + '<button class="ci-chapter" data-i="'+ci+'"><span class="num">'+c.n+'</span><span class="txt">'+c.title+'</span></button>'
-              + '<button class="ci-ch-kebab" data-ch-menu="'+ci+'" title="Chapter actions" aria-label="Chapter actions"><i class="fa-solid fa-ellipsis-vertical"></i></button>'
-              + '</div>';
-          }});
-        }
-        html += '</div>'
-          + '</div>';
+        html += activityRowHTML(it, i);
+        if(!chaptersExist && !bookRendered){ html += bookRowHTML(); bookRendered = true; }
+      } else if(it.kind === "chapter" && !bookRendered){
+        html += bookRowHTML(); bookRendered = true; // chapters emitted inside bookRowHTML
       }
     });
+    if(!bookRendered){ html += bookRowHTML(); }
     html += '</div></div>';
     OTHER_SECTIONS.forEach(function(t){
-      html += '<div class="ci-section collapsed"><button class="ci-sec-head"><span class="chev"><i class="fa-solid fa-chevron-down"></i></span><span class="txt">'+t+'</span></button><div class="ci-activities"></div></div>';
+      html += '<div class="ci-section collapsed" data-row data-rowtype="section">' + secHeadHTML(t) + '<div class="ci-activities"></div></div>';
     });
     document.getElementById("sections").innerHTML = html;
 
-    document.querySelectorAll(".ci-sec-head").forEach(function(h){
-      h.addEventListener("click", function(){ h.closest(".ci-section").classList.toggle("collapsed"); });
+    // section collapse + book chapters collapse
+    document.querySelectorAll("#sections .ci-sec-head").forEach(function(h){
+      h.addEventListener("click", function(e){ e.stopPropagation(); h.closest(".ci-section").classList.toggle("collapsed"); });
     });
-    document.querySelector(".ci-book-chevron").addEventListener("click", function(e){ e.stopPropagation(); this.closest(".ci-bookwrap").classList.toggle("collapsed"); });
-    document.querySelectorAll("[data-i]").forEach(function(el){
-      el.addEventListener("click", function(){ go(parseInt(el.dataset.i, 10)); if(document.body.classList.contains("ci-overlay")) body.classList.remove("ci-open"); });
+    var bc = document.querySelector(".ci-book-chevron");
+    if(bc) bc.addEventListener("click", function(e){ e.stopPropagation(); this.closest(".ci-bookwrap").classList.toggle("collapsed"); });
+    // navigation (ignore clicks on grip / action buttons / chevron)
+    document.querySelectorAll("#sections [data-i]").forEach(function(el){
+      el.addEventListener("click", function(e){
+        if(e.target.closest(".ci-actbtn, .ci-grip, .ci-book-chevron")) return;
+        go(parseInt(el.dataset.i, 10));
+        if(document.body.classList.contains("ci-overlay")) body.classList.remove("ci-open");
+      });
     });
-    // edit-mode TOC controls (per-chapter kebab menu)
+    // REAL chapter ⋮ menu (Edit / Hide / Delete). The + opens the Add-chapter
+    // submenu, handled by the shared [data-menu] wiring below.
     document.querySelectorAll("[data-ch-menu]").forEach(function(k){
       k.addEventListener("click", function(e){ e.stopPropagation(); openChapterMenu(k, parseInt(k.dataset.chMenu, 10)); });
     });
+    // section/activity/book +/… menus (chapter/book "add" is REAL; the rest cosmetic)
+    document.querySelectorAll("#sections [data-menu]").forEach(function(t){
+      t.addEventListener("click", function(e){ e.preventDefault(); e.stopPropagation(); openCiMenu(t); });
+    });
+    // drag-to-reorder: chapters persist; sections/activities are cosmetic
+    enableReorder(document.getElementById("sections"), false);
+    document.querySelectorAll(".ci-activities").forEach(function(c){ enableReorder(c, false); });
+    document.querySelectorAll(".ci-chapters").forEach(function(c){ enableReorder(c, true); });
+    if(typeof updateAnnotations === "function") updateAnnotations();
+  }
+  /* ---- drag-to-reorder within one list (persistChapters=true reorders the model) ---- */
+  function enableReorder(container, persistChapters){
+    if(!container) return;
+    var dragEl = null;
+    function rows(){ return [].slice.call(container.children).filter(function(c){ return c.matches && c.matches("[data-row]"); }); }
+    rows().forEach(function(row){
+      row.setAttribute("draggable", "true");
+      row.addEventListener("dragstart", function(e){
+        if(!document.body.classList.contains("edit-on")){ e.preventDefault(); return; }
+        e.stopPropagation(); dragEl = row; row.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move"; try{ e.dataTransfer.setData("text/plain", ""); }catch(_){}
+      });
+      row.addEventListener("dragend", function(e){
+        e.stopPropagation(); row.classList.remove("dragging"); dragEl = null;
+        if(persistChapters) persistChapterOrder(container);
+      });
+    });
+    container.addEventListener("dragover", function(e){
+      if(!dragEl || dragEl.parentNode !== container) return;
+      e.preventDefault();
+      var after = afterEl(e.clientY);
+      if(after == null) container.appendChild(dragEl); else container.insertBefore(dragEl, after);
+    });
+    function afterEl(y){
+      var els = rows().filter(function(el){ return el !== dragEl; });
+      var closest = { offset: -Infinity, el: null };
+      els.forEach(function(el){ var b = el.getBoundingClientRect(); var o = y - b.top - b.height/2; if(o < 0 && o > closest.offset) closest = { offset:o, el:el }; });
+      return closest.el;
+    }
+  }
+  function persistChapterOrder(container){
+    var order = [].slice.call(container.querySelectorAll(".ci-chapter")).map(function(el){ return parseInt(el.dataset.i, 10); });
+    if(!order.length) return;
+    var objs = order.map(function(i){ return ITEMS[i]; });
+    var curObj = ITEMS[current], k = 0;
+    for(var i=0;i<ITEMS.length;i++){ if(ITEMS[i].kind === "chapter"){ ITEMS[i] = objs[k++]; } }
+    renumberChapters();
+    var nc = ITEMS.indexOf(curObj); if(nc >= 0) current = nc;
+    renderIndex(); render();
   }
 
   /* ---------- render reading view + breadcrumb + highlight + footer ---------- */
@@ -1082,13 +1332,10 @@
   // docked onto the content box and explicit Save/Cancel. Used for editing an
   // existing chapter AND for adding a new one.
   function chapterEditorHTML(o){
+    // Save changes / Cancel live in the sticky footer while editing (see clnEditbar).
     return '<div class="chapter-editor">'
       + '<div class="chapter-editor-head">'
         + '<span class="ce-label"><i class="fa-solid fa-pen-to-square"></i> ' + o.label + '</span>'
-        + '<div class="ce-actions">'
-          + '<button type="button" class="btn btn-primary" data-ch-save><i class="fa-solid fa-check"></i> Save changes</button>'
-          + '<button type="button" class="btn btn-ghost" data-ch-cancel>Cancel</button>'
-        + '</div>'
       + '</div>'
       + '<div class="ce-body">'
         + '<div class="field"><label class="flabel" for="ceTitle">Chapter title<span class="req">*</span></label>'
@@ -1106,6 +1353,7 @@
   }
   function render(){
     var edit = document.body.classList.contains("edit-on");
+    document.body.classList.remove("ch-editing"); // set true only in the chapter editor
 
     // (1) transient "new chapter" editor
     if(pendingNew){ renderNewChapter(); return; }
@@ -1121,7 +1369,7 @@
         + '<button class="btn btn-primary" data-add-first><i class="fa-solid fa-plus"></i> Add your first chapter</button>'
         + '<button class="btn btn-secondary" data-import-open><i class="fa-solid fa-file-import"></i> Import chapters</button>'
         + '</div></div>';
-      reading.querySelector("[data-add-first]").addEventListener("click", function(){ newChapter(true); });
+      reading.querySelector("[data-add-first]").addEventListener("click", function(){ newChapter(null); });
       reading.querySelector("[data-import-open]").addEventListener("click", function(){ openModal("importModal"); });
       window.scrollTo(0,0);
       updateHighlight();
@@ -1136,6 +1384,7 @@
       crumb = '<a href="#">Biology 101</a> / <a href="#">' + BOOK + '</a> / ' + it.title;
       hdr = headerHTML('file', 'fa-book', BOOK, BOOK_DESC);
       if(edit && chapterEditing){
+        document.body.classList.add("ch-editing");
         content = chapterEditorHTML({ label:"Editing chapter", titleVal:it.title, bodyHTML:it.body, isFirst:current === firstChapterIndex() });
       } else {
         var editBtn = edit ? '<button type="button" class="btn btn-secondary chapter-edit-btn" data-ch-edit-inline title="Edit this chapter"><i class="fa-solid fa-pen"></i> Edit</button>' : '';
@@ -1154,37 +1403,55 @@
   }
   // wire the reading-view Edit button and the editor-panel Save/Cancel
   function wireChapterEditControls(){
+    // Save/Cancel now live in the sticky footer; here we only wire the reading-view "Edit" button.
     var eb = reading.querySelector("[data-ch-edit-inline]");
     if(eb) eb.addEventListener("click", function(){ chapterEditing = true; render(); });
-    var sv = reading.querySelector("[data-ch-save]");
-    if(sv) sv.addEventListener("click", function(){ chapterEditing = false; render(); });
-    var cn = reading.querySelector("[data-ch-cancel]");
-    if(cn) cn.addEventListener("click", function(){ chapterEditing = false; render(); });
     if(chapterEditing){ var ti = reading.querySelector("#ceTitle"); if(ti) ti.focus(); }
   }
   function renderNewChapter(){
+    document.body.classList.add("ch-editing");
     reading.innerHTML = '<div class="breadcrumb"><a href="#">Biology 101</a> / <a href="#">' + BOOK + '</a> / New chapter</div>'
       + headerHTML('file', 'fa-book', BOOK, BOOK_DESC)
-      + chapterEditorHTML({ label:"Add new chapter", titleVal:"", bodyHTML:"", isFirst:pendingNewIsFirst });
-    reading.querySelector("[data-ch-save]").addEventListener("click", saveNewChapter);
-    reading.querySelector("[data-ch-cancel]").addEventListener("click", cancelNewChapter);
+      + chapterEditorHTML({ label:(pendingNewSub ? "Add new subchapter" : "Add new chapter"), titleVal:"", bodyHTML:"", isFirst:pendingNewIsFirst, subchapter:pendingNewSub });
     var t = reading.querySelector("#ceTitle"); if(t) t.focus();
     window.scrollTo(0,0);
     updateHighlight();
     updateFooter();
   }
-  function newChapter(isFirst){
-    pendingNew = true; pendingNewIsFirst = !!isFirst;
+  // afterIdx = ITEMS index of the chapter to insert after; null = add as first chapter.
+  // asSub = pre-set the new chapter as a subchapter (from the + → "Add subchapter").
+  function newChapter(afterIdx, asSub){
+    pendingNew = true;
+    pendingAfterIdx = (typeof afterIdx === "number") ? afterIdx : null;
+    pendingNewIsFirst = (pendingAfterIdx == null); // adding the first chapter → subchapter n/a
+    pendingNewSub = !!asSub && !pendingNewIsFirst;
     setEdit(true);
     if(document.body.classList.contains("ci-overlay")) body.classList.remove("ci-open");
     renderIndex(); render();
   }
+  function lastChapterIndex(){ var idx = -1; ITEMS.forEach(function(it, i){ if(it.kind === "chapter") idx = i; }); return idx; }
+  // Manage → "Add chapter" and the book row + → append to the END of the book.
+  function addChapterAtEnd(asSub){
+    body.classList.remove("mode-settings");
+    var last = lastChapterIndex();
+    newChapter(last === -1 ? null : last, asSub);
+  }
   function saveNewChapter(){
-    pendingNew = false;
-    if(bookEmpty){ bookEmpty = false; current = firstChapterIndex(); }
+    var titleEl = reading.querySelector("#ceTitle");
+    var bodyEl = reading.querySelector("#ceBody");
+    var subEl = reading.querySelector(".chapter-editor .subch-toggle input");
+    var title = (titleEl ? titleEl.value : "").trim() || "Untitled chapter";
+    var bodyHTML = (bodyEl && bodyEl.innerHTML.trim()) ? bodyEl.innerHTML : "<p></p>";
+    var subchapter = !!(subEl && !subEl.disabled && subEl.checked);
+    var ch = { kind:"chapter", n:0, title:title, subchapter:subchapter, body:bodyHTML };
+    var insertAt = (pendingAfterIdx == null) ? firstChapterIndex() : (pendingAfterIdx + 1);
+    ITEMS.splice(insertAt, 0, ch);
+    renumberChapters();
+    pendingNew = false; pendingAfterIdx = null; bookEmpty = false; chapterEditing = false;
+    current = insertAt; // land on the new chapter (reading view)
     renderIndex(); render();
   }
-  function cancelNewChapter(){ pendingNew = false; renderIndex(); render(); }
+  function cancelNewChapter(){ pendingNew = false; pendingAfterIdx = null; renderIndex(); render(); }
   function updateHighlight(){
     document.querySelectorAll(".ci-row, .ci-chapter").forEach(function(el){ el.classList.remove("current"); });
     var el = document.querySelector('[data-i="'+current+'"]');
@@ -1207,6 +1474,27 @@
 
   document.getElementById("clnPrev").addEventListener("click", function(){ if(current>0) go(current-1); });
   document.getElementById("clnNext").addEventListener("click", function(){ if(current<ITEMS.length-1) go(current+1); });
+
+  // persist edits to an existing chapter back into the model
+  function saveChapterEdit(){
+    var it = ITEMS[current];
+    if(it && it.kind === "chapter"){
+      var t = reading.querySelector("#ceTitle"), b = reading.querySelector("#ceBody");
+      var subEl = reading.querySelector(".chapter-editor .subch-toggle input");
+      if(t && t.value.trim()) it.title = t.value.trim();
+      if(b) it.body = b.innerHTML;
+      if(subEl && !subEl.disabled) it.subchapter = subEl.checked;
+    }
+    chapterEditing = false;
+    renderIndex(); render();
+  }
+  // footer Save bar (shown while editing/adding a chapter) — routes to the right handler
+  document.getElementById("chSaveBtn").addEventListener("click", function(){
+    if(pendingNew) saveNewChapter(); else saveChapterEdit();
+  });
+  document.getElementById("chCancelBtn").addEventListener("click", function(){
+    if(pendingNew) cancelNewChapter(); else { chapterEditing = false; render(); }
+  });
 
   /* ---------- completion (book-level, cosmetic) ---------- */
   var comp = document.getElementById("completion");
@@ -1262,6 +1550,7 @@
       e.preventDefault(); e.stopPropagation();
       manageMenu.innerHTML = '<div class="menu-label">Manage book</div>'
         + '<button class="menu-item" data-m="settings"><i class="fa-solid fa-gear"></i> Settings</button>'
+        + '<button class="menu-item" data-m="addchapter"><i class="fa-solid fa-plus"></i> Add chapter</button>'
         + '<button class="menu-item" data-m="import"><i class="fa-solid fa-file-import"></i> Import chapter</button>'
         + '<button class="menu-item" data-m="print"><i class="fa-solid fa-print"></i> Print book</button>'
         + '<button class="menu-item" data-m="export"><i class="fa-solid fa-file-export"></i> Download IMS content package</button>'
@@ -1279,6 +1568,7 @@
       closeManage();
       if(mi.dataset.m === "settings") openSettings(false);
       else if(mi.dataset.m === "import") openModal("importModal");
+      else if(mi.dataset.m === "addchapter") addChapterAtEnd();
       return;
     }
     if(!manageMenu.contains(e.target)) closeManage();
@@ -1288,15 +1578,18 @@
   /* ---------- chapter kebab menu (TOC) ---------- */
   var chapterMenu = document.getElementById("chapterMenu");
   var chapterMenuIdx = null;
-  function closeChapterMenu(){ chapterMenu.classList.remove("show"); chapterMenuIdx = null; }
+  function closeChapterMenu(){
+    chapterMenu.classList.remove("show"); chapterMenuIdx = null;
+    document.querySelectorAll(".ci-row-actions.menu-open").forEach(function(a){ a.classList.remove("menu-open"); });
+  }
   function openChapterMenu(anchor, idx){
     chapterMenuIdx = idx;
     var row = anchor.closest(".ci-chapter-row");
+    var cluster = anchor.closest(".ci-row-actions"); if(cluster) cluster.classList.add("menu-open"); // keep cluster visible while open
     var hidden = row && row.classList.contains("ci-hidden");
     chapterMenu.innerHTML = '<div class="menu-label">Chapter</div>'
       + '<button class="menu-item" data-c="edit"><i class="fa-solid fa-pen"></i> Edit chapter</button>'
       + '<button class="menu-item" data-c="hide"><i class="fa-solid fa-' + (hidden ? "eye" : "eye-slash") + '"></i> ' + (hidden ? "Show" : "Hide") + ' chapter</button>'
-      + '<button class="menu-item" data-c="add"><i class="fa-solid fa-plus"></i> Add new chapter after</button>'
       + '<button class="menu-item" data-c="delete" style="color:var(--mds-text-danger)"><i class="fa-solid fa-trash-can" style="color:var(--mds-text-danger)"></i> Delete chapter</button>';
     chapterMenu.classList.add("show");
     var r = anchor.getBoundingClientRect(), mw = chapterMenu.offsetWidth, mh = chapterMenu.offsetHeight;
@@ -1310,7 +1603,6 @@
     closeChapterMenu();
     if(c === "edit"){ go(idx); chapterEditing = true; render(); }
     else if(c === "hide"){ var row = document.querySelector('.ci-chapter-row[data-ch="' + idx + '"]'); if(row) row.classList.toggle("ci-hidden"); }
-    else if(c === "add"){ newChapter(false); }
     else if(c === "delete"){ openDelete(idx); }
   });
   document.addEventListener("click", function(e){
@@ -1321,12 +1613,41 @@
   function openModal(id){ document.getElementById(id).classList.add("show"); }
   function closeModals(){ document.querySelectorAll(".modal-overlay").forEach(function(o){ o.classList.remove("show"); }); }
   function openDelete(idx){
-    document.getElementById("deleteMsg").textContent = "Do you really want to delete this chapter?";
+    deleteIdx = idx;
+    var it = ITEMS[idx], hasSubs = false;
+    if(it && it.kind === "chapter" && !it.subchapter){
+      var nx = ITEMS[idx + 1];
+      hasSubs = !!(nx && nx.kind === "chapter" && nx.subchapter);
+    }
+    document.getElementById("deleteMsg").textContent = hasSubs
+      ? "Do you really want to delete this chapter and all its subchapters?"
+      : "Do you really want to delete this chapter?";
     openModal("deleteModal");
+  }
+  // Confirm delete: remove the chapter (and any following subchapters, per delete.php)
+  // from the model so it disappears from the course index.
+  function confirmDelete(){
+    if(deleteIdx == null){ closeModals(); return; }
+    var it = ITEMS[deleteIdx], removeCount = 1;
+    if(it && it.kind === "chapter" && !it.subchapter){
+      var j = deleteIdx + 1;
+      while(ITEMS[j] && ITEMS[j].kind === "chapter" && ITEMS[j].subchapter){ removeCount++; j++; }
+    }
+    ITEMS.splice(deleteIdx, removeCount);
+    // keep `current` pointing somewhere sensible
+    if(current > deleteIdx) current = Math.max(0, current - removeCount);
+    else if(current >= deleteIdx) current = Math.min(deleteIdx, ITEMS.length - 1);
+    if(current > ITEMS.length - 1) current = ITEMS.length - 1;
+    renumberChapters();
+    if(!hasChapters()) bookEmpty = true;
+    deleteIdx = null; chapterEditing = false; pendingNew = false;
+    closeModals();
+    renderIndex(); render();
   }
   document.querySelectorAll("[data-close-modal]").forEach(function(b){
     b.addEventListener("click", function(){ document.getElementById(b.dataset.closeModal).classList.remove("show"); });
   });
+  document.querySelector("[data-confirm-delete]").addEventListener("click", confirmDelete);
   document.querySelectorAll(".modal-overlay").forEach(function(o){
     o.addEventListener("click", function(e){ if(e.target === o) o.classList.remove("show"); });
   });
@@ -1411,7 +1732,7 @@
   window.addEventListener("resize", function(){ sizeSettingsSpacer(); updateSettingsScrollspy(); });
   function leaveSettings(){
     body.classList.remove("mode-settings");
-    devState.value = "workspace"; bookEmpty = false; pendingNew = false; setEdit(true);
+    syncStateButtons("workspace"); bookEmpty = false; pendingNew = false; setEdit(true);
     if(ITEMS[current].kind !== "chapter") current = firstChapterIndex();
     renderIndex(); render();
   }
@@ -1451,7 +1772,7 @@
   document.querySelectorAll("[data-remove-chip]").forEach(function(x){ x.addEventListener("click", function(){ var c = x.closest(".chip"); if(c) c.remove(); }); });
 
   /* ---------- dev state switcher (throwaway) ---------- */
-  var devState = document.getElementById("devState");
+  function syncStateButtons(s){ document.querySelectorAll("#devStates .devbtn").forEach(function(b){ b.classList.toggle("on", b.dataset.state === s); }); }
   function ensureChapter(){ if(ITEMS[current].kind !== "chapter") current = firstChapterIndex(); }
   function setState(s){
     closeManage(); closeChapterMenu(); closeModals();
@@ -1464,13 +1785,179 @@
     else if(s === "settings-edit"){ setEdit(true); renderIndex(); render(); openSettings(false); }
     else if(s === "import"){ bookEmpty = false; setEdit(true); ensureChapter(); renderIndex(); render(); openModal("importModal"); }
     else if(s === "delete"){ bookEmpty = false; setEdit(true); ensureChapter(); renderIndex(); render(); openDelete(current); }
+    syncStateButtons(s);
   }
-  devState.addEventListener("change", function(){ setState(devState.value); });
+  document.getElementById("devStates").addEventListener("click", function(e){
+    var b = e.target.closest(".devbtn[data-state]"); if(b) setState(b.dataset.state);
+  });
+
+  /* ---------- course-index: cosmetic +/… menus, toast, collapse-all, resize ---------- */
+  var ciToast = document.getElementById("ciToast"), ciToastT;
+  function showToast(msg){ ciToast.textContent = msg; ciToast.classList.add("show"); clearTimeout(ciToastT); ciToastT = setTimeout(function(){ ciToast.classList.remove("show"); }, 1900); }
+
+  var ciMenu = document.getElementById("ciMenu"), ciMenuOwner = null, ciMenuTrigger = null;
+  function closeCiMenu(){ ciMenu.classList.remove("show"); if(ciMenuOwner){ ciMenuOwner.classList.remove("menu-open"); ciMenuOwner = null; } ciMenuTrigger = null; }
+  function ciItems(items){ return items.map(function(it){ if(it[0] === "sep") return '<div class="ci-menu-sep"></div>'; return '<button class="ci-menu-item'+(it[2]?" danger":"")+'"><i class="fa-solid '+it[0]+'"></i>'+it[1]+'</button>'; }).join(""); }
+  function ciMoreMenu(rowtype){
+    var items;
+    if(rowtype === "section") items = [["fa-pen","Edit section name"],["fa-eye-slash","Hide section"],["fa-copy","Duplicate"],["sep"],["fa-trash","Delete section",1]];
+    else if(rowtype === "book") items = [["fa-gear","Edit settings"],["fa-eye-slash","Hide from students"],["fa-copy","Duplicate"],["sep"],["fa-trash","Delete",1]];
+    else items = [["fa-gear","Edit settings"],["fa-eye-slash","Hide from students"],["fa-copy","Duplicate"],["fa-indent","Move right"],["sep"],["fa-trash","Delete",1]];
+    return ciItems(items);
+  }
+  function ciAddMenu(addtype, rowtype){
+    // book/chapter add is REAL: a submenu of Add chapter / Add subchapter
+    if(addtype === "chapter"){
+      return '<div class="ci-menu-label">Add to book</div>'
+        + '<button class="ci-menu-item" data-add="chapter"><i class="fa-solid fa-file-lines"></i>Add chapter</button>'
+        + '<button class="ci-menu-item" data-add="subchapter"><i class="fa-solid fa-indent"></i>Add subchapter</button>';
+    }
+    var html = '<div class="ci-menu-label">Add activity or resource</div>' + ciItems([["fa-pen-to-square","Assignment"],["fa-book","Book"],["fa-comments","Forum"],["fa-file-lines","Page"],["fa-list-check","Quiz"],["fa-link","URL"],["sep"],["fa-ellipsis","More…"]]);
+    if(rowtype === "section") html += '<div class="ci-menu-sep"></div><div class="ci-menu-label">Section</div>' + ciItems([["fa-square-plus","Add section"]]);
+    return html;
+  }
+  function openCiMenu(trigger){
+    closeManage(); closeChapterMenu();
+    var kind = trigger.dataset.menu;
+    ciMenu.innerHTML = kind === "add" ? ciAddMenu(trigger.dataset.addtype, trigger.dataset.rowtype) : ciMoreMenu(trigger.dataset.rowtype);
+    ciMenu.classList.add("show");
+    if(ciMenuOwner) ciMenuOwner.classList.remove("menu-open");
+    ciMenuOwner = trigger.closest(".ci-row-actions"); if(ciMenuOwner) ciMenuOwner.classList.add("menu-open");
+    ciMenuTrigger = trigger;
+    var r = trigger.getBoundingClientRect(), mw = ciMenu.offsetWidth, mh = ciMenu.offsetHeight;
+    var left = Math.min(r.left, window.innerWidth - mw - 8), top = r.bottom + 4;
+    if(top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
+    ciMenu.style.left = Math.max(8, left) + "px"; ciMenu.style.top = top + "px";
+  }
+  document.addEventListener("click", function(e){
+    var mi = e.target.closest("#ciMenu .ci-menu-item");
+    if(mi){
+      var add = mi.dataset.add, t = ciMenuTrigger;
+      if(add && t){ // REAL: add chapter / subchapter (from a chapter or book + )
+        closeCiMenu();
+        if(t.dataset.book) addChapterAtEnd(add === "subchapter");
+        else newChapter(parseInt(t.dataset.ch, 10), add === "subchapter");
+        return;
+      }
+      showToast('"' + mi.textContent.trim() + '" is demo-only in this prototype'); closeCiMenu(); return;
+    }
+    if(ciMenu.classList.contains("show") && !ciMenu.contains(e.target) && !e.target.closest("[data-menu]")) closeCiMenu();
+  });
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape") closeCiMenu(); });
+
+  // collapse / expand all
+  var collapseAll = document.getElementById("collapseAll"), collapseAllLabel = document.getElementById("collapseAllLabel");
+  collapseAll.addEventListener("click", function(){
+    var secs = document.querySelectorAll("#sections .ci-section");
+    var anyOpen = [].some.call(secs, function(s){ return !s.classList.contains("collapsed"); });
+    secs.forEach(function(s){ s.classList.toggle("collapsed", anyOpen); });
+    var bw = document.querySelector(".ci-bookwrap"); if(bw) bw.classList.toggle("collapsed", anyOpen);
+    collapseAllLabel.textContent = anyOpen ? "Expand all" : "Collapse all";
+    if(typeof updateAnnotations === "function") updateAnnotations();
+  });
+
+  // drag-to-resize the course index (desktop/push only)
+  (function(){
+    var handle = document.getElementById("resizeHandle"), readout = document.getElementById("widthReadout");
+    var MIN = 285, MAX = 560, dragging = false, startX = 0, startW = 0;
+    function ciW(){ return parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ci-width")); }
+    function setW(px){ px = Math.max(MIN, Math.min(MAX, px)); document.documentElement.style.setProperty("--ci-width", px + "px"); readout.textContent = Math.round(px) + "px"; handle.setAttribute("aria-valuenow", Math.round(px)); if(typeof updateAnnotations === "function") updateAnnotations(); }
+    handle.addEventListener("mousedown", function(e){ if(body.classList.contains("ci-overlay")) return; dragging = true; startX = e.clientX; startW = ciW(); handle.classList.add("dragging"); body.classList.add("ci-dragging"); readout.classList.add("show"); e.preventDefault(); });
+    window.addEventListener("mousemove", function(e){ if(dragging) setW(startW + (e.clientX - startX)); });
+    window.addEventListener("mouseup", function(){ if(!dragging) return; dragging = false; handle.classList.remove("dragging"); body.classList.remove("ci-dragging"); setTimeout(function(){ readout.classList.remove("show"); }, 400); });
+    handle.addEventListener("dblclick", function(){ setW(300); });
+    handle.addEventListener("keydown", function(e){
+      if(body.classList.contains("ci-overlay")) return;
+      var cur = ciW(), step = e.shiftKey ? 48 : 24, h = true;
+      if(e.key === "ArrowRight") setW(cur + step); else if(e.key === "ArrowLeft") setW(cur - step);
+      else if(e.key === "Home") setW(MIN); else if(e.key === "End") setW(MAX); else h = false;
+      if(h){ e.preventDefault(); readout.classList.add("show"); clearTimeout(handle._t); handle._t = setTimeout(function(){ readout.classList.remove("show"); }, 700); }
+    });
+  })();
+
+  /* ---------- dev State switcher: align its left edge to the course index ---------- */
+  var devSwitchEl = document.querySelector(".devswitch");
+  function positionDevSwitch(){
+    var layout = document.querySelector(".layout");
+    if(!layout || !devSwitchEl) return;
+    var r = layout.getBoundingClientRect();
+    var padL = parseFloat(getComputedStyle(layout).paddingLeft) || 0;
+    devSwitchEl.style.left = Math.max(8, r.left + padL) + "px";
+  }
+
+  /* ---------- annotations (blue walkthrough callouts + dashed ring) ---------- */
+  var annoLayer = document.getElementById("annoLayer");
+  var annoToggle = document.getElementById("annoToggle");
+  var annoToggleLabel = document.getElementById("annoToggleLabel");
+  var annoCards = Array.prototype.slice.call(document.querySelectorAll(".anno-card"));
+  var annoOn = true;
+  // one dashed pulsing ring per card, drawn over its target
+  var annoRings = annoCards.map(function(){ var r = document.createElement("div"); r.className = "anno-ring"; r.style.display = "none"; annoLayer.appendChild(r); return r; });
+  function isElVisible(el){ return !!(el && (el.offsetWidth || el.offsetHeight || el.getClientRects().length)); }
+  function firstVisibleTarget(sel){
+    var els = document.querySelectorAll(sel);
+    for(var i=0;i<els.length;i++){ if(isElVisible(els[i])) return els[i]; }
+    return null;
+  }
+  function aliveCount(){ return annoCards.filter(function(c){ return c.dataset.dismissed !== "1"; }).length; }
+  function updateAnnoToggleLabel(){ annoToggleLabel.textContent = annoOn ? "Hide annotations" : ("Show annotations (" + aliveCount() + ")"); }
+  function updateAnnotations(){
+    if(!annoLayer) return;
+    var vw = window.innerWidth, vh = window.innerHeight;
+    annoCards.forEach(function(card, i){
+      var ring = annoRings[i];
+      if(!annoOn || card.dataset.dismissed === "1"){ card.style.display = "none"; ring.style.display = "none"; return; }
+      var target = firstVisibleTarget(card.dataset.target);
+      var tr = target && target.getBoundingClientRect();
+      var visible = tr && tr.width > 0 && tr.height > 0 && tr.bottom > 64 && tr.top < vh - 8 && tr.right > 0 && tr.left < vw;
+      if(!visible){ card.style.display = "none"; ring.style.display = "none"; return; }
+      card.style.display = "block"; ring.style.display = "block";
+      // ring hugs the target
+      ring.style.left = (tr.left - 4) + "px"; ring.style.top = (tr.top - 4) + "px";
+      ring.style.width = (tr.width + 8) + "px"; ring.style.height = (tr.height + 8) + "px";
+      // callout beside the ring
+      var cw = card.offsetWidth || 220, chh = card.offsetHeight || 90, side = card.dataset.side, cl, ct;
+      if(side === "right"){ cl = tr.right + 18; ct = tr.top - 6; }
+      else if(side === "top"){ cl = tr.left; ct = tr.top - chh - 18; }
+      else if(side === "bottom"){ cl = tr.left; ct = tr.bottom + 18; }
+      else { cl = tr.left - cw - 18; ct = tr.top - 6; }
+      cl = Math.max(8, Math.min(cl, vw - cw - 8));
+      ct = Math.max(72, Math.min(ct, vh - chh - 8));
+      card.style.left = cl + "px"; card.style.top = ct + "px";
+    });
+  }
+  annoToggle.addEventListener("click", function(){
+    annoOn = !annoOn;
+    body.classList.toggle("annotations-on", annoOn);
+    // if everything was dismissed, turning annotations back on restores them all
+    if(annoOn && aliveCount() === 0){ annoCards.forEach(function(c){ c.dataset.dismissed = ""; }); }
+    updateAnnoToggleLabel();
+    updateAnnotations();
+  });
+  annoCards.forEach(function(card){
+    card.querySelector(".anno-close").addEventListener("click", function(){
+      card.dataset.dismissed = "1";
+      if(aliveCount() === 0){ annoOn = false; body.classList.remove("annotations-on"); } // dismissing the last one hides the layer
+      updateAnnoToggleLabel();
+      updateAnnotations();
+    });
+  });
+  window.addEventListener("scroll", updateAnnotations, true);
+  window.addEventListener("resize", function(){ positionDevSwitch(); updateAnnotations(); });
+  // reposition whenever the index or reading pane re-renders
+  var annoObserver = new MutationObserver(function(){ requestAnimationFrame(updateAnnotations); });
+  annoObserver.observe(document.getElementById("sections"), { childList:true, subtree:true });
+  annoObserver.observe(reading, { childList:true, subtree:true });
 
   renderIndex();
   applyMode();
   renderNumPreview();
   render();
+  positionDevSwitch();
+  updateAnnoToggleLabel();
+  updateAnnotations();
+  window.addEventListener("load", function(){ positionDevSwitch(); updateAnnotations(); });
+  setTimeout(function(){ positionDevSwitch(); updateAnnotations(); }, 60);
 })();
 </script>
 

@@ -283,15 +283,20 @@
   body.edit-on [data-row].dragging .ci-grip{ opacity:1; }
   body.edit-on .ci-grip:focus-visible{ outline:2px solid var(--primary); outline-offset:1px; }
 
+  /* Each row exposes its own backdrop colour via --row-bg; the trailing
+     action cluster + its fade use THAT colour, so the overlay blends with
+     whatever the row is (grey by default, blue when it's the current page)
+     instead of a fixed grey gradient painted over a coloured row. */
+  .ci-secrow, .ci-activity, .ci-chapter{ --row-bg:var(--ci-row-hover); }
   .ci-row-actions{
     position:absolute; top:50%; right:4px; transform:translateY(-50%);
     display:flex; align-items:center; gap:1px;
-    background:var(--ci-row-hover);
+    background:var(--row-bg);
     opacity:0; pointer-events:none; transition:opacity .1s ease;
   }
-  .ci-row-actions::before{ /* soft fade so it doesn't hard-edge the name */
-    content:""; position:absolute; left:-14px; top:0; bottom:0; width:14px;
-    background:linear-gradient(90deg, rgba(225,228,230,0), var(--ci-row-hover));
+  .ci-row-actions::before{ /* fade in the ROW'S own colour so there's no hard edge and no grey-over-colour clash */
+    content:""; position:absolute; left:-18px; top:0; bottom:0; width:18px;
+    background:linear-gradient(90deg, rgb(from var(--row-bg) r g b / 0), var(--row-bg));
   }
   /* reveal only in edit mode, on row hover or when a control has focus */
   body.edit-on .ci-secrow:hover .ci-row-actions,
@@ -314,6 +319,18 @@
   .ci-actbtn:focus-visible{ outline:2px solid var(--primary); outline-offset:1px; }
   body.edit-on [data-row].dragging{ opacity:.4; }
   body.edit-on [data-row].dragging .ci-row-actions{ opacity:0; }
+
+  /* current page item (Moodle ".pageitem" = the activity / book chapter you're
+     viewing): full-width primary fill. The action overlay inherits --row-bg so
+     the +/… cluster blends into the blue, and icons/controls flip to white. */
+  .ci-activity.pageitem, .ci-chapter.pageitem{ background:var(--primary); --row-bg:var(--primary); border-radius:var(--r-sm); }
+  .ci-activity.pageitem:hover, .ci-chapter.pageitem:hover{ background:var(--primary-dark); --row-bg:var(--primary-dark); }
+  .pageitem .txt, .pageitem .num, .pageitem .ci-acticon, .pageitem .ci-book-chevron{ color:#fff; }
+  .pageitem .ci-check{ border-color:rgba(255,255,255,.75); }
+  .pageitem .ci-check.done{ background:#fff; border-color:#fff; color:var(--primary); }
+  .pageitem .ci-grip{ color:rgba(255,255,255,.85); }
+  .pageitem .ci-actbtn{ color:rgba(255,255,255,.92); }
+  .pageitem .ci-actbtn:hover{ background:rgba(255,255,255,.22); color:#fff; }
 
   /* book row (expandable) + its chapters (the migrated TOC) */
   .ci-bookwrap{ }
@@ -368,7 +385,9 @@
     content:""; position:absolute; top:0; bottom:0; left:3px; width:2px;
     background:transparent; transition:background .12s ease;
   }
-  .resize-handle:hover::after, .resize-handle.dragging::after{ background:var(--primary); }
+  .resize-handle:hover::after, .resize-handle.dragging::after,
+  .resize-handle:focus-visible::after{ background:var(--primary); }
+  .resize-handle:focus-visible{ outline:2px solid var(--primary); outline-offset:-1px; }
   body.dragging{ cursor:col-resize !important; user-select:none; }
   .width-readout{
     position:absolute; bottom:12px; right:12px; font-size:11px;
@@ -635,6 +654,56 @@
   }
   body.hide-dev .debug, body.hide-dev .hint{ display:none; }
 
+  /* ---- annotations (dismissible walkthrough callouts) ---- */
+  .anno-layer{ position:fixed; inset:0; z-index:70; pointer-events:none; }
+  body.annos-off .anno-layer{ display:none; }
+  .anno-ring{
+    position:fixed; border:2px dashed var(--primary); border-radius:8px;
+    box-shadow:0 0 0 3px rgba(15,108,191,.16); pointer-events:none;
+    animation:annoPulse 1.9s ease-in-out infinite;
+  }
+  @keyframes annoPulse{
+    0%,100%{ box-shadow:0 0 0 3px rgba(15,108,191,.16); }
+    50%{ box-shadow:0 0 0 8px rgba(15,108,191,.06); }
+  }
+  .anno-callout{
+    position:fixed; width:214px; background:var(--primary); color:#fff;
+    border-radius:10px; padding:10px 12px 11px; font-size:12px; line-height:1.45;
+    box-shadow:0 10px 28px rgba(0,0,0,.28); pointer-events:auto;
+  }
+  .anno-callout .anno-num{
+    position:absolute; top:-11px; left:-11px; width:23px; height:23px; border-radius:50%;
+    background:#fff; color:var(--primary); font-weight:700; font-size:12px;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,.25);
+  }
+  .anno-callout .anno-title{ font-weight:700; display:flex; align-items:center; gap:6px; margin:0 14px 3px 0; }
+  .anno-callout .anno-title i{ font-size:12px; }
+  .anno-callout .anno-text{ color:rgba(255,255,255,.92); }
+  .anno-callout .anno-kbd{
+    margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,.22);
+    display:flex; align-items:center; gap:6px; font-size:11px; color:rgba(255,255,255,.82);
+  }
+  .anno-callout .anno-close{
+    position:absolute; top:5px; right:6px; background:none; border:none;
+    color:rgba(255,255,255,.85); cursor:pointer; font-size:12px; padding:3px; line-height:1;
+  }
+  .anno-callout .anno-close:hover{ color:#fff; }
+
+  .anno-toggle{
+    position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:71;
+    background:var(--primary); color:#fff; border:none; border-radius:999px;
+    padding:9px 16px; font-size:13px; font-weight:600; cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,.25); display:flex; align-items:center; gap:8px;
+  }
+  .anno-toggle:hover{ background:var(--primary-dark); }
+  body.annos-off .anno-toggle{ background:var(--text-subtle); }
+  /* while annotations show, force-reveal the specific index controls they
+     point at (these are normally hover-only in edit mode) so each ring lands
+     on a visible target instead of a ghost. */
+  body:not(.annos-off).edit-on .anno-grip-row .ci-grip,
+  body:not(.annos-off).edit-on .anno-add-row .ci-row-actions,
+  body:not(.annos-off).edit-on .anno-more-row .ci-row-actions{ opacity:1; pointer-events:auto; }
+
   /* =====================  RESPONSIVE  =====================
      Two independent breakpoints:
        - nav burger + hidden logo/pills at <=1024px
@@ -764,7 +833,7 @@
         <button class="ci-collapseall"><i class="fa-solid fa-down-left-and-up-right-to-center"></i>Collapse all</button>
         <div id="sections"></div>
       </div>
-      <div class="resize-handle" id="resizeHandle"></div>
+      <div class="resize-handle" id="resizeHandle" tabindex="0" role="separator" aria-orientation="vertical" aria-label="Resize course index (arrow keys)" aria-valuemin="285" aria-valuemax="560" aria-valuenow="285"></div>
       <div class="width-readout" id="widthReadout">285px</div>
     </div>
 
@@ -991,6 +1060,11 @@
 
   <div class="ci-menu" id="ciMenu" role="menu"></div>
   <div class="backdrop" id="backdrop"></div>
+
+  <!-- annotations layer (callouts injected by JS) + toggle -->
+  <div class="anno-layer" id="annoLayer"></div>
+  <button class="anno-toggle" id="annoToggle"><i class="fa-solid fa-location-dot"></i><span id="annoToggleLabel">Hide annotations</span></button>
+
   <div class="debug" id="debug" title="Click to hide dev overlays"></div>
   <div class="hint" title="Click to hide dev overlays">Edit mode on → hover any course-index row for <b>+</b> (add) / <b>…</b> (more) and drag to reorder. The book expands to its chapters (TOC now inline). Toggle Edit mode to see the clean student view. <b>(click to hide)</b></div>
 
@@ -1033,7 +1107,7 @@
   // addtype: 'section' (activity/resource chooser) | 'chapter' (book chapters only).
   function actionsHTML(rowtype, addtype){
     return '<div class="ci-row-actions">'
-      + '<button class="ci-actbtn" data-menu="add" data-addtype="' + addtype + '" title="Add"><i class="fa-solid fa-plus"></i></button>'
+      + '<button class="ci-actbtn" data-menu="add" data-addtype="' + addtype + '" data-rowtype="' + rowtype + '" title="Add"><i class="fa-solid fa-plus"></i></button>'
       + '<button class="ci-actbtn" data-menu="more" data-rowtype="' + rowtype + '" title="More"><i class="fa-solid fa-ellipsis"></i></button>'
       + '</div>';
   }
@@ -1153,13 +1227,30 @@
 
   renderSections();
 
+  /* ---- current page item (Moodle .pageitem): the row you're "viewing" ----
+     Mark the book activity current by default (the state to demo), and let a
+     click on any activity / chapter move the highlight. Clicks on the inline
+     controls (grip / +/… / chevron) are ignored. */
+  (function(){
+    var book = document.querySelector(".ci-book");
+    if(book) book.classList.add("pageitem");
+    document.getElementById("sections").addEventListener("click", function(e){
+      if(e.target.closest(".ci-actbtn, .ci-grip, .ci-book-chevron, .ci-sec-head")) return;
+      var row = e.target.closest(".ci-activity, .ci-chapter");
+      if(!row) return;
+      document.querySelectorAll("#sections .pageitem").forEach(function(el){ el.classList.remove("pageitem"); });
+      row.classList.add("pageitem");
+    });
+  })();
+
   /* ---- + add / … more popup menu (shared) ---- */
   var ciMenu = document.getElementById("ciMenu");
   var menuOwner = null;
   function renderItems(items){
     return items.map(function(it){
       if(it[0] === 'sep') return '<div class="ci-menu-sep"></div>';
-      return '<button class="ci-menu-item' + (it[2] ? ' danger' : '') + '"><i class="fa-solid ' + it[0] + '"></i>' + it[1] + '</button>';
+      var action = it[3] ? ' data-action="' + it[3] + '"' : '';
+      return '<button class="ci-menu-item' + (it[2] ? ' danger' : '') + '"' + action + '><i class="fa-solid ' + it[0] + '"></i>' + it[1] + '</button>';
     }).join('');
   }
   function moreMenu(rowtype){
@@ -1170,22 +1261,41 @@
     else items = [['fa-gear','Edit settings'],['fa-eye-slash','Hide from students'],['fa-copy','Duplicate'],['fa-indent','Move right'],['sep'],['fa-trash','Delete',1]];
     return renderItems(items);
   }
-  function addMenu(addtype){
+  function addMenu(addtype, rowtype){
     if(addtype === 'chapter'){
       return '<div class="ci-menu-label">Add to book</div>' + renderItems([['fa-file-lines','Add chapter'],['fa-indent','Add subchapter']]);
     }
-    return '<div class="ci-menu-label">Add activity or resource</div>' + renderItems([
+    var html = '<div class="ci-menu-label">Add activity or resource</div>' + renderItems([
       ['fa-pen-to-square','Assignment'],['fa-book','Book'],['fa-comments','Forum'],
       ['fa-file-lines','Page'],['fa-list-check','Quiz'],['fa-link','URL'],['sep'],['fa-ellipsis','More…']
     ]);
+    // At the section level the + also offers creating a sibling section.
+    if(rowtype === 'section'){
+      html += '<div class="ci-menu-sep"></div><div class="ci-menu-label">Section</div>'
+        + renderItems([['fa-square-plus','Add section', 0, 'add-section']]);
+    }
+    return html;
   }
   function closeMenu(){ ciMenu.classList.remove('show'); if(menuOwner){ menuOwner.classList.remove('menu-open'); menuOwner = null; } }
+  /* create a new collapsible section at the end of the index */
+  function addNewSection(){
+    var sections = document.getElementById('sections');
+    var sec = document.createElement('div');
+    sec.className = 'ci-section';
+    sec.setAttribute('data-row', '');
+    sec.setAttribute('data-rowtype', 'section');
+    sec.innerHTML = sectionHead('New section') + '<div class="ci-activities"></div>';
+    sections.appendChild(sec);
+    sec.querySelector('.ci-sec-head').addEventListener('click', function(){ sec.classList.toggle('collapsed'); });
+    enableReorder(sec.querySelector('.ci-activities'));
+    sec.scrollIntoView({ block: 'nearest' });
+  }
   document.addEventListener('click', function(e){
     var trigger = e.target.closest('[data-menu]');
     if(trigger){
       e.preventDefault(); e.stopPropagation();
       var kind = trigger.dataset.menu;
-      ciMenu.innerHTML = kind === 'add' ? addMenu(trigger.dataset.addtype) : moreMenu(trigger.dataset.rowtype);
+      ciMenu.innerHTML = kind === 'add' ? addMenu(trigger.dataset.addtype, trigger.dataset.rowtype) : moreMenu(trigger.dataset.rowtype);
       ciMenu.classList.add('show');
       if(menuOwner) menuOwner.classList.remove('menu-open');
       menuOwner = trigger.closest('.ci-row-actions'); if(menuOwner) menuOwner.classList.add('menu-open');
@@ -1197,7 +1307,8 @@
       ciMenu.style.top = top + 'px';
       return;
     }
-    if(e.target.closest('.ci-menu-item')){ closeMenu(); return; } // demo: item just closes
+    var mItem = e.target.closest('.ci-menu-item');
+    if(mItem){ if(mItem.dataset.action === 'add-section') addNewSection(); closeMenu(); return; } // most items are demo-only
     if(!ciMenu.contains(e.target)) closeMenu();
   });
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMenu(); });
@@ -1279,8 +1390,21 @@
     px = Math.max(MIN, Math.min(MAX, px));
     document.documentElement.style.setProperty("--ci-width", px + "px");
     readout.textContent = Math.round(px) + "px";
+    handle.setAttribute("aria-valuenow", Math.round(px));
     updateDebug();
   }
+  /* keyboard resize — makes the handle genuinely Tab-accessible */
+  handle.addEventListener("keydown", function(e){
+    if(body.classList.contains("ci-overlay")) return;
+    var cur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ci-width"));
+    var step = e.shiftKey ? 48 : 24, handled = true;
+    if(e.key === "ArrowRight") setWidth(cur + step);
+    else if(e.key === "ArrowLeft") setWidth(cur - step);
+    else if(e.key === "Home") setWidth(MIN);
+    else if(e.key === "End") setWidth(MAX);
+    else handled = false;
+    if(handled){ e.preventDefault(); readout.classList.add("show"); clearTimeout(handle._t); handle._t = setTimeout(function(){ readout.classList.remove("show"); }, 700); }
+  });
   handle.addEventListener("mousedown", function(e){
     if(body.classList.contains("ci-overlay")) return;
     dragging = true; startX = e.clientX;
@@ -1326,6 +1450,107 @@
   /* click either dev overlay to hide both */
   document.querySelector(".debug").addEventListener("click", function(){ body.classList.add("hide-dev"); });
   document.querySelector(".hint").addEventListener("click", function(){ body.classList.add("hide-dev"); });
+
+  /* ---- annotations: dismissible callouts highlighting key affordances ---- */
+  // Mark three spaced-out, currently-visible course-index rows so each ring
+  // lands on one control (avoids stacking callouts on a single row).
+  var ciRows = Array.prototype.filter.call(
+    document.querySelectorAll("#sections .ci-activity"),
+    function(el){ return el.offsetParent !== null; });
+  if(ciRows.length){
+    ciRows[0].classList.add("anno-grip-row");
+    ciRows[Math.floor(ciRows.length / 2)].classList.add("anno-add-row");
+    ciRows[ciRows.length - 1].classList.add("anno-more-row");
+  }
+
+  var ANNOS = [
+    { sel:"#resizeHandle", side:"right", icon:"fa-arrows-left-right",
+      title:"Drag to expand",
+      text:"Pull this edge to widen the course index and reveal the full, truncated activity names.",
+      kbd:"Tab to focus, then ← → to resize" },
+    { sel:".anno-grip-row .ci-grip", side:"right", icon:"fa-up-down-left-right",
+      title:"Drag handle",
+      text:"In edit mode, grab a row by its handle to reorder activities and sections.",
+      kbd:"Reachable by Tab" },
+    { sel:".anno-add-row .ci-actbtn[data-menu='add']", side:"right", icon:"fa-plus",
+      title:"Add menu",
+      text:"The “+” on a row adds an activity, resource, or (in a book) a chapter.",
+      kbd:"Reachable by Tab" },
+    { sel:".anno-more-row .ci-actbtn[data-menu='more']", side:"right", icon:"fa-ellipsis",
+      title:"Actions menu",
+      text:"The “⋯” opens row actions — edit, hide, move, duplicate, delete.",
+      kbd:"Reachable by Tab" }
+  ];
+  var annoLayer = document.getElementById("annoLayer");
+  var annoToggle = document.getElementById("annoToggle");
+  var annoToggleLabel = document.getElementById("annoToggleLabel");
+
+  ANNOS.forEach(function(a, i){
+    a.ring = document.createElement("div");
+    a.ring.className = "anno-ring";
+    a.callout = document.createElement("div");
+    a.callout.className = "anno-callout";
+    a.callout.innerHTML =
+      '<span class="anno-num">' + (i+1) + '</span>' +
+      '<button class="anno-close" title="Dismiss this annotation" aria-label="Dismiss">✕</button>' +
+      '<div class="anno-title"><i class="fa-solid ' + a.icon + '"></i>' + a.title + '</div>' +
+      '<div class="anno-text">' + a.text + '</div>' +
+      (a.kbd ? '<div class="anno-kbd"><i class="fa-regular fa-keyboard"></i>' + a.kbd + '</div>' : '');
+    a.callout.querySelector(".anno-close").addEventListener("click", function(){ dismiss(a); });
+    annoLayer.appendChild(a.ring);
+    annoLayer.appendChild(a.callout);
+    a.alive = true;
+  });
+
+  function dismiss(a){
+    a.alive = false;
+    a.ring.style.display = "none";
+    a.callout.style.display = "none";
+    updateToggleLabel();
+    if(ANNOS.every(function(x){ return !x.alive; })) body.classList.add("annos-off");
+  }
+  function aliveCount(){ return ANNOS.filter(function(a){ return a.alive; }).length; }
+  function updateToggleLabel(){
+    var off = body.classList.contains("annos-off");
+    annoToggleLabel.textContent = off ? ("Show annotations (" + aliveCount() + ")") : "Hide annotations";
+  }
+
+  function positionAnno(a){
+    if(!a.alive){ return; }
+    var el = document.querySelector(a.sel);
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var r = el && el.getBoundingClientRect();
+    var visible = r && r.width > 0 && r.height > 0 && r.bottom > 64 && r.top < vh - 8 && r.right > 0 && r.left < vw;
+    if(!visible){ a.ring.style.display = "none"; a.callout.style.display = "none"; return; }
+    a.ring.style.display = "block"; a.callout.style.display = "block";
+    a.ring.style.left = (r.left - 4) + "px"; a.ring.style.top = (r.top - 4) + "px";
+    a.ring.style.width = (r.width + 8) + "px"; a.ring.style.height = (r.height + 8) + "px";
+    var cw = a.callout.offsetWidth, ch = a.callout.offsetHeight, cl, ct;
+    if(a.side === "right"){ cl = r.right + 16; ct = r.top - 6; }
+    else if(a.side === "left"){ cl = r.left - cw - 16; ct = r.top - 6; }
+    else if(a.side === "top"){ cl = r.left; ct = r.top - ch - 16; }
+    else { cl = r.left; ct = r.bottom + 16; }
+    cl = Math.max(8, Math.min(cl, vw - cw - 8));
+    ct = Math.max(70, Math.min(ct, vh - ch - 8));
+    a.callout.style.left = cl + "px"; a.callout.style.top = ct + "px";
+  }
+
+  var annoRAF = null;
+  function annoTick(){ ANNOS.forEach(positionAnno); annoRAF = requestAnimationFrame(annoTick); }
+  function startAnnos(){ if(!annoRAF) annoTick(); }
+  function stopAnnos(){ if(annoRAF){ cancelAnimationFrame(annoRAF); annoRAF = null; } }
+
+  annoToggle.addEventListener("click", function(){
+    var off = body.classList.toggle("annos-off");
+    if(off){ stopAnnos(); } else {
+      if(aliveCount() === 0){ ANNOS.forEach(function(a){ a.alive = true; a.ring.style.display = ""; a.callout.style.display = ""; }); }
+      startAnnos();
+    }
+    updateToggleLabel();
+  });
+
+  updateToggleLabel();
+  startAnnos();
 })();
 </script>
 
