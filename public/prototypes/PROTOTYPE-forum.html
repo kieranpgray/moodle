@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTOTYPE — Forum (Biology 101 "Debate"), MDS-grounded (throwaway)</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+  /*
+    THROWAWAY PROTOTYPE — forum experience for the Biology 101 "Debate" forum,
+    modelled on the Zendesk community list + post patterns, in the LMS-uplift
+    look. Grounded in the Moodle Design System (MDS): the :root block below is a
+    VERBATIM subset of @moodlehq/design-system/dist/tokens/css (primitives +
+    semantic aliases + spacing + borders + typography). All forum CSS is authored
+    against these --mds-* tokens so it stays on-system (no eyeballed hex).
+
+    Caters for real mod_forum capabilities — inline reply (inpage_reply), copy
+    link to post (permalink) — plus emoji reactions (net-new).
+    Two views (discussion list + single thread), click-through. Delete when done.
+  */
+
+  /* ============================================================
+     MDS TOKENS — verbatim subset of the design-system CSS build
+     ============================================================ */
+  :root{
+    /* --- primitives: colour ramp (dist/tokens/css/primitives.css) --- */
+    --mds-color-blue-50:#e7f0f9; --mds-color-blue-100:#cfe2f2; --mds-color-blue-200:#9fc4e5;
+    --mds-color-blue-300:#6fa7d9; --mds-color-blue-400:#3f89cc; --mds-color-blue-500:#0f6cbf;
+    --mds-color-blue-600:#0c5699; --mds-color-blue-700:#094173; --mds-color-blue-800:#062b4c;
+    --mds-color-gray-100:#f8f9fa; --mds-color-gray-200:#e9ecef; --mds-color-gray-300:#dee2e6;
+    --mds-color-gray-400:#ced4da; --mds-color-gray-500:#8f959e; --mds-color-gray-600:#6a737b;
+    --mds-color-gray-700:#495057; --mds-color-gray-800:#343a40; --mds-color-gray-900:#1d2125;
+    --mds-color-gray-black:#000; --mds-color-gray-white:#fff;
+    --mds-color-green-100:#d7e4d6; --mds-color-green-500:#357a32; --mds-color-green-800:#153114;
+    --mds-color-red-50:#faeae9; --mds-color-red-100:#f4d6d2; --mds-color-red-200:#eaada6;
+    --mds-color-red-500:#ca3120; --mds-color-red-600:#a2271a; --mds-color-red-700:#791d13;
+    --mds-color-yellow-100:#fcefdc; --mds-color-yellow-500:#f0ad4e; --mds-color-yellow-800:#60451f;
+    --mds-color-cyan-100:#cce6ea; --mds-color-cyan-500:#008196;
+    --mds-color-orange-100:#ffe3d1; --mds-color-orange-600:#cc5e13;
+    --mds-color-pink-100:#f8d1e3; --mds-color-pink-500:#db1a74;
+    --mds-color-indigo-100:#e0cffc; --mds-color-indigo-500:#6610f2;
+
+    /* --- primitives: type (primitives.css) --- */
+    --mds-typography-font-family-sans-serif:"Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --mds-typography-font-size-1:1rem; --mds-typography-font-size-0-875:.875rem;
+    --mds-typography-font-size-1-25:1.25rem; --mds-typography-font-size-1-5:1.5rem;
+    --mds-typography-font-size-1-75:1.75rem; --mds-typography-font-size-2:2rem; --mds-typography-font-size-2-5:2.5rem;
+    --mds-typography-font-weight-regular:400; --mds-typography-font-weight-medium:500;
+    --mds-typography-font-weight-semibold:600; --mds-typography-font-weight-bold:700;
+    --mds-typography-line-height-headings-h1:3rem; --mds-typography-line-height-headings-h2:2.4rem;
+    --mds-typography-line-height-headings-h3:2.1rem; --mds-typography-line-height-headings-h6:1.2rem;
+    --mds-typography-line-height-paragraph-base:1.5rem; --mds-typography-line-height-paragraph-sm:1.0875rem;
+
+    /* --- semantic aliases (colors.css) --- */
+    --mds-text-default:var(--mds-color-gray-900);
+    --mds-text-subtle:var(--mds-color-gray-700);
+    --mds-text-muted:var(--mds-color-gray-600);
+    --mds-text-inverse:var(--mds-color-gray-100);
+    --mds-text-danger:var(--mds-color-red-500);
+    --mds-text-link-primary:var(--mds-color-blue-500);
+    --mds-bg-surface-default:var(--mds-color-gray-white);
+    --mds-bg-surface-subtle:var(--mds-color-gray-100);
+    --mds-bg-surface-strong:var(--mds-color-gray-200);
+    --mds-border-default:var(--mds-color-gray-300);
+    --mds-border-subtle:var(--mds-color-gray-200);
+    --mds-bg-interactive-primary-default:var(--mds-color-blue-500);
+    --mds-bg-interactive-primary-hover:var(--mds-color-blue-600);
+    --mds-bg-interactive-primary-active:var(--mds-color-blue-700);
+    --mds-bg-interactive-primary-light:var(--mds-color-blue-50);
+    --mds-bg-interactive-secondary-default:var(--mds-color-gray-300);
+    --mds-bg-interactive-secondary-hover:var(--mds-color-gray-400);
+    --mds-bg-interactive-danger-light:var(--mds-color-red-50);
+    --mds-bg-nav-pill-selected:var(--mds-color-gray-200);
+    --mds-activity-icon-communication-bg:var(--mds-color-orange-100);
+    --mds-activity-icon-communication-icon:var(--mds-color-orange-600);
+    --mds-bg-feedback-warning-subtle:var(--mds-color-yellow-100);
+    --mds-text-feedback-warning:var(--mds-color-yellow-800);
+
+    /* --- spacing (spacing.css) --- */
+    --mds-spacing-xxs:.25rem; --mds-spacing-xs:.5rem; --mds-spacing-sm:.75rem;
+    --mds-spacing-md:1rem; --mds-spacing-lg:1.25rem; --mds-spacing-xl:2rem; --mds-spacing-xxl:3rem;
+
+    /* --- borders (borders.css) --- */
+    --mds-border-radius-xs:.25rem; --mds-border-radius-sm:.375rem; --mds-border-radius-md:.5rem;
+    --mds-border-radius-lg:.75rem; --mds-border-radius-xl:1rem; --mds-border-radius-pill:50rem;
+    --mds-stroke-weight-sm:.0625rem;
+
+    /* --- typography semantic (typography.css) --- */
+    --mds-font-family-base:var(--mds-typography-font-family-sans-serif);
+    --mds-font-size-heading-2:var(--mds-typography-font-size-2);
+    --mds-font-size-heading-3:var(--mds-typography-font-size-1-75);
+    --mds-font-size-heading-5:var(--mds-typography-font-size-1-25);
+    --mds-font-size-heading-6:var(--mds-typography-font-size-1);
+    --mds-font-size-body:var(--mds-typography-font-size-1);
+    --mds-font-size-small:var(--mds-typography-font-size-0-875);
+
+    /* --- prototype layout constants (match base course prototype) --- */
+    --shell-max:1440px; --shell-pad:var(--mds-spacing-xxl);
+    --nav-h:64px; --content-max:873px; --ci-width:285px; --cb-width:315px; --btn:40px; --footer-h:64px;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ font-size:16px; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    font-family:var(--mds-font-family-base);
+    font-size:var(--mds-font-size-body);
+    line-height:var(--mds-typography-line-height-paragraph-base);
+    color:var(--mds-text-default);
+    background:var(--mds-bg-surface-default);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{ color:var(--mds-text-link-primary); text-decoration:none; }
+  a:hover{ text-decoration:underline; }
+  button{ font-family:inherit; }
+
+  .shell{ max-width:var(--shell-max); margin:0 auto; padding:0 var(--shell-pad); }
+
+  /* ============================  TOP NAV  ============================ */
+  .topbar{ position:sticky; top:0; z-index:40; background:var(--mds-bg-surface-subtle); border-bottom:var(--mds-stroke-weight-sm) solid var(--mds-border-subtle); }
+  .topbar-inner{ height:var(--nav-h); display:flex; align-items:center; justify-content:space-between; gap:var(--mds-spacing-md); }
+  .nav-left{ display:flex; align-items:center; gap:var(--mds-spacing-xl); min-width:0; }
+  .brand{ display:flex; align-items:center; gap:var(--mds-spacing-xs); }
+  .brand .mark{ font-size:26px; color:var(--mds-text-default); }
+  .brand b{ display:block; font-weight:var(--mds-typography-font-weight-bold); font-size:1.0625rem; }
+  .brand span{ display:block; font-size:.6875rem; letter-spacing:2px; color:var(--mds-text-subtle); }
+  .nav-pills{ display:flex; gap:var(--mds-spacing-xxs); }
+  .nav-pill{ display:flex; align-items:center; gap:var(--mds-spacing-xxs); padding:var(--mds-spacing-xs) var(--mds-spacing-sm); border-radius:var(--mds-border-radius-md); border:none; background:none; font-size:var(--mds-font-size-small); font-weight:var(--mds-typography-font-weight-medium); color:var(--mds-text-subtle); cursor:pointer; white-space:nowrap; }
+  .nav-pill.selected{ background:var(--mds-bg-nav-pill-selected); color:var(--mds-text-default); }
+  .nav-pill .dot{ width:4px; height:4px; border-radius:50%; background:var(--mds-bg-interactive-primary-default); }
+  .burger{ display:none; width:var(--btn); height:var(--btn); border:none; background:none; border-radius:var(--mds-border-radius-sm); cursor:pointer; color:var(--mds-text-default); font-size:20px; align-items:center; justify-content:center; }
+  .burger:hover{ background:var(--mds-bg-surface-strong); }
+  .nav-right{ display:flex; align-items:center; gap:var(--mds-spacing-xs); }
+  .nav-right-group{ display:flex; align-items:center; gap:var(--mds-spacing-md); }
+  .search{ display:flex; align-items:center; gap:var(--mds-spacing-xs); width:256px; height:36px; padding:0 var(--mds-spacing-sm); background:var(--mds-bg-surface-strong); border-radius:var(--mds-border-radius-md); color:var(--mds-text-subtle); font-size:var(--mds-font-size-small); }
+  .search i{ font-size:12px; }
+  .search-icon-btn{ display:none; width:36px; height:36px; border:none; background:none; border-radius:var(--mds-border-radius-md); color:var(--mds-text-subtle); cursor:pointer; align-items:center; justify-content:center; }
+  .editmode{ display:flex; align-items:center; gap:var(--mds-spacing-xs); }
+  .editmode .label{ font-size:var(--mds-font-size-small); color:var(--mds-text-subtle); white-space:nowrap; }
+  .switch{ width:32px; height:16px; border-radius:var(--mds-border-radius-pill); background:var(--mds-color-gray-500); position:relative; border:none; cursor:pointer; }
+  .switch::after{ content:""; position:absolute; top:2px; left:2px; width:12px; height:12px; border-radius:50%; background:#fff; transition:left .12s ease; }
+  .switch[aria-pressed="true"]{ background:var(--mds-bg-interactive-primary-default); }
+  .switch[aria-pressed="true"]::after{ left:18px; }
+  .icon-btn{ width:28px; height:28px; border:none; background:none; border-radius:var(--mds-border-radius-sm); color:var(--mds-text-subtle); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .icon-btn:hover{ background:var(--mds-bg-surface-strong); }
+  .nav-icons{ display:flex; align-items:center; gap:var(--mds-spacing-xs); }
+  .nav-divider{ width:1px; height:24px; background:var(--mds-bg-surface-strong); }
+  .profile{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:0 var(--mds-spacing-xs); border-radius:var(--mds-border-radius-pill); cursor:pointer; }
+  .profile:hover{ background:var(--mds-bg-surface-strong); }
+  .profile .pname{ font-size:var(--mds-font-size-small); font-weight:var(--mds-typography-font-weight-medium); }
+  .profile .fa-chevron-down{ font-size:8px; color:var(--mds-text-subtle); }
+
+  /* avatar (initials) */
+  .avatar{ border-radius:50%; flex:0 0 auto; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:var(--mds-typography-font-weight-semibold); border:var(--mds-stroke-weight-sm) solid var(--mds-border-default); }
+  .avatar.xs{ width:24px; height:24px; font-size:10px; }
+  .avatar.sm{ width:32px; height:32px; font-size:12px; }
+  .avatar.md{ width:40px; height:40px; font-size:14px; }
+  .avatar.lg{ width:48px; height:48px; font-size:16px; }
+  .av-1{ background:var(--mds-color-blue-500); } .av-2{ background:var(--mds-color-pink-500); }
+  .av-3{ background:var(--mds-color-green-500); } .av-4{ background:var(--mds-color-indigo-500); }
+  .av-5{ background:var(--mds-color-cyan-500); } .av-6{ background:var(--mds-color-orange-600); }
+
+  /* ============================  LAYOUT  ============================ */
+  /* bottom padding reserves space for the fixed CLN footer so it never covers content */
+  .layout{ display:flex; align-items:flex-start; padding-top:var(--mds-spacing-lg); padding-bottom:calc(var(--footer-h) + var(--mds-spacing-xxl)); min-height:calc(100vh - var(--nav-h)); position:relative; }
+
+  /* course index drawer (grey card, Debate active) */
+  .ci-toggle-col{ flex:0 0 auto; width:var(--btn); margin-right:var(--mds-spacing-sm); display:flex; justify-content:center; }
+  body.ci-open .ci-toggle-col{ width:0; margin-right:0; overflow:hidden; }
+  .ci-toggle{ width:var(--btn); height:var(--btn); border:none; cursor:pointer; border-radius:var(--mds-border-radius-sm); background:var(--mds-bg-surface-strong); display:flex; align-items:center; justify-content:center; position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); color:var(--mds-text-subtle); }
+  .ci-toggle:hover{ background:var(--mds-bg-interactive-secondary-hover); }
+  .drawer{ flex:0 0 auto; width:0; overflow:hidden; position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); align-self:flex-start; transition:width .3s cubic-bezier(.4,0,.2,1); }
+  body.ci-open #drawer{ width:var(--ci-width); } /* scope to id: right drawer also has class .drawer */
+  .ci-card{ width:var(--ci-width); background:var(--mds-bg-surface-strong); border-radius:var(--mds-border-radius-md); padding:0 var(--mds-spacing-sm) var(--mds-spacing-md); max-height:calc(100vh - var(--nav-h) - 2.5rem); overflow-y:auto; }
+  .ci-head{ display:flex; align-items:center; justify-content:space-between; height:53px; padding-left:var(--mds-spacing-md); padding-top:var(--mds-spacing-xs); }
+  .ci-title{ font-size:var(--mds-font-size-heading-6); font-weight:var(--mds-typography-font-weight-semibold); }
+  .ci-divider{ height:1px; background:var(--mds-border-default); }
+  .ci-sec{ font-weight:var(--mds-typography-font-weight-semibold); font-size:var(--mds-font-size-small); padding:var(--mds-spacing-sm); display:flex; gap:var(--mds-spacing-xs); align-items:center; }
+  .ci-sec .chev{ font-size:8px; color:var(--mds-text-muted); }
+  .ci-item{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:var(--mds-spacing-xs) var(--mds-spacing-sm); margin-left:var(--mds-spacing-md); border-radius:var(--mds-border-radius-sm); font-size:var(--mds-font-size-small); color:var(--mds-text-subtle); cursor:pointer; white-space:nowrap; overflow:hidden; }
+  .ci-item .txt{ overflow:hidden; text-overflow:ellipsis; }
+  .ci-item i{ color:var(--mds-color-orange-600); font-size:13px; flex:0 0 auto; }
+  .ci-item:hover{ background:rgba(0,0,0,.04); }
+  .ci-item.active{ background:var(--mds-bg-interactive-primary-default); color:#fff; }
+  .ci-item.active i{ color:#fff; }
+
+  /* ---- right "Course Blocks" drawer (push when there's room, else overlay).
+     Pushes only >=1200px so the forum text stays readable with BOTH sidebars
+     open; below that it overlays. No drag handle (matches course prototype). ---- */
+  .toggle-col-right{ flex:0 0 auto; width:var(--btn); margin-left:var(--mds-spacing-sm); display:flex; justify-content:center; }
+  body.cb-open .toggle-col-right{ width:0; margin-left:0; overflow:hidden; }
+  .blocks-btn{ width:var(--btn); height:var(--btn); border:none; cursor:pointer; border-radius:var(--mds-border-radius-sm); background:var(--mds-bg-surface-strong); color:var(--mds-text-subtle); display:flex; align-items:center; justify-content:center; position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); }
+  .blocks-btn:hover{ background:var(--mds-bg-interactive-secondary-hover); }
+  .drawer-right{ flex:0 0 auto; width:0; overflow:hidden; position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); align-self:flex-start; transition:width .3s cubic-bezier(.4,0,.2,1); }
+  body.cb-open .drawer-right{ width:var(--cb-width); }
+  .cb-card{ width:var(--cb-width); background:var(--mds-bg-surface-subtle); border-radius:var(--mds-border-radius-md); padding:0 var(--mds-spacing-sm) var(--mds-spacing-md); transform:translateX(100%); transition:transform .3s cubic-bezier(.4,0,.2,1); }
+  body.cb-open .cb-card{ transform:translateX(0); }
+  .cb-header{ display:flex; flex-direction:column; align-items:flex-start; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-xs) 0 var(--mds-spacing-sm); }
+  .cb-close{ width:40px; height:40px; border:none; cursor:pointer; border-radius:var(--mds-border-radius-md); background:var(--mds-bg-surface-strong); display:flex; align-items:center; justify-content:center; }
+  .cb-close:hover{ background:var(--mds-bg-interactive-secondary-hover); }
+  .cb-title{ font-size:var(--mds-font-size-heading-6); font-weight:var(--mds-typography-font-weight-semibold); }
+  .cb-block{ background:var(--mds-bg-surface-default); border:var(--mds-stroke-weight-sm) solid var(--mds-border-subtle); border-radius:var(--mds-border-radius-sm); padding:var(--mds-spacing-sm) 0; margin-bottom:var(--mds-spacing-xs); }
+  .cb-block-head{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:0 var(--mds-spacing-md); }
+  .cb-block-head .grip{ color:var(--mds-text-muted); font-size:12px; }
+  .cb-block-title{ font-size:var(--mds-font-size-heading-6); font-weight:var(--mds-typography-font-weight-medium); color:var(--mds-text-subtle); }
+  .cb-block-divider{ height:var(--mds-stroke-weight-sm); background:var(--mds-border-subtle); margin:var(--mds-spacing-sm) 0; }
+  .cb-block-body{ padding:0 var(--mds-spacing-md); font-size:var(--mds-font-size-small); }
+  .cb-block-body p{ margin:0 0 var(--mds-spacing-sm); color:var(--mds-text-muted); }
+  .cb-block-body a{ color:var(--mds-text-link-primary); }
+  .cb-teacher{ display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:0 var(--mds-spacing-md); }
+  .cb-teacher .name{ font-size:var(--mds-font-size-body); color:var(--mds-text-default); }
+  .cb-teacher .role{ font-size:var(--mds-font-size-small); color:var(--mds-text-muted); margin-top:2px; }
+
+  /* content column — same width as the course page, centred. Modest side
+     padding (not the full shell gutter) so it keeps room between drawers. */
+  .content-col{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:center; padding:0 var(--mds-spacing-lg); }
+  .content-col > *{ width:100%; max-width:var(--content-max); }
+
+  .breadcrumb{ font-size:var(--mds-font-size-small); color:var(--mds-text-muted); margin-bottom:var(--mds-spacing-sm); }
+  .breadcrumb a{ color:var(--mds-text-link-primary); }
+
+  /* buttons (MDS Button) */
+  .btn{ display:inline-flex; align-items:center; gap:var(--mds-spacing-xs); border:var(--mds-stroke-weight-sm) solid transparent; border-radius:var(--mds-border-radius-sm); padding:var(--mds-spacing-xs) var(--mds-spacing-md); font-size:var(--mds-font-size-small); font-weight:var(--mds-typography-font-weight-medium); cursor:pointer; white-space:nowrap; }
+  .btn-primary{ background:var(--mds-bg-interactive-primary-default); color:#fff; }
+  .btn-primary:hover{ background:var(--mds-bg-interactive-primary-hover); text-decoration:none; }
+  .btn-secondary{ background:var(--mds-bg-surface-default); color:var(--mds-text-subtle); border-color:var(--mds-border-default); }
+  .btn-secondary:hover{ background:var(--mds-bg-surface-subtle); }
+  .btn-link{ background:none; color:var(--mds-text-link-primary); padding:var(--mds-spacing-xs); }
+
+  /* badges (MDS Badge) */
+  .badge{ display:inline-flex; align-items:center; gap:4px; font-size:.75rem; font-weight:var(--mds-typography-font-weight-medium); padding:2px 8px; border-radius:var(--mds-border-radius-pill); }
+  .badge-pinned{ background:var(--mds-bg-feedback-warning-subtle); color:var(--mds-text-feedback-warning); }
+
+  /* ============================  FORUM HEADER  ============================ */
+  .forum-header{ display:flex; gap:var(--mds-spacing-md); align-items:flex-start; margin-bottom:var(--mds-spacing-lg); }
+  .forum-icon{ width:48px; height:48px; flex:0 0 auto; border-radius:var(--mds-border-radius-md); background:var(--mds-activity-icon-communication-bg); color:var(--mds-activity-icon-communication-icon); display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .forum-header .h-main{ flex:1; min-width:0; }
+  .forum-actions{ flex:0 0 auto; display:flex; gap:var(--mds-spacing-xs); align-items:flex-start; }
+  /* the "Manage" menu is educator-only — the prototype uses the Edit-mode
+     toggle as the teacher/student stand-in (real Moodle gates it by capability). */
+  .manage-btn{ display:none; }
+  body.edit-on .manage-btn{ display:inline-flex; }
+  .forum-title{ font-size:var(--mds-font-size-heading-3); font-weight:var(--mds-typography-font-weight-bold); line-height:var(--mds-typography-line-height-headings-h3); margin:0; }
+  .forum-intro{ color:var(--mds-text-muted); font-size:var(--mds-font-size-small); margin:var(--mds-spacing-xxs) 0 0; }
+
+  .list-toolbar{ display:flex; align-items:center; justify-content:space-between; padding:var(--mds-spacing-sm) 0; border-bottom:var(--mds-stroke-weight-sm) solid var(--mds-border-default); }
+  .list-count{ font-size:var(--mds-font-size-small); color:var(--mds-text-muted); }
+  .sort{ display:flex; align-items:center; gap:6px; font-size:var(--mds-font-size-small); color:var(--mds-text-subtle); cursor:pointer; }
+
+  /* ============================  DISCUSSION LIST (Zendesk rows)  ============================ */
+  .disc-row{ position:relative; display:flex; gap:var(--mds-spacing-md); padding:var(--mds-spacing-md); border-bottom:var(--mds-stroke-weight-sm) solid var(--mds-border-subtle); border-radius:var(--mds-border-radius-md); cursor:pointer; }
+  .disc-row:hover{ background:var(--mds-bg-surface-subtle); }
+  .disc-main{ flex:1; min-width:0; padding-right:var(--mds-spacing-md); }
+  .disc-byline{ display:flex; align-items:center; gap:var(--mds-spacing-xs); font-size:var(--mds-font-size-small); margin-bottom:2px; }
+  .disc-byline .author{ font-weight:var(--mds-typography-font-weight-semibold); color:var(--mds-text-default); }
+  .disc-byline .lock-ic{ color:var(--mds-text-muted); font-size:11px; }
+  .disc-title{ font-size:var(--mds-font-size-heading-6); font-weight:var(--mds-typography-font-weight-semibold); color:var(--mds-text-default); margin:2px 0; }
+  .disc-title .t{ display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .disc-snippet{ font-size:var(--mds-font-size-small); color:var(--mds-text-muted); line-height:var(--mds-typography-line-height-paragraph-base); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .tags{ display:flex; flex-wrap:wrap; gap:var(--mds-spacing-xs); margin-top:var(--mds-spacing-xs); }
+  .tag-chip{ display:inline-flex; align-items:center; gap:5px; font-size:.75rem; color:var(--mds-text-subtle); background:var(--mds-bg-surface-strong); padding:2px 10px; border-radius:var(--mds-border-radius-pill); }
+  .tag-chip:hover{ background:var(--mds-bg-interactive-secondary-hover); color:var(--mds-text-default); text-decoration:none; }
+  .tag-chip i{ font-size:9px; color:var(--mds-text-muted); }
+  .disc-footer{ display:flex; align-items:center; justify-content:space-between; gap:var(--mds-spacing-md); margin-top:var(--mds-spacing-sm); }
+  .disc-metrics{ display:flex; align-items:center; gap:var(--mds-spacing-md); }
+  .metric{ display:inline-flex; align-items:center; gap:5px; font-size:var(--mds-font-size-small); color:var(--mds-text-muted); border:none; background:none; padding:0; }
+  .metric i{ font-size:13px; }
+  .metric .cnt{ font-weight:var(--mds-typography-font-weight-medium); }
+  .metric.like{ cursor:pointer; }
+  .metric.like:hover{ color:var(--mds-text-subtle); }
+  .metric.like.on{ color:var(--mds-bg-interactive-primary-default); }
+  .disc-lastpost{ flex:0 0 auto; display:flex; align-items:center; gap:var(--mds-spacing-xs); font-size:var(--mds-font-size-small); color:var(--mds-text-muted); }
+  .disc-actions{ position:absolute; top:var(--mds-spacing-sm); right:var(--mds-spacing-sm); display:flex; gap:2px; }
+  .disc-actbtn{ width:30px; height:30px; border:none; background:none; border-radius:var(--mds-border-radius-sm); color:var(--mds-text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px; opacity:0; transition:opacity .1s ease; }
+  /* reveal all on hover/focus; keep an active (starred/subscribed) button visible always */
+  .disc-row:hover .disc-actbtn, .disc-actions:focus-within .disc-actbtn, .disc-actbtn.on{ opacity:1; }
+  .disc-actbtn:hover{ background:var(--mds-bg-surface-strong); color:var(--mds-text-default); }
+  .disc-actbtn.fav.on{ color:var(--mds-color-yellow-500); }
+  .disc-actbtn.watch.on{ color:var(--mds-bg-interactive-primary-default); }
+
+  /* ============================  THREAD VIEW  ============================ */
+  .back-link{ display:inline-flex; align-items:center; gap:6px; font-size:var(--mds-font-size-small); color:var(--mds-text-link-primary); margin-bottom:var(--mds-spacing-sm); cursor:pointer; }
+  .thread-title{ font-size:var(--mds-font-size-heading-2); font-weight:var(--mds-typography-font-weight-bold); line-height:var(--mds-typography-line-height-headings-h2); margin:0 0 var(--mds-spacing-sm); }
+
+  .post{ padding:var(--mds-spacing-md) 0; }
+  .post-head{ display:flex; gap:var(--mds-spacing-sm); align-items:center; }
+  .post-head .who{ flex:1; min-width:0; }
+  .post-author{ font-weight:var(--mds-typography-font-weight-semibold); font-size:var(--mds-font-size-body); }
+  .post-meta{ font-size:var(--mds-font-size-small); color:var(--mds-text-muted); }
+  .post-body{ margin:var(--mds-spacing-sm) 0; color:var(--mds-text-default); }
+  .post-body p{ margin:0 0 var(--mds-spacing-sm); }
+
+  /* reactions + action bar */
+  .reactions{ display:flex; align-items:center; gap:var(--mds-spacing-xs); flex-wrap:wrap; margin:var(--mds-spacing-xs) 0; }
+  .rx-chip{ display:inline-flex; align-items:center; gap:6px; padding:2px 10px; border-radius:var(--mds-border-radius-pill); background:var(--mds-bg-surface-strong); border:var(--mds-stroke-weight-sm) solid transparent; font-size:var(--mds-font-size-small); color:var(--mds-text-subtle); cursor:pointer; }
+  .rx-chip:hover{ background:var(--mds-bg-interactive-secondary-hover); }
+  .rx-chip.on{ background:var(--mds-bg-interactive-primary-light); border-color:var(--mds-color-blue-200); color:var(--mds-color-blue-700); }
+  .rx-chip .cnt{ font-weight:var(--mds-typography-font-weight-semibold); }
+  .rx-add{ width:30px; justify-content:center; padding:2px; }
+
+  .action-bar{ display:flex; align-items:center; gap:var(--mds-spacing-xs); flex-wrap:wrap; margin-top:var(--mds-spacing-xs); }
+  .act{ display:inline-flex; align-items:center; gap:6px; border:none; background:none; padding:6px 8px; border-radius:var(--mds-border-radius-sm); font-size:var(--mds-font-size-small); color:var(--mds-text-subtle); cursor:pointer; }
+  .act:hover{ background:var(--mds-bg-surface-subtle); color:var(--mds-text-default); }
+  .act i{ font-size:13px; }
+  .act.fav.on{ color:var(--mds-color-yellow-500); }
+  .act.watch.on{ color:var(--mds-bg-interactive-primary-default); }
+
+  .post-divider{ height:var(--mds-stroke-weight-sm); background:var(--mds-border-subtle); }
+  .replies-head{ font-size:var(--mds-font-size-small); font-weight:var(--mds-typography-font-weight-semibold); color:var(--mds-text-subtle); margin:var(--mds-spacing-md) 0 0; }
+
+  /* nested replies: indent with a hairline rail, capped depth */
+  .reply{ padding:var(--mds-spacing-md) 0; border-bottom:var(--mds-stroke-weight-sm) solid var(--mds-border-subtle); }
+  .reply-children{ margin-left:var(--mds-spacing-lg); padding-left:var(--mds-spacing-md); border-left:var(--mds-stroke-weight-sm) solid var(--mds-border-subtle); }
+  .show-more-replies, .continue-thread{ display:inline-flex; align-items:center; gap:6px; font-size:var(--mds-font-size-small); color:var(--mds-text-link-primary); cursor:pointer; padding:var(--mds-spacing-xs) 0; }
+
+  /* inline reply composer (mirrors inpage_reply) */
+  .composer{ margin-top:var(--mds-spacing-sm); }
+  .composer textarea{ width:100%; min-height:88px; resize:vertical; padding:var(--mds-spacing-sm); border:var(--mds-stroke-weight-sm) solid var(--mds-border-default); border-radius:var(--mds-border-radius-md); font-family:inherit; font-size:var(--mds-font-size-body); background:var(--mds-bg-surface-subtle); }
+  .composer textarea:focus{ outline:2px solid var(--mds-bg-interactive-primary-default); outline-offset:1px; background:var(--mds-bg-surface-default); }
+  .composer-actions{ display:flex; gap:var(--mds-spacing-xs); margin-top:var(--mds-spacing-xs); }
+  .composer-inline{ display:none; }
+  .composer-inline.open{ display:block; }
+
+  /* popup menu (more / emoji picker) */
+  .popup{ position:fixed; z-index:80; background:var(--mds-bg-surface-default); border:var(--mds-stroke-weight-sm) solid var(--mds-border-default); border-radius:var(--mds-border-radius-md); box-shadow:0 8px 28px rgba(0,0,0,.16); padding:6px; display:none; }
+  .popup.show{ display:block; }
+  .menu-item{ display:flex; align-items:center; gap:10px; width:100%; min-width:170px; padding:8px 10px; border:none; background:none; cursor:pointer; font-size:var(--mds-font-size-small); color:var(--mds-text-default); border-radius:var(--mds-border-radius-sm); text-align:left; }
+  .menu-item:hover{ background:var(--mds-bg-surface-subtle); }
+  .menu-item i{ width:16px; text-align:center; color:var(--mds-text-muted); }
+  .menu-item.danger{ color:var(--mds-text-danger); } .menu-item.danger i{ color:var(--mds-text-danger); }
+  .menu-sep{ height:1px; background:var(--mds-border-subtle); margin:5px 4px; }
+  .menu-label{ font-size:.6875rem; text-transform:uppercase; letter-spacing:.4px; color:var(--mds-text-muted); padding:6px 10px 3px; }
+  .emoji-grid{ display:flex; gap:2px; }
+  .emoji-grid button{ width:34px; height:34px; border:none; background:none; border-radius:var(--mds-border-radius-sm); font-size:18px; cursor:pointer; }
+  .emoji-grid button:hover{ background:var(--mds-bg-surface-subtle); }
+
+  /* toast */
+  .toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(10px); background:var(--mds-color-gray-900); color:#fff; font-size:var(--mds-font-size-small); padding:10px 16px; border-radius:var(--mds-border-radius-md); box-shadow:0 8px 28px rgba(0,0,0,.25); opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease; z-index:90; }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .view{ display:none; } .view.active{ display:block; }
+
+  .backdrop{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:45; }
+  body.ci-overlay.ci-open .backdrop,
+  body.cb-overlay.cb-open .backdrop{ display:block; }
+
+  /* ============================  RESPONSIVE  ============================ */
+  @media (max-width:1024px){
+    :root{ --shell-pad:var(--mds-spacing-lg); }
+    .burger{ display:flex; }
+    .nav-left .brand, .nav-left .nav-pills{ display:none; }
+  }
+  /* right blocks drawer overlays below 1200 so both sidebars never squeeze the
+     forum text (it only pushes on wide desktop where content stays readable) */
+  @media (max-width:1200px){
+    body.cb-overlay .drawer-right{ position:fixed; right:0; top:var(--nav-h); height:calc(100vh - var(--nav-h)); width:auto !important; z-index:47; padding:var(--mds-spacing-md); margin:0; }
+    body.cb-overlay .cb-card{ height:100%; overflow-y:auto; }
+    /* when closed in overlay mode the fixed container still sits over the content
+       (the card is only slid off-screen), so make it transparent to clicks —
+       otherwise it silently swallows clicks on the post ⋯ menu, reply buttons, etc. */
+    body.cb-overlay:not(.cb-open) .drawer-right{ pointer-events:none; }
+    body.cb-overlay:not(.cb-open) .cb-card{ transform:translateX(360px); }
+    body.cb-overlay .toggle-col-right{ width:var(--btn); margin-left:var(--mds-spacing-sm); }
+    .cln-rightspacer{ display:none; }
+  }
+  @media (max-width:768px){
+    /* both drawer toggles FLOAT (fixed corners) so the forum content spans the
+       full width instead of two inline columns squeezing it */
+    .ci-toggle-col, .toggle-col-right{ width:0 !important; margin:0 !important; overflow:visible; }
+    .ci-toggle, .blocks-btn{ position:fixed; top:calc(var(--nav-h) + var(--mds-spacing-xs)); z-index:30; box-shadow:0 1px 4px rgba(0,0,0,.12); }
+    .ci-toggle{ left:var(--mds-spacing-sm); }
+    .blocks-btn{ right:var(--mds-spacing-sm); }
+    .layout{ padding-top:calc(var(--btn) + var(--mds-spacing-md)); }
+    body.ci-overlay #drawer{ position:fixed; left:0; top:var(--nav-h); height:calc(100vh - var(--nav-h)); width:auto !important; z-index:47; padding:var(--mds-spacing-md); margin:0; }
+    body.ci-overlay .ci-card{ height:100%; max-height:none; }
+    body.ci-overlay:not(.ci-open) #drawer{ transform:translateX(-360px); }
+    .cln-indexspacer, .cln-rightspacer{ display:none; }
+    .cln-region{ padding:0; }
+    .cln-bar{ gap:var(--mds-spacing-sm); }
+  }
+  @media (max-width:767px){
+    :root{ --shell-pad:var(--mds-spacing-md); }
+    .search{ display:none; } .search-icon-btn{ display:flex; }
+    .editmode .label{ display:none; }
+    .profile .pname, .profile .fa-chevron-down{ display:none; }
+    .forum-header{ flex-wrap:wrap; }
+    .forum-actions{ order:3; flex-basis:100%; margin-top:var(--mds-spacing-xs); }
+    .forum-actions .btn{ flex:1; justify-content:center; }
+    .forum-title{ font-size:var(--mds-font-size-heading-5); line-height:var(--mds-typography-line-height-headings-h3); }
+    .thread-title{ font-size:var(--mds-font-size-heading-3); line-height:var(--mds-typography-line-height-headings-h3); }
+    .disc-footer{ flex-wrap:wrap; gap:var(--mds-spacing-xs) var(--mds-spacing-md); }
+    .disc-actbtn{ opacity:1; } /* no hover on touch — keep row actions visible */
+    .reply-children{ margin-left:var(--mds-spacing-xs); padding-left:var(--mds-spacing-sm); }
+  }
+
+  /* =====================  CLN STICKY FOOTER  =====================
+     Course Linear Navigation — ported from the book prototype. cm-scoped
+     (before_footer_html_generation + course_navigation controller), so it
+     shows on ANY activity page, including both this forum's discussion list
+     and an open thread. A forum is a single node in the course sequence (not
+     paginated like a book), so Previous/Next always step OUT to the
+     neighbouring activity — there's no "internal" stepping to do first. */
+  .cln-footer{ position:fixed; left:0; right:0; bottom:0; height:var(--footer-h); z-index:30;
+    background:var(--mds-bg-surface-default); border-top:var(--mds-stroke-weight-sm) solid var(--mds-border-subtle); }
+  .cln-shell{ display:flex; height:100%; max-width:var(--shell-max); margin:0 auto; padding:0 var(--shell-pad); }
+  .cln-indexspacer{ flex:0 0 auto; width:0; transition:width .32s cubic-bezier(.4,0,.2,1); }
+  body.ci-open:not(.ci-overlay) .cln-indexspacer{ width:var(--ci-width); }
+  body:not(.ci-open):not(.ci-overlay) .cln-indexspacer{ width:calc(var(--btn) + var(--mds-spacing-sm)); }
+  .cln-region{ flex:1 1 auto; min-width:0; display:flex; justify-content:center; padding:0 var(--shell-pad); }
+  .cln-rightspacer{ flex:0 0 auto; width:0; transition:width .3s cubic-bezier(.4,0,.2,1); }
+  body.cb-open:not(.cb-overlay) .cln-rightspacer{ width:var(--cb-width); }
+  .cln-bar{ width:100%; max-width:var(--content-max); display:flex; align-items:center; gap:var(--mds-spacing-md); }
+  /* generic "Previous"/"Next" (faithful to real CLN) with the actual target
+     name as a hover/focus tooltip, so the footer stays short and never truncates */
+  .cln-link{ position:relative; display:inline-flex; align-items:center; gap:var(--mds-spacing-xs); border:none; background:none; cursor:pointer;
+    color:var(--mds-bg-interactive-primary-default); font-size:var(--mds-font-size-default); padding:var(--mds-spacing-xxs) 0; }
+  .cln-link:disabled{ color:var(--mds-color-gray-500); cursor:default; }
+  .cln-link > span[aria-hidden]{ flex:0 0 auto; }
+  .cln-link .lbl .k{ white-space:nowrap; font-weight:var(--mds-typography-font-weight-semibold); }
+  .cln-link:not(:disabled):hover .k{ text-decoration:underline; }
+  .cln-link.next{ text-align:right; margin-left:auto; }
+  .cln-link .lbl .t{
+    position:absolute; bottom:calc(100% + 10px); z-index:60;
+    background:var(--mds-color-gray-900); color:#fff;
+    padding:.4rem .6rem; border-radius:var(--mds-border-radius-sm);
+    font-size:var(--mds-font-size-small); line-height:1.35;
+    white-space:normal; width:max-content; max-width:240px;
+    box-shadow:0 6px 18px rgba(0,0,0,.22);
+    opacity:0; pointer-events:none; transition:opacity .12s ease;
+  }
+  .cln-link.prev .lbl .t{ left:0; }
+  .cln-link.next .lbl .t{ right:0; }
+  .cln-link .lbl .t::after{ content:""; position:absolute; top:100%; width:8px; height:8px;
+    background:var(--mds-color-gray-900); transform:translateY(-50%) rotate(45deg); }
+  .cln-link.prev .lbl .t::after{ left:16px; }
+  .cln-link.next .lbl .t::after{ right:16px; }
+  .cln-link:hover .lbl .t, .cln-link:focus-visible .lbl .t{ opacity:1; }
+  .cln-link:disabled .lbl .t{ display:none; }
+
+  .hint{ position:fixed; bottom:16px; left:16px; z-index:60; max-width:260px; background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default); color:var(--mds-text-muted); font-size:.6875rem; padding:6px 9px; border-radius:var(--mds-border-radius-sm); line-height:1.4; cursor:pointer; }
+  body.hide-hint .hint{ display:none; }
+
+  /* ---- move-discussion modal (target = a forum in the same course) ---- */
+  .modal-backdrop{ display:none; position:fixed; inset:0; background:rgba(29,33,37,.5); z-index:90; }
+  .modal-backdrop.show{ display:block; }
+  .modal{ position:fixed; z-index:91; left:50%; top:50%; transform:translate(-50%,-50%); width:min(480px, calc(100vw - 32px));
+    max-height:calc(100vh - 64px); display:none; flex-direction:column; background:var(--mds-bg-surface-default);
+    border-radius:var(--mds-border-radius-lg); box-shadow:0 18px 50px rgba(0,0,0,.32); overflow:hidden; }
+  .modal.show{ display:flex; }
+  .modal-head{ padding:var(--mds-spacing-lg) var(--mds-spacing-xl) var(--mds-spacing-sm); }
+  .modal-title{ font-size:1.125rem; font-weight:var(--mds-typography-font-weight-bold); color:var(--mds-text-default); display:flex; align-items:center; gap:var(--mds-spacing-sm); }
+  .modal-sub{ margin-top:var(--mds-spacing-xxs); font-size:var(--mds-font-size-small); color:var(--mds-text-muted); }
+  .modal-sub b{ color:var(--mds-text-subtle); font-weight:var(--mds-typography-font-weight-semibold); }
+  .modal-close{ position:absolute; top:var(--mds-spacing-md); right:var(--mds-spacing-md); border:none; background:none; cursor:pointer; color:var(--mds-text-muted); font-size:18px; line-height:1; padding:6px; border-radius:var(--mds-border-radius-sm); }
+  .modal-close:hover{ background:var(--mds-bg-surface-subtle); color:var(--mds-text-default); }
+  .move-body{ padding:0 var(--mds-spacing-xl); overflow-y:auto; }
+  .move-group-label{ font-size:.6875rem; text-transform:uppercase; letter-spacing:.4px; color:var(--mds-text-muted); font-weight:var(--mds-typography-font-weight-semibold); padding:var(--mds-spacing-md) 0 var(--mds-spacing-xxs); }
+  .move-opt{ display:flex; align-items:center; gap:var(--mds-spacing-sm); width:100%; text-align:left; padding:var(--mds-spacing-sm) var(--mds-spacing-md); border:var(--mds-stroke-weight-sm) solid var(--mds-border-default); border-radius:var(--mds-border-radius-md); background:var(--mds-bg-surface-default); cursor:pointer; margin-bottom:var(--mds-spacing-xs); }
+  .move-opt:hover{ background:var(--mds-bg-surface-subtle); }
+  .move-opt.sel{ border-color:var(--mds-bg-interactive-primary-default); box-shadow:0 0 0 2px var(--mds-bg-interactive-primary-light); }
+  .move-radio{ width:18px; height:18px; border-radius:50%; border:2px solid var(--mds-border-default); flex:0 0 auto; position:relative; }
+  .move-opt.sel .move-radio{ border-color:var(--mds-bg-interactive-primary-default); }
+  .move-opt.sel .move-radio::after{ content:''; position:absolute; inset:3px; border-radius:50%; background:var(--mds-bg-interactive-primary-default); }
+  .move-forum-ic{ width:30px; height:30px; border-radius:var(--mds-border-radius-md); background:var(--mds-orange-100, #ffe3d1); color:var(--mds-orange-600, #cc5e13); display:flex; align-items:center; justify-content:center; flex:0 0 auto; font-size:13px; }
+  .move-opt-main{ flex:1 1 auto; min-width:0; }
+  .move-opt-name{ font-size:var(--mds-font-size-default); color:var(--mds-text-default); font-weight:var(--mds-typography-font-weight-medium); }
+  .move-opt-type{ font-size:.75rem; color:var(--mds-text-muted); }
+  .move-note{ display:flex; gap:var(--mds-spacing-xs); font-size:.75rem; color:var(--mds-text-muted); background:var(--mds-bg-surface-subtle); border-radius:var(--mds-border-radius-md); padding:var(--mds-spacing-sm) var(--mds-spacing-md); margin:var(--mds-spacing-sm) 0 var(--mds-spacing-md); line-height:1.4; }
+  .modal-foot{ display:flex; justify-content:flex-end; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-md) var(--mds-spacing-xl) var(--mds-spacing-lg); border-top:var(--mds-stroke-weight-sm) solid var(--mds-border-subtle); }
+  .btn[disabled]{ opacity:.5; cursor:not-allowed; }
+
+  /* ---- annotations (blue walkthrough callouts, matching the course-index
+     drawer-resize prototype: dashed pulsing ring on the target + blue callout
+     with a close button, and a centered Hide/Show annotations toggle) ---- */
+  .anno-layer{ position:fixed; inset:0; z-index:60; pointer-events:none; }
+  body:not(.annotations-on) .anno-layer{ display:none; }
+  .anno-ring{ position:fixed; border:2px dashed var(--mds-bg-interactive-primary-default); border-radius:8px;
+    box-shadow:0 0 0 3px rgba(15,108,191,.16); pointer-events:none; animation:annoPulse 1.9s ease-in-out infinite; }
+  @keyframes annoPulse{ 0%,100%{ box-shadow:0 0 0 3px rgba(15,108,191,.16); } 50%{ box-shadow:0 0 0 8px rgba(15,108,191,.06); } }
+  .anno-card{ position:fixed; width:220px; background:var(--mds-bg-interactive-primary-default); color:#fff;
+    border-radius:10px; padding:10px 12px 11px; font-size:12px; line-height:1.45; box-shadow:0 10px 28px rgba(0,0,0,.28); pointer-events:auto; }
+  .anno-badge{ position:absolute; top:-11px; left:-11px; width:23px; height:23px; border-radius:50%; background:#fff;
+    color:var(--mds-bg-interactive-primary-default); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,.25); }
+  .anno-title{ font-weight:700; font-size:12px; display:flex; align-items:center; gap:6px; margin:0 16px 3px 0; }
+  .anno-title i{ font-size:12px; }
+  .anno-body{ color:rgba(255,255,255,.92); }
+  .anno-close{ position:absolute; top:5px; right:6px; border:none; background:none; cursor:pointer; color:rgba(255,255,255,.85); font-size:13px; line-height:1; padding:3px; }
+  .anno-close:hover{ color:#fff; }
+  .anno-toggle{ position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:71;
+    background:var(--mds-bg-interactive-primary-default); color:#fff; border:none; border-radius:999px;
+    padding:9px 16px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,.25); display:flex; align-items:center; gap:8px; }
+  .anno-toggle:hover{ background:var(--mds-bg-interactive-primary-hover); }
+  .anno-toggle i{ font-size:12px; }
+  body:not(.annotations-on) .anno-toggle{ background:var(--mds-text-subtle); }
+  /* reveal the (hover-only) per-row actions while annotating so rings land on visible targets */
+  body.annotations-on .disc-actbtn{ opacity:1 !important; }
+</style>
+</head>
+<body class="ci-open edit-on annotations-on">
+
+  <!-- ===== TOP NAV ===== -->
+  <header class="topbar">
+    <div class="topbar-inner shell">
+      <div class="nav-left">
+        <button class="burger" id="burger" aria-label="Site navigation"><i class="fa-solid fa-bars"></i></button>
+        <div class="brand"><span class="mark"><i class="fa-solid fa-leaf"></i></span><span class="word"><b>Fleetwood</b><span>UNIVERSITY</span></span></div>
+        <nav class="nav-pills"><button class="nav-pill selected" data-nav="placeholder"><span class="dot"></span>Dashboard</button><button class="nav-pill" data-nav="placeholder">Site Administration</button></nav>
+      </div>
+      <div class="nav-right">
+        <div class="nav-right-group">
+          <div class="search"><i class="fa-solid fa-magnifying-glass"></i><span>Search…</span></div>
+          <button class="search-icon-btn" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+          <div class="editmode"><span class="label">Edit mode</span><button class="switch" id="editSwitch" aria-pressed="true" aria-label="Edit mode"></button></div>
+          <div class="nav-icons"><button class="icon-btn"><i class="fa-regular fa-bell"></i></button><button class="icon-btn"><i class="fa-regular fa-comment"></i></button></div>
+        </div>
+        <div class="nav-divider"></div>
+        <div class="profile"><span class="avatar sm av-1">S</span><span class="pname">Sarah</span><i class="fa-solid fa-chevron-down"></i></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== PAGE ===== -->
+  <div class="layout shell">
+    <div class="ci-toggle-col">
+      <button class="ci-toggle" id="ciOpen" aria-label="Open course index">
+        <svg width="20" height="16" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer" id="drawer">
+      <div class="ci-card">
+        <div class="ci-head"><span class="ci-title">Course Index</span>
+          <button class="ci-toggle" id="ciClose" style="position:static;background:transparent;width:32px;height:32px" aria-label="Close course index"><svg width="20" height="16" viewBox="0 0 20 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg></button>
+        </div>
+        <div class="ci-divider"></div>
+        <div class="ci-sec"><span class="chev"><i class="fa-solid fa-chevron-down"></i></span>General</div>
+        <div class="ci-item" data-nav="placeholder"><i class="fa-regular fa-comments"></i><span class="txt">Course Q&amp;A</span></div>
+        <div class="ci-item" data-nav="placeholder"><i class="fa-regular fa-file-lines"></i><span class="txt">Course Syllabus &amp; Study Guide</span></div>
+        <div class="ci-sec"><span class="chev"><i class="fa-solid fa-chevron-down"></i></span>Evolution &amp; Natural Selection</div>
+        <div class="ci-item active" data-nav="list"><i class="fa-solid fa-comments"></i><span class="txt">Debate: peppered moth vs…</span></div>
+        <div class="ci-item" data-nav="placeholder"><i class="fa-regular fa-file-lines"></i><span class="txt">Reading: Natural selection</span></div>
+        <div class="ci-item" data-nav="placeholder"><i class="fa-regular fa-circle-question"></i><span class="txt">Quiz: Evolution checkpoint</span></div>
+      </div>
+    </div>
+
+    <main class="content-col">
+
+      <!-- ============ VIEW 1: DISCUSSION LIST ============ -->
+      <section class="view active" id="view-list">
+        <div class="breadcrumb"><a href="#" data-nav="course">Biology 101</a> / <a href="#" data-nav="section">Evolution &amp; Natural Selection</a> / Debate</div>
+        <div class="forum-header">
+          <div class="forum-icon"><i class="fa-solid fa-comments"></i></div>
+          <div class="h-main">
+            <h1 class="forum-title">Debate: Is the peppered moth the best example of natural selection?</h1>
+            <p class="forum-intro">Take a side and back it with evidence.</p>
+          </div>
+          <div class="forum-actions">
+            <button class="btn btn-secondary manage-btn" data-manage title="Manage this forum (educators)">Manage <i class="fa-solid fa-chevron-down" style="font-size:10px"></i></button>
+            <button class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add discussion</button>
+          </div>
+        </div>
+        <div class="list-toolbar">
+          <span class="list-count">6 discussions</span>
+          <span class="sort">Sort: Latest activity <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></span>
+        </div>
+        <div id="disc-list"></div>
+      </section>
+
+      <!-- ============ VIEW 2: SINGLE THREAD ============ -->
+      <section class="view" id="view-thread">
+        <span class="back-link" id="backToList"><i class="fa-solid fa-arrow-left"></i> All discussions</span>
+        <div class="breadcrumb"><a href="#" data-nav="course">Biology 101</a> / <a href="#" data-nav="list" id="crumbForum">Debate</a> / <span id="crumbThread"></span></div>
+        <div id="thread-root"></div>
+      </section>
+
+    </main>
+
+    <!-- right "Course Blocks" drawer -->
+    <div class="drawer drawer-right" id="drawerRight">
+      <div class="cb-card">
+        <div class="cb-header">
+          <button class="cb-close" id="cbClose" aria-label="Close course blocks">
+            <svg width="20" height="16" viewBox="0 0 20 16" style="transform:scaleX(-1)"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+          </button>
+          <span class="cb-title">Course Blocks</span>
+        </div>
+        <div class="cb-block">
+          <div class="cb-block-head"><span class="grip"><i class="fa-solid fa-grip-vertical"></i></span><span class="cb-block-title">Licence</span></div>
+          <div class="cb-block-divider"></div>
+          <div class="cb-block-body"><p>This Creative Commons course, created by Mary, is available on</p><a href="#">MoodleNet: Effective Memory Techniques</a></div>
+        </div>
+        <div class="cb-block">
+          <div class="cb-block-head"><span class="cb-block-title">Your teacher</span></div>
+          <div class="cb-block-divider"></div>
+          <div class="cb-teacher"><span class="avatar lg av-4">MS</span><div><div class="name">Mr. Sanders</div><div class="role">Senior Lecturer, Mount Orange</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="toggle-col-right">
+      <button class="blocks-btn" id="cbOpen" aria-label="Open course blocks">
+        <svg width="20" height="16" viewBox="0 0 20 16" style="transform:scaleX(-1)"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== CLN STICKY FOOTER (course linear navigation — leaves the forum) ===== -->
+  <footer class="cln-footer" aria-label="Course navigation">
+    <div class="cln-shell">
+      <div class="cln-indexspacer"></div>
+      <div class="cln-region">
+        <div class="cln-bar">
+          <button class="cln-link prev" id="clnPrev">
+            <span aria-hidden="true"><i class="fa-solid fa-chevron-left"></i></span>
+            <span class="lbl"><span class="k">Previous</span><span class="t" id="clnPrevT"></span></span>
+          </button>
+          <button class="cln-link next" id="clnNext">
+            <span class="lbl"><span class="k">Next</span><span class="t" id="clnNextT"></span></span>
+            <span aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></span>
+          </button>
+        </div>
+      </div>
+      <div class="cln-rightspacer"></div>
+    </div>
+  </footer>
+
+  <div class="popup" id="popup"></div>
+  <div class="backdrop" id="backdrop"></div>
+  <div class="toast" id="toast"></div>
+
+  <!-- ===== move-discussion modal (pick a target forum in the same course) ===== -->
+  <div class="modal-backdrop" id="moveBackdrop"></div>
+  <div class="modal" id="moveModal" role="dialog" aria-modal="true" aria-labelledby="moveModalTitle">
+    <div class="modal-head">
+      <button class="modal-close" id="moveClose" aria-label="Cancel">&times;</button>
+      <div class="modal-title" id="moveModalTitle"><i class="fa-solid fa-arrow-right-arrow-left"></i> Move discussion</div>
+      <div class="modal-sub" id="moveModalSub"></div>
+    </div>
+    <div class="move-body" id="moveBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-link" id="moveCancel">Cancel</button>
+      <button class="btn btn-primary" id="moveConfirm" disabled>Move discussion</button>
+    </div>
+  </div>
+  <div class="hint" id="hint" title="click to hide">Forum prototype (MDS tokens). Click a discussion to open the thread. Try Reply · Favourite · Subscribe · 😀 react · Copy link. <b>(click to hide)</b></div>
+
+  <!-- ===== annotations (removable explainer callouts — significant changes vs the current forum) ===== -->
+  <button class="anno-toggle" id="annoToggle" title="Show or hide the explainer annotations">
+    <i class="fa-solid fa-location-dot"></i> <span id="annoToggleLabel">Hide annotations</span>
+  </button>
+  <div class="anno-layer" id="annoLayer">
+    <!-- discussion-list view (default) -->
+    <div class="anno-card" data-anno="width" data-target=".list-toolbar" data-side="top">
+      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+      <div class="anno-badge">1</div>
+      <div class="anno-title"><i class="fa-solid fa-left-right"></i> Fixed-width, responsive layout</div>
+      <div class="anno-body">Content sits in a fixed max-width column that matches the course page, then reflows to a single column on smaller screens — both side drawers collapse to overlays.</div>
+    </div>
+    <div class="anno-card" data-anno="manage" data-target=".manage-btn" data-side="left">
+      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+      <div class="anno-badge">2</div>
+      <div class="anno-title"><i class="fa-solid fa-gear"></i> Manage menu</div>
+      <div class="anno-body">The forum's secondary-nav tabs — Settings, Advanced grading, Subscriptions, Reports, Filters, Permissions, Logs, Backup, Restore, Export — are consolidated into one educator-only dropdown.</div>
+    </div>
+    <div class="anno-card" data-anno="cards" data-target=".disc-row" data-side="left">
+      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+      <div class="anno-badge">3</div>
+      <div class="anno-title"><i class="fa-solid fa-address-card"></i> Discussion cards</div>
+      <div class="anno-body">Each discussion is a card — author avatar &amp; name, a snippet preview and a metrics footer — modelled on modern community forums, replacing the dense table row.</div>
+    </div>
+    <div class="anno-card" data-anno="metrics" data-target=".disc-row:nth-child(2) .disc-metrics" data-side="left">
+      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+      <div class="anno-badge">4</div>
+      <div class="anno-title"><i class="fa-regular fa-thumbs-up"></i> Engagement metrics + reactions</div>
+      <div class="anno-body">At-a-glance likes, views and replies on every card. Like is a new lightweight signal, kept separate from Favourite (bookmark) and Subscribe (notify).</div>
+    </div>
+    <div class="anno-card" data-anno="reltime" data-target=".disc-row:nth-child(3) .disc-lastpost" data-side="right">
+      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+      <div class="anno-badge">5</div>
+      <div class="anno-title"><i class="fa-regular fa-clock"></i> Relative timestamps</div>
+      <div class="anno-body">Times now read as "5 days ago" instead of a full date-time string (e.g. "Thu, 9 Jul 2026, 1:38 AM") — quicker to scan. The exact date stays available on hover.</div>
+    </div>
+    <div class="anno-card" data-anno="blocks" data-target=".blocks-btn" data-side="left">
+      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+      <div class="anno-badge">6</div>
+      <div class="anno-title"><i class="fa-solid fa-table-columns"></i> Course blocks drawer</div>
+      <div class="anno-body">Course blocks move into a collapsible right-hand drawer, keeping the reading column clear while staying one click away — and displacing content only when there's room.</div>
+    </div>
+    <!-- thread view (appear when a discussion is open) -->
+    <div class="anno-card" data-anno="reactions" data-target=".reactions .rx-add" data-side="left">
+      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+      <div class="anno-badge">7</div>
+      <div class="anno-title"><i class="fa-regular fa-face-smile"></i> Emoji reactions</div>
+      <div class="anno-body">A lightweight way to acknowledge a strong argument without adding a reply. Net-new — the core forum has only the ratings subsystem today.</div>
+    </div>
+    <div class="anno-card" data-anno="more" data-target="#view-thread .action-bar [data-more]" data-side="right">
+      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+      <div class="anno-badge">8</div>
+      <div class="anno-title"><i class="fa-solid fa-ellipsis"></i> Grouped post actions</div>
+      <div class="anno-body">Actions once spread across a settings dropdown and inline links — Edit, Pin, Lock, <strong>Move discussion</strong>, Split, Delete, Copy link — are gathered into one ⋯ menu, shown by permission.</div>
+    </div>
+    <div class="anno-card" data-anno="cln" data-target=".cln-bar" data-side="top">
+      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+      <div class="anno-badge">9</div>
+      <div class="anno-title"><i class="fa-solid fa-arrow-right-arrow-left"></i> Course Linear Navigation</div>
+      <div class="anno-body">A sticky footer — same as the book prototype — steps between this forum and its course neighbours (<strong>Course Syllabus &amp; Study Guide</strong> before, <strong>Reading: Natural selection</strong> after). Unlike a book, a forum is one node in the sequence, so Previous/Next leave it immediately.</div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---- people (from the Biology 101 seed roster) ---- */
+  var P = {
+    ava:{n:"Ava Nguyen", i:"AN", c:"av-1", role:"Student"},
+    liam:{n:"Liam Okafor", i:"LO", c:"av-2", role:"Student"},
+    sofia:{n:"Sofia Rossi", i:"SR", c:"av-3", role:"Student"},
+    noah:{n:"Noah Patel", i:"NP", c:"av-4", role:"Student"},
+    mia:{n:"Mia Johansson", i:"MJ", c:"av-5", role:"Student"},
+    ethan:{n:"Ethan Kim", i:"EK", c:"av-6", role:"Student"},
+    edu:{n:"Dr. Emily Sanders", i:"ES", c:"av-1", role:"Teacher"}
+  };
+  function avatar(p, size){ return '<span class="avatar '+(size||'md')+' '+p.c+'">'+p.i+'</span>'; }
+  // (No author role/"Student" badge — forum post output doesn't show one.)
+
+  /* ---- discussion list (real threads + a few from the stress set) ---- */
+  // likes repurpose the forum "favourite/star" (public count + personal toggle);
+  // watch = subscribe (renamed). `last` = who replied most recently + how long ago.
+  // NOTE: `views` is net-new — Moodle forums don't track per-discussion views today.
+  var DISCUSSIONS = [
+    { id:'mega', pinned:true, locked:true, author:P.edu, title:'MONSTER MEGATHREAD — post your strongest single piece of evidence 🌋',
+      snippet:'One post, one claim, one citation. This is the master thread — reply under the branch that matches your position and keep sub-threads tidy.',
+      replies:412, views:1203, likes:34, liked:false, watched:true, time:'2 months ago', last:{p:P.noah, t:'3 hours ago'} },
+    { id:'for', author:P.ava, title:'For: the peppered moth is the clearest example',
+      snippet:'Industrial melanism is directly observed and reversible — hard to beat as evidence. Kettlewell’s work plus the post–Clean-Air-Act decline in melanic forms makes it textbook.',
+      replies:8, views:96, likes:12, liked:true, watched:false, favourited:true, time:'5 days ago', last:{p:P.mia, t:'2 days ago'} },
+    { id:'against', author:P.liam, title:'Against: antibiotic resistance is more compelling',
+      snippet:'Resistance evolving in real time under clear selection pressure is more convincing to me — we watch it happen in a lab within days.',
+      replies:5, views:74, likes:9, liked:false, watched:false, time:'4 days ago', last:{p:P.sofia, t:'4 days ago'} },
+    { id:'krebs', author:P.sofia, title:'How deep do we need to know the Krebs cycle for this?',
+      snippet:'Slightly off-topic, but does the debate rubric expect us to bring in metabolic detail or stay on selection mechanisms?',
+      replies:3, views:41, likes:2, liked:false, watched:false, time:'3 days ago', last:{p:P.ava, t:'3 days ago'} },
+    { id:'long', author:P.noah, title:'Why do plants need both light and dark reactions, and does the phrase “dark reactions” actually mislead students into thinking they only happen at night rather than simply being light-independent?',
+      snippet:'Bringing this over from the study group because it keeps coming up when people argue about what counts as “directly observed” selection.',
+      replies:6, views:58, likes:4, liked:false, watched:true, time:'2 days ago', last:{p:P.ethan, t:'1 day ago'} },
+    { id:'emoji', author:P.ethan, title:'🧫🧪🌱🦠🔬 all the lab emoji in one very colourful discussion title 🧬',
+      snippet:'Testing whether the forum copes with a title that is mostly emoji. Also: which organism is the best classroom demo of selection?',
+      replies:2, views:33, likes:1, liked:false, watched:false, favourited:true, time:'yesterday', last:{p:P.liam, t:'yesterday'} }
+  ];
+
+  function byId(id){ return DISCUSSIONS.find(function(d){ return d.id===id; }); }
+
+  /* ---- tags (core forum/tag API): shown in the listing and on the post ---- */
+  var TAGS = {
+    mega:['natural-selection','evidence','debate'],
+    for:['peppered-moth','industrial-melanism','evidence'],
+    against:['antibiotic-resistance','real-time-evolution'],
+    krebs:['krebs-cycle','metabolism','assessment'],
+    long:['photosynthesis','terminology'],
+    emoji:['classroom-demo','fun']
+  };
+  function tagsHTML(id){
+    var ts = TAGS[id] || [];
+    if(!ts.length) return '';
+    return '<div class="tags">' + ts.map(function(t){
+      return '<a class="tag-chip" href="#" title="Tag: '+t+'"><i class="fa-solid fa-tag"></i>'+t+'</a>';
+    }).join('') + '</div>';
+  }
+
+  function renderList(){
+    // starring sorts favourites to the top (below pinned) — real forum behaviour
+    var ordered = DISCUSSIONS.slice().sort(function(a,b){
+      return (b.pinned?1:0)-(a.pinned?1:0) || (b.favourited?1:0)-(a.favourited?1:0);
+    });
+    document.getElementById('disc-list').innerHTML = ordered.map(function(d){
+      return '<div class="disc-row" data-disc="'+d.id+'">'
+        + avatar(d.author,'md')
+        + '<div class="disc-main">'
+          + '<div class="disc-byline"><span class="author">'+d.author.n+'</span>'
+            + (d.pinned?'<span class="badge badge-pinned"><i class="fa-solid fa-thumbtack" style="font-size:10px"></i> Pinned</span>':'')
+            + (d.locked?'<i class="fa-solid fa-lock lock-ic" title="Locked"></i>':'')
+          + '</div>'
+          + '<div class="disc-title"><span class="t">'+d.title+'</span></div>'
+          + '<div class="disc-snippet">'+d.snippet+'</div>'
+          + tagsHTML(d.id)
+          + '<div class="disc-footer">'
+            + '<div class="disc-metrics">'
+              + '<button class="metric like'+(d.liked?' on':'')+'" data-like="'+d.id+'" aria-pressed="'+(d.liked?'true':'false')+'" title="Like"><i class="fa-'+(d.liked?'solid':'regular')+' fa-thumbs-up"></i><span class="cnt">'+d.likes+'</span></button>'
+              + '<span class="metric" title="Views"><i class="fa-regular fa-eye"></i><span class="cnt">'+d.views+'</span></span>'
+              + '<span class="metric" title="Replies"><i class="fa-regular fa-comment"></i><span class="cnt">'+d.replies+'</span></span>'
+            + '</div>'
+            + '<div class="disc-lastpost" title="Last reply by '+d.last.p.n+'">'+avatar(d.last.p,'xs')+'<span>'+d.last.t+'</span></div>'
+          + '</div>'
+        + '</div>'
+        + '<div class="disc-actions">'
+          + '<button class="disc-actbtn fav'+(d.favourited?' on':'')+'" data-fav="'+d.id+'" title="'+(d.favourited?'Starred — click to unstar':'Star this discussion')+'"><i class="fa-'+(d.favourited?'solid':'regular')+' fa-star"></i></button>'
+          + '<button class="disc-actbtn watch'+(d.watched?' on':'')+'" data-watch="'+d.id+'" title="'+(d.watched?'Subscribed — click to unsubscribe':'Subscribe')+'"><i class="fa-'+(d.watched?'solid':'regular')+' fa-bell"></i></button>'
+          + '<button class="disc-actbtn" data-rowmore="'+d.id+'" title="More"><i class="fa-solid fa-ellipsis"></i></button>'
+        + '</div>'
+      + '</div>';
+    }).join('');
+    document.querySelectorAll('.disc-row').forEach(function(r){
+      r.addEventListener('click', function(e){
+        if(e.target.closest('.disc-actions,[data-like]')) return; // don't open on action clicks
+        goThread(r.dataset.disc);
+      });
+    });
+  }
+
+  /* ---- thread data (nested replies; representative + collapse cues) ---- */
+  var THREADS = {
+    'for': {
+      author:P.ava, title:'For: the peppered moth is the clearest example', time:'5 days ago', views:96,
+      body:'<p>Industrial melanism is directly observed and reversible — hard to beat as evidence. Kettlewell’s predation experiments showed differential survival by background, and the decline of melanic forms after the Clean Air Acts tracks the drop in soot almost perfectly.</p><p>It’s visual, it’s quantified, and it happened on a human timescale. What clears that bar better?</p>',
+      up:12, rx:[{e:'👍',n:3,who:'Mia, Sofia, Noah'},{e:'❤️',n:1,who:'Mia'}],
+      earlier:2,
+      replies:[
+        { author:P.mia, time:'5 days ago', body:'Agreed, and the data spans decades — it’s not a one-off snapshot.', up:4, rx:[{e:'👍',n:2,who:'Ava, Ethan'}],
+          replies:[ { author:P.ava, time:'4 days ago', body:'Exactly — and it’s reversible, which is rare for a clean classroom example.', up:1, rx:[] } ] },
+        { author:P.liam, time:'4 days ago', body:'But isn’t it criticised for the flawed original photos of moths pinned to trunks? Antibiotic resistance avoids that baggage entirely.', up:5, rx:[{e:'💡',n:2,who:'Sofia, Noah'}],
+          replies:[ { author:P.sofia, time:'4 days ago', body:'The photos were staged for illustration, but the selection data itself holds up under reanalysis.', up:3, rx:[],
+            replies:[ { author:P.noah, time:'3 days ago', body:'Fair — though the reanalysis is exactly where it gets technical.', up:0, rx:[],
+              replies:[ { author:P.mia, time:'3 days ago', body:'Linking the Cook et al. 2012 reassessment for anyone going down this rabbit hole.', up:1, rx:[] } ] } ] } ] },
+        { author:P.ethan, time:'2 days ago', body:'Peppered moth is just easy to teach — visual and intuitive. That counts for “best classroom example” even if resistance is a better research case.', up:2, rx:[{e:'🎉',n:1,who:'Ava'}] }
+      ]
+    }
+  };
+  // fall-throughs: other discussions open a lightweight thread from their list row
+  function threadFor(id){
+    if(THREADS[id]) return THREADS[id];
+    var d = DISCUSSIONS.find(function(x){return x.id===id;});
+    return { author:d.author, title:d.title, time:d.time, views:d.views, body:'<p>'+d.snippet+'</p>', up:d.up, rx:[], earlier:0, replies:[] };
+  }
+
+  var uid = 0;
+  // Emoji reactions only (upvote removed — forums have no native upvote/like;
+  // the only native score is the core Rating subsystem).
+  function reactionsHTML(rx){
+    var html = '<div class="reactions">';
+    (rx||[]).forEach(function(r){ html += '<button class="rx-chip" title="'+r.who+' reacted"><span>'+r.e+'</span><span class="cnt">'+r.n+'</span></button>'; });
+    html += '<button class="rx-chip rx-add" data-react title="Add reaction"><i class="fa-regular fa-face-smile"></i></button>';
+    html += '</div>';
+    return html;
+  }
+  // isMain: the discussion's first post also carries the discussion-level
+  // Favourite (star) + Subscribe (bell) controls; replies don't (those are
+  // per-discussion, not per-post). Subscribe is the notification control.
+  function actionBar(isMain){
+    return '<div class="action-bar">'
+      + '<button class="act" data-reply><i class="fa-solid fa-reply"></i> Reply</button>'
+      + (isMain
+          ? '<button class="act fav" data-fav><i class="fa-regular fa-star"></i> Favourite</button>'
+          + '<button class="act watch" data-watch><i class="fa-regular fa-bell"></i> Subscribe</button>'
+          : '')
+      + '<button class="act" data-copy><i class="fa-solid fa-link"></i> Copy link</button>'
+      + '<button class="act" data-more="'+(isMain?'disc':'reply')+'"><i class="fa-solid fa-ellipsis"></i></button>'
+      + '</div>';
+  }
+  function composerHTML(){
+    return '<div class="composer composer-inline">'
+      + '<textarea placeholder="Write a reply…"></textarea>'
+      + '<div class="composer-actions"><button class="btn btn-primary" data-postreply>Post to forum</button><button class="btn btn-link" data-cancelreply>Cancel</button></div>'
+      + '</div>';
+  }
+
+  function replyHTML(r, depth){
+    var id = ++uid;
+    var capped = depth >= 3;
+    var childHTML = '';
+    if(r.replies && r.replies.length && !capped){
+      childHTML = '<div class="reply-children">' + r.replies.map(function(c){ return replyHTML(c, depth+1); }).join('') + '</div>';
+    } else if(r.replies && r.replies.length && capped){
+      childHTML = '<div class="reply-children"><span class="continue-thread"><i class="fa-solid fa-arrow-turn-down"></i> Continue this thread ('+countDeep(r.replies)+')</span></div>';
+    }
+    return '<div class="reply" data-post="'+id+'">'
+      + '<div class="post-head">'+avatar(r.author,'sm')
+        + '<div class="who"><span class="post-author">'+r.author.n+'</span>'
+        + '<div class="post-meta">'+r.time+'</div></div></div>'
+      + '<div class="post-body">'+r.body+'</div>'
+      + reactionsHTML(r.rx)
+      + actionBar(false)
+      + composerHTML()
+      + childHTML
+      + '</div>';
+  }
+  function countDeep(list){ var n=0; (list||[]).forEach(function(r){ n += 1 + countDeep(r.replies); }); return n; }
+
+  function openThread(id){
+    currentThreadId = id;
+    var t = threadFor(id);
+    document.getElementById('crumbThread').textContent = t.title.length>40 ? t.title.slice(0,40)+'…' : t.title;
+    var repliesTotal = countDeep(t.replies) + (t.earlier||0);
+    var html = ''
+      + '<article class="post">'
+        + '<h1 class="thread-title">'+t.title+'</h1>'
+        + '<div class="post-head">'+avatar(t.author,'lg')
+          + '<div class="who"><span class="post-author">'+t.author.n+'</span>'
+          + '<div class="post-meta">'+t.time+' · '+t.views+' views</div></div></div>'
+        + '<div class="post-body">'+t.body+'</div>'
+        + tagsHTML(id)
+        + reactionsHTML(t.rx)
+        + actionBar(true)
+        + composerHTML()
+      + '</article>'
+      + '<div class="post-divider"></div>'
+      + (repliesTotal ? '<div class="replies-head">'+repliesTotal+' repl'+(repliesTotal===1?'y':'ies')+'</div>' : '');
+    if(t.earlier){ html += '<span class="show-more-replies"><i class="fa-solid fa-chevron-down"></i> Show '+t.earlier+' earlier replies</span>'; }
+    html += t.replies.map(function(r){ return replyHTML(r, 1); }).join('');
+    document.getElementById('thread-root').innerHTML = html;
+    setView('thread');
+    window.scrollTo(0,0);
+  }
+
+  /* ---- view routing (real history so breadcrumb, back link & browser Back all work) ---- */
+  function setView(v){
+    document.getElementById('view-list').classList.toggle('active', v==='list');
+    document.getElementById('view-thread').classList.toggle('active', v==='thread');
+  }
+  function goThread(id){ closePopup(); openThread(id); history.pushState({view:'thread', id:id}, '', '?view=thread'); }
+  function goList(){ closePopup(); setView('list'); window.scrollTo(0,0); history.pushState({view:'list'}, '', location.pathname); }
+  window.addEventListener('popstate', function(e){
+    var s = e.state || {view:'list'};
+    if(s.view==='thread' && s.id){ openThread(s.id); } else { setView('list'); window.scrollTo(0,0); }
+  });
+  document.getElementById('backToList').addEventListener('click', goList);
+
+  // core links: breadcrumb, course index, nav pills. 'list' => back to the forum;
+  // course/section/placeholder aren't modelled here, so they show a toast.
+  document.addEventListener('click', function(e){
+    var nav = e.target.closest('[data-nav]');
+    if(!nav) return;
+    e.preventDefault();
+    var k = nav.dataset.nav;
+    if(k==='list'){ goList(); }
+    else if(k==='course'){ showToast('Course home — not part of this forum prototype'); }
+    else if(k==='section'){ showToast('Section page — not part of this forum prototype'); }
+    else { var lbl = nav.querySelector('.txt') ? nav.querySelector('.txt').textContent.trim() : nav.textContent.trim(); showToast(lbl + ' — not part of this forum prototype'); }
+  });
+
+  /* ---- delegated interactions (reply, upvote, react, copy, more) ---- */
+  var popup = document.getElementById('popup');
+  function closePopup(){ popup.classList.remove('show'); }
+  function positionPopup(btn){
+    var r = btn.getBoundingClientRect(), mw = popup.offsetWidth, mh = popup.offsetHeight;
+    var left = Math.min(r.left, window.innerWidth - mw - 8);
+    var top = r.bottom + 6; if(top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 6);
+    popup.style.left = Math.max(8,left)+'px'; popup.style.top = top+'px';
+  }
+  var EMOJI = ['👍','❤️','🎉','💡','👀','🙂'];
+
+  /* ---- more-menu contents (grounded in real forum capabilities) ----
+     Pin + Lock are DISCUSSION-level → list rows + the thread's first post.
+     Split ("prune") is POST-level and only valid on a REPLY (has a parent) →
+     thread reply menus only. No Permalink (Copy link covers it) and no Report
+     (not a core forum feature). */
+  function discMenuItems(d, includeLink){
+    // Move discussion — a discussion-level action (moves the whole thread +
+    // posts + attachments to another forum in the SAME course). In core this
+    // lives in the nested-v2 settings drawer; here it moves into the ⋯ menu.
+    // Gated by mod/forum:movediscussions and source type !== 'single'.
+    return (includeLink ? '<button class="menu-item" data-mi="link"><i class="fa-solid fa-link"></i> Copy link</button>' : '')
+      + '<button class="menu-item" data-mi="edit"><i class="fa-solid fa-pen"></i> Edit</button>'
+      + '<button class="menu-item" data-mi="pin"><i class="fa-solid fa-thumbtack"></i> '+((d&&d.pinned)?'Unpin':'Pin')+'</button>'
+      + '<button class="menu-item" data-mi="lock"><i class="fa-solid fa-lock"></i> '+((d&&d.locked)?'Unlock':'Lock')+'</button>'
+      + '<button class="menu-item" data-mi="move"><i class="fa-solid fa-arrow-right-arrow-left"></i> Move discussion…</button>'
+      + '<div class="menu-sep"></div>'
+      + '<button class="menu-item danger" data-mi="delete"><i class="fa-solid fa-trash"></i> Delete</button>';
+  }
+  function replyMenuItems(){
+    return '<button class="menu-item" data-mi="edit"><i class="fa-solid fa-pen"></i> Edit</button>'
+      + '<button class="menu-item" data-mi="split"><i class="fa-solid fa-code-branch"></i> Split discussion</button>'
+      + '<div class="menu-sep"></div>'
+      + '<button class="menu-item danger" data-mi="delete"><i class="fa-solid fa-trash"></i> Delete</button>';
+  }
+  var currentThreadId = null;
+
+  document.addEventListener('click', function(e){
+    var t = e.target;
+
+    // ---- like / favourite / subscribe (work in both the list and the thread) ----
+    // like: public reaction count + solid thumb
+    var likeBtn = t.closest('[data-like]');
+    if(likeBtn){ e.stopPropagation(); var lc=likeBtn.querySelector('.cnt'); var ln=parseInt(lc.textContent,10); var lon=likeBtn.classList.toggle('on'); likeBtn.setAttribute('aria-pressed', lon); likeBtn.querySelector('i').className='fa-'+(lon?'solid':'regular')+' fa-thumbs-up'; lc.textContent=lon?ln+1:ln-1; return; }
+    // favourite (star): personal bookmark that sorts the discussion to the top
+    var favBtn = t.closest('[data-fav]');
+    if(favBtn){ e.stopPropagation(); var fon=favBtn.classList.toggle('on'); favBtn.querySelector('i').className='fa-'+(fon?'solid':'regular')+' fa-star'; if(favBtn.classList.contains('disc-actbtn')) favBtn.title=fon?'Starred — click to unstar':'Star this discussion'; showToast(fon?'Starred — favourites sort to the top':'Removed star'); return; }
+    // subscribe (bell): notifications of new posts
+    var watchBtn = t.closest('[data-watch]');
+    if(watchBtn){ e.stopPropagation(); var won=watchBtn.classList.toggle('on'); watchBtn.querySelector('i').className='fa-'+(won?'solid':'regular')+' fa-bell'; if(watchBtn.classList.contains('disc-actbtn')) watchBtn.title=won?'Subscribed — click to unsubscribe':'Subscribe'; showToast(won?'Subscribed — you’ll be notified of new posts':'Unsubscribed'); return; }
+    // row … menu: Copy link / Edit / Delete (permission-gated in real Moodle)
+    var rowMore = t.closest('[data-rowmore]');
+    if(rowMore){
+      e.stopPropagation();
+      popup.innerHTML = discMenuItems(byId(rowMore.dataset.rowmore), true); // list row: Copy link stays (no visible copy button)
+      popup.classList.add('show'); positionPopup(rowMore);
+      popup.__owner=rowMore; popup.__ctx='list'; popup.__disc=rowMore.dataset.rowmore; return;
+    }
+
+    // reply composer toggle
+    var replyBtn = t.closest('[data-reply]');
+    if(replyBtn){ var c = replyBtn.closest('.post,.reply').querySelector(':scope > .composer-inline'); if(c){ c.classList.toggle('open'); if(c.classList.contains('open')) c.querySelector('textarea').focus(); } return; }
+    if(t.closest('[data-cancelreply]')){ t.closest('.composer-inline').classList.remove('open'); return; }
+    if(t.closest('[data-postreply]')){ var ci=t.closest('.composer-inline'); ci.querySelector('textarea').value=''; ci.classList.remove('open'); showToast('Reply posted'); return; }
+
+    // reaction chip toggle (existing)
+    var chip = t.closest('.rx-chip:not(.rx-add):not(.rx-upvote)');
+    if(chip){ var cn=chip.querySelector('.cnt'); var m=parseInt(cn.textContent,10); var onc=chip.classList.toggle('on'); cn.textContent= onc? m+1 : m-1; return; }
+
+    // add-reaction emoji picker
+    var addBtn = t.closest('[data-react]');
+    if(addBtn){
+      popup.innerHTML = '<div class="emoji-grid">'+EMOJI.map(function(em){ return '<button data-emoji="'+em+'">'+em+'</button>'; }).join('')+'</div>';
+      popup.classList.add('show'); positionPopup(addBtn); popup.__owner = addBtn; return;
+    }
+    var em = t.closest('[data-emoji]');
+    if(em){
+      var bar = popup.__owner.closest('.reactions');
+      var existing = [].slice.call(bar.querySelectorAll('.rx-chip')).find(function(x){ return x.firstChild && x.textContent.trim().charAt(0)===em.dataset.emoji.charAt(0); });
+      if(existing){ existing.classList.add('on'); var xc=existing.querySelector('.cnt'); xc.textContent=parseInt(xc.textContent,10)+1; }
+      else { var chipEl=document.createElement('button'); chipEl.className='rx-chip on'; chipEl.title='You reacted'; chipEl.innerHTML='<span>'+em.dataset.emoji+'</span><span class="cnt">1</span>'; bar.insertBefore(chipEl, popup.__owner); }
+      closePopup(); return;
+    }
+
+    // copy link → toast (maps to forum Permalink)
+    if(t.closest('[data-copy]')){ var url=location.href.split('#')[0]+'#p'+(t.closest('.post,.reply')?.dataset.post||''); copy(url); showToast('Link copied to clipboard'); return; }
+
+    // educator "Manage" menu = the forum's secondary/settings nav, all in one
+    // place (Settings, Advanced grading, Subscriptions, Reports, + admin overflow)
+    var manageBtn = t.closest('[data-manage]');
+    if(manageBtn){
+      e.stopPropagation();
+      // the forum's whole secondary-nav / settings tab strip, grounded in
+      // mod_forum + core module admin nodes, consolidated into one dropdown
+      // (mirrors the book prototype's Manage menu layout).
+      popup.innerHTML = '<div class="menu-label">Manage forum</div>'
+        + '<button class="menu-item" data-manageitem="Settings"><i class="fa-solid fa-gear"></i> Settings</button>'
+        + '<button class="menu-item" data-manageitem="Advanced grading"><i class="fa-solid fa-table-list"></i> Advanced grading</button>'
+        + '<button class="menu-item" data-manageitem="Subscriptions"><i class="fa-solid fa-bell"></i> Subscriptions</button>'
+        + '<button class="menu-item" data-manageitem="Reports"><i class="fa-solid fa-chart-line"></i> Reports</button>'
+        + '<button class="menu-item" data-manageitem="Filters"><i class="fa-solid fa-filter"></i> Filters</button>'
+        + '<button class="menu-item" data-manageitem="Permissions"><i class="fa-solid fa-user-shield"></i> Permissions</button>'
+        + '<button class="menu-item" data-manageitem="Logs"><i class="fa-solid fa-clock-rotate-left"></i> Logs</button>'
+        + '<button class="menu-item" data-manageitem="Backup"><i class="fa-solid fa-box-archive"></i> Backup</button>'
+        + '<button class="menu-item" data-manageitem="Restore"><i class="fa-solid fa-upload"></i> Restore</button>'
+        + '<button class="menu-item" data-manageitem="Export"><i class="fa-solid fa-file-export"></i> Export</button>';
+      popup.classList.add('show'); positionPopup(manageBtn); popup.__owner=manageBtn; return;
+    }
+
+    // thread more menu — first post = discussion menu (Pin/Lock); reply = Split
+    var moreBtn=t.closest('[data-more]');
+    if(moreBtn){
+      var ctx = moreBtn.dataset.more; // 'disc' | 'reply'
+      popup.innerHTML = ctx==='reply' ? replyMenuItems() : discMenuItems(byId(currentThreadId), false);
+      popup.classList.add('show'); positionPopup(moreBtn);
+      popup.__owner=moreBtn; popup.__ctx=ctx; popup.__disc=currentThreadId; return;
+    }
+    var mi = t.closest('.menu-item');
+    if(mi){
+      if(mi.dataset.manageitem){ showToast(mi.dataset.manageitem + ' — not part of this forum prototype'); closePopup(); return; }
+      var kind = mi.dataset.mi, ctx2 = popup.__ctx, d = byId(popup.__disc);
+      if(kind==='link'){ copy(location.href); showToast('Link copied to clipboard'); }
+      else if(kind==='edit'){ showToast('Opens the edit form'); }
+      else if(kind==='pin'){ if(d){ d.pinned=!d.pinned; showToast(d.pinned?'Pinned to the top':'Unpinned'); if(ctx2==='list') renderList(); } }
+      else if(kind==='lock'){ if(d){ d.locked=!d.locked; showToast(d.locked?'Discussion locked — no new replies':'Discussion unlocked'); if(ctx2==='list') renderList(); } }
+      else if(kind==='move'){ openMoveDialog(popup.__disc, ctx2); closePopup(); return; }
+      else if(kind==='split'){ showToast('Split — this reply and its replies become a new discussion'); }
+      else if(kind==='delete'){
+        if(ctx2==='list'){ var row=popup.__owner&&popup.__owner.closest('.disc-row'); if(row){ var id=row.dataset.disc; var idx=DISCUSSIONS.findIndex(function(x){return x.id===id;}); if(idx>-1) DISCUSSIONS.splice(idx,1); row.remove(); var lc=document.querySelector('.list-count'); if(lc) lc.textContent=DISCUSSIONS.length+' discussions'; showToast('Discussion deleted'); } }
+        else showToast('Deleted');
+      }
+      closePopup(); return;
+    }
+
+    // continue thread / show earlier (demo)
+    if(t.closest('.continue-thread')){ showToast('Would load the deeper thread'); return; }
+    if(t.closest('.show-more-replies')){ t.closest('.show-more-replies').style.display='none'; showToast('Earlier replies loaded'); return; }
+
+    if(!popup.contains(t)) closePopup();
+  });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') closePopup(); });
+
+  function copy(text){ try{ navigator.clipboard && navigator.clipboard.writeText(text); }catch(_){} }
+  var toastEl=document.getElementById('toast'), toastT;
+  function showToast(msg){ toastEl.textContent=msg; toastEl.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(function(){ toastEl.classList.remove('show'); },1800); }
+
+  /* ---- move discussion: target = a forum in the SAME course, grouped by
+     section. Mirrors get_move_discussion_html(): lists course forums the user
+     can start discussions in, excluding this forum + single-discussion forums. */
+  var COURSE_FORUMS = [
+    { section:'General', forums:[ { id:'qa', name:'Course Q&amp;A', type:'Q&amp;A forum' } ] },
+    { section:'Photosynthesis', forums:[ { id:'photo', name:'Discussion: C3, C4 and CAM plants', type:'Standard forum' } ] }
+  ];
+  var moveId=null, moveCtx=null, moveSel=null;
+  var moveModal=document.getElementById('moveModal'), moveBackdrop=document.getElementById('moveBackdrop'),
+      moveBodyEl=document.getElementById('moveBody'), moveConfirmBtn=document.getElementById('moveConfirm');
+  function shortTitle(t){ return t.length>48 ? t.slice(0,48)+'…' : t; }
+  function openMoveDialog(id, ctx){
+    var d=byId(id); if(!d) return;
+    moveId=id; moveCtx=ctx; moveSel=null;
+    document.getElementById('moveModalSub').innerHTML =
+      'Moving <b>“'+shortTitle(d.title)+'”</b> out of <b>Debate: Is the peppered moth…</b> into another forum in <b>Biology 101</b>.';
+    var html='';
+    COURSE_FORUMS.forEach(function(g){
+      html += '<div class="move-group-label">'+g.section+'</div>';
+      g.forums.forEach(function(f){
+        html += '<button class="move-opt" data-forum="'+f.id+'" data-name="'+f.name+'" data-section="'+g.section+'">'
+          + '<span class="move-radio"></span>'
+          + '<span class="move-forum-ic"><i class="fa-solid fa-comments"></i></span>'
+          + '<span class="move-opt-main"><span class="move-opt-name">'+f.name+'</span><span class="move-opt-type">'+f.type+'</span></span>'
+          + '</button>';
+      });
+    });
+    html += '<div class="move-note"><i class="fa-solid fa-circle-info" style="margin-top:2px"></i>'
+      + '<span>Only forums in this course are shown, grouped by section. This forum and single-discussion forums (e.g. “Introduce yourself”) can’t be a target.</span></div>';
+    moveBodyEl.innerHTML = html;
+    moveConfirmBtn.disabled = true;
+    moveModal.classList.add('show'); moveBackdrop.classList.add('show');
+  }
+  function closeMove(){ moveModal.classList.remove('show'); moveBackdrop.classList.remove('show'); }
+  moveBodyEl.addEventListener('click', function(e){
+    var opt=e.target.closest('.move-opt'); if(!opt) return;
+    [].slice.call(moveBodyEl.querySelectorAll('.move-opt')).forEach(function(o){ o.classList.remove('sel'); });
+    opt.classList.add('sel');
+    moveSel={ id:opt.dataset.forum, name:opt.dataset.name, section:opt.dataset.section };
+    moveConfirmBtn.disabled=false;
+  });
+  moveConfirmBtn.addEventListener('click', function(){
+    if(!moveSel) return;
+    var d=byId(moveId); var title=d?shortTitle(d.title):'Discussion';
+    var idx=DISCUSSIONS.findIndex(function(x){ return x.id===moveId; });   // it now lives in the target forum
+    if(idx>-1) DISCUSSIONS.splice(idx,1);
+    renderList();
+    var lc=document.querySelector('.list-count'); if(lc) lc.textContent=DISCUSSIONS.length+' discussions';
+    closeMove();
+    if(moveCtx!=='list') goList();   // from the thread view, return to the (now-updated) list
+    showToast('Moved “'+title+'” to '+moveSel.name+' · '+moveSel.section);
+  });
+  document.getElementById('moveCancel').addEventListener('click', closeMove);
+  document.getElementById('moveClose').addEventListener('click', closeMove);
+  moveBackdrop.addEventListener('click', closeMove);
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeMove(); });
+
+  /* ---- shell: nav + both drawers responsive ---- */
+  var body=document.body, backdrop=document.getElementById('backdrop');
+  function ciOverlay(){ return body.classList.contains('ci-overlay'); }
+  function cbOverlay(){ return body.classList.contains('cb-overlay'); }
+  document.getElementById('ciOpen').addEventListener('click', function(){ body.classList.add('ci-open'); if(ciOverlay() && cbOverlay()) body.classList.remove('cb-open'); });
+  document.getElementById('ciClose').addEventListener('click', function(){ body.classList.remove('ci-open'); });
+  document.getElementById('cbOpen').addEventListener('click', function(){ body.classList.add('cb-open'); if(cbOverlay() && ciOverlay()) body.classList.remove('ci-open'); });
+  document.getElementById('cbClose').addEventListener('click', function(){ body.classList.remove('cb-open'); });
+  backdrop.addEventListener('click', function(){ if(ciOverlay()) body.classList.remove('ci-open'); if(cbOverlay()) body.classList.remove('cb-open'); });
+  document.getElementById('burger').addEventListener('click', function(){ showToast('Site navigation (placeholder)'); });
+
+  // Edit-mode toggle = prototype stand-in for teacher/student. On => educator
+  // ("Manage" appears); off => student view (clean, no management affordances).
+  document.getElementById('editSwitch').addEventListener('click', function(){
+    var on = this.getAttribute('aria-pressed')==='true';
+    this.setAttribute('aria-pressed', on ? 'false' : 'true');
+    body.classList.toggle('edit-on', !on);
+    showToast(!on ? 'Educator view — Manage available' : 'Student view — management hidden');
+  });
+
+  var mqLeft=window.matchMedia('(max-width:768px)');   // course index: overlay <=768
+  var mqRight=window.matchMedia('(max-width:1200px)');  // course blocks: overlay <=1200
+  function applyMode(){
+    body.classList.toggle('ci-overlay', mqLeft.matches);
+    body.classList.toggle('cb-overlay', mqRight.matches);
+    if(mqLeft.matches) body.classList.remove('ci-open'); else body.classList.add('ci-open');
+    if(mqRight.matches) body.classList.remove('cb-open'); // blocks start closed unless it can push (desktop)
+  }
+  mqLeft.addEventListener('change', applyMode); mqRight.addEventListener('change', applyMode); applyMode();
+
+  document.getElementById('hint').addEventListener('click', function(){ body.classList.add('hide-hint'); });
+
+  /* ---------- annotations (blue walkthrough callouts + dashed ring) ---------- */
+  var annoLayer=document.getElementById('annoLayer');
+  var annoToggle=document.getElementById('annoToggle');
+  var annoToggleLabel=document.getElementById('annoToggleLabel');
+  var annoCards=Array.prototype.slice.call(document.querySelectorAll('.anno-card'));
+  var annoOn=true;
+  // one dashed pulsing ring per card, drawn over its target
+  var annoRings=annoCards.map(function(){ var r=document.createElement('div'); r.className='anno-ring'; r.style.display='none'; annoLayer.appendChild(r); return r; });
+  function isElVisible(el){ return !!(el && (el.offsetWidth || el.offsetHeight || el.getClientRects().length)); }
+  function firstVisibleTarget(sel){ var els=document.querySelectorAll(sel); for(var i=0;i<els.length;i++){ if(isElVisible(els[i])) return els[i]; } return null; }
+  function annoAlive(){ return annoCards.filter(function(c){ return c.dataset.dismissed!=='1'; }).length; }
+  function updateAnnoToggleLabel(){ annoToggleLabel.textContent = annoOn ? 'Hide annotations' : ('Show annotations ('+annoAlive()+')'); }
+  function updateAnnotations(){
+    if(!annoLayer) return;
+    var vw=window.innerWidth, vh=window.innerHeight;
+    annoCards.forEach(function(card,i){
+      var ring=annoRings[i];
+      if(!annoOn || card.dataset.dismissed==='1'){ card.style.display='none'; ring.style.display='none'; return; }
+      var target=firstVisibleTarget(card.dataset.target);
+      var tr=target && target.getBoundingClientRect();
+      var visible=tr && tr.width>0 && tr.height>0 && tr.bottom>64 && tr.top<vh-8 && tr.right>0 && tr.left<vw;
+      if(!visible){ card.style.display='none'; ring.style.display='none'; return; }
+      card.style.display='block'; ring.style.display='block';
+      ring.style.left=(tr.left-4)+'px'; ring.style.top=(tr.top-4)+'px';
+      ring.style.width=(tr.width+8)+'px'; ring.style.height=(tr.height+8)+'px';
+      var cw=card.offsetWidth||220, chh=card.offsetHeight||90, side=card.dataset.side, cl, ct;
+      if(side==='right'){ cl=tr.right+18; ct=tr.top-6; }
+      else if(side==='top'){ cl=tr.left; ct=tr.top-chh-18; }
+      else if(side==='bottom'){ cl=tr.left; ct=tr.bottom+18; }
+      else { cl=tr.left-cw-18; ct=tr.top-6; }
+      cl=Math.max(8, Math.min(cl, vw-cw-8));
+      ct=Math.max(72, Math.min(ct, vh-chh-8));
+      card.style.left=cl+'px'; card.style.top=ct+'px';
+    });
+  }
+  annoToggle.addEventListener('click', function(){
+    annoOn=!annoOn;
+    body.classList.toggle('annotations-on', annoOn);
+    if(annoOn && annoAlive()===0){ annoCards.forEach(function(c){ c.dataset.dismissed=''; }); }
+    updateAnnoToggleLabel(); updateAnnotations();
+  });
+  annoCards.forEach(function(card){
+    card.querySelector('.anno-close').addEventListener('click', function(){
+      card.dataset.dismissed='1';
+      if(annoAlive()===0){ annoOn=false; body.classList.remove('annotations-on'); }
+      updateAnnoToggleLabel(); updateAnnotations();
+    });
+  });
+  window.addEventListener('scroll', updateAnnotations, true);
+  window.addEventListener('resize', updateAnnotations);
+  // reposition whenever a view re-renders (list rebuild, thread open, edit toggle)
+  var annoObserver=new MutationObserver(function(){ requestAnimationFrame(updateAnnotations); });
+  annoObserver.observe(document.getElementById('disc-list'), { childList:true, subtree:true });
+  annoObserver.observe(document.getElementById('thread-root'), { childList:true, subtree:true });
+  annoObserver.observe(document.body, { attributes:true, attributeFilter:['class'] });
+
+  /* ---------- CLN (course linear navigation) ----------
+     Walks the same sequence shown in the course index: General (Course Q&A,
+     Course Syllabus & Study Guide) → Evolution & Natural Selection (this
+     forum, Reading: Natural selection, Quiz: Evolution checkpoint). The forum
+     is a single node, not paginated content, so Previous/Next always leave it
+     for a neighbouring activity — there's nothing to step through first. */
+  var CLN_WALK = [
+    { label:'Course Q&amp;A', kind:'forum' },
+    { label:'Course Syllabus &amp; Study Guide', kind:'page' },
+    { label:'Debate: Is the peppered moth the best example of natural selection?', kind:'forum', current:true },
+    { label:'Reading: Natural selection', kind:'page' },
+    { label:'Quiz: Evolution checkpoint', kind:'quiz' }
+  ];
+  var CLN_HERE = CLN_WALK.findIndex(function(it){ return it.current; });
+  function cleanLabel(s){ return s.replace(/&amp;/g,'&'); }
+  function updateCLN(){
+    var prev = CLN_HERE>0 ? CLN_WALK[CLN_HERE-1] : null;
+    var next = CLN_HERE<CLN_WALK.length-1 ? CLN_WALK[CLN_HERE+1] : null;
+    var prevBtn=document.getElementById('clnPrev'), nextBtn=document.getElementById('clnNext');
+    prevBtn.disabled=!prev; nextBtn.disabled=!next;
+    document.getElementById('clnPrevT').textContent = prev ? cleanLabel(prev.label) : '';
+    document.getElementById('clnNextT').textContent = next ? cleanLabel(next.label) : '';
+    prevBtn.setAttribute('aria-label', prev ? ('Previous: '+cleanLabel(prev.label)) : 'Previous');
+    nextBtn.setAttribute('aria-label', next ? ('Next: '+cleanLabel(next.label)) : 'Next');
+  }
+  function goCLN(dir){
+    var target = CLN_WALK[CLN_HERE + dir];
+    if(!target) return;
+    // this forum is the only "page" this prototype implements — every CLN
+    // neighbour is a stub, so leaving shows a toast rather than a dead link
+    showToast('Would open “'+cleanLabel(target.label)+'” — leaving the forum (not part of this prototype)');
+  }
+  document.getElementById('clnPrev').addEventListener('click', function(){ goCLN(-1); });
+  document.getElementById('clnNext').addEventListener('click', function(){ goCLN(1); });
+  updateCLN();
+
+  /* ---- init ---- */
+  renderList();
+  if(new URLSearchParams(location.search).get('view')==='thread'){ openThread('for'); history.replaceState({view:'thread', id:'for'}, '', '?view=thread'); }
+  else { history.replaceState({view:'list'}, '', location.pathname); }
+  updateAnnoToggleLabel(); updateAnnotations();
+})();
+</script>
+</body>
+</html>

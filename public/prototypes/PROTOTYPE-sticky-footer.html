@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTOTYPE — Sticky footer containment (throwaway, not for merge)</title>
+
+<!-- Noto Sans (matches --mds-font-family-base) + Font Awesome, via CDN. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+  /*
+    THROWAWAY PROTOTYPE — sticky footer containment (regression against
+    MDL-88411). Reuses the quiz/book/forum prototype shell: MDS :root tokens,
+    top nav, annotation layer, dev state switcher. Delete once the design
+    question is answered (NOTES at bottom).
+
+    UNLIKE the other prototypes, the drawers here are `position: fixed` with
+    real z-index values, and #page carries real margins/padding — because the
+    whole question is which layer paints over which. The other prototypes use
+    in-flow sticky drawers, which can never be covered by a fixed footer and
+    so cannot show this bug at all.
+
+    Every geometry number below is lifted from the real SCSS; the source rule
+    is named in a comment beside it. The measurement readout (bottom left)
+    evaluates the plan's §7 invariant live, so the prototype checks itself
+    rather than asking you to eyeball it.
+  */
+
+  :root{
+    /* ---- MDS primitives (dist/tokens/css/primitives.css, resolved) ---- */
+    --mds-color-blue-50:#e7f0f9; --mds-color-blue-500:#0f6cbf; --mds-color-blue-600:#0c5699; --mds-color-blue-700:#094173;
+    --mds-color-cyan-100:#cce6ea; --mds-color-cyan-500:#008196;
+    --mds-color-pink-100:#f8d1e3; --mds-color-pink-500:#db1a74;
+    --mds-color-orange-100:#ffe3d1; --mds-color-orange-500:#e8590c; --mds-color-orange-600:#cc5e13;
+    --mds-color-green-50:#ebf2ea; --mds-color-green-100:#d3e9d1; --mds-color-green-500:#357a32; --mds-color-green-700:#245021;
+    --mds-color-red-50:#faeae9; --mds-color-red-100:#f3c9c5; --mds-color-red-500:#ca3120; --mds-color-red-600:#a2271a;
+    --mds-color-gray-100:#f8f9fa; --mds-color-gray-200:#e9ecef; --mds-color-gray-300:#dee2e6;
+    --mds-color-gray-400:#ced4da; --mds-color-gray-500:#8f959e; --mds-color-gray-600:#6a737b;
+    --mds-color-gray-700:#495057; --mds-color-gray-800:#343a40; --mds-color-gray-900:#1d2125; --mds-color-gray-white:#fff;
+
+    /* ---- MDS semantic (dist/tokens/css/colors.css) ---- */
+    --mds-text-default:var(--mds-color-gray-900);
+    --mds-text-subtle:var(--mds-color-gray-700);
+    --mds-text-muted:var(--mds-color-gray-600);
+    --mds-text-inverse:var(--mds-color-gray-white);
+    --mds-text-danger:var(--mds-color-red-500);
+    --mds-text-feedback-success:var(--mds-color-green-500);
+    --mds-text-feedback-warning:var(--mds-color-orange-600);
+    --mds-bg-surface-default:var(--mds-color-gray-white);
+    --mds-bg-surface-subtle:var(--mds-color-gray-100);
+    --mds-bg-surface-strong:var(--mds-color-gray-200);
+    --mds-border-default:var(--mds-color-gray-300);
+    --mds-border-subtle:var(--mds-color-gray-200);
+    --mds-border-interactive-secondary-default:var(--mds-color-gray-500);
+    --mds-bg-interactive-primary-default:var(--mds-color-blue-500);
+    --mds-bg-interactive-primary-hover:var(--mds-color-blue-600);
+    --mds-bg-interactive-primary-active:var(--mds-color-blue-700);
+    --mds-bg-interactive-primary-default-light:var(--mds-color-blue-50);
+    --mds-bg-nav-pill-selected:var(--mds-color-gray-200);
+    --mds-bg-feedback-success-light:var(--mds-color-green-50);
+    --mds-bg-feedback-warning-light:var(--mds-color-orange-100);
+    --mds-activity-icon-assessment-bg:var(--mds-color-pink-100);      --mds-activity-icon-assessment-icon:var(--mds-color-pink-500);
+    --mds-activity-icon-communication-bg:var(--mds-color-orange-100); --mds-activity-icon-communication-icon:var(--mds-color-orange-600);
+    --mds-activity-icon-file-bg:var(--mds-color-cyan-100);            --mds-activity-icon-file-icon:var(--mds-color-cyan-500);
+
+    /* ---- MDS spacing ---- */
+    --mds-spacing-xxs:.25rem; --mds-spacing-xs:.5rem; --mds-spacing-sm:.75rem;
+    --mds-spacing-md:1rem; --mds-spacing-lg:1.25rem; --mds-spacing-xl:2rem; --mds-spacing-xxl:3rem;
+
+    /* ---- MDS radius ---- */
+    --mds-border-radius-xs:.25rem; --mds-border-radius-sm:.375rem; --mds-border-radius-md:.5rem;
+    --mds-border-radius-lg:.75rem; --mds-border-radius-xl:1rem; --mds-border-radius-pill:50rem;
+
+    /* ---- MDS typography ---- */
+    --mds-font-family-base:"Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mds-font-size-headings-4:1.5rem;  --mds-line-height-headings-4:2rem;
+    --mds-font-size-headings-5:1.25rem; --mds-line-height-headings-5:1.75rem;
+    --mds-font-size-headings-6:1rem;    --mds-line-height-headings-6:1.5rem;
+    --mds-font-size-paragraph-default:1rem;  --mds-line-height-paragraph-default:1.5rem;
+    --mds-font-size-paragraph-small:.875rem; --mds-line-height-paragraph-small:1.25rem;
+    --mds-font-weight-regular:400; --mds-font-weight-medium:500; --mds-font-weight-semibold:600; --mds-font-weight-bold:700;
+    --mds-stroke-weight-sm:1px;
+
+    /* ---- REAL Boost geometry (each maps to a named SCSS variable) ---- */
+    --drawer-left-width:285px;      /* $drawer-left-width      drawer.scss:5  */
+    --drawer-right-width:315px;     /* $drawer-right-width     drawer.scss:6  */
+    --page-drawers-padding-x:3rem;  /* $page-drawers-padding-x variables.scss (new in the patch) */
+    --content-max:830px;            /* $course-content-maxwidth variables.scss:28 */
+    --drawer-main-gap:calc(.5rem + 20px); /* $drawer-main-gap  drawer.scss:15 (28px) */
+    --footer-h:4rem;                /* $stickyfooter-height              variables.scss */
+    --footer-supp-h:2.5rem;         /* $stickyfooter-supplementary-height variables.scss */
+    --nav-h:60px;                   /* $navbar-height          variables.scss:25 */
+
+    /* ---- anchored-drawer offsets, verbatim from drawer.scss:16-30 ---- */
+    --anchor-none:calc(50% + var(--content-max) / 2 + var(--drawer-main-gap));
+    --anchor-both-offset:calc((var(--drawer-right-width) - var(--drawer-left-width)) / 2);
+    --anchor-both-left:Min(calc(50% + var(--content-max) / 2 + var(--anchor-both-offset) + var(--drawer-main-gap)), calc(100% - var(--drawer-left-width)));
+    --anchor-both-right:Min(calc(50% + var(--content-max) / 2 - var(--anchor-both-offset) + var(--drawer-main-gap)), calc(100% - var(--drawer-right-width)));
+    --anchor-xxl-left-open:calc(50% + var(--content-max) / 2 - var(--drawer-left-width) / 2 + var(--drawer-main-gap));
+    --anchor-xxl-right-open:calc(50% + var(--content-max) / 2 - var(--drawer-right-width) / 2 + var(--drawer-main-gap));
+
+    /* ---- prototype-only chrome ---- */
+    --shell-max:100%; --btn:40px;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  /* White, like Boost. An earlier draft used a grey page with a white content
+     column, which made the footer band read as "the white bit" and looked nothing
+     like a real page — on a real page the band is white on white and only its
+     border-top delineates it. */
+  body{ margin:0; font-family:var(--mds-font-family-base); color:var(--mds-text-default);
+    background:var(--mds-bg-surface-default); -webkit-font-smoothing:antialiased; }
+  a{ color:var(--mds-bg-interactive-primary-default); text-decoration:none; }
+  button{ font-family:inherit; }
+
+  /* =====================  TOP NAV  ===================== */
+  /* $navbar-height, fixed like Boost's real navbar so the drawers can sit under it */
+  .topbar{ position:fixed; top:0; left:0; right:0; height:var(--nav-h); z-index:1030;
+    background:var(--mds-bg-surface-subtle); border-bottom:var(--mds-stroke-weight-sm) solid var(--mds-border-subtle);
+    display:flex; align-items:center; justify-content:space-between; padding:0 var(--mds-spacing-md); gap:var(--mds-spacing-md); }
+  .nav-left{ display:flex; align-items:center; gap:var(--mds-spacing-lg); min-width:0; }
+  .brand{ display:flex; align-items:center; gap:.5rem; }
+  .brand .mark{ font-size:22px; color:var(--mds-activity-icon-file-icon); }
+  .brand .word b{ display:block; font-weight:var(--mds-font-weight-bold); font-size:15px; letter-spacing:.2px; line-height:1.1; }
+  .brand .word span{ display:block; font-size:10px; letter-spacing:2px; color:var(--mds-text-subtle); }
+  .nav-pills{ display:flex; align-items:center; gap:var(--mds-spacing-xxs); }
+  .nav-pill{ display:flex; align-items:center; gap:var(--mds-spacing-xxs); padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
+    border-radius:var(--mds-border-radius-md); border:none; background:transparent;
+    font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium);
+    color:var(--mds-text-subtle); cursor:pointer; white-space:nowrap; }
+  .nav-pill .dot{ width:4px; height:4px; border-radius:50%; background:var(--mds-bg-interactive-primary-default); }
+  .nav-pill.selected{ background:var(--mds-bg-nav-pill-selected); color:var(--mds-text-default); }
+  .nav-right{ display:flex; align-items:center; gap:var(--mds-spacing-sm); }
+  .editmode{ display:flex; align-items:center; gap:var(--mds-spacing-xs); }
+  .editmode .label{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); white-space:nowrap; }
+  .switch{ width:32px; height:16px; border-radius:var(--mds-border-radius-pill);
+    background:var(--mds-bg-interactive-primary-default); position:relative; border:none; cursor:pointer; flex:0 0 auto; }
+  .switch::after{ content:""; position:absolute; top:2px; left:18px; width:12px; height:12px;
+    border-radius:50%; background:#fff; transition:left .15s ease; }
+  .switch[aria-pressed="false"]{ background:var(--mds-border-interactive-secondary-default); }
+  .switch[aria-pressed="false"]::after{ left:2px; }
+  .icon-btn{ width:28px; height:28px; border:none; background:transparent; border-radius:var(--mds-border-radius-sm);
+    color:var(--mds-text-subtle); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .icon-btn:hover{ background:var(--mds-bg-surface-strong); }
+  .avatar{ width:30px; height:30px; border-radius:50%; flex:0 0 auto; border:1px solid var(--mds-border-default);
+    background:linear-gradient(135deg,#f0a878,#c9805a); display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:12px; font-weight:var(--mds-font-weight-semibold); }
+
+  /* =====================  DRAWERS  =====================
+     Modelled on the real thing: position:fixed, top below the navbar.
+     z-index is the crux of the whole issue, so it is state-driven — see the
+     Z-INDEX block further down. */
+  .drawer{ position:fixed; top:var(--nav-h); height:calc(100vh - var(--nav-h));
+    overflow-y:auto; overscroll-behavior:none;
+    padding:var(--mds-spacing-md) var(--mds-spacing-sm);
+    transition:left .2s ease, right .2s ease, width .2s ease, visibility .2s ease; }
+  .drawer-left{ width:var(--drawer-left-width); background:var(--mds-bg-surface-strong); }   /* $drawer-left-bg-color: $gray-200 */
+  .drawer-right{ width:var(--drawer-right-width); background:var(--mds-bg-surface-subtle); } /* $drawer-right-bg-color: $gray-100 */
+  body:not(.dl-open) .drawer-left{ visibility:hidden; left:calc(-1 * var(--drawer-left-width) - 10px); right:auto; }
+  body:not(.dr-open) .drawer-right{ visibility:hidden; right:calc(-1 * var(--drawer-right-width) - 10px); left:auto; }
+
+  /* full-width regime: drawers flush to the viewport edge (the pre-MDL-88411
+     behaviour, still current for any page without limitedwidth/standard) */
+  body.w-full.dl-open .drawer-left{ left:0; right:auto; }
+  body.w-full.dr-open .drawer-right{ right:0; left:auto; }
+
+  .d-title{ font-size:var(--mds-font-size-headings-6); font-weight:var(--mds-font-weight-semibold);
+    margin:0 0 var(--mds-spacing-sm); padding:0 var(--mds-spacing-xs); }
+  .ci-row{ display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-sm) var(--mds-spacing-xs);
+    border-radius:var(--mds-border-radius-sm); cursor:pointer; font-size:var(--mds-font-size-paragraph-small);
+    color:var(--mds-text-subtle); font-weight:var(--mds-font-weight-medium); }
+  .ci-row:hover{ background:rgba(0,0,0,.05); }
+  .ci-row .dot{ width:14px; height:14px; border-radius:50%; border:1px solid var(--mds-border-interactive-secondary-default); flex:0 0 auto; }
+  .ci-row .dot.done{ background:var(--mds-bg-interactive-primary-default); border-color:var(--mds-bg-interactive-primary-default); }
+  .ci-sec{ font-weight:var(--mds-font-weight-semibold); color:var(--mds-text-default); margin-top:var(--mds-spacing-xs); }
+  /* the payoff row: if the footer paints over the drawer, this is what disappears */
+  .ci-last{ background:var(--mds-bg-feedback-warning-light); color:var(--mds-text-feedback-warning);
+    font-weight:var(--mds-font-weight-semibold); }
+  .cb-block{ background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-md); padding:var(--mds-spacing-sm); margin-bottom:var(--mds-spacing-sm); }
+  .cb-block h4{ margin:0 0 var(--mds-spacing-xs); font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-semibold); }
+  .cb-block p{ margin:0; font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); line-height:1.4; }
+
+  /* =====================  #page + .main-inner  =====================
+     layout.scss:36-52 (#page.drawers), :58-63 (the 830px cap),
+     :162-170 (md padding), :188-205 (lg drawer margins). */
+  .page{ margin-top:var(--nav-h); min-height:calc(100vh - var(--nav-h));
+    display:flex; flex-direction:column;
+    padding-left:var(--page-drawers-padding-x); padding-right:var(--page-drawers-padding-x);
+    transition:margin .2s ease; }
+  /* No background in core (layout.scss:39-48 sets only sizing/padding/radius).
+     The dashed outline is a PROTOTYPE-ONLY guide so the box the footer must match
+     stays visible on a white page — it does not exist in Boost.
+     (The extra top padding that used to clear the floating readout is gone now
+     that the readout lives in the navbar.) */
+  .main-inner{ width:100%; max-width:100%; margin:0 auto;
+    padding:var(--mds-spacing-lg) var(--mds-spacing-xs);
+    border-radius:var(--mds-border-radius-md);
+    outline:1px dashed rgba(15, 108, 191, .3);
+    flex:1 0 auto; margin-bottom:calc(var(--footer-total, 4rem) + 1rem); }
+
+  /* the 830px cap — layout.scss:58-63, md+ and ONLY on standard/limitedwidth */
+  @media (min-width:768px){
+    body.w-limited .main-inner, body.w-standard .main-inner{ max-width:var(--content-max); }
+  }
+  /* drawer margins on #page — layout.scss:188+, lg+, NOT scoped by width class
+     (this is why the footer can mirror them with plain padding) */
+  @media (min-width:992px){
+    body.dl-open .page{ margin-left:var(--drawer-left-width); }
+    body.dr-open .page{ margin-right:var(--drawer-right-width); }
+  }
+
+  /* anchored drawer positions — drawer.scss:291-340, lg+, standard/limitedwidth only */
+  @media (min-width:992px){
+    body.w-limited.dl-open:not(.dr-open) .drawer-left,
+    body.w-standard.dl-open:not(.dr-open) .drawer-left{ left:auto; right:var(--anchor-xxl-left-open); }
+    body.w-limited.dr-open:not(.dl-open) .drawer-right,
+    body.w-standard.dr-open:not(.dl-open) .drawer-right{ right:auto; left:var(--anchor-xxl-right-open); }
+    body.w-limited.dl-open.dr-open .drawer-left,
+    body.w-standard.dl-open.dr-open .drawer-left{ left:auto; right:var(--anchor-both-left); }
+    body.w-limited.dl-open.dr-open .drawer-right,
+    body.w-standard.dl-open.dr-open .drawer-right{ right:auto; left:var(--anchor-both-right); }
+  }
+  /* below lg the drawers are overlays at a high z-index — drawer.scss:181-184 */
+  @media (max-width:991.98px){
+    .drawer{ z-index:1035 !important; box-shadow:0 0 24px rgba(0,0,0,.25); }
+    body.dl-open .drawer-left{ left:0; right:auto; }
+    body.dr-open .drawer-right{ right:0; left:auto; }
+  }
+  /* below md #page loses its 3rem padding — layout.scss:159 is md+ only */
+  @media (max-width:767.98px){
+    .page{ padding-left:var(--mds-spacing-xs); padding-right:var(--mds-spacing-xs); }
+  }
+
+  /* =====================  Z-INDEX (the crux)  =====================
+     Real values: footer 3 (map-get($zindex-levels,3)), anchored drawers 2
+     (drawer.scss:297), default drawers 1015 ($zindex-sticky - 5, drawer.scss:179).
+     The full-width case uses 40 rather than 1015 purely so the drawers do not
+     also cover this prototype's annotation layer (z-index 60) — any value above
+     the footer reproduces the same behaviour. */
+  .stickyfooter{ z-index:3; }
+  body.w-limited .drawer, body.w-standard .drawer{ z-index:2; }   /* BELOW the footer → clipped */
+  body.w-full .drawer{ z-index:40; }                              /* ABOVE the footer → fine */
+
+  /* =====================  CONTENT  ===================== */
+  .crumb{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); margin-bottom:var(--mds-spacing-xs); padding:0 var(--mds-spacing-md); }
+  .main-inner h1{ font-size:var(--mds-font-size-headings-4); line-height:var(--mds-line-height-headings-4);
+    margin:0 0 var(--mds-spacing-md); padding:0 var(--mds-spacing-md); }
+  .sec{ padding:var(--mds-spacing-md); border-top:1px solid var(--mds-border-subtle); }
+  .sec h2{ font-size:var(--mds-font-size-headings-6); margin:0 0 var(--mds-spacing-xs); }
+  .sec p{ margin:0 0 var(--mds-spacing-sm); color:var(--mds-text-subtle); font-size:var(--mds-font-size-paragraph-default); line-height:1.55; }
+  .act{ display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-sm);
+    border:1px solid var(--mds-border-subtle); border-radius:var(--mds-border-radius-md); margin-bottom:var(--mds-spacing-xs); }
+  .act .ico{ width:32px; height:32px; border-radius:var(--mds-border-radius-sm); display:flex; align-items:center; justify-content:center;
+    background:var(--mds-activity-icon-assessment-bg); color:var(--mds-activity-icon-assessment-icon); font-size:13px; flex:0 0 auto; }
+  .act .nm{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); }
+
+  /* =====================  STICKY FOOTER  =====================
+     Two modes, switched on the body class. The CSS below is a direct
+     transcription of sticky-footer.scss before/after the patch. */
+  .stickyfooter{ position:fixed; left:0; right:0; bottom:0;
+    font-size:calc(var(--mds-font-size-paragraph-default) * 1.10); }
+
+  /* ---- MODE: current (shipped) ----
+     bg-white + border-top live on the OUTER element, so the surface is
+     full-bleed and paints across whatever sits under it. */
+  body.mode-current .stickyfooter{
+    background:var(--mds-bg-surface-default);
+    border-top:var(--mds-stroke-weight-sm) solid var(--mds-border-default);
+  }
+  /* NO width here. The template gives the wrapper `d-flex justify-content-center`
+     and the SCSS gives it only height + the lg margin/padding block, so it is a
+     block-level flex box at width:auto that shrinks to fit its margins. Setting
+     width:100% as well makes it overflow the viewport by the margin amount and
+     throws the centred content ~300px off — which is what made the full-width
+     band look wrong compared with a real page. */
+  body.mode-current .sf-wrapper{ width:auto; }
+  @media (min-width:768px){
+    /* pre-patch the 830 cap sat on .sticky-footer-content, not the wrapper */
+    body.mode-current.w-limited .sf-content, body.mode-current.w-standard .sf-content{ max-width:var(--content-max); }
+  }
+  @media (min-width:992px){
+    /* the old wrapper margin/padding block — note the asymmetric 1rem vs 3rem
+       that mis-aligned the bar by 16px whenever exactly one drawer was open */
+    body.mode-current.dl-open:not(.dr-open) .sf-wrapper{ margin-left:var(--drawer-left-width); padding:0 3rem 0 1rem; }
+    body.mode-current.dr-open:not(.dl-open) .sf-wrapper{ margin-right:var(--drawer-right-width); padding:0 1rem 0 3rem; }
+    body.mode-current.dl-open.dr-open .sf-wrapper{ margin-left:var(--drawer-left-width); margin-right:var(--drawer-right-width); padding:0 1rem; }
+  }
+
+  /* ---- MODE: proposed (the patch) ----
+     .stickyfooter becomes a transparent, click-through positioning layer;
+     the wrappers become the visible surface, boxed to .main-inner. */
+  body.mode-proposed .stickyfooter{
+    background:transparent; border-top:none;
+    pointer-events:none;
+    transition:padding .2s ease;
+  }
+  body.mode-proposed .stickyfooter > *{ pointer-events:auto; }
+  /* mirror #page's insets */
+  @media (min-width:768px){
+    body.mode-proposed .stickyfooter{
+      padding-left:var(--page-drawers-padding-x); padding-right:var(--page-drawers-padding-x);
+    }
+  }
+  @media (min-width:992px){
+    body.mode-proposed.dl-open .stickyfooter{ padding-left:calc(var(--drawer-left-width) + var(--page-drawers-padding-x)); }
+    body.mode-proposed.dr-open .stickyfooter{ padding-right:calc(var(--drawer-right-width) + var(--page-drawers-padding-x)); }
+  }
+  body.mode-proposed .sf-wrapper{
+    width:100%; margin-left:auto; margin-right:auto;
+    background:var(--mds-bg-surface-default);
+    border-top:var(--mds-stroke-weight-sm) solid var(--mds-border-default);
+  }
+  @media (min-width:768px){
+    body.mode-proposed.w-limited .sf-wrapper, body.mode-proposed.w-standard .sf-wrapper{ max-width:var(--content-max); }
+  }
+
+  /* ---- shared footer internals ----
+     `d-flex justify-content-center align-items-center` comes from the template in
+     both variants, so it belongs on the base rule rather than either mode. */
+  .sf-wrapper{ display:flex; justify-content:center; align-items:center; }
+  .sf-content-wrapper{ height:var(--footer-h); }
+  .sf-supp-wrapper{ height:var(--footer-supp-h); font-size:var(--mds-font-size-paragraph-default); }
+  .sf-content{ width:100%; height:100%; display:flex; align-items:center; gap:var(--mds-spacing-sm);
+    padding:0 var(--mds-spacing-md); overflow:hidden; margin:0 auto; }
+
+  /* sticky-footer.scss:83 — NOT scoped by width class, so it caps the linear-nav
+     buttons at 830px on full-width pages too. This is the rule the plan keeps
+     deliberately, and it is why a full-width activity page today already shows
+     the nav centred in an 830px column inside a full-bleed band. Without it the
+     prototype wrongly spread the buttons across the whole band. */
+  .stickyfooter .course-linear-navigation{ max-width:var(--content-max); }
+  /* Structure + styles from linearnavigation/footer_content.mustache and
+     course.scss / sticky-footer.scss completion fixes. */
+  .course-linear-navigation-footer-content{ display:flex; width:100%; align-items:center; }
+  .course-linear-navigation-footer-content .d-flex{ display:flex; }
+  .course-linear-navigation-footer-content .align-items-center{ align-items:center; }
+  .course-linear-navigation-footer-content .gap-4{ gap:1.5rem; }
+  .course-linear-navigation-footer-content .ms-auto{ margin-left:auto; }
+  .course-linear-navigation-link{ display:inline-flex; align-items:center; gap:.25rem;
+    font-size:var(--mds-font-size-paragraph-default); color:var(--mds-bg-interactive-primary-default);
+    background:none; border:none; cursor:pointer; padding:.25rem 0; text-decoration:none; }
+  .course-linear-navigation-link:hover span,
+  .course-linear-navigation-link:focus span{ text-decoration:underline; }
+  .course-linear-navigation-link .icon-no-margin{ display:inline-flex; width:1rem; height:1rem;
+    align-items:center; justify-content:center; flex:0 0 auto; }
+  .course-linear-navigation-link .icon-no-margin i{ font-size:.875rem; }
+  /* Bootstrap .vr — separator between completion and Next */
+  .course-linear-navigation-footer-content .vr{
+    display:inline-block; align-self:stretch; width:1px; min-height:1em;
+    background-color:currentcolor; opacity:.25; }
+  /* sticky-footer.scss:85-89 — completion button sizing inside the footer */
+  .stickyfooter .course-linear-navigation .course-linear-navigation-completion .btn{
+    font-size:var(--mds-font-size-paragraph-small); min-height:2rem;
+    padding:.25rem .5rem; line-height:1.25; white-space:nowrap;
+    border-radius:var(--mds-border-radius-sm); cursor:pointer;
+    font-weight:var(--mds-font-weight-medium); border:1px solid transparent; }
+  .btn-subtle-body{
+    color:var(--mds-text-default); background:transparent;
+    border-color:var(--mds-border-default); }
+  .btn-subtle-body:hover{ background:var(--mds-color-gray-600); color:#fff; border-color:var(--mds-color-gray-600); }
+  .btn-subtle-success{
+    color:var(--mds-color-green-700); background:var(--mds-bg-feedback-success-light);
+    border-color:transparent; }
+  .btn-subtle-success:hover{ background:var(--mds-color-green-500); color:#fff; }
+  .sf-supp{ width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+    padding:0 var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); margin:0 auto; }
+  .sf-supp a{ color:var(--mds-bg-interactive-primary-default); font-weight:var(--mds-font-weight-medium); text-decoration:none; }
+  .sf-supp a:hover{ text-decoration:underline; }
+  /* sticky-footer.scss:75-78 — divider between supplementary and content rows */
+  .sf-supp-wrapper:has(.sf-supp) + .sf-content-wrapper{ border-top:1px solid var(--mds-border-default); }
+  body:not(.content-linear) .sf-supp-wrapper{ display:none; }
+  .btn{ border-radius:var(--mds-border-radius-sm); padding:var(--mds-spacing-xs) var(--mds-spacing-md);
+    font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); cursor:pointer; border:1px solid transparent; }
+  .btn-primary{ background:var(--mds-bg-interactive-primary-default); color:#fff; }
+  .btn-primary:hover{ background:var(--mds-bg-interactive-primary-hover); }
+  .btn-secondary{ background:var(--mds-bg-surface-default); color:var(--mds-text-subtle); border-color:var(--mds-border-interactive-secondary-default); }
+  .btn-secondary:hover{ background:var(--mds-bg-surface-strong); }
+  .sf-spacer{ margin-left:auto; }
+
+  /* =====================  BULK ACTIONS BAR  =====================
+     Transcribed from core/bulkactions/bulk_actions.mustache:44-93 and
+     core/bulkactions/bulk_action_trigger.mustache:36-45. The root div really is
+     `class="justify-content-between px-3 py-2" data-type="bulkactions"` with NO
+     d-flex — the flex comes from core.scss:2986-2992, reproduced verbatim below.
+     Note there is NO height: the bar is content-sized, unlike the wrappers. */
+  #stickyFooter [data-type="bulkactions"]{      /* core.scss:2986-2992 */
+    display:flex;
+    flex:0 0 100%;
+    align-items:center;
+  }
+  [data-type="bulkactions"]{                    /* template classes */
+    justify-content:space-between;              /* .justify-content-between */
+    padding:var(--mds-spacing-xs) var(--mds-spacing-md);  /* .py-2 .px-3 */
+  }
+  [data-type="bulkactions"] .btn-toolbar{ display:flex; flex-wrap:wrap; justify-content:flex-start; }
+
+  /* ---- course-format variant (bulkedittools.mustache) ----
+     Rendered through {{< core/sticky_footer }}, so it keeps the wrappers and is
+     NOT affected by the patch. Layout: Select all | centred actions | cancel
+     over count, which is the arrangement in the reference screenshot. */
+  .sf-content.bulkactions{ justify-content:center; gap:var(--mds-spacing-sm); }
+  .sf-content.bulkactions .form-check{ display:flex; align-items:center; gap:var(--mds-spacing-xs); white-space:nowrap; }
+  .sf-content.bulkactions .form-check-input{ width:16px; height:16px; margin:0; accent-color:var(--mds-bg-interactive-primary-default); }
+  .sf-content.bulkactions .form-check-label{ font-size:var(--mds-font-size-paragraph-default); color:var(--mds-text-default); }
+  .sf-content.bulkactions .mx-auto{ margin-left:auto; margin-right:auto; }
+  .sf-content.bulkactions ul.actions{ display:flex; flex-wrap:nowrap; list-style:none; margin:0; padding:0; }
+  .sf-content.bulkactions .bulkcount{ font-size:var(--mds-font-size-paragraph-default); color:var(--mds-text-default); white-space:nowrap; text-align:right; }
+  .sf-content.bulkactions .bulkcancel{ margin-left:auto; }
+
+  /* .btn.py-0.d-flex.flex-column — icon above label, no border or background.
+     Shared by both variants; sizes tuned to the reference screenshot (icon
+     noticeably larger than its label) rather than to Bootstrap's flat 1rem. */
+  .sf-content.bulkactions .btn,
+  [data-type="bulkactions"] .btn{
+    display:flex; flex-direction:column; text-align:center;
+    padding:0 var(--mds-spacing-sm); border:none; background:none; cursor:pointer;
+    color:var(--mds-text-default); align-items:center; gap:2px;
+    font-size:var(--mds-font-size-paragraph-small); line-height:1.35;
+    border-radius:var(--mds-border-radius-sm);
+  }
+  .sf-content.bulkactions .btn:hover,
+  [data-type="bulkactions"] .btn:hover{ background:var(--mds-bg-surface-strong); }
+  /* .w-100.ps-2 on the icon span */
+  .sf-content.bulkactions .btn > span:first-child,
+  [data-type="bulkactions"] .btn > span:first-child{ width:100%; padding-left:var(--mds-spacing-xs); }
+  .sf-content.bulkactions .btn i,
+  [data-type="bulkactions"] .btn i{ font-size:1.125rem; color:var(--mds-text-subtle); }
+  /* no font-size rule on bulkcount in core, so it inherits .stickyfooter's 1.1rem */
+  [data-type="bulkactions"] [data-for="bulkcount"]{ color:var(--mds-text-subtle); white-space:nowrap; }
+  .sf-content.bulkactions .bulk-right,
+  [data-type="bulkactions"] .bulk-right{ display:flex; flex-direction:column; }  /* .d-flex.flex-column */
+  .sf-content.bulkactions .bulk-right .ms-auto,
+  [data-type="bulkactions"] .bulk-right .ms-auto{ margin-left:auto; }
+  .sf-content.bulkactions .btn.cancel,
+  [data-type="bulkactions"] .btn.cancel{ padding-right:0; padding-bottom:0; }    /* .pe-0.pb-0 */
+  .sf-content.bulkactions .btn.cancel i,
+  [data-type="bulkactions"] .btn.cancel i{ font-size:1rem; color:var(--mds-text-default); }
+  /* .dropup .dropdown-menu */
+  [data-type="bulkactions"] .dropup{ position:relative; }
+  [data-type="bulkactions"] .dropdown-menu{
+    display:none; position:absolute; bottom:calc(100% + 6px); left:0; min-width:200px; z-index:5;
+    background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-md); box-shadow:0 8px 28px rgba(0,0,0,.18); padding:var(--mds-spacing-xxs) 0;
+  }
+  [data-type="bulkactions"] .dropup.show .dropdown-menu{ display:block; }
+  [data-type="bulkactions"] .dropdown-item{
+    display:block; padding:var(--mds-spacing-xs) var(--mds-spacing-md);
+    font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-default); white-space:nowrap;
+  }
+  [data-type="bulkactions"] .dropdown-item:hover{ background:var(--mds-bg-surface-subtle); }
+
+  /* current mode still paints, because the surface is on .stickyfooter itself */
+  body.mode-current.content-bulk .stickyfooter{ background:var(--mds-bg-surface-default); }
+  /* Proposed mode leaves this bar with nothing to paint. Outline it so the
+     result reads as the defect being demonstrated rather than unfinished CSS. */
+  body.mode-proposed.content-bulk [data-type="bulkactions"]{
+    outline:2px dashed var(--mds-text-danger); outline-offset:-2px; position:relative; }
+  body.mode-proposed.content-bulk [data-type="bulkactions"]::after{
+    content:"no background or border — bulk_actions.mustache has no wrapper div";
+    position:absolute; top:-9px; left:var(--mds-spacing-md);
+    background:var(--mds-text-danger); color:#fff; font-size:.5625rem; font-weight:var(--mds-font-weight-semibold);
+    padding:1px 6px; border-radius:var(--mds-border-radius-pill); white-space:nowrap; }
+
+  /* =====================  MEASUREMENT READOUT  =====================
+     Sits INSIDE the navbar. It used to float over the page, which meant it
+     covered content and, worse, sat on top of a drawer — and the drawers are the
+     thing under test. In the navbar it can never overlap anything that matters.
+     Everything is on one line and clipped rather than wrapped, because the
+     navbar is a fixed 60px tall. */
+  .measure{ flex:1 1 auto; min-width:0; height:34px;
+    display:flex; align-items:center; gap:.55rem; overflow:hidden;
+    margin:0 var(--mds-spacing-md);
+    background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-md); padding:0 var(--mds-spacing-xs); }
+  .measure h5{ margin:0; font-size:.5625rem; text-transform:uppercase; letter-spacing:.5px;
+    color:var(--mds-text-muted); white-space:nowrap; flex:0 0 auto; }
+  .mrow{ display:flex; align-items:baseline; gap:4px; font-size:.625rem; line-height:1.4; flex:0 0 auto; }
+  .mrow .k{ color:var(--mds-text-muted); white-space:nowrap; }
+  .mrow .v{ font-variant-numeric:tabular-nums; font-weight:var(--mds-font-weight-medium); white-space:nowrap; }
+  .verdict{ padding:3px 6px; border-radius:var(--mds-border-radius-xs); font-size:.625rem;
+    font-weight:var(--mds-font-weight-semibold); white-space:nowrap; flex:0 0 auto; }
+  /* keep the brand/profile from being squeezed by the readout */
+  .nav-left, .nav-right{ flex:0 0 auto; }
+  .verdict.ok{ background:var(--mds-bg-feedback-success-light); color:var(--mds-text-feedback-success); }
+  .verdict.bad{ background:var(--mds-color-red-50); color:var(--mds-text-danger); }
+  .verdict.warn{ background:var(--mds-bg-feedback-warning-light); color:var(--mds-text-feedback-warning); }
+
+  /* =====================  DEV STATE SWITCHER (prototype only)  ===================== */
+  /* Pinned bottom-right, above the sticky footer, so its annotation can sit
+     above it instead of competing for the top-right corner with the readout. */
+  .devpanel{ position:fixed; top:auto; bottom:calc(var(--footer-total, 4rem) + var(--mds-spacing-md));
+    right:var(--mds-spacing-sm); z-index:95; width:238px;
+    max-height:calc(100vh - var(--nav-h) - var(--footer-total, 4rem) - 4 * var(--mds-spacing-lg)); overflow:auto;
+    background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md);
+    box-shadow:0 8px 28px rgba(0,0,0,.16); padding:var(--mds-spacing-sm); }
+  .devpanel h5{ margin:0 0 6px; font-size:.625rem; text-transform:uppercase; letter-spacing:.5px; color:var(--mds-text-muted); }
+  .devpanel h5:not(:first-child){ margin-top:var(--mds-spacing-sm); }
+  .devrow{ display:flex; flex-wrap:wrap; gap:4px; }
+  .devbtn{ border:1px solid var(--mds-border-default); background:var(--mds-bg-surface-subtle); border-radius:var(--mds-border-radius-xs);
+    padding:4px 8px; cursor:pointer; font-size:.6875rem; color:var(--mds-text-subtle); font-weight:var(--mds-font-weight-medium); }
+  .devbtn:hover:not(:disabled){ background:var(--mds-bg-surface-strong); }
+  .devbtn.on{ background:var(--mds-bg-interactive-primary-default); color:#fff; border-color:transparent; }
+  .devbtn:disabled{ opacity:.35; cursor:not-allowed; }
+  .devbtn.on:disabled{ opacity:.5; }
+  .devpanel h5.dim{ opacity:.4; }
+  .devpanel .cap{ font-size:.625rem; color:var(--mds-text-muted); margin-top:6px; line-height:1.4; }
+  /* Collapsible, because a fixed right-hand panel unavoidably overlaps the
+     block drawer — and the block drawer is one of the two things being tested. */
+  .devcollapse{ position:absolute; top:6px; right:6px; width:20px; height:20px; border:none; background:transparent;
+    color:var(--mds-text-muted); cursor:pointer; font-size:11px; border-radius:var(--mds-border-radius-xs); }
+  .devcollapse:hover{ background:var(--mds-bg-surface-strong); }
+  .devpanel{ position:fixed; }
+  body.dev-collapsed .devpanel{ width:auto; padding:4px; }
+  body.dev-collapsed .devpanel > *:not(.devcollapse){ display:none; }
+  body.dev-collapsed .devcollapse{ position:static; width:26px; height:26px; }
+
+  /* =====================  ANNOTATIONS  ===================== */
+  /* Above everything, including the navbar (1030) — the readout now lives in the
+     navbar, so a callout pointing at it has to be able to sit in front of it. */
+  .anno-layer{ position:fixed; inset:0; z-index:1100; pointer-events:none; }
+  body:not(.annotations-on) .anno-layer{ display:none; }
+  .anno-ring{ position:fixed; border:2px dashed var(--mds-bg-interactive-primary-default); border-radius:8px;
+    box-shadow:0 0 0 3px rgba(15,108,191,.16); pointer-events:none; animation:annoPulse 1.9s ease-in-out infinite; }
+  @keyframes annoPulse{ 0%,100%{ box-shadow:0 0 0 3px rgba(15,108,191,.16); } 50%{ box-shadow:0 0 0 8px rgba(15,108,191,.06); } }
+  .anno-card{ position:fixed; width:230px; background:var(--mds-bg-interactive-primary-default); color:#fff;
+    border-radius:10px; padding:10px 12px 11px; font-size:12px; line-height:1.45; box-shadow:0 10px 28px rgba(0,0,0,.28); pointer-events:auto; }
+  /* The clipped-row callout is the first thing to see on load — keep it above
+     every other annotation card and ring in the same layer. */
+  .anno-card[data-priority="high"]{ z-index:2; }
+  .anno-ring[data-priority="high"]{ z-index:2; }
+  .anno-title{ font-weight:700; font-size:12px; display:flex; align-items:center; gap:6px; margin:0 16px 3px 0; }
+  .anno-title i{ font-size:12px; }
+  .anno-body{ color:rgba(255,255,255,.92); }
+  .anno-close{ position:absolute; top:5px; right:6px; border:none; background:none; cursor:pointer; color:rgba(255,255,255,.85); font-size:13px; line-height:1; padding:3px; }
+  .anno-close:hover{ color:#fff; }
+  .anno-toggle{ position:fixed; bottom:calc(var(--footer-total, 4rem) + var(--mds-spacing-md)); left:50%; transform:translateX(-50%); z-index:1101;
+    background:var(--mds-bg-interactive-primary-default); color:#fff; border:none; border-radius:999px;
+    padding:9px 16px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,.25); display:flex; align-items:center; gap:8px; }
+  .anno-toggle:hover{ background:var(--mds-bg-interactive-primary-hover); }
+  .anno-toggle i{ font-size:12px; }
+  body:not(.annotations-on) .anno-toggle{ background:var(--mds-text-subtle); }
+
+  /* =====================  RESPONSIVE  ===================== */
+  @media (max-width:1200px){
+    .nav-pills, .editmode .label{ display:none; }
+  }
+  /* The navbar runs out of room for the readout well before the page does. */
+  @media (max-width:1100px){
+    .measure{ display:none; }
+  }
+  @media (max-width:900px){
+    .devpanel{ top:auto; bottom:calc(var(--footer-total, 4rem) + 8px); right:8px; left:auto; width:210px; max-height:46vh; }
+    .brand .word{ display:none; }
+  }
+</style>
+</head>
+<body class="mode-current w-limited dl-open dr-open content-form annotations-on">
+
+  <!-- ===== TOP NAV ===== -->
+  <header class="topbar">
+    <div class="nav-left">
+      <div class="brand"><span class="mark"><i class="fa-solid fa-leaf"></i></span><span class="word"><b>Fleetwood</b><span>UNIVERSITY</span></span></div>
+      <nav class="nav-pills"><button class="nav-pill selected"><span class="dot"></span>Dashboard</button><button class="nav-pill">My courses</button></nav>
+    </div>
+    <!-- ===== MEASUREMENT READOUT (the plan's §7 invariant, live) =====
+         Lives inside the navbar so it never covers page content or a drawer. -->
+    <div class="measure" id="measure">
+      <h5>Measure</h5>
+      <div class="mrow"><span class="k">vw</span><span class="v" id="mVw">&ndash;</span></div>
+      <div class="mrow"><span class="k">bp</span><span class="v" id="mBp">&ndash;</span></div>
+      <div class="mrow"><span class="k">content</span><span class="v" id="mMain">&ndash;</span></div>
+      <div class="mrow"><span class="k">footer</span><span class="v" id="mFoot">&ndash;</span></div>
+      <div class="mrow"><span class="k">drawer z</span><span class="v" id="mZ">&ndash;</span></div>
+      <div class="verdict" id="mVerdict">&ndash;</div>
+      <div class="verdict" id="mClip">&ndash;</div>
+    </div>
+
+    <div class="nav-right">
+      <div class="editmode"><span class="label">Edit mode</span><button class="switch" id="editSwitch" aria-pressed="true" aria-label="Edit mode"></button></div>
+      <button class="icon-btn" aria-label="Notifications"><i class="fa-regular fa-bell"></i></button>
+      <span class="avatar">S</span>
+    </div>
+  </header>
+
+  <!-- ===== LEFT DRAWER (course index) ===== -->
+  <aside class="drawer drawer-left" id="drawerLeft" aria-label="Course index">
+    <h3 class="d-title">Course index</h3>
+    <div class="ci-row ci-sec"><i class="fa-solid fa-chevron-down" style="font-size:9px"></i> Introduction</div>
+    <div class="ci-row"><span class="dot done"></span> Welcome and orientation</div>
+    <div class="ci-row"><span class="dot done"></span> How this course works</div>
+    <div class="ci-row ci-sec"><i class="fa-solid fa-chevron-down" style="font-size:9px"></i> Cell structure</div>
+    <div class="ci-row"><span class="dot done"></span> Organelles reading</div>
+    <div class="ci-row"><span class="dot"></span> Membrane transport quiz</div>
+    <div class="ci-row"><span class="dot"></span> Lab write-up</div>
+    <div class="ci-row ci-sec"><i class="fa-solid fa-chevron-down" style="font-size:9px"></i> Genetics</div>
+    <div class="ci-row"><span class="dot"></span> Mendelian inheritance</div>
+    <div class="ci-row"><span class="dot"></span> Punnett square practice</div>
+    <div class="ci-row"><span class="dot"></span> Genetics discussion forum</div>
+    <div class="ci-row ci-sec"><i class="fa-solid fa-chevron-down" style="font-size:9px"></i> Cell division</div>
+    <div class="ci-row"><span class="dot"></span> Mitosis animation</div>
+    <div class="ci-row"><span class="dot"></span> Meiosis worksheet</div>
+    <div class="ci-row"><span class="dot"></span> Cell cycle checkpoint quiz</div>
+    <div class="ci-row ci-sec"><i class="fa-solid fa-chevron-down" style="font-size:9px"></i> Ecology</div>
+    <div class="ci-row"><span class="dot"></span> Food webs reading</div>
+    <div class="ci-row"><span class="dot"></span> Field study preparation</div>
+    <div class="ci-row"><span class="dot"></span> Population dynamics</div>
+    <div class="ci-row ci-sec"><i class="fa-solid fa-chevron-down" style="font-size:9px"></i> Assessment</div>
+    <div class="ci-row"><span class="dot"></span> Mid-term revision</div>
+    <div class="ci-row"><span class="dot"></span> Practice paper</div>
+    <div class="ci-row"><span class="dot"></span> Marking criteria</div>
+    <div class="ci-row ci-last" id="ciLast"><i class="fa-solid fa-triangle-exclamation"></i> Final exam &mdash; last item</div>
+  </aside>
+
+  <!-- ===== RIGHT DRAWER (blocks) ===== -->
+  <aside class="drawer drawer-right" id="drawerRight" aria-label="Blocks">
+    <h3 class="d-title">Blocks</h3>
+    <div class="cb-block"><h4>Calendar</h4><p>Final exam opens 24 March. Two assignments due this week.</p></div>
+    <div class="cb-block"><h4>Recent activity</h4><p>Mr. Sanders posted in Genetics discussion forum.</p></div>
+    <div class="cb-block"><h4>Your progress</h4><p>6 of 11 activities complete.</p></div>
+    <div class="cb-block"><h4>Licence</h4><p>This Creative Commons course is available on MoodleNet.</p></div>
+    <div class="cb-block"><h4>Upcoming events</h4><p>Field study briefing, Thursday 14:00. Practice paper closes Friday.</p></div>
+    <div class="cb-block"><h4>Latest announcements</h4><p>Reading week timetable published. Lab groups reassigned.</p></div>
+    <div class="cb-block"><h4>Tags</h4><p>cells &middot; genetics &middot; ecology &middot; revision</p></div>
+    <div class="cb-block" id="cbLast" style="background:var(--mds-bg-feedback-warning-light);border-color:var(--mds-text-feedback-warning)">
+      <h4 style="color:var(--mds-text-feedback-warning)">Your teacher &mdash; last block</h4>
+      <p style="color:var(--mds-text-feedback-warning)">Mr. Sanders, Senior Lecturer. This block is what the footer band covers.</p></div>
+  </aside>
+
+  <!-- ===== #page / .main-inner ===== -->
+  <div class="page" id="page">
+    <div class="main-inner" id="mainInner">
+      <div class="crumb"><a href="#">Biology 101</a> / <a href="#">Cell structure</a> / Settings</div>
+      <h1 id="pageTitle">Edit settings</h1>
+      <div class="sec">
+        <h2>What this prototype is for</h2>
+        <p>The sticky footer is <code>position: fixed; left: 0; right: 0</code> with an opaque
+           background. After MDL&#8209;88411 the anchored drawers dropped to <code>z-index: 2</code>,
+           below the footer's <code>3</code> &mdash; so on limited-width and standard pages the
+           footer now paints over the bottom of both drawers.</p>
+        <p>Switch <strong>Footer treatment</strong> in the panel on the right between
+           <em>Current</em> and <em>Proposed</em>, and watch the highlighted last row of the
+           course index. The readout in the bottom-left corner checks the alignment invariant
+           on every change.</p>
+      </div>
+      <div class="sec">
+        <h2>General</h2>
+        <div class="act"><span class="ico"><i class="fa-solid fa-pen-to-square"></i></span><span class="nm">Activity name</span></div>
+        <div class="act"><span class="ico"><i class="fa-solid fa-align-left"></i></span><span class="nm">Description</span></div>
+        <div class="act"><span class="ico"><i class="fa-solid fa-calendar"></i></span><span class="nm">Availability</span></div>
+      </div>
+      <div class="sec">
+        <h2>Grade</h2>
+        <div class="act"><span class="ico"><i class="fa-solid fa-list-check"></i></span><span class="nm">Grade category</span></div>
+        <div class="act"><span class="ico"><i class="fa-solid fa-percent"></i></span><span class="nm">Grade to pass</span></div>
+      </div>
+      <div class="sec">
+        <h2>Common module settings</h2>
+        <div class="act"><span class="ico"><i class="fa-solid fa-eye"></i></span><span class="nm">Availability</span></div>
+        <div class="act"><span class="ico"><i class="fa-solid fa-users"></i></span><span class="nm">Group mode</span></div>
+        <p style="margin-top:1rem">Scroll to confirm the footer stays pinned and the drawers scroll independently.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== STICKY FOOTER =====
+       #sticky-footer is a DESCENDANT of #page in real Boost (it renders at
+       output.main_content inside #region-main). It is flattened out here
+       because position:fixed makes ancestry irrelevant to layout, and keeping
+       it a sibling makes the prototype's own markup easier to read. -->
+  <div class="stickyfooter" id="stickyFooter">
+    <div class="sf-wrapper sf-supp-wrapper" id="sfSupp">
+      <div class="sf-supp">Section 3 of 5 &middot; Genetics</div>
+    </div>
+    <div class="sf-wrapper sf-content-wrapper" id="sfWrapper">
+      <div class="sf-content" id="sfContent"><!-- rendered by JS --></div>
+    </div>
+  </div>
+
+  <!-- ===== DEV STATE SWITCHER (prototype only — delete for merge) ===== -->
+  <div class="devpanel" id="devpanel">
+    <button class="devcollapse" id="devCollapse" title="Collapse the panel so it stops covering the block drawer" aria-label="Collapse panel"><i class="fa-solid fa-chevron-right"></i></button>
+    <h5>Footer treatment</h5>
+    <div class="devrow" id="devMode">
+      <button class="devbtn" data-mode="current">Current (shipped)</button>
+      <button class="devbtn" data-mode="proposed">Proposed (contained)</button>
+    </div>
+    <h5>Page width class</h5>
+    <div class="devrow" id="devWidth">
+      <button class="devbtn" data-width="limited">body.limitedwidth</button>
+      <button class="devbtn" data-width="standard">pagelayout-standard</button>
+      <button class="devbtn" data-width="full">Full width</button>
+    </div>
+    <h5>Drawers</h5>
+    <div class="devrow" id="devDrawers">
+      <button class="devbtn" data-drawers="both">Both</button>
+      <button class="devbtn" data-drawers="left">Course index</button>
+      <button class="devbtn" data-drawers="right">Blocks</button>
+      <button class="devbtn" data-drawers="none">None</button>
+    </div>
+    <h5>Footer content</h5>
+    <div class="devrow" id="devContent">
+      <button class="devbtn" data-content="form">Form buttons</button>
+      <button class="devbtn" data-content="linear">Linear nav (2 rows)</button>
+      <button class="devbtn" data-content="bulk">Bulk actions</button>
+    </div>
+    <h5 id="devBulkLabel">Bulk actions source</h5>
+    <div class="devrow" id="devBulk">
+      <button class="devbtn" data-bulk="assign">Assign grading</button>
+      <button class="devbtn" data-bulk="gradebook">Gradebook setup</button>
+      <button class="devbtn" data-bulk="course">Course bulk edit</button>
+    </div>
+    <div class="cap" id="devCap"></div>
+  </div>
+
+  <!-- ===== ANNOTATIONS (removable explainer callouts) ===== -->
+  <button class="anno-toggle" id="annoToggle" title="Show or hide the explainer annotations">
+    <i class="fa-solid fa-location-dot"></i> <span id="annoToggleLabel">Hide annotations</span>
+  </button>
+  <div class="anno-layer" id="annoLayer">
+
+    <div class="anno-card" data-target="#ciLast" data-side="right" data-when="bug" data-priority="high">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-title"><i class="fa-solid fa-triangle-exclamation"></i> This link can't be clicked</div>
+      <div class="anno-body">The white bar along the bottom is painted <strong>on top of</strong> the course index, so the last item is hidden behind it and clicks don't reach it. On a long course the final sections can't be opened at all. Try clicking this row.</div>
+    </div>
+
+    <!-- side="over" + bias="top": sits on the right drawer so the left stays
+         clear for the clipped-row callout — the first thing to read on load. -->
+    <div class="anno-card" data-target="#drawerRight" data-side="over" data-bias="top" data-when="bug">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-title"><i class="fa-solid fa-layer-group"></i> Why it happens</div>
+      <div class="anno-body">Both the course index and block drawer are cut off. A recent change moved both drawers <strong>behind</strong> the footer bar. The bar stretches the full width of the window, so wherever it overlaps a drawer, that part of the drawer disappears.<br><br>This only happens on these two page types. Set <em>Page width class</em> to <strong>Full width</strong> and the problem goes away, because there the drawers still sit in front.</div>
+    </div>
+
+    <div class="anno-card" data-target="#stickyFooter" data-side="top" data-when="proposed">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-title"><i class="fa-solid fa-hand-pointer"></i> Step 1: the bar becomes invisible</div>
+      <div class="anno-body">The full-width bar stops being painted and stops catching clicks. It's now just an invisible frame, so clicks pass straight through to the drawers underneath &mdash; the row in the course index is reachable again.</div>
+    </div>
+
+    <div class="anno-card" data-target="#sfWrapper" data-side="top" data-when="proposed">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-title"><i class="fa-solid fa-arrows-left-right-to-line"></i> Step 2: only this panel is painted</div>
+      <div class="anno-body">Only the footer area that matches the page content width has a white background and horizontal line. That's the entire fix &mdash; the footer no longer reaches the drawers, so it can't cover them.</div>
+    </div>
+
+    <!-- side="over": the ring outlines .main-inner itself, because that IS the box
+         the footer has to match, and the card sits dead centre of it. An earlier
+         version pointed at the page title instead, purely to dodge a placement
+         clash — which made the ring look like it was about the heading. -->
+    <div class="anno-card" data-target="#mainInner" data-side="over" data-when="notbulk">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-title"><i class="fa-solid fa-ruler-combined"></i> Proposed footer matches this container's width</div>
+      <div class="anno-body">This content area is what the user is navigating between. Sidebars are complementary nav. The fix works by making the footer line up with the main content area's <strong>left and right edges</strong>.</div>
+    </div>
+
+    <div class="anno-card" data-target="#sfWrapper" data-side="top" data-when="fullwidth">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-title"><i class="fa-solid fa-compress"></i> Full-width pages do change &mdash; slightly</div>
+      <div class="anno-body"><strong>Yes, these pages change too</strong>, even though they never had the bug. The change is small: the white bar's left and right edges move inward by about 48px.<br><br>Nothing else moves &mdash; every button stays exactly where it is. That 48px is the only thing needing a design decision.</div>
+    </div>
+
+    <div class="anno-card" data-target="[data-type='bulkactions']" data-side="top" data-anchor="center" data-when="bulk">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-title"><i class="fa-solid fa-bug"></i> The fix breaks this bar</div>
+      <div class="anno-body">This bar has <strong>lost its white background and top line</strong> &mdash; that's the bug, not unfinished styling.<br><br>It's built by JavaScript, which throws away the inner panel the fix puts the background on. So there's nothing left to paint. It's fixable in one line, by painting whatever the footer contains rather than one specific panel.</div>
+    </div>
+
+    <div class="anno-card" data-target="#devBulk" data-side="left" data-when="bulk">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-title"><i class="fa-solid fa-circle-exclamation"></i> Only two screens are affected</div>
+      <div class="anno-body">Just <strong>assign grading</strong> and <strong>gradebook setup</strong> use this bar. Both are full-width pages, which never had the original bug &mdash; so limiting the fix to the page types that did have it would make this breakage disappear on its own.<br><br><em>Course bulk edit</em> is built differently and is not affected. Switch to it to see it keep its background.</div>
+    </div>
+
+    <div class="anno-card" data-target="#measure" data-side="bottom" data-anchor="center" data-when="always">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-title"><i class="fa-solid fa-square-check"></i> The readout checks itself</div>
+      <div class="anno-body">It compares the footer panel's edges against the content area's edges every time anything changes, and says whether they match. So you can test every screen size by resizing the window, rather than measuring by hand.</div>
+    </div>
+
+    <div class="anno-card" data-target="#devpanel" data-side="top" data-anchor="center" data-when="notbulk">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-title"><i class="fa-solid fa-flask"></i> Demo controls only</div>
+      <div class="anno-body">Not part of the proposal. Use it to flip between today's behaviour and the fix, and between the page types. Options that can't show the problem are greyed out, with a note saying why.</div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  var body = document.body;
+
+  /* ------------------------------------------------------------------ state */
+  var S = { mode:"current", width:"limited", drawers:"both", content:"form",
+            bulkSource:"assign", devCollapsed:false };
+
+  /* Footer content per state. The bulk state deliberately renders WITHOUT a
+     .sf-wrapper, exactly as core/bulkactions/bulk_actions.mustache does — that
+     omission is the whole point of the state. */
+  function renderFooter(){
+    var sf = document.getElementById("stickyFooter");
+    /* The supplementary row carries $PAGE->get_supplementary_content(); on a forum
+       discussion that is the "Go to all discussions" link. It has no max-width in
+       core — only the content row is capped. */
+    var supp = '<div class="sf-wrapper sf-supp-wrapper" id="sfSupp"><div class="sf-supp">'
+             + '<a href="#">Go to all discussions</a></div></div>';
+
+    if(S.content === "bulk"){
+      /* Structure transcribed from core/bulkactions/bulk_actions.mustache:44-93.
+         No wrapper div — that omission is the point of this state.
+         Only two features in core use this JS-injected path:
+           - mod_assign grading  (10 actions → 4 buttons + a More dropup)
+           - gradebook setup     (1 action: Move)
+         maxButtons is 5 and showindropdown is `index >= maxButtons - 1`
+         (bulk_actions.js:52,215-229), so exactly 4 buttons show before More. */
+      var trigger = function(action, title, icon){
+        return '<button type="button" class="btn" data-action="' + action + '" title="' + title + '">'
+             + '<span><i class="fa-solid ' + icon + '"></i></span>'
+             + '<span>' + title + '</span></button>';
+      };
+      var item = function(title){ return '<a class="dropdown-item" href="#" role="menuitem">' + title + '</a>'; };
+
+      /* Course activity bulk editing — bulkedittools.mustache. This one goes
+         through {{< core/sticky_footer }}, so it renders INSIDE the wrappers and
+         keeps its surface under the patch. Actions and icons from
+         bulkedittools.php:94-129. */
+      if(S.bulkSource === "course"){
+        var li = function(action, name, icon){
+          return '<li class="nav-item"><button class="btn" data-action="' + action + '" data-for="bulkaction" title="' + name + '">'
+               + '<span class="bulkaction-icon"><i class="fa-solid ' + icon + '"></i></span>'
+               + '<span class="bulkaction-name">' + name + '</span></button></li>';
+        };
+        sf.innerHTML =
+          '<div class="sf-wrapper sf-content-wrapper" id="sfWrapper">'
+          + '<div class="sf-content justify-content-center bulkactions" id="sfContent">'
+          +   '<div class="form-check">'
+          +     '<input type="checkbox" class="form-check-input" id="selectall" data-for="selectall">'
+          +     '<label class="form-check-label" for="selectall">Select all</label>'
+          +   '</div>'
+          +   '<div class="mx-auto" data-for="bulktools">'
+          +     '<ul class="actions nav flex-nowrap" data-for="bulkactions">'
+          +       li("cmAvailability", "Availability", "fa-eye-slash")
+          +       li("cmDuplicate", "Duplicate", "fa-clone")
+          +       li("moveCm", "Move", "fa-up-down-left-right")
+          +       li("cmDelete", "Delete", "fa-trash-can")
+          +     '</ul>'
+          +   '</div>'
+          +   '<div class="bulk-right">'
+          +     '<div class="bulkcancel ms-auto"><button class="btn cancel" data-action="bulkcancel" '
+          +       'data-for="bulkcancel" title="Close bulk edit"><span><i class="fa-solid fa-xmark"></i></span></button></div>'
+          +     '<div class="bulkcount" data-for="bulkcount" role="status">0 selected</div>'
+          +   '</div>'
+          + '</div></div>';
+        return;
+      }
+
+      var buttons, more = "";
+      if(S.bulkSource === "gradebook"){
+        // grade/edit/tree — one action, so no More menu. i/dragdrop, str: move.
+        buttons = trigger("move", "Move", "fa-up-down-left-right");
+      } else {
+        // mod_assign grading. Labels are the real lang strings, in push order.
+        buttons = trigger("lock", "Lock", "fa-lock")
+                + trigger("unlock", "Unlock", "fa-unlock")
+                + trigger("downloadselected", "Download", "fa-download")
+                + trigger("removesubmission", "Delete", "fa-trash-can");
+        more = '<div class="dropup" id="bulkMore">'
+             + '<button type="button" class="btn" aria-haspopup="true" aria-expanded="false" tabindex="-1">'
+             + '<span><i class="fa-solid fa-bars"></i></span><span>More</span></button>'
+             + '<div class="dropdown-menu" role="menu">'
+             + item("Extend") + item("Grant attempt") + item("Change marking state")
+             + item("Allocate marker") + item("Revert to draft") + item("Message")
+             + '</div></div>';
+      }
+
+      sf.innerHTML =
+        '<div class="justify-content-between px-3 py-2" data-type="bulkactions">'
+        + '<div class="d-flex"></div>'
+        + '<div data-for="bulktools">'
+        +   '<div class="btn-toolbar" role="toolbar" aria-label="Bulk actions" data-for="bulkactions">'
+        +     buttons + more
+        +   '</div>'
+        + '</div>'
+        + '<div class="bulk-right">'
+        +   '<div class="ms-auto"><button type="button" class="btn cancel" data-action="bulkcancel" '
+        +     'data-for="bulkcancel" title="Close bulk edit"><span><i class="fa-solid fa-xmark"></i></span></button></div>'
+        +   '<div data-for="bulkcount" role="status">&nbsp;3 selected</div>'
+        + '</div>'
+        + '</div>';
+
+      var dropup = document.getElementById("bulkMore");
+      if(dropup){
+        dropup.querySelector(".btn").addEventListener("click", function(e){
+          e.stopPropagation();
+          dropup.classList.toggle("show");
+          this.setAttribute("aria-expanded", dropup.classList.contains("show") ? "true" : "false");
+        });
+      }
+      return;
+    }
+
+    /* Linear navigation as it renders on a course activity page.
+       hook_listener.php:134-137 constructs
+       supplementary_sticky_footer($content, 'course-linear-navigation'), so that
+       class lands on .sticky-footer-content — where the UNSCOPED 830px cap in
+       sticky-footer.scss:83 applies. Structure from
+       linearnavigation/footer_content.mustache:30-61 (Previous + manual
+       completion + Next). Icons are pix e/backward + e/forward (= FA arrow-left
+       / arrow-right). The supplementary row is forum-only in core; kept here so
+       the prototype can still exercise the taller 2-row footer height. */
+    var inner, contentClass = "";
+    if(S.content === "linear"){
+      contentClass = " course-linear-navigation";
+      inner = '<div class="course-linear-navigation-footer-content">'
+            + '<a href="#" class="course-linear-navigation-link">'
+            +   '<span class="icon-no-margin" aria-hidden="true"><i class="fa-solid fa-arrow-left"></i></span>'
+            +   '<span>Previous</span></a>'
+            + '<div class="d-flex align-items-center gap-4 ms-auto" data-for="course-linear-navigation-footer">'
+            +   '<div class="course-linear-navigation-completion">'
+            +     '<button type="button" class="btn btn-subtle-body btn-sm text-nowrap" data-action="toggle-manual-completion" data-toggletype="manual:mark-done">'
+            +       'Mark as done</button>'
+            +   '</div>'
+            +   '<div class="vr"></div>'
+            +   '<a href="#" class="course-linear-navigation-link ms-auto">'
+            +     '<span>Next</span>'
+            +     '<span class="icon-no-margin" aria-hidden="true"><i class="fa-solid fa-arrow-right"></i></span></a>'
+            + '</div></div>';
+    } else {
+      inner = '<span class="sf-spacer"></span>'
+            + '<button class="btn btn-secondary">Cancel</button>'
+            + '<button class="btn btn-primary">Save and return to course</button>';
+    }
+    sf.innerHTML = (S.content === "linear" ? supp : "")
+      + '<div class="sf-wrapper sf-content-wrapper" id="sfWrapper">'
+      + '<div class="sf-content' + contentClass + '" id="sfContent">'
+      + inner + '</div></div>';
+
+    if(S.content === "linear"){
+      var compBtn = sf.querySelector('[data-action="toggle-manual-completion"]');
+      if(compBtn){
+        compBtn.addEventListener("click", function(){
+          var done = this.getAttribute("data-toggletype") === "manual:undo";
+          if(done){
+            this.className = "btn btn-subtle-body btn-sm text-nowrap";
+            this.setAttribute("data-toggletype", "manual:mark-done");
+            this.textContent = "Mark as done";
+          } else {
+            this.className = "btn btn-subtle-success btn-sm text-nowrap";
+            this.setAttribute("data-toggletype", "manual:undo");
+            this.innerHTML = '<i class="fa fa-check" aria-hidden="true"></i> Done';
+          }
+        });
+      }
+      Array.prototype.forEach.call(sf.querySelectorAll(".course-linear-navigation-link"), function(a){
+        a.addEventListener("click", function(e){ e.preventDefault(); });
+      });
+    }
+  }
+
+  /* --------------------------------------------------------------- geometry */
+  function bp(){
+    var w = window.innerWidth;
+    if(w >= 1400) return "xxl";
+    if(w >= 1200) return "xl";
+    if(w >= 992)  return "lg";
+    if(w >= 768)  return "md";
+    if(w >= 576)  return "sm";
+    return "xs";
+  }
+  /* The bug needs BOTH an anchored-drawer width class AND lg+, because the
+     z-index override lives inside media-breakpoint-up(lg). */
+  function bugPossible(){
+    var w = window.innerWidth;
+    return (S.width === "limited" || S.width === "standard") && w >= 992;
+  }
+
+  function apply(){
+    body.className = [
+      "mode-" + S.mode,
+      "w-" + S.width,
+      (S.drawers === "both" || S.drawers === "left")  ? "dl-open" : "",
+      (S.drawers === "both" || S.drawers === "right") ? "dr-open" : "",
+      "content-" + S.content,
+      annoOn ? "annotations-on" : "",
+      S.devCollapsed ? "dev-collapsed" : ""
+    ].filter(Boolean).join(" ");
+
+    // total footer height, so #page's bottom margin and the annotation toggle clear it
+    var total = (S.content === "linear") ? "6.5rem" : "4rem";
+    document.documentElement.style.setProperty("--footer-total", total);
+
+    document.getElementById("pageTitle").textContent =
+      S.content === "bulk" ? "Biology 101" :
+      S.content === "linear" ? "Mendelian inheritance" : "Edit settings";
+
+    renderFooter();
+    syncButtons();
+    parkDrawers();
+    /* .stickyfooter animates its padding over 200ms, so an immediate read
+       catches the band mid-flight and reports a misalignment that isn't real.
+       Measure now for responsiveness, then again once the transition settles. */
+    measure();
+    requestAnimationFrame(function(){ measure(); updateAnnotations(); });
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(function(){ measure(); updateAnnotations(); }, 260);
+  }
+  var settleTimer = null;
+
+  /* The bug only bites when a drawer's content is longer than the drawer — the
+     footer covers the bottom 64px either way, but there has to be something
+     there to lose. Top up each drawer until it genuinely overflows at the
+     current window height, then scroll to the bottom so the rows the band
+     covers are the ones on screen. Filler goes BEFORE the marked last item so
+     that item stays last. */
+  function ensureOverflow(drawerId, lastId, makeFiller){
+    var d = document.getElementById(drawerId), last = document.getElementById(lastId);
+    if(!d || !last) return;
+    var guard = 0;
+    while(d.scrollHeight < d.clientHeight + 140 && guard < 40){
+      d.insertBefore(makeFiller(guard), last);
+      guard++;
+    }
+  }
+  function ciFiller(i){
+    var el = document.createElement("div");
+    el.className = "ci-row";
+    el.dataset.filler = "1";
+    el.innerHTML = '<span class="dot"></span> Supplementary reading ' + (i + 1);
+    return el;
+  }
+  function cbFiller(i){
+    var el = document.createElement("div");
+    el.className = "cb-block";
+    el.dataset.filler = "1";
+    el.innerHTML = '<h4>Course notice ' + (i + 1) + '</h4><p>Filler block, added so the drawer overflows at this window height.</p>';
+    return el;
+  }
+  function parkDrawers(){
+    ensureOverflow("drawerLeft", "ciLast", ciFiller);
+    ensureOverflow("drawerRight", "cbLast", cbFiller);
+    /* Scroll after layout so clientHeight is real. An early apply() can run
+       before the drawer has height, add too few fillers, and leave the last
+       row above the footer — hiding the bug the prototype is meant to show. */
+    ["drawerLeft","drawerRight"].forEach(function(id){
+      var d = document.getElementById(id);
+      if(d) d.scrollTop = d.scrollHeight;
+    });
+  }
+
+  function syncButtons(){
+    // the bulk-source picker only means anything while the bulk bar is showing
+    var showBulk = S.content === "bulk";
+    document.getElementById("devBulk").style.display = showBulk ? "" : "none";
+    document.getElementById("devBulkLabel").style.display = showBulk ? "" : "none";
+
+    // [group id, data-* attribute name, state key] — the bulk picker's attribute
+    // and state key differ, so all three are listed explicitly.
+    [["devMode","mode","mode"], ["devWidth","width","width"], ["devDrawers","drawers","drawers"],
+     ["devContent","content","content"], ["devBulk","bulk","bulkSource"]]
+      .forEach(function(g){
+        var group = document.getElementById(g[0]);
+        Array.prototype.forEach.call(group.querySelectorAll(".devbtn"), function(b){
+          b.classList.toggle("on", b.dataset[g[1]] === S[g[2]]);
+        });
+      });
+
+    // Dim the width classes that cannot show the bug at this viewport, and
+    // label why — a silent no-op reads as "the fix did nothing".
+    var narrow = window.innerWidth < 992;
+    Array.prototype.forEach.call(document.querySelectorAll("#devWidth .devbtn"), function(b){
+      b.disabled = narrow && b.dataset.width !== "full";
+      b.title = b.disabled ? "Below 992px the drawers are high-z-index overlays, so no clipping occurs" : "";
+    });
+    document.querySelector('#devWidth').previousElementSibling.classList.toggle("dim", narrow);
+
+    var cap = document.getElementById("devCap");
+    if(narrow){
+      cap.innerHTML = "Below <b>lg (992px)</b> the drawers are overlays at z-index 1035 &mdash; above the footer. No clipping is possible; widen the window.";
+    } else if(S.content === "bulk" && S.bulkSource === "course"){
+      cap.innerHTML = "Course bulk editing renders through <code>{{&lt; core/sticky_footer}}</code>, so it keeps the wrappers "
+                    + "and is <b>unaffected</b> either way. This is the reference layout: Select all, centred actions, cancel over count.";
+    } else if(S.content === "bulk" && S.mode === "proposed"){
+      cap.innerHTML = "<b>Bug in the patch:</b> no wrapper, so the bar lost its background and border. Affects "
+                    + "<b>assign grading</b> and <b>gradebook setup</b> only &mdash; both full-width pages that never had the clipping bug.";
+    } else if(S.content === "bulk"){
+      cap.innerHTML = "Shipped JS-injected bulk bar. Content-sized (no fixed height) and never capped at 830px, because it renders "
+                    + "neither wrapper nor <code>.sticky-footer-content</code>.";
+    } else if(S.width === "full"){
+      cap.innerHTML = "Full-width page: drawers sit at z-index 1015, above the footer. <b>Never affected by the bug</b> &mdash; but the proposed band still narrows.";
+    } else {
+      cap.innerHTML = S.mode === "current"
+        ? "Shipped behaviour. The band runs the full viewport width and covers both drawers."
+        : "Patched behaviour. The band is boxed to <code>.main-inner</code> and clicks fall through.";
+    }
+  }
+
+  /* ------------------------------------------------------------- measurement */
+  function measure(){
+    var main = document.getElementById("mainInner");
+    /* Measure the element that actually PAINTS the band, which differs by mode:
+       - current  → .stickyfooter carries bg-white + border-top (full-bleed)
+       - proposed → the wrapper carries them (boxed to .main-inner)
+       - bulk + proposed → nothing paints at all; fall back to the bare bar so
+         the geometry still reads, and let the clip verdict flag the defect. */
+    var surface;
+    if(S.mode === "current"){
+      surface = document.getElementById("stickyFooter");
+    } else {
+      surface = document.querySelector(".sf-content-wrapper") || document.querySelector('[data-type="bulkactions"]');
+    }
+    if(!main || !surface) return;
+
+    var m = main.getBoundingClientRect(), f = surface.getBoundingClientRect();
+
+    /* Compare with a sub-pixel tolerance rather than integer equality. Centring
+       830px inside an odd-width box lands on .5 boundaries (412.5 here), and
+       rounding each edge independently can straddle one and report a phantom
+       1px failure. */
+    var dl = f.left - m.left, dr = f.right - m.right;
+    var fmt = function(n){ return (Math.round(n * 10) / 10).toString(); };
+
+    document.getElementById("mVw").textContent  = window.innerWidth + "px";
+    document.getElementById("mBp").textContent  = bp() + (window.innerWidth >= 992 ? "" : " (no bug)");
+    document.getElementById("mMain").textContent = fmt(m.left) + " → " + fmt(m.right);
+    document.getElementById("mFoot").textContent = fmt(f.left) + " → " + fmt(f.right);
+
+    var z = (S.width === "full") ? "1015 (above)" : (window.innerWidth < 992 ? "1035 (above)" : "2 (below)");
+    document.getElementById("mZ").textContent = z;
+
+    var aligned = Math.abs(dl) < 1 && Math.abs(dr) < 1;
+    var v = document.getElementById("mVerdict");
+    if(S.content === "bulk" && S.bulkSource !== "course"){
+      /* The JS-injected bulk bar renders neither a wrapper nor
+         .sticky-footer-content, so it never picked up the 830px cap — not in the
+         shipped code either. The width mismatch is PRE-EXISTING and not caused by
+         the patch; only the lost background is new. Reporting a flat
+         "aligned: false" would pin an old quirk on the change. The course-format
+         variant DOES have a wrapper, so it is measured normally. */
+      v.className = "verdict warn";
+      v.innerHTML = '<i class="fa-solid fa-circle-info"></i> not boxed &mdash; no wrapper (pre-existing, &Delta;'
+                  + fmt(dl) + " / " + fmt(dr) + ")";
+    } else {
+      v.className = "verdict " + (aligned ? "ok" : "bad");
+      v.innerHTML = aligned
+        ? '<i class="fa-solid fa-check"></i> aligned: true'
+        : '<i class="fa-solid fa-xmark"></i> aligned: false &nbsp;(&Delta;' + fmt(dl) + " / " + fmt(dr) + ")";
+    }
+
+    // does the painted band actually overlap a visible drawer, and is it on top?
+    var clip = document.getElementById("mClip");
+    var overlaps = false;
+    ["drawerLeft","drawerRight"].forEach(function(id){
+      var d = document.getElementById(id);
+      if(!d || getComputedStyle(d).visibility === "hidden") return;
+      var r = d.getBoundingClientRect();
+      if(f.left < r.right && f.right > r.left && f.top < r.bottom && f.bottom > r.top) overlaps = true;
+    });
+    var painted = (S.mode === "current") || (S.content === "bulk" && S.mode === "current");
+    if(overlaps && bugPossible() && painted){
+      clip.className = "verdict bad";
+      clip.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> drawer clipped by footer';
+    } else if(S.mode === "proposed" && S.content === "bulk" && S.bulkSource !== "course"){
+      clip.className = "verdict bad";
+      clip.innerHTML = '<i class="fa-solid fa-bug"></i> no background/border &mdash; new';
+    } else if(S.content === "bulk" && S.bulkSource === "course"){
+      clip.className = "verdict ok";
+      clip.innerHTML = '<i class="fa-solid fa-check"></i> keeps its wrapper &mdash; unaffected';
+    } else {
+      clip.className = "verdict ok";
+      clip.innerHTML = '<i class="fa-solid fa-check"></i> drawers fully visible';
+    }
+  }
+
+  /* ------------------------------------------------------------ annotations */
+  var annoLayer = document.getElementById("annoLayer");
+  var annoToggle = document.getElementById("annoToggle");
+  var annoToggleLabel = document.getElementById("annoToggleLabel");
+  var annoCards = Array.prototype.slice.call(document.querySelectorAll(".anno-card"));
+  var annoOn = true;
+  var annoRings = annoCards.map(function(){
+    var r = document.createElement("div"); r.className = "anno-ring"; r.style.display = "none";
+    annoLayer.appendChild(r); return r;
+  });
+  function isElVisible(el){ return !!(el && (el.offsetWidth || el.offsetHeight || el.getClientRects().length)); }
+  function firstVisibleTarget(sel){
+    var els = document.querySelectorAll(sel);
+    for(var i=0;i<els.length;i++){ if(isElVisible(els[i])) return els[i]; }
+    return null;
+  }
+  function aliveCount(){ return annoCards.filter(function(c){ return c.dataset.dismissed !== "1"; }).length; }
+  function updateAnnoToggleLabel(){
+    annoToggleLabel.textContent = annoOn ? "Hide annotations" : ("Show annotations (" + aliveCount() + ")");
+  }
+  /* data-when gates a card to the states where it is actually true, so the
+     walkthrough tracks the switcher instead of contradicting it. */
+  function relevant(when){
+    if(when === "always" || !when) return true;
+    /* Generic explainers that say nothing useful about the bulk bar — hidden in
+       that state so the two bulk-specific cards have room. */
+    if(when === "notbulk")   return S.content !== "bulk";
+    if(when === "bug")       return S.mode === "current" && bugPossible();
+    /* The two "how the fix works" cards and the "collateral change" card all
+       anchor to the footer, so showing them together crowds one corner. Split
+       them by page type instead: mechanics on the widths where the bug existed,
+       collateral change on full width where it didn't. */
+    if(when === "proposed")  return S.mode === "proposed" && S.content !== "bulk" && S.width !== "full";
+    if(when === "fullwidth") return S.mode === "proposed" && S.width === "full";
+    if(when === "bulk")      return S.content === "bulk" && S.mode === "proposed";
+    return true;
+  }
+  /* Placement runs in two phases. Phase 1 computes each card's preferred spot
+     next to its target; phase 2 pushes overlapping cards apart. Without phase 2
+     cards stack on top of each other at wide viewports, where several targets
+     (the measurement strip, the state switcher, .main-inner's right edge) all
+     sit in the same corner. data-anchor="center" centres a top/bottom card over
+     a wide target instead of pinning it to the target's left edge. */
+  function updateAnnotations(){
+    if(!annoLayer) return;
+    var vw = document.documentElement.clientWidth, vh = window.innerHeight;
+    var placed = [];
+
+    annoCards.forEach(function(card,i){
+      var ring = annoRings[i];
+      if(!annoOn || card.dataset.dismissed === "1" || !relevant(card.dataset.when)){
+        card.style.display = "none"; ring.style.display = "none"; return;
+      }
+      var target = firstVisibleTarget(card.dataset.target);
+      var tr = target && target.getBoundingClientRect();
+      var visible = tr && tr.width > 0 && tr.height > 0 && tr.bottom > 64 && tr.top < vh - 8 && tr.right > 0 && tr.left < vw;
+      if(!visible){ card.style.display = "none"; ring.style.display = "none"; return; }
+      card.style.display = "block"; ring.style.display = "block";
+      if(card.dataset.priority === "high") ring.setAttribute("data-priority", "high");
+      else ring.removeAttribute("data-priority");
+      ring.style.left = (tr.left - 4) + "px"; ring.style.top = (tr.top - 4) + "px";
+      ring.style.width = (tr.width + 8) + "px"; ring.style.height = (tr.height + 8) + "px";
+
+      var cw = card.offsetWidth || 230, chh = card.offsetHeight || 90;
+      var side = card.dataset.side, centred = card.dataset.anchor === "center", cl, ct;
+
+      /* "over" sits the card in the middle of its target, "inside" tucks it just
+         inside the top-left corner. Both are for targets too big to sit beside —
+         a full-height drawer, or the content column itself — where a card placed
+         alongside gets clamped to the window edge and ends up pointing at
+         nothing in particular. */
+      if(side === "over" || side === "inside"){
+        if(side === "over"){
+          /* Centre on the VISIBLE part of the target. The content column and the
+             drawers are both taller than the window, so centring on the full box
+             would put the card below the fold and then clamp it to the bottom
+             edge — which does not read as "the middle of this box". */
+          var vt = Math.max(tr.top, 72), vb = Math.min(tr.bottom, vh - 8);
+          cl = tr.left + tr.width / 2 - cw / 2;
+          /* data-bias="top" keeps a card in the upper part of a tall target
+             instead of dead centre, so it doesn't monopolise the middle of a
+             column another card needs. */
+          ct = card.dataset.bias === "top" ? vt + 24 : (vt + vb) / 2 - chh / 2;
+        } else {
+          cl = tr.left + 16;
+          ct = tr.top + 16;
+        }
+        cl = Math.max(8, Math.min(cl, vw - cw - 8));
+        ct = Math.max(72, Math.min(ct, vh - chh - 8));
+      } else {
+        if(side === "top" && tr.top - chh - 18 < 72) side = "bottom";
+        else if(side === "bottom" && tr.bottom + chh + 18 > vh - 8 && tr.top - chh - 18 >= 72) side = "top";
+        if(side === "right"){ cl = tr.right + 18; ct = tr.top - 6; }
+        else if(side === "top"){ cl = centred ? tr.left + tr.width / 2 - cw / 2 : tr.left; ct = tr.top - chh - 18; }
+        else if(side === "bottom"){ cl = centred ? tr.left + tr.width / 2 - cw / 2 : tr.left; ct = tr.bottom + 18; }
+        else { cl = tr.left - cw - 18; ct = tr.top - 6; }
+        cl = Math.max(8, Math.min(cl, vw - cw - 8));
+        if(side === "top"){ ct = Math.max(72, Math.min(ct, tr.top - chh - 8)); }
+        else if(side === "bottom"){ ct = Math.min(vh - chh - 8, Math.max(ct, tr.bottom + 8)); }
+        else { ct = Math.max(72, Math.min(ct, vh - chh - 8)); }
+      }
+      placed.push({ card:card, l:cl, t:ct, w:cw, h:chh, fixed: card.dataset.priority === "high" });
+    });
+
+    /* phase 2 — separate overlapping cards; prefer moving down, then up, then
+       sideways. The measurement strip, the state switcher and the Hide
+       annotations button join in as immovable obstacles: the layer sits above
+       them all (z-index 100/101 vs 95/96), so a card landing on one would hide
+       the very control it describes. Priority cards (the clipped-row callout)
+       are also fixed so other explainers move out of the way on first load. */
+    var obstacles = [];
+    ["measure","devpanel","annoToggle"].forEach(function(id){
+      var el = document.getElementById(id);
+      if(!el || getComputedStyle(el).display === "none") return;
+      var r = el.getBoundingClientRect();
+      if(r.width > 0 && r.height > 0) obstacles.push({ l:r.left, t:r.top, w:r.width, h:r.height, fixed:true });
+    });
+    var all = obstacles.concat(placed);
+
+    var GAP = 8;
+    for(var pass = 0; pass < 8; pass++){
+      var moved = false;
+      for(var a = 0; a < all.length; a++){
+        for(var b = a + 1; b < all.length; b++){
+          var A = all[a], B = all[b];
+          if(B.fixed) continue;   // obstacles never move
+          var hit = A.l < B.l + B.w + GAP && A.l + A.w + GAP > B.l &&
+                    A.t < B.t + B.h + GAP && A.t + A.h + GAP > B.t;
+          if(!hit) continue;
+          var below = A.t + A.h + GAP, above = A.t - B.h - GAP;
+          if(below + B.h <= vh - 8){ B.t = below; }
+          else if(above >= 72){ B.t = above; }
+          else {
+            var right = A.l + A.w + GAP, left = A.l - B.w - GAP;
+            B.l = (right + B.w <= vw - 8) ? right : Math.max(8, left);
+          }
+          moved = true;
+        }
+      }
+      if(!moved) break;
+    }
+
+    /* The passes above can leave a card wedged: pushed off an obstacle into
+       another card, then back onto the obstacle. So repair anything still
+       overlapping ANYTHING — card or obstacle — by scanning for the first free
+       slot, first down its own column, then the left and right edges. */
+    var hits = function(l, t, w, h, list){
+      for(var i = 0; i < list.length; i++){
+        var B = list[i];
+        if(l < B.l + B.w + GAP && l + w + GAP > B.l && t < B.t + B.h + GAP && t + h + GAP > B.t) return true;
+      }
+      return false;
+    };
+    var others = function(self){
+      return obstacles.concat(placed.filter(function(p){ return p !== self; }));
+    };
+    placed.forEach(function(p){
+      if(p.fixed) return;
+      var list = others(p);
+      if(!hits(p.l, p.t, p.w, p.h, list)) return;
+      var columns = [p.l, 8, vw - p.w - 8];
+      for(var ci = 0; ci < columns.length; ci++){
+        var L = Math.max(8, Math.min(columns[ci], vw - p.w - 8));
+        for(var T = 72; T + p.h <= vh - 8; T += 10){
+          if(!hits(L, T, p.w, p.h, list)){ p.l = L; p.t = T; return; }
+        }
+      }
+    });
+
+    /* Last resort: the window genuinely cannot hold them all. Stack in a readable
+       column down the left edge — a deliberate list beats an accidental heap.
+       Priority cards keep their preferred spot next to the clipped row. */
+    var stuck = placed.some(function(p){ return !p.fixed && hits(p.l, p.t, p.w, p.h, others(p)); });
+    if(stuck){
+      var cursor = 72;
+      placed.forEach(function(p){
+        if(p.fixed) return;
+        p.l = 8; p.t = cursor; cursor += p.h + GAP;
+      });
+    }
+
+    placed.forEach(function(p){ p.card.style.left = p.l + "px"; p.card.style.top = p.t + "px"; });
+  }
+  annoToggle.addEventListener("click", function(){
+    annoOn = !annoOn; body.classList.toggle("annotations-on", annoOn);
+    if(annoOn && aliveCount() === 0){ annoCards.forEach(function(c){ c.dataset.dismissed = ""; }); }
+    updateAnnoToggleLabel(); updateAnnotations();
+  });
+  annoCards.forEach(function(card){
+    card.querySelector(".anno-close").addEventListener("click", function(){
+      card.dataset.dismissed = "1";
+      if(aliveCount() === 0){ annoOn = false; body.classList.remove("annotations-on"); }
+      updateAnnoToggleLabel(); updateAnnotations();
+    });
+  });
+
+  /* ----------------------------------------------------------------- wiring */
+  document.getElementById("devMode").addEventListener("click", function(e){
+    var b = e.target.closest(".devbtn"); if(!b || b.disabled) return; S.mode = b.dataset.mode; apply();
+  });
+  document.getElementById("devWidth").addEventListener("click", function(e){
+    var b = e.target.closest(".devbtn"); if(!b || b.disabled) return; S.width = b.dataset.width; apply();
+  });
+  document.getElementById("devDrawers").addEventListener("click", function(e){
+    var b = e.target.closest(".devbtn"); if(!b || b.disabled) return; S.drawers = b.dataset.drawers; apply();
+  });
+  document.getElementById("devContent").addEventListener("click", function(e){
+    var b = e.target.closest(".devbtn"); if(!b || b.disabled) return; S.content = b.dataset.content; apply();
+  });
+  document.getElementById("devBulk").addEventListener("click", function(e){
+    var b = e.target.closest(".devbtn"); if(!b || b.disabled) return; S.bulkSource = b.dataset.bulk; apply();
+  });
+  document.getElementById("devCollapse").addEventListener("click", function(){
+    S.devCollapsed = !S.devCollapsed;
+    this.innerHTML = '<i class="fa-solid fa-chevron-' + (S.devCollapsed ? "left" : "right") + '"></i>';
+    this.title = S.devCollapsed ? "Expand the state switcher" : "Collapse the panel so it stops covering the block drawer";
+    apply();
+  });
+  document.getElementById("editSwitch").addEventListener("click", function(){
+    var on = this.getAttribute("aria-pressed") === "true";
+    this.setAttribute("aria-pressed", on ? "false" : "true");
+  });
+
+  // clicking the covered row proves the pointer-events half of the fix
+  document.getElementById("ciLast").addEventListener("click", function(){
+    this.innerHTML = '<i class="fa-solid fa-check"></i> Clicked &mdash; the row is reachable';
+    var self = this;
+    setTimeout(function(){ self.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Final exam &mdash; last item'; }, 1600);
+  });
+
+  // authoritative re-read once the padding animation actually finishes
+  document.getElementById("stickyFooter").addEventListener("transitionend", function(e){
+    if(e.propertyName && e.propertyName.indexOf("padding") === 0){ measure(); updateAnnotations(); }
+  });
+  window.addEventListener("resize", function(){ syncButtons(); parkDrawers(); measure(); updateAnnotations(); });
+  window.addEventListener("scroll", function(){ measure(); updateAnnotations(); }, true);
+
+  /* ------------------------------------------------------------------- init */
+  apply();
+  updateAnnoToggleLabel();
+  updateAnnotations();
+
+  /* Placement depends on each card's MEASURED size, which is wrong until the
+     webfont and Font Awesome have loaded — cards sized with fallback metrics
+     compute non-overlapping positions that overlap once the real fonts arrive.
+     Normally a scroll or resize would trigger a fresh pass, but an embedded
+     preview pane may never fire either, so the bad first pass sticks and every
+     card ends up clamped into one corner. Re-run explicitly instead.
+     Always re-park the drawers too: early layout can leave the course index
+     not scrolled to the clipped last row. */
+  var replace = function(){ parkDrawers(); measure(); updateAnnotations(); };
+  window.addEventListener("load", replace);
+  if(document.fonts && document.fonts.ready && document.fonts.ready.then){
+    document.fonts.ready.then(replace);
+  }
+  [120, 400, 900, 1800].forEach(function(ms){ setTimeout(replace, ms); });
+  // last resort for environments with no load/resize/scroll at all
+  if(window.ResizeObserver){
+    new ResizeObserver(replace).observe(document.documentElement);
+  }
+})();
+</script>
+
+<!--
+NOTES (throwaway prototype — delete once reviewed):
+
+Prototype: sticky footer containment. Regression against MDL-88411
+("Middle align Moodle LMS", commit a1530491e2e, 17 Jun 2026), component Themes.
+Reuses the quiz/book/forum prototype shell — MDS :root tokens, top nav,
+annotation layer (.anno-card + data-target/data-side/dashed ring), dev state
+switcher (.devpanel / .devbtn) — plus a live measurement readout specific to
+this question.
+
+WHY THIS ONE MODELS THE LAYOUT DIFFERENTLY
+The other prototypes render the drawers in flow (position: sticky), which means
+a fixed footer can never cover them and the bug cannot be reproduced. Here the
+drawers are position: fixed with real z-index values and #page carries the real
+margins and padding, because layer order IS the question.
+
+GEOMETRY — every value traced to source
+  $drawer-left-width 285px / $drawer-right-width 315px   drawer.scss:5-6
+  $page-drawers-padding-x 3rem                           variables.scss (new)
+  $course-content-maxwidth 830px                         variables.scss:28
+  $drawer-main-gap calc(.5rem + 20px) = 28px             drawer.scss:15
+  $stickyfooter-height 4rem / supplementary 2.5rem       variables.scss
+  $navbar-height 60px                                    variables.scss:25
+  anchored-drawer offset formulas                        drawer.scss:16-30
+  #page.drawers padding 3rem (md+)                       layout.scss:159-170
+  #page.drawers drawer margins (lg+)                     layout.scss:188-205
+  .main-inner max-width 830 (md+, standard/limitedwidth) layout.scss:56-63
+  drawer z-index 2 (lg+, standard/limitedwidth only)     drawer.scss:291-297
+  drawer z-index $zindex-sticky - 5 = 1015 (default)     drawer.scss:179
+  drawer z-index $zindex-fixed + 5 = 1035 (below lg)     drawer.scss:181-184
+  footer z-index map-get($zindex-levels, 3)              sticky-footer.scss:19
+
+DELIBERATE DIVERGENCES FROM THE REAL DOM
+1. #sticky-footer is a sibling of #page here; in Boost it renders inside
+   #region-main inside #page (drawers.mustache:171). position: fixed makes DOM
+   ancestry irrelevant to layout, and flattening it keeps the markup readable.
+2. The full-width drawer z-index is 40, not 1015, so the drawers do not also
+   cover this prototype's own annotation layer (z-index 60). Any value above
+   the footer reproduces the behaviour being shown.
+3. Drawer open/close is instant state, not the real JS drawer manager; the
+   mutually-exclusive-below-1400 rule from MDL-88411 is not enforced, so "Both"
+   is selectable at any width in order to show alignment at every breakpoint.
+
+WHAT THE THREE STATES ARE FOR
+- Footer treatment: the before/after. Current = surface on .stickyfooter,
+  full-bleed. Proposed = transparent click-through layer + surface on the
+  wrappers, boxed to .main-inner.
+- Page width class: determines whether the bug exists at all. limitedwidth and
+  pagelayout-standard get anchored drawers at z-index 2 (affected); everything
+  else keeps 1015 (never affected). Below 992px nothing is affected, and the
+  panel dims and explains rather than silently doing nothing.
+- Footer content: form buttons (the common case), linear navigation (two rows,
+  104px), and bulk actions — which is the state that exposes the defect in the
+  patch, see below.
+
+FINDINGS THIS PROTOTYPE IS BUILT TO DEMONSTRATE
+a) The bug is narrow. It needs .pagelayout-standard or body.limitedwidth AND
+   >= 992px. The grader report, single view, user report, gradebook setup,
+   question bank and the assign grading table get neither class and are not
+   affected. Roughly six of the sixteen sticky-footer surfaces have the bug.
+b) The patch breaks bulk actions — but on exactly two pages. bulk_actions.js:154
+   assigns container.innerHTML = renderBulkActions(), and
+   bulk_actions.mustache:44 has no .sticky-footer-*-wrapper. With background and
+   border moved onto the wrappers there is nothing to paint. Select "Bulk
+   actions" + "Proposed" to see it. Suggested fix: style .stickyfooter > *
+   rather than the two named wrapper classes, keeping max-width/margin on the
+   named wrappers.
+
+   THERE ARE TWO SEPARATE BULK-ACTION FOOTERS. Only one is affected:
+   - AFFECTED — core/bulkactions/bulk_actions, injected by JS over innerHTML.
+     Exactly two consumers in core:
+       grade/amd/src/bulkactions/edit/tree/bulk_actions.js  → grade/edit/tree
+         (pagelayout admin, no limitedwidth) — 1 action: Move / i/dragdrop
+       mod/assign/amd/src/bulkactions/grading/bulk_actions.js → assign
+         action=grading (incourse, no limitedwidth) — 10 actions; maxButtons is
+         5 and showindropdown is index >= maxButtons - 1, so 4 buttons + More.
+     Both are FULL-WIDTH pages, so neither ever had the clipping bug. Scoping
+     the fix to .pagelayout-standard, body.limitedwidth removes this regression
+     without any extra work.
+   - NOT AFFECTED — course/format/templates/local/content/bulkedittools.mustache
+     uses {{< core/sticky_footer }}, so it inherits the wrappers and keeps its
+     surface. Question bank is not a sticky footer at all (a server-rendered
+     .btn-group.dropup, question/templates/bulk_actions_ui.mustache), and admin
+     user bulk select is a moodleform. An earlier draft of this prototype listed
+     all of those as affected; that was wrong.
+
+   The bar's markup here is transcribed from the real templates: root
+   `<div class="justify-content-between px-3 py-2" data-type="bulkactions">`
+   with no d-flex (the flex comes from core.scss:2986-2992), each action a
+   `.btn.py-0.d-flex.flex-column` with the icon span above the label
+   (bulk_action_trigger.mustache:36-45), and the cancel button stacked above the
+   bulkcount region. It is content-sized — there is no height on it, unlike the
+   wrappers — so it does NOT necessarily equal the 4rem that
+   --sticky-footer-total-height falls back to when no wrapper is present
+   (core.scss:2047-2056 keys off :has(.sticky-footer-*-wrapper)). Measured here:
+   the wrapper-based course variant is 64px; the JS-injected bar is ~59px with
+   these icon/label sizes. Whatever the exact number, the reserved space is a
+   coincidence rather than a guarantee, and #page's bottom margin in bulk mode
+   silently depends on it.
+
+   SECOND CONSEQUENCE OF THE PATCH FOR THIS BAR. Because the proposed rules put
+   horizontal padding on .stickyfooter itself, the JS bulk bar's available width
+   drops from the full viewport to #page's content box. Its .btn-toolbar has
+   flex-wrap:wrap, so at narrow content widths it wraps to a second row and the
+   footer grows — measured here at 98px vs 59px unwrapped. Not a problem at
+   typical desktop widths (assign grading with one drawer open still has ~1000px
+   for 5 buttons), but it is a real second-order effect, distinct from losing the
+   background, and it disappears if the fix is scoped to
+   .pagelayout-standard, body.limitedwidth.
+c) The collateral UI change is MUCH smaller than "loses the edge-to-edge band".
+   Two things make it so, both measured here at a 1985px viewport:
+
+   1. On a full-width page the drawers sit at z-index 1015, ABOVE the footer, so
+      they already cover the band's overhang. The band's visible edges today are
+      the drawer edges, which is why a real full-width forum page already looks
+      like a contained band. Switching to Proposed moves the visible edges from
+      285->1670 to 333->1622 — 48px in on each side, exactly #page's 3rem
+      padding. With no drawer open it is 0->1985 versus 48->1937: same 48px.
+      On limited-width with both drawers it is 28px (the drawer gap).
+
+   2. The footer's CONTENT never moves. .course-linear-navigation carries an
+      unscoped max-width:830px (sticky-footer.scss:83), so the Previous/Next
+      column measures 563->1393 in BOTH modes on full width, and 563->1393 in
+      both modes on limited width. Only the painted surface changes; no control
+      shifts by a pixel. This is the plan's "the controls were never mis-placed",
+      now demonstrated across every state rather than asserted.
+
+   So the sign-off question is narrow: is a 48px inset of the white band on
+   full-width pages acceptable? It is not a layout change.
+
+NOT MODELLED
+- RTL. Moodle flips CSS server-side via core_rtlcss (theme_config.php:1637), so
+  the padding/margin pairs mirror together; that needs a real site to verify.
+- prefers-reduced-motion. The patch replaces an @include transition(0.2s) with a
+  raw transition shorthand, dropping the reduced-motion guard.
+- The 1px total-height change (105px -> 104px) from moving border-top off the
+  outer element onto the wrappers.
+-->
+</body>
+</html>

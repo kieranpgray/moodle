@@ -1,0 +1,2117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTOTYPE — Quiz activity (throwaway, not for merge)</title>
+
+<!-- Noto Sans (matches --mds-font-family-base) + Font Awesome, via CDN. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+  /*
+    THROWAWAY PROTOTYPE — Quiz activity type. Reuses the book prototype's shell
+    (MDS :root tokens, top nav, left course-index drawer, sticky footer) and the
+    forum prototype's right "Course Blocks" drawer. Grounded in mod/quiz code:
+    view.php (entry), attempt.php (question nav + Finish attempt link),
+    summary.php (Submit all and finish), submission_confirmation.mustache
+    (confirm modal), review.php (per-question / show-all review options).
+    ALL component CSS is on --mds-* tokens (no eyeballed hex). Delete once reviewed.
+  */
+
+  :root{
+    /* ---- MDS primitives (dist/tokens/css/primitives.css, resolved) ---- */
+    --mds-color-blue-50:#e7f0f9; --mds-color-blue-500:#0f6cbf; --mds-color-blue-600:#0c5699; --mds-color-blue-700:#094173;
+    --mds-color-cyan-100:#cce6ea; --mds-color-cyan-500:#008196;
+    --mds-color-pink-100:#f8d1e3; --mds-color-pink-500:#db1a74;
+    --mds-color-orange-100:#ffe3d1; --mds-color-orange-500:#e8590c; --mds-color-orange-600:#cc5e13;
+    --mds-color-green-50:#ebf2ea; --mds-color-green-100:#d3e9d1; --mds-color-green-500:#357a32; --mds-color-green-700:#245021;
+    --mds-color-red-50:#faeae9; --mds-color-red-100:#f3c9c5; --mds-color-red-500:#ca3120; --mds-color-red-600:#a2271a; --mds-color-red-800:#791d13;
+    --mds-color-gray-100:#f8f9fa; --mds-color-gray-200:#e9ecef; --mds-color-gray-300:#dee2e6;
+    --mds-color-gray-400:#ced4da; --mds-color-gray-500:#8f959e; --mds-color-gray-600:#6a737b;
+    --mds-color-gray-700:#495057; --mds-color-gray-800:#343a40; --mds-color-gray-900:#1d2125; --mds-color-gray-white:#fff;
+
+    /* ---- MDS semantic (dist/tokens/css/colors.css) ---- */
+    --mds-text-default:var(--mds-color-gray-900);
+    --mds-text-subtle:var(--mds-color-gray-700);
+    --mds-text-muted:var(--mds-color-gray-600);
+    --mds-text-inverse:var(--mds-color-gray-white);
+    --mds-text-danger:var(--mds-color-red-500);
+    --mds-text-feedback-success:var(--mds-color-green-500);
+    --mds-text-feedback-warning:var(--mds-color-orange-600);
+    --mds-bg-surface-default:var(--mds-color-gray-white);
+    --mds-bg-surface-subtle:var(--mds-color-gray-100);
+    --mds-bg-surface-strong:var(--mds-color-gray-200);
+    --mds-border-default:var(--mds-color-gray-300);
+    --mds-border-subtle:var(--mds-color-gray-200);
+    --mds-border-interactive-secondary-default:var(--mds-color-gray-500);
+    --mds-bg-interactive-primary-default:var(--mds-color-blue-500);
+    --mds-bg-interactive-primary-hover:var(--mds-color-blue-600);
+    --mds-bg-interactive-primary-active:var(--mds-color-blue-700);
+    --mds-bg-interactive-primary-default-light:var(--mds-color-blue-50);
+    --mds-bg-nav-pill-selected:var(--mds-color-gray-200);
+    --mds-bg-feedback-success-light:var(--mds-color-green-50);
+    --mds-bg-feedback-warning-light:var(--mds-color-orange-100);
+    /* activity-icon categories (quiz = assessment/pink) */
+    --mds-activity-icon-assessment-bg:var(--mds-color-pink-100);   --mds-activity-icon-assessment-icon:var(--mds-color-pink-500);
+    --mds-activity-icon-communication-bg:var(--mds-color-orange-100); --mds-activity-icon-communication-icon:var(--mds-color-orange-600);
+    --mds-activity-icon-file-bg:var(--mds-color-cyan-100);         --mds-activity-icon-file-icon:var(--mds-color-cyan-500);
+
+    /* ---- MDS spacing ---- */
+    --mds-spacing-xxs:.25rem; --mds-spacing-xs:.5rem; --mds-spacing-sm:.75rem;
+    --mds-spacing-md:1rem; --mds-spacing-lg:1.25rem; --mds-spacing-xl:2rem; --mds-spacing-xxl:3rem;
+
+    /* ---- MDS radius ---- */
+    --mds-border-radius-xs:.25rem; --mds-border-radius-sm:.375rem; --mds-border-radius-md:.5rem;
+    --mds-border-radius-lg:.75rem; --mds-border-radius-xl:1rem; --mds-border-radius-pill:50rem;
+
+    /* ---- MDS typography ---- */
+    --mds-font-family-base:"Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mds-font-size-headings-1:2.5rem;  --mds-line-height-headings-1:3rem;
+    --mds-font-size-headings-3:1.75rem; --mds-line-height-headings-3:2.25rem;
+    --mds-font-size-headings-4:1.5rem;  --mds-line-height-headings-4:2rem;
+    --mds-font-size-headings-5:1.25rem; --mds-line-height-headings-5:1.75rem;
+    --mds-font-size-headings-6:1rem;    --mds-line-height-headings-6:1.5rem;
+    --mds-font-size-paragraph-default:1rem;   --mds-line-height-paragraph-default:1.5rem;
+    --mds-font-size-paragraph-lead:1.25rem;   --mds-line-height-paragraph-lead:1.875rem;
+    --mds-font-size-paragraph-small:.875rem;  --mds-line-height-paragraph-small:1.25rem;
+    --mds-font-weight-regular:400; --mds-font-weight-medium:500; --mds-font-weight-semibold:600; --mds-font-weight-bold:700;
+
+    /* ---- aliases so the ported forum Course-Blocks CSS resolves ---- */
+    --mds-color-indigo-500:#6610f2;
+    --mds-font-size-heading-6:1rem; --mds-font-size-body:1rem; --mds-font-size-small:.875rem;
+    --mds-text-link-primary:var(--mds-color-blue-500);
+    --mds-typography-font-weight-regular:400; --mds-typography-font-weight-medium:500;
+    --mds-typography-font-weight-semibold:600; --mds-typography-font-weight-bold:700;
+    --mds-bg-interactive-secondary-hover:var(--mds-color-gray-400);
+    --mds-stroke-weight-sm:1px;
+
+    /* ---- local layout (not visual tokens) ---- */
+    --shell-max:1440px; --shell-pad:2.5rem;
+    --nav-h:64px; --footer-h:64px;
+    --ci-width:300px; --cb-width:315px; --btn:40px;
+    --content-max:873px;
+  }
+
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:var(--mds-font-family-base); color:var(--mds-text-default);
+    background:var(--mds-bg-surface-default); -webkit-font-smoothing:antialiased; }
+  a{ color:var(--mds-bg-interactive-primary-default); text-decoration:none; }
+  button{ font-family:inherit; }
+  .shell{ max-width:var(--shell-max); margin:0 auto; padding:0 var(--shell-pad); }
+
+  /* =====================  TOP NAV  ===================== */
+  .topbar{ position:-webkit-sticky; position:sticky; top:0; z-index:50; background:var(--mds-bg-surface-subtle); border-bottom:1px solid var(--mds-border-subtle); }
+  .topbar-inner{ height:var(--nav-h); display:flex; align-items:center; justify-content:space-between; gap:var(--mds-spacing-md); }
+  .nav-left{ display:flex; align-items:center; gap:2rem; min-width:0; }
+  .brand{ display:flex; align-items:center; gap:.5rem; height:40px; }
+  .brand .mark{ font-size:26px; color:var(--mds-activity-icon-file-icon); }
+  .brand .word b{ display:block; font-weight:var(--mds-font-weight-bold); font-size:17px; letter-spacing:.2px; line-height:1; }
+  .brand .word span{ display:block; font-size:11px; letter-spacing:2px; color:var(--mds-text-subtle); }
+  .nav-pills{ display:flex; align-items:center; gap:var(--mds-spacing-xxs); }
+  .nav-pill{ display:flex; align-items:center; gap:var(--mds-spacing-xxs); padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
+    border-radius:var(--mds-border-radius-md); border:none; background:transparent;
+    font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); color:var(--mds-text-subtle); cursor:pointer; white-space:nowrap; }
+  .nav-pill .dot{ width:4px; height:4px; border-radius:50%; background:var(--mds-bg-interactive-primary-default); }
+  .nav-pill.selected{ background:var(--mds-bg-nav-pill-selected); color:var(--mds-text-default); }
+  .burger{ display:none; width:var(--btn); height:var(--btn); border:none; background:transparent; border-radius:var(--mds-border-radius-sm);
+    cursor:pointer; color:var(--mds-text-default); font-size:20px; align-items:center; justify-content:center; }
+  .burger:hover{ background:var(--mds-bg-surface-strong); }
+  .nav-right{ display:flex; align-items:center; gap:var(--mds-spacing-xs); }
+  .nav-right-group{ display:flex; align-items:center; gap:var(--mds-spacing-md); }
+  .search{ display:flex; align-items:center; gap:var(--mds-spacing-xs); width:256px; height:36px; padding:0 var(--mds-spacing-sm);
+    background:var(--mds-bg-surface-strong); border-radius:var(--mds-border-radius-md); color:var(--mds-text-subtle); font-size:var(--mds-font-size-paragraph-small); }
+  .search i{ font-size:12px; }
+  .search-icon-btn{ display:none; width:36px; height:36px; border:none; background:transparent; border-radius:var(--mds-border-radius-md);
+    color:var(--mds-text-subtle); cursor:pointer; align-items:center; justify-content:center; }
+  .editmode{ display:flex; align-items:center; gap:var(--mds-spacing-xs); }
+  .editmode .label{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); white-space:nowrap; }
+  .switch{ width:32px; height:16px; border-radius:var(--mds-border-radius-pill); background:var(--mds-bg-interactive-primary-default);
+    position:relative; border:none; cursor:pointer; flex:0 0 auto; }
+  .switch::after{ content:""; position:absolute; top:2px; left:18px; width:12px; height:12px; border-radius:50%; background:#fff; transition:left .15s ease; }
+  .switch[aria-pressed="false"]{ background:var(--mds-border-interactive-secondary-default); }
+  .switch[aria-pressed="false"]::after{ left:2px; }
+  .icon-btn{ width:28px; height:28px; border:none; background:transparent; border-radius:var(--mds-border-radius-sm);
+    color:var(--mds-text-subtle); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .icon-btn:hover{ background:var(--mds-bg-surface-strong); }
+  .nav-icons{ display:flex; align-items:center; gap:var(--mds-spacing-xs); }
+  .nav-divider{ width:1px; height:24px; background:var(--mds-bg-surface-strong); }
+  .profile{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:0 var(--mds-spacing-xs); border-radius:var(--mds-border-radius-pill); cursor:pointer; }
+  .profile:hover{ background:var(--mds-bg-surface-strong); }
+  .avatar{ width:32px; height:32px; border-radius:50%; flex:0 0 auto; border:1px solid var(--mds-border-default);
+    background:linear-gradient(135deg,#f0a878,#c9805a); display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:var(--mds-font-weight-semibold); }
+  .profile .pname{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); }
+  .profile .fa-chevron-down{ font-size:8px; color:var(--mds-text-subtle); }
+
+  /* =====================  PAGE LAYOUT  ===================== */
+  .layout{ display:flex; align-items:flex-start; padding-top:var(--mds-spacing-lg);
+    padding-bottom:calc(var(--footer-h) + 2rem); min-height:calc(100vh - var(--nav-h)); position:relative; }
+  body.hide-footer .layout{ padding-bottom:2rem; }
+
+  .toggle-col{ flex:0 0 auto; width:var(--btn); margin-right:.75rem; align-self:stretch; display:flex; justify-content:center; }
+  body.ci-open .toggle-col{ width:0; margin-right:0; overflow:hidden; }
+  .ci-toggle{ width:var(--btn); height:var(--btn); border:none; cursor:pointer; border-radius:var(--mds-border-radius-sm);
+    background:var(--mds-bg-surface-strong); display:flex; align-items:center; justify-content:center; }
+  .ci-toggle:hover{ background:var(--mds-border-default); }
+  .ci-toggle.sticky{ position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); }
+  .ci-toggle.contained{ background:transparent; }
+  .ci-toggle.contained:hover{ background:rgba(0,0,0,.06); }
+  .sidebar-icon{ width:20px; height:16px; display:block; }
+
+  /* course index drawer (grey card) */
+  .drawer{ flex:0 0 auto; width:0; overflow:hidden; position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg));
+    align-self:flex-start; transition:width .32s cubic-bezier(.4,0,.2,1); }
+  body.ci-open #drawer{ width:var(--ci-width); }
+  .ci-card{ width:var(--ci-width); background:var(--mds-bg-surface-strong); border-radius:var(--mds-border-radius-md);
+    padding:0 var(--mds-spacing-sm) var(--mds-spacing-md);
+    max-height:calc(100vh - var(--nav-h) - 2 * var(--mds-spacing-lg)); overflow-x:hidden; overflow-y:auto;
+    transform:translateX(-100%); transition:transform .32s cubic-bezier(.4,0,.2,1); }
+  body.ci-open .ci-card{ transform:translateX(0); }
+  .ci-header{ display:flex; align-items:center; justify-content:space-between; height:53px; padding-left:var(--mds-spacing-md); padding-top:var(--mds-spacing-xs); }
+  .ci-title{ font-size:var(--mds-font-size-headings-6); font-weight:var(--mds-font-weight-semibold); }
+  .ci-divider{ height:1px; background:var(--mds-border-default); }
+
+  .ci-section{ margin-top:var(--mds-spacing-xxs); }
+  .ci-sec-head{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:var(--mds-spacing-sm); border:none; background:none; width:100%;
+    cursor:pointer; text-align:left; border-radius:var(--mds-border-radius-sm); }
+  .ci-sec-head:hover{ background:rgba(0,0,0,.04); }
+  .ci-sec-head .chev{ width:10px; font-size:8px; color:var(--mds-text-muted); flex:0 0 auto; text-align:center; transition:transform .15s ease; }
+  .ci-sec-head .txt{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ci-section.collapsed .chev{ transform:rotate(-90deg); }
+  .ci-section.collapsed .ci-activities{ display:none; }
+
+  .ci-activities{ padding-left:var(--mds-spacing-md); display:flex; flex-direction:column; gap:var(--mds-spacing-xxs); }
+  .ci-row{ display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
+    border-radius:var(--mds-border-radius-sm); cursor:pointer; min-width:0; border:none; background:none; width:100%; text-align:left; }
+  .ci-row:hover{ background:rgba(0,0,0,.04); }
+  .ci-row.current{ background:var(--mds-bg-interactive-primary-default); }
+  .ci-row.current .txt, .ci-row.current .act-icon{ color:#fff; }
+  .ci-row.current .act-icon{ background:rgba(255,255,255,.22); }
+  .ci-row .txt{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); color:var(--mds-text-subtle);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  .act-icon{ flex:0 0 auto; width:22px; height:22px; border-radius:var(--mds-border-radius-lg);
+    display:flex; align-items:center; justify-content:center; font-size:11px; }
+  .act-icon.file{ background:var(--mds-activity-icon-file-bg); color:var(--mds-activity-icon-file-icon); }
+  .act-icon.communication{ background:var(--mds-activity-icon-communication-bg); color:var(--mds-activity-icon-communication-icon); }
+  .act-icon.assessment{ background:var(--mds-activity-icon-assessment-bg); color:var(--mds-activity-icon-assessment-icon); }
+
+  /* ---- QUIZ ACTIVITY: expands to nested question rows (mirrors book chapters) ---- */
+  .ci-quiz-chevron{ width:12px; border:none; background:none; padding:0; cursor:pointer; color:var(--mds-text-muted); font-size:9px; flex:0 0 auto; transition:transform .15s ease; }
+  .ci-quizwrap.collapsed .ci-quiz-chevron{ transform:rotate(-90deg); }
+  .ci-quizwrap.collapsed .ci-questions{ display:none; }
+  .ci-questions{ padding-left:26px; display:flex; flex-direction:column; gap:1px; }
+  .ci-question{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
+    border-radius:var(--mds-border-radius-sm); cursor:pointer; min-width:0; border:none; background:none; width:100%; text-align:left; }
+  .ci-question:hover{ background:rgba(0,0,0,.04); }
+  .ci-question.current{ background:var(--mds-bg-interactive-primary-default); }
+  .ci-question.current .txt{ color:#fff; }
+  .ci-question .txt{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  /* status dot: outline = not answered, filled grey = answered, green/red = correct/incorrect (review) */
+  .ci-question .qdot{ width:14px; height:14px; border-radius:50%; border:2px solid var(--mds-color-gray-500); flex:0 0 auto; box-sizing:border-box; }
+  .ci-question.answered .qdot{ background:var(--mds-color-gray-600); border-color:var(--mds-color-gray-600); }
+  .ci-question.correct .qdot{ background:var(--mds-color-green-500); border-color:var(--mds-color-green-500); }
+  .ci-question.incorrect .qdot{ background:var(--mds-color-red-500); border-color:var(--mds-color-red-500); }
+  .ci-question.current .qdot{ border-color:rgba(255,255,255,.85); }
+  .ci-question .flag{ margin-left:auto; color:var(--mds-text-danger); font-size:10px; flex:0 0 auto; }
+  .ci-question.current .flag{ color:#fff; }
+
+  /* =====================  CONTENT  ===================== */
+  .content-col{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:center; padding:0 var(--shell-pad); }
+  .content{ width:100%; max-width:var(--content-max); }
+  .breadcrumb{ color:var(--mds-text-muted); font-size:var(--mds-font-size-paragraph-small); margin-bottom:var(--mds-spacing-sm); display:flex; gap:.4rem; flex-wrap:wrap; }
+  .breadcrumb a{ color:var(--mds-bg-interactive-primary-default); }
+
+  /* forum-style activity header: icon tile + title + description + actions */
+  .act-header{ display:flex; gap:var(--mds-spacing-md); align-items:flex-start; margin-bottom:var(--mds-spacing-lg); }
+  .act-tile{ width:48px; height:48px; flex:0 0 auto; border-radius:var(--mds-border-radius-md); display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .act-tile.assessment{ background:var(--mds-activity-icon-assessment-bg); color:var(--mds-activity-icon-assessment-icon); }
+  .act-header .h-main{ flex:1; min-width:0; }
+  .act-header .h-title{ margin:0; font-size:var(--mds-font-size-headings-3); line-height:var(--mds-line-height-headings-3); font-weight:var(--mds-font-weight-bold); letter-spacing:-.2px; }
+  .act-header .h-desc{ margin:var(--mds-spacing-xxs) 0 0; color:var(--mds-text-muted); font-size:var(--mds-font-size-paragraph-small); }
+  .act-header .h-actions{ flex:0 0 auto; display:flex; gap:var(--mds-spacing-xs); align-items:flex-start; }
+
+  /* MDS buttons */
+  .btn{ display:inline-flex; align-items:center; gap:var(--mds-spacing-xs); border:1px solid transparent; border-radius:var(--mds-border-radius-sm);
+    padding:var(--mds-spacing-xs) var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); cursor:pointer; white-space:nowrap; }
+  .btn-primary{ background:var(--mds-bg-interactive-primary-default); color:#fff; }
+  .btn-primary:hover{ background:var(--mds-bg-interactive-primary-hover); }
+  .btn-secondary{ background:var(--mds-bg-surface-default); color:var(--mds-text-subtle); border-color:var(--mds-border-default); }
+  .btn-secondary:hover{ background:var(--mds-bg-surface-subtle); }
+  .btn-lg{ padding:var(--mds-spacing-sm) var(--mds-spacing-lg); font-size:var(--mds-font-size-paragraph-default); border-radius:var(--mds-border-radius-md); }
+  .manage-btn{ display:none; }
+  body.edit-on .manage-btn{ display:inline-flex; }
+
+  /* Manage dropdown */
+  .manage-menu{ position:fixed; z-index:80; min-width:210px; background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md); box-shadow:0 8px 28px rgba(0,0,0,.16); padding:6px; display:none; }
+  .manage-menu.show{ display:block; }
+  .manage-menu .menu-label{ font-size:.6875rem; text-transform:uppercase; letter-spacing:.4px; color:var(--mds-text-muted); padding:6px 10px 3px; }
+  .manage-menu .menu-item{ display:flex; align-items:center; gap:10px; width:100%; padding:8px 10px; border:none; background:none; cursor:pointer; font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-default); border-radius:var(--mds-border-radius-sm); text-align:left; }
+  .manage-menu .menu-item:hover{ background:var(--mds-bg-surface-subtle); }
+  .manage-menu .menu-item i{ width:16px; text-align:center; color:var(--mds-text-muted); }
+  .manage-menu .menu-sep{ height:1px; background:var(--mds-border-subtle); margin:4px 6px; }
+
+  .content p{ margin:0 0 var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-default); line-height:var(--mds-line-height-paragraph-default); }
+
+  /* ---- entry: info panel + attempts table + CTA ---- */
+  /* faithful to Moodle's centred .quizinfo access-rule box (view_information/describe_rules):
+     the settings surface as a list of sentences, not a key/value table */
+  .quizinfo{ border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md); background:var(--mds-bg-surface-subtle);
+    padding:var(--mds-spacing-md) var(--mds-spacing-lg); margin-bottom:var(--mds-spacing-lg); text-align:center; }
+  .quizinfo p{ margin:0 0 var(--mds-spacing-xxs); font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); }
+  .quizinfo p:last-child{ margin-bottom:0; }
+  .cta{ display:flex; justify-content:center; margin:var(--mds-spacing-xl) 0 var(--mds-spacing-md); }
+  .teacher-only{ display:none; }
+  body.role-teacher .teacher-only{ display:block; }
+  .teacher-counts{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); margin-bottom:var(--mds-spacing-md); }
+  .teacher-counts a{ font-weight:var(--mds-font-weight-medium); }
+  .preview-ribbon{ display:none; }
+  body.role-teacher .preview-ribbon{ display:flex; align-items:center; gap:var(--mds-spacing-xs); background:var(--mds-bg-interactive-primary-default-light);
+    border:1px solid var(--mds-bg-interactive-primary-default); color:var(--mds-color-blue-700); border-radius:var(--mds-border-radius-sm);
+    padding:var(--mds-spacing-xs) var(--mds-spacing-sm); font-size:var(--mds-font-size-paragraph-small); margin-bottom:var(--mds-spacing-md); }
+  .preview-ribbon .preview-restart{ margin-left:auto; font-weight:var(--mds-font-weight-medium); white-space:nowrap; }
+
+  .qtable{ width:100%; border-collapse:collapse; margin-bottom:var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-small); }
+  .qtable caption{ text-align:left; font-size:var(--mds-font-size-headings-6); font-weight:var(--mds-font-weight-semibold); margin-bottom:var(--mds-spacing-xs); }
+  .qtable th, .qtable td{ text-align:left; padding:var(--mds-spacing-sm); border-bottom:1px solid var(--mds-border-subtle); }
+  .qtable th{ font-weight:var(--mds-font-weight-semibold); color:var(--mds-text-subtle); background:var(--mds-bg-surface-subtle); }
+  .qtable tbody tr:hover{ background:var(--mds-bg-surface-subtle); }
+  .badge-state{ display:inline-flex; align-items:center; gap:6px; font-size:.6875rem; font-weight:var(--mds-font-weight-semibold);
+    padding:2px 8px; border-radius:var(--mds-border-radius-pill); }
+  .badge-state.finished{ background:var(--mds-bg-feedback-success-light); color:var(--mds-text-feedback-success); }
+  .badge-state.inprogress{ background:var(--mds-bg-feedback-warning-light); color:var(--mds-text-feedback-warning); }
+  .grade-summary{ font-size:var(--mds-font-size-paragraph-default); margin-bottom:var(--mds-spacing-md); }
+  .grade-summary strong{ color:var(--mds-bg-interactive-primary-default); }
+
+  /* ---- resume banner ---- */
+  .resume{ display:flex; align-items:center; gap:var(--mds-spacing-md); border:1px solid var(--mds-bg-interactive-primary-default);
+    background:var(--mds-bg-interactive-primary-default-light); border-radius:var(--mds-border-radius-md); padding:var(--mds-spacing-md); margin-bottom:var(--mds-spacing-lg); }
+  .resume .txt{ flex:1; min-width:0; }
+  .resume .txt b{ display:block; margin-bottom:2px; }
+  .resume .txt span{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); }
+
+  /* ---- timer ---- */
+  .timer{ display:inline-flex; align-items:center; gap:var(--mds-spacing-xs); background:var(--mds-bg-surface-subtle);
+    border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-pill); padding:var(--mds-spacing-xxs) var(--mds-spacing-sm);
+    font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); margin-bottom:var(--mds-spacing-md); }
+  .timer i{ color:var(--mds-text-feedback-warning); }
+  .timer b{ font-variant-numeric:tabular-nums; color:var(--mds-text-default); }
+
+  /* ---- question card ---- */
+  .qcard{ border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md); margin-bottom:var(--mds-spacing-lg); overflow:hidden; }
+  .qcard-head{ display:flex; align-items:center; gap:var(--mds-spacing-sm); background:var(--mds-bg-surface-subtle);
+    padding:var(--mds-spacing-sm) var(--mds-spacing-md); border-bottom:1px solid var(--mds-border-subtle); }
+  .qcard-head .qn{ font-weight:var(--mds-font-weight-semibold); font-size:var(--mds-font-size-paragraph-small); }
+  .qcard-head .qmeta{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); }
+  .qcard-head .qstate{ font-size:.6875rem; font-weight:var(--mds-font-weight-semibold); padding:2px 8px; border-radius:var(--mds-border-radius-pill);
+    background:var(--mds-bg-surface-strong); color:var(--mds-text-subtle); }
+  .qcard-head .qstate.correct{ background:var(--mds-bg-feedback-success-light); color:var(--mds-text-feedback-success); }
+  .qcard-head .qstate.incorrect{ background:var(--mds-color-red-50); color:var(--mds-text-danger); }
+  .qflag{ margin-left:auto; display:inline-flex; align-items:center; gap:6px; border:none; background:none; cursor:pointer;
+    color:var(--mds-text-muted); font-size:var(--mds-font-size-paragraph-small); }
+  .qflag.on{ color:var(--mds-text-danger); }
+  .qcard-body{ padding:var(--mds-spacing-md); }
+  .qtext{ font-size:var(--mds-font-size-paragraph-default); line-height:var(--mds-line-height-paragraph-default); margin:0 0 var(--mds-spacing-md); }
+  .qopts{ display:flex; flex-direction:column; gap:var(--mds-spacing-xs); }
+  .qopt{ display:flex; align-items:flex-start; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
+    border:1px solid transparent; border-radius:var(--mds-border-radius-sm); cursor:pointer; font-size:var(--mds-font-size-paragraph-default); }
+  .qopt:hover{ background:var(--mds-bg-surface-subtle); }
+  .qopt .radio{ width:18px; height:18px; border-radius:50%; border:2px solid var(--mds-color-gray-500); flex:0 0 auto; margin-top:1px; position:relative; }
+  .qopt.sel .radio{ border-color:var(--mds-bg-interactive-primary-default); }
+  .qopt.sel .radio::after{ content:""; position:absolute; inset:3px; border-radius:50%; background:var(--mds-bg-interactive-primary-default); }
+  .qopt .mark{ margin-left:auto; flex:0 0 auto; font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-semibold); }
+  /* review markers */
+  .qopt.opt-correct{ background:var(--mds-bg-feedback-success-light); border-color:var(--mds-color-green-500); }
+  .qopt.opt-wrong{ background:var(--mds-color-red-50); border-color:var(--mds-color-red-500); }
+  .qopt.opt-correct .mark{ color:var(--mds-text-feedback-success); }
+  .qopt.opt-wrong .mark{ color:var(--mds-text-danger); }
+  .qfeedback{ margin-top:var(--mds-spacing-md); border-left:3px solid var(--mds-bg-interactive-primary-default);
+    background:var(--mds-bg-surface-subtle); border-radius:var(--mds-border-radius-sm); padding:var(--mds-spacing-sm) var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-small); }
+  .qfeedback .right{ color:var(--mds-text-feedback-success); font-weight:var(--mds-font-weight-medium); }
+  .qgrade-note{ margin-top:var(--mds-spacing-xs); font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); }
+
+  /* ---- summary + review headings ---- */
+  .sec-h{ font-size:var(--mds-font-size-headings-5); font-weight:var(--mds-font-weight-bold); margin:0 0 var(--mds-spacing-md); }
+  .submitbtns{ display:flex; gap:var(--mds-spacing-sm); justify-content:center; margin:var(--mds-spacing-lg) 0; flex-wrap:wrap; }
+
+  /* ---- review summary + controls ---- */
+  .review-summary{ border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md); padding:var(--mds-spacing-md) var(--mds-spacing-lg); margin-bottom:var(--mds-spacing-lg); }
+  .review-summary dl{ display:grid; grid-template-columns:auto 1fr; gap:var(--mds-spacing-xs) var(--mds-spacing-lg); margin:0; }
+  .review-summary dt{ color:var(--mds-text-muted); font-size:var(--mds-font-size-paragraph-small); }
+  .review-summary dd{ margin:0; font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-default); }
+  .review-summary dd.big{ font-weight:var(--mds-font-weight-bold); color:var(--mds-bg-interactive-primary-default); }
+  .review-controls{ display:flex; align-items:center; justify-content:space-between; gap:var(--mds-spacing-md); margin-bottom:var(--mds-spacing-md); flex-wrap:wrap; }
+  .seg{ display:inline-flex; border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-sm); overflow:hidden; }
+  .seg button{ border:none; background:var(--mds-bg-surface-default); color:var(--mds-text-subtle); padding:var(--mds-spacing-xs) var(--mds-spacing-md);
+    font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); cursor:pointer; }
+  .seg button + button{ border-left:1px solid var(--mds-border-default); }
+  .seg button.on{ background:var(--mds-bg-interactive-primary-default); color:#fff; }
+  .review-count{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); }
+
+  /* ---- ALTERNATIVE progress pattern: survey-style progress module (bar + counter
+     + numbered question chips), shown inline at the top of the quiz content when
+     the "Progress bar" question-UI is selected (instead of nesting in the index) ---- */
+  .qprogress{ border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md); padding:var(--mds-spacing-md); margin-bottom:var(--mds-spacing-lg); }
+  .qprogress-top{ display:flex; justify-content:space-between; align-items:baseline; gap:var(--mds-spacing-xs); flex-wrap:wrap; margin-bottom:var(--mds-spacing-xs); }
+  .qprogress-label{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-semibold); color:var(--mds-text-default); }
+  .qprogress-count{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); }
+  .qprogress-count b{ color:var(--mds-text-default); }
+  .qprogress-bar{ height:8px; border-radius:var(--mds-border-radius-pill); background:var(--mds-bg-surface-strong); overflow:hidden; margin-bottom:var(--mds-spacing-md); }
+  .qprogress-fill{ height:100%; background:var(--mds-bg-interactive-primary-default); border-radius:inherit; transition:width .3s ease; }
+  .qprogress-fill.review{ background:var(--mds-color-green-500); }
+  .qprogress-chips{ display:flex; flex-wrap:wrap; gap:var(--mds-spacing-xs); }
+  .qchip{ position:relative; width:34px; height:34px; border-radius:var(--mds-border-radius-sm); border:1px solid var(--mds-color-gray-400);
+    background:var(--mds-bg-surface-default); color:var(--mds-text-default); font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium);
+    cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .qchip:hover{ border-color:var(--mds-bg-interactive-primary-default); }
+  .qchip.answered{ background:var(--mds-color-gray-600); border-color:var(--mds-color-gray-600); color:#fff; }
+  .qchip.correct{ background:var(--mds-color-green-500); border-color:var(--mds-color-green-500); color:#fff; }
+  .qchip.incorrect{ background:var(--mds-color-red-500); border-color:var(--mds-color-red-500); color:#fff; }
+  .qchip.current{ box-shadow:0 0 0 2px var(--mds-bg-surface-default), 0 0 0 4px var(--mds-bg-interactive-primary-default); }
+  .qchip-flag{ position:absolute; top:-4px; right:-4px; width:0; height:0; border-top:10px solid var(--mds-color-red-500); border-left:10px solid transparent; border-top-right-radius:2px; }
+  .qprogress-legend{ display:flex; flex-wrap:wrap; gap:var(--mds-spacing-xs) var(--mds-spacing-md); margin-top:var(--mds-spacing-sm); }
+  .qprogress-legend span{ display:inline-flex; align-items:center; gap:6px; font-size:.6875rem; color:var(--mds-text-muted); }
+  .qprogress-legend .sw{ width:12px; height:12px; border-radius:3px; border:1px solid var(--mds-color-gray-400); }
+  .qprogress-legend .sw.answered{ background:var(--mds-color-gray-600); border-color:var(--mds-color-gray-600); }
+  .qprogress-legend .sw.correct{ background:var(--mds-color-green-500); border-color:var(--mds-color-green-500); }
+  .qprogress-legend .sw.incorrect{ background:var(--mds-color-red-500); border-color:var(--mds-color-red-500); }
+
+  /* =====================  STICKY FOOTER  ===================== */
+  .cln-footer{ position:fixed; left:0; right:0; bottom:0; height:var(--footer-h); z-index:30;
+    background:var(--mds-bg-surface-default); border-top:1px solid var(--mds-border-subtle); }
+  body.hide-footer .cln-footer{ display:none; }
+  .cln-shell{ display:flex; height:100%; max-width:var(--shell-max); margin:0 auto; padding:0 var(--shell-pad); }
+  .cln-indexspacer{ flex:0 0 auto; width:0; transition:width .32s cubic-bezier(.4,0,.2,1); }
+  body.ci-open:not(.ci-overlay) .cln-indexspacer{ width:var(--ci-width); }
+  body:not(.ci-open):not(.ci-overlay) .cln-indexspacer{ width:calc(var(--btn) + .75rem); }
+  .cln-region{ flex:1 1 auto; min-width:0; display:flex; justify-content:center; padding:0 var(--shell-pad); }
+  .cln-rightspacer{ flex:0 0 auto; width:0; transition:width .3s cubic-bezier(.4,0,.2,1); }
+  body.cb-open:not(.cb-overlay) .cln-rightspacer{ width:var(--cb-width); }
+  .cln-bar{ width:100%; max-width:var(--content-max); display:flex; align-items:center; gap:var(--mds-spacing-md); }
+  .cln-link{ position:relative; display:inline-flex; align-items:center; gap:var(--mds-spacing-xs); border:none; background:none; cursor:pointer;
+    color:var(--mds-bg-interactive-primary-default); font-size:var(--mds-font-size-paragraph-default); padding:var(--mds-spacing-xxs) 0; }
+  .cln-link:disabled{ color:var(--mds-color-gray-500); cursor:default; }
+  .cln-link .k{ white-space:nowrap; font-weight:var(--mds-font-weight-semibold); }
+  .cln-link:not(:disabled):hover .k{ text-decoration:underline; }
+  .cln-right{ display:flex; align-items:center; gap:var(--mds-spacing-md); margin-left:auto; }
+  /* Finish-attempt button — footer placement, sits to the LEFT of Next */
+  .cln-finish{ display:inline-flex; }
+  body.finish-in-header .cln-finish{ display:none; }
+
+  /* overlay backdrop */
+  .backdrop{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:46; }
+  body.ci-overlay.ci-open .backdrop{ display:block; }
+  body.cb-overlay.cb-open .backdrop{ display:block; }
+
+  /* =====================  CONFIRM MODAL  ===================== */
+  .modal{ position:fixed; inset:0; z-index:90; display:none; align-items:center; justify-content:center; padding:var(--mds-spacing-md); }
+  .modal.show{ display:flex; }
+  .modal-back{ position:absolute; inset:0; background:rgba(0,0,0,.5); }
+  .modal-card{ position:relative; background:var(--mds-bg-surface-default); border-radius:var(--mds-border-radius-md); max-width:480px; width:100%;
+    box-shadow:0 16px 48px rgba(0,0,0,.28); padding:var(--mds-spacing-lg); }
+  .modal-title{ font-size:var(--mds-font-size-headings-5); font-weight:var(--mds-font-weight-bold); margin:0 0 var(--mds-spacing-sm); }
+  .modal-card p{ font-size:var(--mds-font-size-paragraph-default); margin:0 0 var(--mds-spacing-md); }
+  .alert-warning{ display:flex; gap:var(--mds-spacing-sm); background:var(--mds-bg-feedback-warning-light);
+    border-left:3px solid var(--mds-text-feedback-warning); border-radius:var(--mds-border-radius-sm);
+    padding:var(--mds-spacing-sm) var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-small); color:var(--mds-color-red-800); margin-bottom:var(--mds-spacing-md); }
+  .alert-warning i{ color:var(--mds-text-feedback-warning); margin-top:2px; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:var(--mds-spacing-sm); }
+
+  /* ===================  RIGHT "COURSE BLOCKS" DRAWER (forum)  =================== */
+  .toggle-col-right{ flex:0 0 auto; width:var(--btn); margin-left:var(--mds-spacing-sm); display:flex; justify-content:center; }
+  body.cb-open .toggle-col-right{ width:0; margin-left:0; overflow:hidden; }
+  .blocks-btn{ width:var(--btn); height:var(--btn); border:none; cursor:pointer; border-radius:var(--mds-border-radius-sm); background:var(--mds-bg-surface-strong); color:var(--mds-text-subtle); display:flex; align-items:center; justify-content:center; position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); }
+  .blocks-btn:hover{ background:var(--mds-bg-interactive-secondary-hover); }
+  .drawer-right{ flex:0 0 auto; width:0; overflow:hidden; position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); align-self:flex-start; transition:width .3s cubic-bezier(.4,0,.2,1); }
+  body.cb-open .drawer-right{ width:var(--cb-width); }
+  .cb-card{ width:var(--cb-width); background:var(--mds-bg-surface-subtle); border-radius:var(--mds-border-radius-md); padding:0 var(--mds-spacing-sm) var(--mds-spacing-md); transform:translateX(100%); transition:transform .3s cubic-bezier(.4,0,.2,1); }
+  body.cb-open .cb-card{ transform:translateX(0); }
+  .cb-header{ display:flex; flex-direction:column; align-items:flex-start; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-xs) 0 var(--mds-spacing-sm); }
+  .cb-close{ width:40px; height:40px; border:none; cursor:pointer; border-radius:var(--mds-border-radius-md); background:var(--mds-bg-surface-strong); display:flex; align-items:center; justify-content:center; }
+  .cb-close:hover{ background:var(--mds-bg-interactive-secondary-hover); }
+  .cb-title{ font-size:var(--mds-font-size-heading-6); font-weight:var(--mds-typography-font-weight-semibold); }
+  .cb-block{ background:var(--mds-bg-surface-default); border:var(--mds-stroke-weight-sm) solid var(--mds-border-subtle); border-radius:var(--mds-border-radius-sm); padding:var(--mds-spacing-sm) 0; margin-bottom:var(--mds-spacing-xs); }
+  .cb-block-head{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:0 var(--mds-spacing-md); }
+  .cb-block-head .grip{ color:var(--mds-text-muted); font-size:12px; }
+  .cb-block-title{ font-size:var(--mds-font-size-heading-6); font-weight:var(--mds-typography-font-weight-medium); color:var(--mds-text-subtle); }
+  .cb-block-divider{ height:var(--mds-stroke-weight-sm); background:var(--mds-border-subtle); margin:var(--mds-spacing-sm) 0; }
+  .cb-block-body{ padding:0 var(--mds-spacing-md); font-size:var(--mds-font-size-small); }
+  .cb-block-body p{ margin:0 0 var(--mds-spacing-sm); color:var(--mds-text-muted); }
+  .cb-block-body a{ color:var(--mds-text-link-primary); }
+  .cb-teacher{ display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:0 var(--mds-spacing-md); }
+  .cb-teacher .name{ font-size:var(--mds-font-size-body); color:var(--mds-text-default); }
+  .cb-teacher .role{ font-size:var(--mds-font-size-small); color:var(--mds-text-muted); margin-top:2px; }
+  .cb-avatar{ width:48px; height:48px; flex:0 0 auto; border-radius:50%; background:var(--mds-color-indigo-500); color:#fff; font-weight:var(--mds-typography-font-weight-semibold); font-size:16px; display:flex; align-items:center; justify-content:center; border:var(--mds-stroke-weight-sm) solid var(--mds-border-default); }
+
+  /* =====================  DEV STATE SWITCHER (prototype only)  ===================== */
+  /* pinned to the bottom, above the linear-navigation footer; its LEFT edge sits
+     at the Course Blocks drawer's right edge (in the right gutter), clamped on
+     narrow viewports so it never runs off-screen */
+  .devpanel{ position:fixed; top:auto; bottom:calc(var(--footer-h) + var(--mds-spacing-md));
+    right:max(var(--mds-spacing-sm), calc(max(var(--shell-pad), (100vw - var(--shell-max)) / 2 + var(--shell-pad)) - 238px)); z-index:95; width:238px;
+    max-height:calc(100vh - var(--nav-h) - 2 * var(--mds-spacing-lg)); overflow:auto;
+    background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md);
+    box-shadow:0 8px 28px rgba(0,0,0,.16); padding:var(--mds-spacing-sm); }
+  /* when the footer isn't shown (entry / summary / edit), drop back to the bottom */
+  body.hide-footer .devpanel{ bottom:var(--mds-spacing-md); }
+  .devpanel h5{ margin:0 0 6px; font-size:.625rem; text-transform:uppercase; letter-spacing:.5px; color:var(--mds-text-muted); }
+  .devpanel h5:not(:first-child){ margin-top:var(--mds-spacing-sm); }
+  .devrow{ display:flex; flex-wrap:wrap; gap:4px; }
+  .devbtn{ border:1px solid var(--mds-border-default); background:var(--mds-bg-surface-subtle); border-radius:var(--mds-border-radius-xs);
+    padding:4px 8px; cursor:pointer; font-size:.6875rem; color:var(--mds-text-subtle); font-weight:var(--mds-font-weight-medium); }
+  .devbtn:hover:not(:disabled){ background:var(--mds-bg-surface-strong); }
+  .devbtn.on{ background:var(--mds-bg-interactive-primary-default); color:#fff; border-color:transparent; }
+  /* options with no effect in the current state are dimmed + non-clickable */
+  .devbtn:disabled{ opacity:.35; cursor:not-allowed; }
+  .devbtn.on:disabled{ opacity:.5; }
+  .devpanel h5.dim{ opacity:.4; }
+  .devpanel .cap{ font-size:.625rem; color:var(--mds-text-muted); margin-top:6px; line-height:1.4; }
+
+  /* =====================  RESPONSIVE  ===================== */
+  @media (max-width:1024px){
+    :root{ --shell-pad:1.5rem; }
+    .burger{ display:flex; }
+    .nav-left .brand, .nav-left .nav-pills{ display:none; }
+  }
+  @media (max-width:1200px){
+    body.cb-overlay .drawer-right{ position:fixed; right:0; top:var(--nav-h); height:calc(100vh - var(--nav-h)); width:auto !important; z-index:47; padding:var(--mds-spacing-md); margin:0; }
+    body.cb-overlay .cb-card{ height:100%; overflow-y:auto; }
+    body.cb-overlay:not(.cb-open) .cb-card{ transform:translateX(360px); }
+    body.cb-overlay .toggle-col-right{ width:var(--btn); margin-left:var(--mds-spacing-sm); }
+    .cln-rightspacer{ display:none; }
+  }
+  @media (max-width:768px){
+    .toggle-col, .toggle-col-right{ width:0 !important; margin:0 !important; overflow:visible; }
+    .ci-toggle, .blocks-btn{ position:fixed; top:calc(var(--nav-h) + var(--mds-spacing-xs)); z-index:30; box-shadow:0 1px 4px rgba(0,0,0,.12); }
+    .ci-toggle{ left:var(--mds-spacing-sm); }
+    .blocks-btn{ right:var(--mds-spacing-sm); }
+    .layout{ padding-top:calc(var(--btn) + var(--mds-spacing-md)); }
+    body.ci-overlay #drawer{ position:fixed; left:0; top:var(--nav-h); height:calc(100vh - var(--nav-h)); width:auto !important; z-index:47; padding:16px; margin:0; }
+    body.ci-overlay .ci-card{ width:300px; max-width:85vw; height:100%; overflow-y:auto; transform:translateX(-360px); transition:transform .3s cubic-bezier(.4,0,.2,1); }
+    body.ci-overlay.ci-open .ci-card{ transform:translateX(0); }
+    .cln-indexspacer, .cln-rightspacer{ display:none; }
+    .cln-region{ padding:0; }
+    .devpanel{ top:auto; bottom:8px; left:8px; right:8px; width:auto; max-height:60vh; }
+  }
+  @media (max-width:767px){
+    :root{ --shell-pad:1rem; }
+    .search{ display:none; }
+    .search-icon-btn{ display:flex; }
+    .editmode .label{ display:none; }
+    .profile .pname, .profile .fa-chevron-down{ display:none; }
+    .content-col{ padding:0 1rem; }
+    .act-header{ flex-wrap:wrap; }
+    .act-header .h-actions{ order:3; width:100%; }
+    .act-header .h-title{ font-size:var(--mds-font-size-headings-4); line-height:var(--mds-line-height-headings-4); }
+  }
+
+  /* =====================================================================
+     EDIT / CREATE WORKSPACE  (teacher/manager — entered via edit toggle +
+     Manage dropdown). Grounded in mod_form.php, edit.php/edit_renderer.php,
+     editgrading.php, overrideedit.php, qbank + report/* subplugins.
+     ===================================================================== */
+  /* fill the viewport height so the sticky Save footer is pushed to the bottom on
+     every edit tab (short tabs like Questions/Grades behave like the tall Settings tab) */
+  body.edit-mode .content{ max-width:1180px; display:flex; flex-direction:column; min-height:calc(100vh - var(--nav-h)); }
+  body.edit-mode .ws-panel{ flex:1 0 auto; }
+  body.edit-mode .cln-footer{ display:none; }
+  body.edit-mode .layout{ padding-bottom:0; }
+
+  .ws-head{ display:flex; align-items:flex-start; gap:var(--mds-spacing-md); margin-bottom:var(--mds-spacing-md); }
+  .ws-head .act-tile{ width:44px; height:44px; font-size:18px; }
+  .ws-head .h-main{ flex:1; min-width:0; }
+  .ws-name{ font-size:var(--mds-font-size-headings-4); line-height:var(--mds-line-height-headings-4); font-weight:var(--mds-font-weight-bold); margin:0; border:1px solid transparent; border-radius:var(--mds-border-radius-sm); padding:2px 6px; margin-left:-6px; }
+  .ws-name:hover, .ws-name:focus{ border-color:var(--mds-border-default); outline:none; background:var(--mds-bg-surface-default); }
+  .ws-sub{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); margin:var(--mds-spacing-xxs) 0 0; }
+  .ws-badge{ display:inline-flex; align-items:center; gap:6px; font-size:.6875rem; font-weight:var(--mds-font-weight-semibold); padding:2px 8px; border-radius:var(--mds-border-radius-pill); background:var(--mds-bg-surface-strong); color:var(--mds-text-subtle); margin-left:var(--mds-spacing-xs); vertical-align:middle; }
+  .ws-badge.draft{ background:var(--mds-bg-feedback-warning-light); color:var(--mds-text-feedback-warning); }
+  .ws-badge.open{ background:var(--mds-bg-feedback-success-light); color:var(--mds-text-feedback-success); }
+  .ws-head .h-actions{ flex:0 0 auto; display:flex; gap:var(--mds-spacing-xs); }
+
+  /* workspace tabs (the real secondary nav, modernised) */
+  .ws-tabs{ display:flex; gap:var(--mds-spacing-xs); border-bottom:1px solid var(--mds-border-default); margin-bottom:var(--mds-spacing-lg); flex-wrap:wrap; }
+  .ws-tab{ border:none; background:none; cursor:pointer; padding:var(--mds-spacing-sm) var(--mds-spacing-sm); font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); color:var(--mds-text-subtle); border-bottom:2px solid transparent; margin-bottom:-1px; display:inline-flex; align-items:center; gap:6px; }
+  .ws-tab:hover{ color:var(--mds-text-default); }
+  .ws-tab.on{ color:var(--mds-bg-interactive-primary-default); border-bottom-color:var(--mds-bg-interactive-primary-default); }
+
+  /* shared form controls */
+  .field{ margin-bottom:var(--mds-spacing-md); }
+  .field-label, .field > label{ display:block; font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); margin-bottom:var(--mds-spacing-xxs); }
+  .field .req{ color:var(--mds-text-danger); }
+  .inp{ width:100%; max-width:440px; padding:var(--mds-spacing-xs) var(--mds-spacing-sm); border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-sm); font-family:inherit; font-size:var(--mds-font-size-paragraph-small); background:var(--mds-bg-surface-default); color:var(--mds-text-default); }
+  .inp:focus{ outline:2px solid var(--mds-bg-interactive-primary-default); outline-offset:-1px; border-color:var(--mds-bg-interactive-primary-default); }
+  select.inp{ max-width:340px; }
+  .inp.sm{ max-width:120px; }
+  .help{ font-size:.75rem; color:var(--mds-text-muted); margin-top:var(--mds-spacing-xxs); max-width:560px; }
+  .field.adv{ display:none; }
+  .set-group.show-adv .field.adv{ display:block; }
+  .adv-toggle{ background:none; border:none; color:var(--mds-bg-interactive-primary-default); font-size:.75rem; cursor:pointer; padding:0; margin-top:var(--mds-spacing-xs); }
+  .inline-2{ display:flex; gap:var(--mds-spacing-sm); align-items:center; flex-wrap:wrap; }
+  .duration-off{ opacity:.5; }
+  input[type="checkbox"], input[type="radio"]{ accent-color:var(--mds-bg-interactive-primary-default); width:16px; height:16px; }
+  .checkrow{ display:flex; align-items:center; gap:var(--mds-spacing-xs); font-size:var(--mds-font-size-paragraph-small); margin-bottom:var(--mds-spacing-xxs); }
+
+  /* settings: left sub-nav + sections */
+  .set-wrap{ display:flex; gap:var(--mds-spacing-xl); align-items:flex-start; }
+  .set-nav{ flex:0 0 auto; width:184px; position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); display:flex; flex-direction:column; gap:2px; max-height:calc(100vh - var(--nav-h) - 2rem); overflow:auto; }
+  .set-nav a{ display:block; padding:var(--mds-spacing-xs) var(--mds-spacing-sm); border-radius:var(--mds-border-radius-sm); font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); border-left:2px solid transparent; cursor:pointer; }
+  .set-nav a:hover{ background:var(--mds-bg-surface-subtle); }
+  .set-nav a.on{ color:var(--mds-text-default); font-weight:var(--mds-font-weight-medium); border-left-color:var(--mds-bg-interactive-primary-default); background:var(--mds-bg-interactive-primary-default-light); }
+  .set-body{ flex:1 1 auto; min-width:0; }
+  .set-group{ padding-bottom:var(--mds-spacing-lg); margin-bottom:var(--mds-spacing-lg); border-bottom:1px solid var(--mds-border-subtle); scroll-margin-top:calc(var(--nav-h) + var(--mds-spacing-md)); }
+  .set-group > h3{ font-size:var(--mds-font-size-headings-5); font-weight:var(--mds-font-weight-bold); margin:0 0 var(--mds-spacing-md); }
+
+  /* review options 4x8 matrix */
+  .rmatrix{ width:100%; border-collapse:collapse; font-size:var(--mds-font-size-paragraph-small); max-width:640px; }
+  .rmatrix th, .rmatrix td{ padding:var(--mds-spacing-xs) var(--mds-spacing-sm); border-bottom:1px solid var(--mds-border-subtle); text-align:center; }
+  .rmatrix th:first-child, .rmatrix td:first-child{ text-align:left; color:var(--mds-text-subtle); }
+  .rmatrix thead th{ font-weight:var(--mds-font-weight-semibold); color:var(--mds-text-subtle); background:var(--mds-bg-surface-subtle); font-size:.6875rem; }
+  .rmatrix td.disabled input{ opacity:.35; pointer-events:none; }
+
+  /* sticky save bar */
+  .ws-savebar{ position:sticky; bottom:0; background:var(--mds-bg-surface-default); border-top:1px solid var(--mds-border-default); padding:var(--mds-spacing-sm) 0; display:flex; gap:var(--mds-spacing-sm); justify-content:flex-end; margin-top:var(--mds-spacing-md); }
+  /* workspace sticky footer holding the primary Save action */
+  .ws-footer{ position:sticky; bottom:0; z-index:20; background:var(--mds-bg-surface-default); border-top:1px solid var(--mds-border-default); padding:var(--mds-spacing-sm) 0; margin-top:var(--mds-spacing-lg); display:flex; gap:var(--mds-spacing-sm); justify-content:flex-end; }
+
+  /* ---- question builder ---- */
+  .qb-top{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--mds-spacing-sm); margin-bottom:var(--mds-spacing-sm); }
+  .qb-status{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); }
+  .qb-status b{ color:var(--mds-text-default); }
+  .qb-status .st-chip{ margin-left:var(--mds-spacing-xs); }
+  .qb-right{ display:flex; align-items:center; gap:var(--mds-spacing-md); flex-wrap:wrap; }
+  .qb-maxgrade{ display:inline-flex; align-items:center; gap:var(--mds-spacing-xs); font-size:var(--mds-font-size-paragraph-small); }
+  .qb-maxgrade input{ width:70px; }
+  .qb-total{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); }
+  .qb-total b{ color:var(--mds-text-default); }
+  .qb-toolbar{ display:flex; gap:var(--mds-spacing-xs); margin-bottom:var(--mds-spacing-md); flex-wrap:wrap; }
+  .qb-section{ border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md); margin-bottom:var(--mds-spacing-md); overflow:hidden; }
+  .qb-sec-head{ display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-xs) var(--mds-spacing-md); background:var(--mds-bg-surface-subtle); border-bottom:1px solid var(--mds-border-subtle); }
+  .qb-sec-title{ font-weight:var(--mds-font-weight-semibold); font-size:var(--mds-font-size-paragraph-small); border:1px solid transparent; border-radius:var(--mds-border-radius-sm); padding:2px 6px; }
+  .qb-sec-title:hover{ border-color:var(--mds-border-default); background:var(--mds-bg-surface-default); }
+  .qb-sec-head .spacer{ margin-left:auto; }
+  .qb-shuffle{ display:inline-flex; align-items:center; gap:6px; font-size:.75rem; color:var(--mds-text-subtle); }
+  .qb-item{ display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-sm) var(--mds-spacing-md); border-bottom:1px solid var(--mds-border-subtle); }
+  .qb-item:last-child{ border-bottom:none; }
+  .qb-item:hover{ background:var(--mds-bg-surface-subtle); }
+  .qb-grip{ color:var(--mds-text-muted); cursor:grab; font-size:12px; flex:0 0 auto; }
+  .qb-num{ font-weight:var(--mds-font-weight-semibold); font-size:var(--mds-font-size-paragraph-small); min-width:20px; flex:0 0 auto; }
+  .qb-qicon{ width:24px; height:24px; border-radius:var(--mds-border-radius-sm); background:var(--mds-activity-icon-assessment-bg); color:var(--mds-activity-icon-assessment-icon); display:flex; align-items:center; justify-content:center; font-size:11px; flex:0 0 auto; }
+  .qb-name{ flex:1; min-width:0; }
+  .qb-name .nm{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .qb-name .ty{ font-size:.6875rem; color:var(--mds-text-muted); }
+  .qb-marks{ display:inline-flex; align-items:center; gap:6px; font-size:.6875rem; color:var(--mds-text-muted); flex:0 0 auto; }
+  .qb-marks input{ width:58px; }
+  .qb-icons{ display:flex; gap:2px; flex:0 0 auto; }
+  .qb-iconbtn{ width:28px; height:28px; border:none; background:none; border-radius:var(--mds-border-radius-sm); color:var(--mds-text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:12px; }
+  .qb-iconbtn:hover{ background:var(--mds-bg-surface-strong); color:var(--mds-text-default); }
+  .qb-iconbtn.danger:hover{ color:var(--mds-text-danger); }
+  .qb-page{ display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-xxs) var(--mds-spacing-md); background:var(--mds-bg-surface-subtle); font-size:.6875rem; color:var(--mds-text-muted); border-bottom:1px solid var(--mds-border-subtle); }
+  .qb-page .ln{ flex:1; height:1px; background:var(--mds-border-default); }
+  .qb-addbar{ padding:var(--mds-spacing-sm) var(--mds-spacing-md); display:flex; gap:var(--mds-spacing-xs); flex-wrap:wrap; }
+  .qb-empty{ text-align:center; padding:var(--mds-spacing-xxl) var(--mds-spacing-md); border:2px dashed var(--mds-border-default); border-radius:var(--mds-border-radius-md); }
+  .qb-empty > i{ font-size:32px; color:var(--mds-text-muted); margin-bottom:var(--mds-spacing-sm); }
+  .qb-empty h3{ margin:0 0 var(--mds-spacing-xs); font-size:var(--mds-font-size-headings-6); }
+  .qb-empty p{ color:var(--mds-text-muted); margin:0 0 var(--mds-spacing-md); }
+  .qb-locked{ display:flex; gap:var(--mds-spacing-sm); align-items:flex-start; background:var(--mds-bg-feedback-warning-light); border-left:3px solid var(--mds-text-feedback-warning); border-radius:var(--mds-border-radius-sm); padding:var(--mds-spacing-sm) var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-small); color:var(--mds-color-red-800); margin-bottom:var(--mds-spacing-md); }
+  .qb-locked i{ color:var(--mds-text-feedback-warning); margin-top:2px; }
+  body.qb-lockmode .qb-grip, body.qb-lockmode .qb-marks input, body.qb-lockmode .qb-addbar, body.qb-lockmode .qb-iconbtn.struct, body.qb-lockmode .qb-toolbar, body.qb-lockmode .qb-shuffle{ opacity:.4; pointer-events:none; }
+
+  /* sub-tabs (overrides / results) */
+  .subtabs{ display:flex; gap:var(--mds-spacing-xs); margin-bottom:var(--mds-spacing-md); }
+  .subtab{ border:1px solid var(--mds-border-default); background:var(--mds-bg-surface-default); border-radius:var(--mds-border-radius-pill); padding:var(--mds-spacing-xxs) var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); cursor:pointer; }
+  .subtab.on{ background:var(--mds-bg-interactive-primary-default); color:#fff; border-color:transparent; }
+  .note-analysis{ font-size:.75rem; color:var(--mds-text-muted); margin-bottom:var(--mds-spacing-md); font-style:italic; }
+  .qtype-tag{ display:inline-flex; align-items:center; gap:6px; }
+
+  /* question chooser + workspace modals (wide) */
+  .modal-wide{ max-width:720px; }
+  .qchooser{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:var(--mds-spacing-xs); max-height:340px; overflow:auto; padding:2px; }
+  .qchoice{ text-align:left; border:1px solid var(--mds-border-default); background:var(--mds-bg-surface-default); border-radius:var(--mds-border-radius-md); padding:var(--mds-spacing-sm); cursor:pointer; display:flex; gap:var(--mds-spacing-sm); align-items:flex-start; }
+  .qchoice:hover{ border-color:var(--mds-bg-interactive-primary-default); background:var(--mds-bg-interactive-primary-default-light); }
+  .qchoice .ic{ width:28px; height:28px; border-radius:var(--mds-border-radius-sm); background:var(--mds-activity-icon-assessment-bg); color:var(--mds-activity-icon-assessment-icon); display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .qchoice .nm{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); }
+  .qchoice .ds{ font-size:.6875rem; color:var(--mds-text-muted); }
+  .modal-tabs{ display:flex; gap:var(--mds-spacing-xs); border-bottom:1px solid var(--mds-border-default); margin-bottom:var(--mds-spacing-md); }
+  .modal-tabs button{ border:none; background:none; padding:var(--mds-spacing-xs) var(--mds-spacing-sm); font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); color:var(--mds-text-subtle); border-bottom:2px solid transparent; margin-bottom:-1px; cursor:pointer; }
+  .modal-tabs button.on{ color:var(--mds-bg-interactive-primary-default); border-bottom-color:var(--mds-bg-interactive-primary-default); }
+
+  /* question preview (question/bank/previewquestion/preview.php) */
+  .modal-card.modal-wide{ max-height:88vh; overflow:auto; }
+  .qpv-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:var(--mds-spacing-md); }
+  .qpv-opts{ border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-sm); padding:var(--mds-spacing-sm) var(--mds-spacing-md); margin-top:var(--mds-spacing-md); }
+  .qpv-opts summary{ cursor:pointer; font-weight:var(--mds-font-weight-semibold); font-size:var(--mds-font-size-paragraph-small); }
+  .qpv-opts[open] summary{ margin-bottom:var(--mds-spacing-sm); }
+  .qpv-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 var(--mds-spacing-lg); }
+  .qpv-grid .field{ margin-bottom:var(--mds-spacing-sm); }
+  .qpv-opts .inp{ max-width:none; }
+  .qpv-opts + .qpv-opts{ margin-top:var(--mds-spacing-xs); }
+  .qpv-tech p{ margin:.15rem 0; font-size:.75rem; color:var(--mds-text-muted); word-break:break-word; }
+  .qpv-idnumber{ display:inline-block; background:var(--mds-bg-interactive-primary-default); color:#fff; font-size:.6875rem; padding:2px 8px; border-radius:var(--mds-border-radius-xs); margin:var(--mds-spacing-xxs) 0 var(--mds-spacing-sm); }
+  .qpv-xml{ margin-top:var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-small); }
+  .qpv-comments textarea{ width:100%; margin-top:var(--mds-spacing-xs); }
+  @media (max-width:600px){ .qpv-grid{ grid-template-columns:1fr; } }
+
+  @media (max-width:900px){
+    .set-wrap{ flex-direction:column; }
+    .set-nav{ position:static; width:100%; flex-direction:row; flex-wrap:wrap; max-height:none; }
+  }
+
+  /* ---- annotations (blue walkthrough callouts + dashed pulsing ring, matching
+     the book prototype) ---- */
+  .anno-layer{ position:fixed; inset:0; z-index:60; pointer-events:none; }
+  body:not(.annotations-on) .anno-layer{ display:none; }
+  .anno-ring{ position:fixed; border:2px dashed var(--mds-bg-interactive-primary-default); border-radius:8px;
+    box-shadow:0 0 0 3px rgba(15,108,191,.16); pointer-events:none; animation:annoPulse 1.9s ease-in-out infinite; }
+  @keyframes annoPulse{ 0%,100%{ box-shadow:0 0 0 3px rgba(15,108,191,.16); } 50%{ box-shadow:0 0 0 8px rgba(15,108,191,.06); } }
+  .anno-card{ position:fixed; width:230px; background:var(--mds-bg-interactive-primary-default); color:#fff;
+    border-radius:10px; padding:10px 12px 11px; font-size:12px; line-height:1.45; box-shadow:0 10px 28px rgba(0,0,0,.28); pointer-events:auto; }
+  .anno-badge{ position:absolute; top:-11px; left:-11px; width:23px; height:23px; border-radius:50%; background:#fff;
+    color:var(--mds-bg-interactive-primary-default); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,.25); }
+  .anno-title{ font-weight:700; font-size:12px; display:flex; align-items:center; gap:6px; margin:0 16px 3px 0; }
+  .anno-title i{ font-size:12px; }
+  .anno-body{ color:rgba(255,255,255,.92); }
+  .anno-close{ position:absolute; top:5px; right:6px; border:none; background:none; cursor:pointer; color:rgba(255,255,255,.85); font-size:13px; line-height:1; padding:3px; }
+  .anno-close:hover{ color:#fff; }
+  .anno-toggle{ position:fixed; bottom:var(--mds-spacing-md); left:50%; transform:translateX(-50%); z-index:71;
+    background:var(--mds-bg-interactive-primary-default); color:#fff; border:none; border-radius:999px;
+    padding:9px 16px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,.25); display:flex; align-items:center; gap:8px; }
+  /* sit above the sticky footer when one is present (CLN footer in flow states, or
+     the workspace Save footer in edit mode) */
+  body:not(.hide-footer) .anno-toggle, body.edit-mode .anno-toggle{ bottom:calc(var(--footer-h) + var(--mds-spacing-md)); }
+  .anno-toggle:hover{ background:var(--mds-bg-interactive-primary-hover); }
+  .anno-toggle i{ font-size:12px; }
+  body:not(.annotations-on) .anno-toggle{ background:var(--mds-text-subtle); }
+</style>
+</head>
+<body class="ci-open annotations-on">
+
+  <!-- ===== TOP NAV ===== -->
+  <header class="topbar">
+    <div class="topbar-inner shell">
+      <div class="nav-left">
+        <button class="burger" id="burger" aria-label="Open site navigation"><i class="fa-solid fa-bars"></i></button>
+        <div class="brand"><span class="mark"><i class="fa-solid fa-leaf"></i></span><span class="word"><b>Fleetwood</b><span>UNIVERSITY</span></span></div>
+        <nav class="nav-pills"><button class="nav-pill selected"><span class="dot"></span>Dashboard</button><button class="nav-pill">Site Administration</button></nav>
+      </div>
+      <div class="nav-right">
+        <div class="nav-right-group">
+          <div class="search"><i class="fa-solid fa-magnifying-glass"></i><span>Search…</span></div>
+          <button class="search-icon-btn" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+          <div class="editmode"><span class="label">Edit mode</span><button class="switch" id="editSwitch" aria-pressed="false" aria-label="Edit mode"></button></div>
+          <div class="nav-icons"><button class="icon-btn" aria-label="Notifications"><i class="fa-regular fa-bell"></i></button><button class="icon-btn" aria-label="Messages"><i class="fa-regular fa-comment"></i></button></div>
+        </div>
+        <div class="nav-divider"></div>
+        <div class="profile"><span class="avatar">S</span><span class="pname">Sarah</span><i class="fa-solid fa-chevron-down"></i></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== PAGE ===== -->
+  <div class="layout shell">
+    <div class="toggle-col">
+      <button class="ci-toggle sticky" id="openBtn" title="Open course index" aria-label="Open course index">
+        <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer" id="drawer">
+      <div class="ci-card">
+        <div class="ci-header">
+          <span class="ci-title" id="ciTitle">Course Index</span>
+          <button class="ci-toggle contained" id="closeBtn" title="Close course index" aria-label="Close course index">
+            <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+          </button>
+        </div>
+        <div class="ci-divider"></div>
+        <div id="sections"></div>
+      </div>
+    </div>
+
+    <main class="content-col">
+      <div class="content" id="view"><!-- rendered by JS --></div>
+    </main>
+
+    <!-- right "Course Blocks" drawer (ported from PROTOTYPE-forum.html) -->
+    <div class="drawer drawer-right" id="drawerRight">
+      <div class="cb-card">
+        <div class="cb-header">
+          <button class="cb-close" id="cbClose" aria-label="Close course blocks">
+            <svg width="20" height="16" viewBox="0 0 20 16" style="transform:scaleX(-1)"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+          </button>
+          <span class="cb-title">Course Blocks</span>
+        </div>
+        <div class="cb-block">
+          <div class="cb-block-head"><span class="grip"><i class="fa-solid fa-grip-vertical"></i></span><span class="cb-block-title">Licence</span></div>
+          <div class="cb-block-divider"></div>
+          <div class="cb-block-body"><p>This Creative Commons course, created by Mary, is available on</p><a href="#">MoodleNet: Effective Memory Techniques</a></div>
+        </div>
+        <div class="cb-block">
+          <div class="cb-block-head"><span class="cb-block-title">Your teacher</span></div>
+          <div class="cb-block-divider"></div>
+          <div class="cb-teacher"><span class="cb-avatar">MS</span><div><div class="name">Mr. Sanders</div><div class="role">Senior Lecturer, Mount Orange</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="toggle-col-right">
+      <button class="blocks-btn" id="cbOpen" aria-label="Open course blocks">
+        <svg width="20" height="16" viewBox="0 0 20 16" style="transform:scaleX(-1)"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== STICKY FOOTER (quiz-aware) ===== -->
+  <footer class="cln-footer" aria-label="Quiz navigation">
+    <div class="cln-shell">
+      <div class="cln-indexspacer"></div>
+      <div class="cln-region"><div class="cln-bar" id="clnBar"></div></div>
+      <div class="cln-rightspacer"></div>
+    </div>
+  </footer>
+
+  <!-- ===== CONFIRM MODAL ===== -->
+  <div class="modal" id="modal">
+    <div class="modal-back" id="modalBack"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h3 class="modal-title" id="modalTitle">Submit all your answers and finish?</h3>
+      <p>Once you submit your answers, you won't be able to change them.</p>
+      <div class="alert-warning"><i class="fa-solid fa-triangle-exclamation"></i><span id="modalWarn">You still have 2 questions without an answer.</span></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="modalCancel">Cancel</button>
+        <button class="btn btn-primary" id="modalConfirm">Submit all and finish</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="manage-menu" id="manageMenu" role="menu"></div>
+  <div class="backdrop" id="backdrop"></div>
+
+  <!-- ===== WORKSPACE MODAL (question chooser / add random / override form) ===== -->
+  <div class="modal" id="wsmodal">
+    <div class="modal-back" id="wsmodalBack"></div>
+    <div class="modal-card modal-wide" role="dialog" aria-modal="true">
+      <div id="wsmodalBody"></div>
+    </div>
+  </div>
+
+  <!-- ===== DEV STATE SWITCHER (prototype only — delete for merge) ===== -->
+  <div class="devpanel" id="devpanel">
+    <h5>Quiz state</h5>
+    <div class="devrow" id="devStates">
+      <button class="devbtn" data-state="E1">E1 · No attempts</button>
+      <button class="devbtn" data-state="E2">E2 · Resume</button>
+      <button class="devbtn" data-state="A">A · Attempt</button>
+      <button class="devbtn" data-state="S">S · Summary</button>
+      <button class="devbtn" data-state="C">C · Confirm</button>
+      <button class="devbtn" data-state="R">R · Results</button>
+    </div>
+    <h5>Role</h5>
+    <div class="devrow" id="devRole">
+      <button class="devbtn" data-role="student">Student</button>
+      <button class="devbtn" data-role="teacher">Teacher (preview)</button>
+    </div>
+    <h5>Finish attempt button</h5>
+    <div class="devrow" id="devFA">
+      <button class="devbtn" data-fa="footer">Sticky footer</button>
+      <button class="devbtn" data-fa="header">Header action</button>
+    </div>
+    <h5>Question progress UI</h5>
+    <div class="devrow" id="devQnav">
+      <button class="devbtn" data-qnav="index">Course index</button>
+      <button class="devbtn" data-qnav="progress">Progress bar</button>
+    </div>
+    <h5>Edit workspace (teacher)</h5>
+    <div class="devrow" id="devTabs">
+      <button class="devbtn" data-tab="questions">Questions</button>
+      <button class="devbtn" data-tab="settings">Settings</button>
+      <button class="devbtn" data-tab="grades">Grades</button>
+      <button class="devbtn" data-tab="overrides">Overrides</button>
+      <button class="devbtn" data-tab="bank">Bank</button>
+      <button class="devbtn" data-tab="results">Results</button>
+    </div>
+    <h5>Edit data state</h5>
+    <div class="devrow" id="devEditData">
+      <button class="devbtn" data-editdata="create">Create (empty)</button>
+      <button class="devbtn" data-editdata="edit">Edit (populated)</button>
+      <button class="devbtn" data-editdata="locked">Locked (attempts)</button>
+    </div>
+    <div class="cap" id="devCap"></div>
+  </div>
+
+  <!-- ===== annotations (removable explainer callouts, matching the book prototype).
+       Each card shows only while its target is on screen, so switching quiz state /
+       edit tab surfaces the relevant notes. ===== -->
+  <button class="anno-toggle" id="annoToggle" title="Show or hide the explainer annotations">
+    <i class="fa-solid fa-location-dot"></i> <span id="annoToggleLabel">Hide annotations</span>
+  </button>
+  <div class="anno-layer" id="annoLayer">
+    <div class="anno-card" data-target=".act-header .h-actions .btn-primary" data-side="left">
+      <button class="anno-close" aria-label="Dismiss">&times;</button><div class="anno-badge">1</div>
+      <div class="anno-title"><i class="fa-solid fa-flag-checkered"></i> Finish attempt (header)</div>
+      <div class="anno-body">Optional placement of the <strong>Finish attempt</strong> action in the activity header — an alternative to the sticky-footer button. Shown when set via "Finish attempt button → Header action".</div>
+    </div>
+    <div class="anno-card" data-target=".manage-btn" data-side="left">
+      <button class="anno-close" aria-label="Dismiss">&times;</button><div class="anno-badge">2</div>
+      <div class="anno-title"><i class="fa-solid fa-gear"></i> Manage dropdown</div>
+      <div class="anno-body">The activity's tabs — Settings, Question bank, Preview, Results, Overrides, Permissions, Backup — collapsed into <strong>one Manage menu</strong> (educator-only).</div>
+    </div>
+    <div class="anno-card" data-target=".ci-question" data-side="right">
+      <button class="anno-close" aria-label="Dismiss">&times;</button><div class="anno-badge">3</div>
+      <div class="anno-title"><i class="fa-solid fa-list-ol"></i> Questions in the course index</div>
+      <div class="anno-body">Each question is a <strong>nested item under the quiz</strong> in the course index — like book chapters — instead of a quiz-only progress grid in a block. (Alternative: switch "Question progress UI" to <em>Progress bar</em>.)</div>
+    </div>
+    <div class="anno-card" data-target=".qprogress" data-side="bottom">
+      <button class="anno-close" aria-label="Dismiss">&times;</button><div class="anno-badge">3</div>
+      <div class="anno-title"><i class="fa-solid fa-bars-progress"></i> Survey-style progress (alternative)</div>
+      <div class="anno-body">A familiar survey pattern: an inline <strong>progress bar + "X of 8 answered"</strong> counter and numbered question chips (completed / current / flagged). The course index stays a plain activity row.</div>
+    </div>
+    <div class="anno-card" data-target=".cln-bar" data-side="top">
+      <button class="anno-close" aria-label="Dismiss">&times;</button><div class="anno-badge">4</div>
+      <div class="anno-title"><i class="fa-solid fa-arrow-right-arrow-left"></i> Linear navigation</div>
+      <div class="anno-body">Previous / Next <em>and</em> <strong>Finish attempt</strong> live in the course's sticky footer — the same linear nav used across the course — not a quiz-only nav block.</div>
+    </div>
+    <div class="anno-card" data-target=".resume" data-side="top">
+      <button class="anno-close" aria-label="Dismiss">&times;</button><div class="anno-badge">5</div>
+      <div class="anno-title"><i class="fa-solid fa-rotate-right"></i> Multiple attempts</div>
+      <div class="anno-body">Resume / re-attempt and each attempt's grade are surfaced on the <strong>entry screen</strong> — a resume banner plus the previous-attempts table and highest-grade summary.</div>
+    </div>
+    <div class="anno-card" data-target="[data-action='confirm']" data-side="top">
+      <button class="anno-close" aria-label="Dismiss">&times;</button><div class="anno-badge">6</div>
+      <div class="anno-title"><i class="fa-solid fa-list-check"></i> Summary &amp; confirmation</div>
+      <div class="anno-body">Before submitting, a <strong>summary</strong> of every question's status, then a <strong>confirmation</strong> step that warns about any unanswered questions.</div>
+    </div>
+    <div class="anno-card" data-target=".set-nav" data-side="right">
+      <button class="anno-close" aria-label="Dismiss">&times;</button><div class="anno-badge">7</div>
+      <div class="anno-title"><i class="fa-solid fa-sliders"></i> Sectioned, responsive settings</div>
+      <div class="anno-body">Every setting in one tabbed workspace; the form is <strong>sectioned with a sticky sub-nav</strong> that tracks scroll and reflows to a single column on small screens.</div>
+    </div>
+    <div class="anno-card" data-target=".qb-item [data-preview]" data-side="left">
+      <button class="anno-close" aria-label="Dismiss">&times;</button><div class="anno-badge">8</div>
+      <div class="anno-title"><i class="fa-solid fa-magnifying-glass"></i> Question preview</div>
+      <div class="anno-body">Preview any question with the full <strong>behaviour + display options</strong>, technical info and Moodle-XML export — mirroring the question-bank preview page.</div>
+    </div>
+    <div class="anno-card" data-target=".devpanel" data-side="top">
+      <button class="anno-close" aria-label="Dismiss">&times;</button><div class="anno-badge">9</div>
+      <div class="anno-title"><i class="fa-solid fa-flask"></i> Prototype state switcher</div>
+      <div class="anno-body">A demo-only control (not a real feature) to jump between the quiz's states — attempt, summary, results — and the create / edit workspace tabs.</div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ------------------------------------------------------------------ data */
+  var QUIZ = {
+    name:"Cell Structure &amp; Function Quiz",
+    desc:"Ten questions on cells, membranes and transport. You have two attempts — your highest score counts.",
+    attempts:2, timelimit:"30 minutes", grademethod:"Highest grade",
+    grade:"10.00", gradepass:"5.00", sumgrades:8,
+    open:"10 March 2026, 9:00 AM", close:"24 March 2026, 11:59 PM"
+  };
+  var CRUMB = '<a href="#">Biology 101</a> / <a href="#">Cell Structure &amp; Function</a> / ' + QUIZ.name;
+
+  // 8 questions. astate/aflag = live-attempt (state A/S); rchosen/rflag = finished attempt (state R).
+  var Q = [
+    { n:1, max:1, correct:"b", astate:"answered", aflag:false, rchosen:"b", rflag:false,
+      text:"Which organelle is the primary site of ATP production through aerobic respiration?",
+      opts:[["a","Ribosome"],["b","Mitochondrion"],["c","Golgi apparatus"],["d","Lysosome"]],
+      fb:"The mitochondrion is the site of aerobic respiration, where most ATP is generated." },
+    { n:2, max:1, correct:"c", astate:"answered", aflag:false, rchosen:"c", rflag:false,
+      text:"The plasma membrane is best described as:",
+      opts:[["a","Fully permeable"],["b","Impermeable"],["c","Selectively permeable"],["d","Rigid and non-fluid"]],
+      fb:"The membrane is selectively (partially) permeable — it controls what passes through." },
+    { n:3, max:1, correct:"b", astate:"todo", aflag:false, rchosen:"a", rflag:false,
+      text:"The net movement of water across a semi-permeable membrane, from high to low water potential, is called:",
+      opts:[["a","Diffusion"],["b","Osmosis"],["c","Active transport"],["d","Endocytosis"]],
+      fb:"Osmosis is specifically the movement of water across a semi-permeable membrane." },
+    { n:4, max:1, correct:"b", astate:"todo", aflag:false, rchosen:"b", rflag:false,
+      text:"Which structure regulates the passage of molecules between the nucleus and the cytoplasm?",
+      opts:[["a","Nucleolus"],["b","Nuclear pore"],["c","Centriole"],["d","Vacuole"]],
+      fb:"Nuclear pores span the nuclear envelope and control nucleus–cytoplasm exchange." },
+    { n:5, max:1, correct:"b", astate:"todo", aflag:false, rchosen:"b", rflag:false,
+      text:"Ribosomes are directly responsible for:",
+      opts:[["a","Photosynthesis"],["b","Protein synthesis"],["c","Lipid storage"],["d","DNA replication"]],
+      fb:"Ribosomes translate mRNA into polypeptides — i.e. protein synthesis." },
+    { n:6, max:1, correct:"a", astate:"todo", aflag:false, rchosen:"b", rflag:false,
+      text:"Active transport differs from diffusion because it:",
+      opts:[["a","Requires ATP and can move substances against a concentration gradient"],["b","Only ever moves water molecules"],["c","Never involves membrane proteins"],["d","Occurs only in plant cells"]],
+      fb:"Active transport uses energy (ATP) to move substances against their gradient." },
+    { n:7, max:1, correct:"a", astate:"todo", aflag:false, rchosen:"a", rflag:false,
+      text:"A feature found in plant cells but not in animal cells is:",
+      opts:[["a","A cellulose cell wall"],["b","Mitochondria"],["c","A nucleus"],["d","Ribosomes"]],
+      fb:"Plant cells have a cellulose cell wall; the other structures occur in both." },
+    { n:8, max:1, correct:"a", astate:"todo", aflag:true, rchosen:null, rflag:true,
+      text:"The gel-like fluid that fills the cell and suspends the organelles is the:",
+      opts:[["a","Cytoplasm"],["b","Nucleoplasm"],["c","Extracellular matrix"],["d","Stroma"]],
+      fb:"The cytoplasm is the fluid that fills the cell and holds the organelles." }
+  ];
+
+  // Other collapsed sections for course-index context (entry states).
+  var OTHER_SECTIONS = ["Introduction", "The Chemistry of Life", "Membranes & Transport", "Enzymes & Metabolism"];
+
+  /* ------------------------------------------------------------------ state */
+  var state = "E1";            // E1 E2 A S C R
+  var role  = "student";       // student | teacher
+  var faPlace = "footer";      // footer | header
+  var mode = "flow";           // flow (student/preview) | edit (author workspace)
+  var editTab = "questions";   // questions | settings | grades | overrides | bank | results
+  var editData = "edit";       // create (empty) | edit (populated) | locked (has attempts)
+  var overrideTab = "user";    // overrides sub-tab: user | group
+  var resultTab = "grades";    // results sub-tab
+  var settingsSpy = null;      // IntersectionObserver for the settings sub-nav scrollspy
+  var qNavUI = "index";        // question progress UI: index (nested in course index) | progress (survey-style bar)
+  var curQ = 2;                // attempt: current question index (Q3)
+  var revIdx = 0;              // review: current question index
+  var reviewAll = false;       // review: show all vs one-per-page
+  var body = document.body;
+
+  var ATTEMPT_STATES = { A:1, S:1, C:1, R:1 };
+  var attemptScreen = function(){ return !!ATTEMPT_STATES[state]; };
+  var isReview = function(){ return state === "R"; };
+
+  /* review scoring */
+  function isCorrect(q){ return q.rchosen === q.correct; }
+  var marks = Q.reduce(function(s,q){ return s + (isCorrect(q) ? q.max : 0); }, 0); // 5
+  var gradeVal = (marks / QUIZ.sumgrades * parseFloat(QUIZ.grade)).toFixed(2);      // 6.25
+  var unanswered = Q.filter(function(q){ return q.astate !== "answered"; }).length; // for summary/confirm
+  // Overall feedback = static text authored for the achieved grade band (quiz_feedback
+  // table), shown as the "Feedback" row via the overallfeedback review option. It is NOT
+  // question-aware — it cannot reference which individual questions were wrong.
+  var OVERALL_FEEDBACK = "Good effort — you've grasped the core ideas. Review the material on cell membranes and transport, then use your second attempt to improve your score.";
+
+  /* ------------------------------------------------------------------ index */
+  function optLetter(i){ return String.fromCharCode(97+i); }
+
+  function navClass(q){
+    if(isReview()){
+      if(q.rchosen === null) return "incorrect";
+      return isCorrect(q) ? "correct" : "incorrect";
+    }
+    return q.astate === "answered" ? "answered" : "";
+  }
+
+  function renderIndex(){
+    var ci = document.getElementById("sections");
+    // The course index always renders in full. When an attempt/review is open, the
+    // quiz activity expands to show its questions as nested rows (like book chapters).
+    var nested = attemptScreen() && qNavUI==="index";
+    var html = "";
+    OTHER_SECTIONS.forEach(function(t, si){
+      var open = si===0;
+      html += '<div class="ci-section'+(open?'':' collapsed')+'"><button class="ci-sec-head"><span class="chev"><i class="fa-solid fa-chevron-down"></i></span><span class="txt">'+t+'</span></button><div class="ci-activities">';
+      if(open){
+        html += '<button class="ci-row"><span class="act-icon file"><i class="fa-solid fa-file-lines"></i></span><span class="txt">Course notes: The cell</span></button>';
+        // quiz activity (expandable) — nested question rows appear during attempt/review
+        html += '<div class="ci-quizwrap'+(nested?'':' collapsed')+'">'
+          + '<div class="ci-row'+(nested?'':' current')+'" style="cursor:default">'
+            + (nested ? '<button class="ci-quiz-chevron" title="Collapse questions"><i class="fa-solid fa-chevron-down"></i></button>' : '')
+            + '<span class="act-icon assessment"><i class="fa-solid fa-clipboard-question"></i></span>'
+            + '<span class="txt">'+QUIZ.name+'</span>'
+          + '</div>';
+        if(nested){
+          html += '<div class="ci-questions">';
+          Q.forEach(function(q,i){
+            var cls = navClass(q);
+            var cur = (state==="A" && i===curQ) || (isReview() && i===revIdx && !reviewAll);
+            var flag = (isReview() ? q.rflag : q.aflag) ? '<i class="fa-solid fa-flag flag"></i>' : '';
+            html += '<button class="ci-question '+cls+(cur?' current':'')+'" data-q="'+i+'"><span class="qdot"></span><span class="txt">Question '+q.n+'</span>'+flag+'</button>';
+          });
+          html += '</div>';
+        }
+        html += '</div>'; // .ci-quizwrap
+        html += '<button class="ci-row"><span class="act-icon communication"><i class="fa-solid fa-comments"></i></span><span class="txt">Cell biology Q&amp;A forum</span></button>';
+      }
+      html += '</div></div>';
+    });
+    ci.innerHTML = html;
+
+    ci.querySelectorAll(".ci-sec-head").forEach(function(h){
+      h.addEventListener("click", function(){ h.closest(".ci-section").classList.toggle("collapsed"); });
+    });
+    var chev = ci.querySelector(".ci-quiz-chevron");
+    if(chev) chev.addEventListener("click", function(e){ e.stopPropagation(); this.closest(".ci-quizwrap").classList.toggle("collapsed"); });
+    ci.querySelectorAll(".ci-question").forEach(function(b){
+      b.addEventListener("click", function(){
+        var i = parseInt(b.dataset.q,10);
+        if(isReview()){ revIdx=i; reviewAll=false; render(); }
+        else { curQ=i; setState("A"); }
+      });
+    });
+  }
+
+  /* ------------------------------------------------------------------ header */
+  function headerHTML(extraActions){
+    return '<div class="act-header">'
+      + '<div class="act-tile assessment"><i class="fa-solid fa-clipboard-question"></i></div>'
+      + '<div class="h-main"><h1 class="h-title">' + QUIZ.name + '</h1><p class="h-desc">' + QUIZ.desc + '</p></div>'
+      + '<div class="h-actions">'
+        + '<button class="btn btn-secondary manage-btn" data-manage title="Manage this quiz">Manage <i class="fa-solid fa-chevron-down" style="font-size:10px"></i></button>'
+        + (extraActions||'')
+      + '</div></div>';
+  }
+
+  /* ------------------------------------------------------------------ views */
+  // Faithful to view_information()/describe_rules(): the quiz settings surface as a
+  // list of access-rule sentences in the centred .quizinfo box (not a key/value table).
+  function infoPanel(){
+    var rules = [
+      'Attempts allowed: ' + QUIZ.attempts,
+      'Time limit: ' + QUIZ.timelimit,
+      'This quiz opened at ' + QUIZ.open + '.',
+      'This quiz will close at ' + QUIZ.close + '.',
+      'Grading method: ' + QUIZ.grademethod + '.',
+      'To pass this quiz you need a grade of ' + QUIZ.gradepass + ' out of ' + QUIZ.grade + ' or better.'
+    ];
+    return '<div class="quizinfo">' + rules.map(function(r){ return '<p>'+r+'</p>'; }).join('') + '</div>';
+  }
+  function teacherCounts(){
+    return '<div class="teacher-only teacher-counts">Attempts: <a href="#">24 students have attempted this quiz (68 attempts)</a> · <a href="#">2 overrides</a></div>';
+  }
+  // Faithful preview notice: shown DURING a preview attempt/review (not the entry page).
+  // Mirrors the quiz's preview messaging + restart_preview_button ("Start a new preview").
+  function previewRibbon(){
+    return '<div class="preview-ribbon"><i class="fa-solid fa-flask"></i>'
+      + '<span>You are previewing this quiz. Attempts made in preview mode are not saved and do not count towards grades.</span>'
+      + '<a href="#" class="preview-restart">Start a new preview</a></div>';
+  }
+  function primaryLabel(kind){
+    if(role === "teacher") return "Preview quiz";
+    if(kind === "attempt") return "Attempt quiz";
+    if(kind === "reattempt") return "Re-attempt quiz";
+    if(kind === "continue") return "Continue your attempt";
+    return "Attempt quiz";
+  }
+
+  function viewE1(){
+    var cta = '<div class="cta"><button class="btn btn-primary btn-lg" data-action="startattempt">'+primaryLabel("attempt")+'</button></div>';
+    return '<div class="breadcrumb">'+CRUMB+'</div>'
+      + headerHTML()
+      + teacherCounts()
+      + infoPanel()
+      + cta;
+  }
+
+  function viewE2(){
+    var resume = '<div class="resume"><i class="fa-solid fa-circle-play" style="color:var(--mds-bg-interactive-primary-default);font-size:20px"></i>'
+      + '<div class="txt"><b>You have an attempt in progress</b><span>Started 12 March 2026, 10:04 AM</span></div>'
+      + '<button class="btn btn-primary" data-action="startattempt">'+primaryLabel("continue")+'</button></div>';
+    var table = '<table class="qtable"><caption>Summary of your previous attempts</caption>'
+      + '<thead><tr><th>Attempt</th><th>State</th><th>Marks / '+QUIZ.sumgrades+'.00</th><th>Grade / '+QUIZ.grade+'</th><th></th></tr></thead>'
+      + '<tbody>'
+      + '<tr><td>1</td><td><span class="badge-state finished"><i class="fa-solid fa-check"></i> Finished</span><br><span style="color:var(--mds-text-muted);font-size:.75rem">Submitted 11 March, 3:20 PM</span></td><td>5.00</td><td>6.25</td><td><a href="#" data-action="startreview">Review</a></td></tr>'
+      + '<tr><td>2</td><td><span class="badge-state inprogress"><i class="fa-regular fa-clock"></i> In progress</span></td><td>—</td><td>—</td><td><a href="#" data-action="startattempt">Continue</a></td></tr>'
+      + '</tbody></table>';
+    var reattempt = '<div class="cta"><button class="btn btn-primary btn-lg" data-action="startattempt">'+primaryLabel("continue")+'</button></div>';
+    return '<div class="breadcrumb">'+CRUMB+'</div>'
+      + headerHTML()
+      + teacherCounts()
+      + resume
+      + '<p class="grade-summary">Your current grade for this quiz is <strong>6.25 / '+QUIZ.grade+'</strong> (highest of your attempts).</p>'
+      + table
+      + reattempt;
+  }
+
+  function optionRow(q, key, label, mode){
+    var cls = "qopt";
+    var mark = "";
+    if(mode === "review"){
+      var chosen = q.rchosen === key;
+      if(key === q.correct){ cls += " opt-correct"; mark = '<span class="mark"><i class="fa-solid fa-check"></i> Correct answer</span>'; }
+      else if(chosen){ cls += " opt-wrong"; mark = '<span class="mark"><i class="fa-solid fa-xmark"></i> Your answer</span>'; }
+      var radio = '<span class="radio'+(chosen?' sel':'')+'"></span>';
+      return '<div class="'+cls+(chosen?' sel':'')+'">'+radio+'<span>'+label+'</span>'+mark+'</div>';
+    }
+    // attempt mode: nothing preselected (Q is "to do")
+    return '<label class="'+cls+'"><span class="radio"></span><span>'+label+'</span></label>';
+  }
+
+  function questionCard(q, mode){
+    var head, body_;
+    if(mode === "review"){
+      var ok = isCorrect(q), blank = q.rchosen === null;
+      var stateCls = ok ? "correct" : "incorrect";
+      var stateTxt = ok ? "Correct" : (blank ? "Not answered" : "Incorrect");
+      head = '<div class="qcard-head"><span class="qn">Question '+q.n+'</span>'
+        + '<span class="qstate '+stateCls+'">'+stateTxt+'</span>'
+        + '<span class="qmeta">Mark '+(ok?q.max.toFixed(2):"0.00")+' / '+q.max.toFixed(2)+'</span>'
+        + (q.rflag ? '<span class="qflag on"><i class="fa-solid fa-flag"></i> Flagged</span>' : '') + '</div>';
+      var opts = q.opts.map(function(o){ return optionRow(q,o[0],o[1],"review"); }).join("");
+      var correctText = q.opts.filter(function(o){ return o[0]===q.correct; })[0][1];
+      body_ = '<div class="qcard-body"><p class="qtext">'+q.text+'</p><div class="qopts">'+opts+'</div>'
+        + '<div class="qfeedback"><span class="right">The correct answer is: '+correctText+'.</span><br>'+q.fb+'</div></div>';
+    } else {
+      head = '<div class="qcard-head"><span class="qn">Question '+q.n+'</span>'
+        + '<span class="qmeta">Not yet answered · Marked out of '+q.max.toFixed(2)+'</span>'
+        + '<button class="qflag'+(q.aflag?' on':'')+'" data-flag><i class="fa-'+(q.aflag?'solid':'regular')+' fa-flag"></i> '+(q.aflag?'Flagged':'Flag question')+'</button></div>';
+      var opts2 = q.opts.map(function(o){ return optionRow(q,o[0],o[1],"attempt"); }).join("");
+      body_ = '<div class="qcard-body"><p class="qtext">'+q.text+'</p><div class="qopts">'+opts2+'</div></div>';
+    }
+    return '<div class="qcard">'+head+body_+'</div>';
+  }
+
+  // ALTERNATIVE to the course-index nesting: an inline survey-style progress module
+  // (bar + "X of N answered" + numbered chips). Shown only when qNavUI==="progress".
+  function progressStrip(kind){
+    if(qNavUI!=="progress") return '';
+    var total=Q.length, fillPct, label, count, legend, review = kind==="review";
+    if(review){
+      var correct=Q.filter(isCorrect).length;
+      fillPct=Math.round(correct/total*100);
+      label = reviewAll ? 'Reviewing all '+total+' questions' : 'Reviewing question '+(revIdx+1)+' of '+total;
+      count = '<b>'+correct+'</b> of '+total+' correct';
+      legend = '<span><i class="sw correct"></i>Correct</span><span><i class="sw incorrect"></i>Incorrect</span>';
+    } else {
+      var answered=Q.filter(function(q){return q.astate==="answered";}).length;
+      fillPct=Math.round(answered/total*100);
+      label = kind==="attempt" ? 'Question '+(curQ+1)+' of '+total : 'Ready to submit';
+      count = '<b>'+answered+'</b> of '+total+' answered';
+      legend = '<span><i class="sw answered"></i>Answered</span><span><i class="sw"></i>Not yet answered</span>';
+    }
+    var chips=Q.map(function(q,i){
+      var cls = review ? (q.rchosen===null ? "incorrect" : (isCorrect(q)?"correct":"incorrect"))
+                       : (q.astate==="answered" ? "answered" : "");
+      var cur = (kind==="attempt" && i===curQ) || (review && i===revIdx && !reviewAll);
+      var flag = (review?q.rflag:q.aflag) ? '<span class="qchip-flag"></span>' : '';
+      var attr = review ? 'data-rq="'+i+'"' : 'data-q="'+i+'"';
+      return '<button class="qchip '+cls+(cur?' current':'')+'" '+attr+' title="Question '+q.n+'">'+q.n+flag+'</button>';
+    }).join('');
+    return '<div class="qprogress"><div class="qprogress-top"><span class="qprogress-label">'+label+'</span>'
+      + '<span class="qprogress-count">'+count+'</span></div>'
+      + '<div class="qprogress-bar"><div class="qprogress-fill'+(review?' review':'')+'" style="width:'+fillPct+'%"></div></div>'
+      + '<div class="qprogress-chips">'+chips+'</div>'
+      + '<div class="qprogress-legend">'+legend+'</div></div>';
+  }
+
+  function viewA(){
+    var q = Q[curQ];
+    var headerExtra = (faPlace === "header")
+      ? '<button class="btn btn-primary" data-action="tosummary">Finish attempt</button>' : '';
+    return '<div class="breadcrumb">'+CRUMB+'</div>'
+      + headerHTML(headerExtra)
+      + previewRibbon()
+      + progressStrip("attempt")
+      + '<div class="timer"><i class="fa-solid fa-stopwatch"></i> Time remaining <b>24:18</b></div>'
+      + questionCard(q, "attempt");
+  }
+
+  function summaryTable(){
+    var rows = Q.map(function(q){
+      var answered = q.astate === "answered";
+      var status = answered ? '<span style="color:var(--mds-text-default)">Answer saved</span>'
+                            : '<span style="color:var(--mds-text-muted)">Not yet answered</span>';
+      var flag = q.aflag ? ' <i class="fa-solid fa-flag" style="color:var(--mds-text-danger);font-size:11px"></i>' : '';
+      return '<tr><td><a href="#" data-q="'+(q.n-1)+'">'+q.n+'</a>'+flag+'</td><td>'+status+'</td></tr>';
+    }).join("");
+    return '<table class="qtable"><thead><tr><th style="width:120px">Question</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  }
+
+  function viewS(){
+    var headerExtra = (faPlace === "header")
+      ? '<button class="btn btn-primary" data-action="confirm">Submit all and finish</button>' : '';
+    return '<div class="breadcrumb">'+CRUMB+'</div>'
+      + headerHTML(headerExtra)
+      + previewRibbon()
+      + progressStrip("summary")
+      + '<h2 class="sec-h">Summary of attempt</h2>'
+      + summaryTable()
+      + '<div class="timer"><i class="fa-solid fa-stopwatch"></i> This attempt must be submitted by '+QUIZ.close+'.</div>'
+      + '<div class="submitbtns"><button class="btn btn-secondary" data-action="returnattempt">Return to attempt</button>'
+      + '<button class="btn btn-primary btn-lg" data-action="confirm">Submit all and finish</button></div>';
+  }
+
+  function viewR(){
+    var summary = '<div class="review-summary"><dl>'
+      + '<dt>Started</dt><dd>Saturday, 11 March 2026, 3:02 PM</dd>'
+      + '<dt>State</dt><dd>Finished</dd>'
+      + '<dt>Completed</dt><dd>Saturday, 11 March 2026, 3:20 PM</dd>'
+      + '<dt>Time taken</dt><dd>18 mins 12 secs</dd>'
+      + '<dt>Marks</dt><dd class="big">'+marks.toFixed(2)+' / '+QUIZ.sumgrades+'.00</dd>'
+      + '<dt>Grade</dt><dd class="big">'+gradeVal+' / '+QUIZ.grade+'</dd>'
+      + '<dt>Feedback</dt><dd>'+OVERALL_FEEDBACK+'</dd>'
+      + '</dl></div>';
+    var controls = '<div class="review-controls">'
+      + '<div class="seg"><button data-review="single" class="'+(!reviewAll?'on':'')+'">One question per page</button>'
+      + '<button data-review="all" class="'+(reviewAll?'on':'')+'">Show all on one page</button></div>'
+      + '<span class="review-count">'+(reviewAll ? Q.length+' questions' : 'Question '+(revIdx+1)+' of '+Q.length)+'</span></div>';
+    var cards;
+    if(reviewAll){ cards = Q.map(function(q){ return questionCard(q,"review"); }).join(""); }
+    else { cards = questionCard(Q[revIdx],"review"); }
+    return '<div class="breadcrumb">'+CRUMB+'</div>'
+      + headerHTML()
+      + previewRibbon()
+      + progressStrip("review")
+      + summary + controls + cards;
+  }
+
+  /* ------------------------------------------------------------------ footer */
+  function link(dir, label, disabled, action){
+    var icon = dir==="prev" ? '<span aria-hidden="true"><i class="fa-solid fa-chevron-left"></i></span>' : '';
+    var icon2 = dir==="next" ? '<span aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></span>' : '';
+    return '<button class="cln-link '+dir+'"'+(disabled?' disabled':'')+' data-action="'+action+'">'+icon+'<span class="k">'+label+'</span>'+icon2+'</button>';
+  }
+
+  function renderFooter(){
+    var bar = document.getElementById("clnBar");
+    if(state === "A"){
+      var finish = '<button class="btn btn-primary cln-finish" data-action="tosummary">Finish attempt</button>';
+      bar.innerHTML =
+        link("prev","Previous page", curQ===0, "prevq")
+        + '<div class="cln-right">'
+          + finish
+          + link("next","Next page", curQ===Q.length-1, "nextq")
+        + '</div>';
+    } else if(state === "R"){
+      var finishR = '<button class="btn btn-primary cln-finish" data-action="finishreview">Finish review</button>';
+      if(reviewAll){
+        bar.innerHTML = '<span class="review-count">Showing all '+Q.length+' questions</span><div class="cln-right">'+finishR+'</div>';
+      } else {
+        bar.innerHTML =
+          link("prev","Previous", revIdx===0, "prevr")
+          + '<div class="cln-right">'+finishR+ link("next","Next", revIdx===Q.length-1, "nextr")+'</div>';
+      }
+    } else {
+      bar.innerHTML = "";
+    }
+    // hide the whole footer on entry + summary + confirm (their CTAs live in the body)
+    body.classList.toggle("hide-footer", !(state === "A" || state === "R"));
+    bar.querySelectorAll("[data-action]").forEach(function(b){
+      b.addEventListener("click", function(){ if(!b.disabled) dispatch(b.dataset.action); });
+    });
+  }
+
+  /* ============================================================================
+     EDIT / CREATE WORKSPACE  (mode === "edit")
+     Grounded in mod_form.php, edit.php / edit_renderer.php, editgrading.php,
+     overrideedit.php, question bank + report/* subplugins. Every control maps
+     to a real field/action; conditional logic mirrors hideIf/disabledIf.
+     ========================================================================== */
+  // Builder data — faithful field set from edit_renderer question_row().
+  var QB = [
+    {n:1,name:"Aerobic respiration site",type:"Multiple choice",icon:"fa-list-ul",marks:"1.00",page:1,dep:false},
+    {n:2,name:"Plasma membrane permeability",type:"Multiple choice",icon:"fa-list-ul",marks:"1.00",page:1,dep:false},
+    {n:3,name:"Water movement across membranes",type:"Multiple choice",icon:"fa-list-ul",marks:"1.00",page:1,dep:false},
+    {n:4,name:"Nucleus–cytoplasm exchange",type:"Multiple choice",icon:"fa-list-ul",marks:"1.00",page:2,dep:false},
+    {n:5,name:"Role of ribosomes",type:"Multiple choice",icon:"fa-list-ul",marks:"1.00",page:2,dep:false},
+    {n:6,name:"Active vs passive transport",type:"Multiple choice",icon:"fa-list-ul",marks:"1.00",page:2,dep:true},
+    {n:7,name:"Plant vs animal cells",type:"True/False",icon:"fa-toggle-on",marks:"1.00",page:3,dep:false},
+    {n:8,name:"Cell fluid identification",type:"Short answer",icon:"fa-i-cursor",marks:"1.00",page:3,dep:false}
+  ];
+
+  /* --- small HTML helpers --- */
+  function sel(opts, si, id){ return '<select class="inp"'+(id?' id="'+id+'"':'')+'>'+opts.map(function(o,i){return '<option'+(i===si?' selected':'')+'>'+o+'</option>';}).join('')+'</select>'; }
+  function yesno(v,id){ return sel(["No","Yes"], v?1:0, id); }
+  function field(label, control, help, wrapId){ return '<div class="field"'+(wrapId?' id="'+wrapId+'"':'')+'><label>'+label+'</label>'+control+(help?'<div class="help">'+help+'</div>':'')+'</div>'; }
+  function toggleField(label,val,on,unit,id){ return '<div class="field"'+(id?' id="'+id+'"':'')+'><label>'+label+'</label><div class="inline-2"><label class="checkrow"><input type="checkbox"'+(on?' checked':'')+'> Enable</label><input class="inp" type="text" value="'+val+'" style="max-width:220px"'+(on?'':' disabled')+'>'+(unit?'<span class="help" style="margin:0">'+unit+'</span>':'')+'</div></div>'; }
+
+  /* --- enter / exit / preview --- */
+  function enterEdit(tab){
+    mode="edit"; if(tab) editTab=tab;
+    body.classList.add("edit-on"); document.getElementById("editSwitch").setAttribute("aria-pressed","true");
+    if(!body.classList.contains("ci-overlay")) body.classList.remove("ci-open"); // give the workspace room
+    closeManage(); render();
+  }
+  function exitEdit(){ mode="flow"; role="student"; body.classList.remove("role-teacher"); state="E1"; if(!body.classList.contains("ci-overlay")) body.classList.add("ci-open"); render(); }
+  function previewFromEdit(){ mode="flow"; role="teacher"; body.classList.add("role-teacher"); state="E1"; if(!body.classList.contains("ci-overlay")) body.classList.add("ci-open"); render(); }
+
+  /* --- chrome --- */
+  function wsHeader(){
+    var name = editData==="create" ? "Untitled quiz" : "Cell Structure &amp; Function Quiz";
+    var badge = editData==="create" ? '<span class="ws-badge draft">Draft · not saved</span>'
+              : editData==="locked" ? '<span class="ws-badge open">Open · has attempts</span>'
+              : '<span class="ws-badge open">Open</span>';
+    var crumb = '<a href="#">Biology 101</a> / <a href="#">Cell Structure &amp; Function</a> / ' + (editData==="create"?"Add a new quiz":name);
+    return '<div class="breadcrumb">'+crumb+'</div>'
+      + '<div class="ws-head"><div class="act-tile assessment"><i class="fa-solid fa-clipboard-question"></i></div>'
+        + '<div class="h-main"><h1 class="ws-name" contenteditable="true" spellcheck="false">'+name+'</h1>'+badge
+          + '<p class="ws-sub">'+(editData==="create"?"New quiz — add questions and configure settings before saving.":"Editing · Biology 101")+'</p></div>'
+        + '</div>';
+  }
+  // Sticky workspace footer holding the primary Save action (on the edit surfaces
+  // where saving the quiz applies). Preview lives in the Manage dropdown, not here.
+  function wsFooter(){
+    if(!{questions:1,settings:1,grades:1}[editTab]) return '';
+    var label = editData==="create" ? "Save and display" : "Save and return to course";
+    return '<div class="ws-footer"><button class="btn btn-secondary" data-mact="cancel">Cancel</button>'
+      + '<button class="btn btn-primary" data-wsdone>'+label+'</button></div>';
+  }
+  function wsTabs(){
+    var tabs=[["questions","Questions","fa-list-ol"],["settings","Settings","fa-gear"],["grades","Grades setup","fa-scale-balanced"],["overrides","Overrides","fa-user-clock"],["bank","Question bank","fa-database"],["results","Results","fa-chart-simple"]];
+    return '<div class="ws-tabs">'+tabs.map(function(t){return '<button class="ws-tab'+(editTab===t[0]?' on':'')+'" data-tab="'+t[0]+'"><i class="fa-solid '+t[2]+'"></i> '+t[1]+'</button>';}).join('')+'</div>';
+  }
+
+  function renderEdit(){
+    var view=document.getElementById("view");
+    body.classList.toggle("qb-lockmode", editTab==="questions" && editData==="locked");
+    var panel = editTab==="questions" ? tabQuestions()
+              : editTab==="settings"  ? tabSettings()
+              : editTab==="grades"    ? tabGrades()
+              : editTab==="overrides" ? tabOverrides()
+              : editTab==="bank"      ? tabBank()
+              : tabResults();
+    view.innerHTML = wsHeader()+wsTabs()+'<div class="ws-panel">'+panel+'</div>'+wsFooter();
+    document.getElementById("modal").classList.remove("show");
+    wireEdit(view);
+    renderIndex(); renderFooter();
+    window.scrollTo(0,0); syncDev();
+  }
+
+  /* ---------------- Tab: Questions (builder) ---------------- */
+  function tabQuestions(){
+    if(editData==="create") return qbEmpty();
+    var locked = editData==="locked";
+    var lock = locked ? '<div class="qb-locked"><i class="fa-solid fa-lock"></i><span>This quiz has been attempted, so you can\'t add, remove, move or re-mark questions. You can still change the maximum grade (which regrades all attempts).</span></div>' : '';
+    var total = QB.reduce(function(s,q){return s+parseFloat(q.marks);},0).toFixed(2);
+    var top = '<div class="qb-top"><div class="qb-status"><b>'+QB.length+' questions</b> | <span class="quizopeningstatus">Opens 10 March 2026, 9:00 AM</span></div>'
+      + '<div class="qb-right"><span class="qb-maxgrade">Maximum grade <input class="inp sm" type="text" value="'+QUIZ.grade+'"> <button class="btn btn-secondary">Save</button></span>'
+      + '<span class="qb-total">Total of marks: <b>'+total+'</b></span></div></div>';
+    var toolbar = '<div class="qb-toolbar"><button class="btn btn-secondary"><i class="fa-solid fa-arrows-up-down"></i> Repaginate</button>'
+      + '<button class="btn btn-secondary"><i class="fa-solid fa-square-check"></i> Select multiple items</button></div>';
+    var rows="", lastPage=0;
+    QB.forEach(function(q){
+      if(q.page!==lastPage){ if(lastPage!==0){ rows+='<div class="qb-page"><span>Page '+q.page+'</span><span class="ln"></span><button class="qb-iconbtn struct" title="Remove page break"><i class="fa-solid fa-link-slash"></i></button></div>'; } lastPage=q.page; }
+      rows+=qbRow(q);
+    });
+    var section = '<div class="qb-section"><div class="qb-sec-head"><span class="qb-grip"><i class="fa-solid fa-grip-vertical"></i></span>'
+      + '<span class="qb-sec-title" contenteditable="true" spellcheck="false">Section 1</span><span class="spacer"></span>'
+      + '<label class="qb-shuffle"><input type="checkbox"> Shuffle</label>'
+      + '<button class="qb-iconbtn struct" title="Remove section"><i class="fa-solid fa-xmark"></i></button></div>'
+      + rows
+      + '<div class="qb-addbar"><button class="btn btn-primary" data-add="question"><i class="fa-solid fa-plus"></i> Add a question</button>'
+        + '<button class="btn btn-secondary" data-add="bank"><i class="fa-solid fa-database"></i> From question bank</button>'
+        + '<button class="btn btn-secondary" data-add="random"><i class="fa-solid fa-shuffle"></i> A random question</button>'
+        + '<button class="btn btn-secondary" data-add="section"><i class="fa-solid fa-heading"></i> Add a section heading</button></div></div>';
+    return lock+top+toolbar+section;
+  }
+  function qbRow(q){
+    return '<div class="qb-item"><span class="qb-grip" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i></span>'
+      + '<span class="qb-num">'+q.n+'</span>'
+      + '<span class="qb-qicon" title="'+q.type+'"><i class="fa-solid '+q.icon+'"></i></span>'
+      + '<span class="qb-name"><span class="nm">'+q.name+'</span><span class="ty">'+q.type+'</span></span>'
+      + '<span class="qb-marks">Marks <input class="inp sm" type="text" value="'+q.marks+'"></span>'
+      + '<span class="qb-icons">'
+        + '<button class="qb-iconbtn" title="Preview question" data-preview="'+q.n+'"><i class="fa-solid fa-magnifying-glass"></i></button>'
+        + '<button class="qb-iconbtn" title="Edit question"><i class="fa-solid fa-pen"></i></button>'
+        + '<button class="qb-iconbtn struct" title="Requires previous question ('+(q.dep?"on":"off")+')"><i class="fa-solid '+(q.dep?"fa-lock":"fa-lock-open")+'"></i></button>'
+        + '<button class="qb-iconbtn danger struct" title="Delete" data-del="'+q.n+'"><i class="fa-solid fa-trash"></i></button>'
+      + '</span></div>';
+  }
+  function qbEmpty(){
+    return '<div class="qb-empty"><i class="fa-solid fa-clipboard-question"></i><h3>This quiz has no questions yet</h3>'
+      + '<p>Add your first question — create a new one, choose from the question bank, or add a random question.</p>'
+      + '<button class="btn btn-primary" data-add="question"><i class="fa-solid fa-plus"></i> Add a question</button></div>';
+  }
+
+  /* ---------------- Tab: Settings (all mod_form fields) ---------------- */
+  var SET_GROUPS=[["general","General"],["timing","Timing"],["grade","Grade"],["layout","Layout"],["behaviour","Question behaviour"],["review","Review options"],["appearance","Appearance"],["restrictions","Extra restrictions"],["feedback","Overall feedback"],["common","Common module settings"],["restrict","Restrict access"],["completion","Activity completion"],["tags","Tags"],["competencies","Competencies"]];
+  function reviewMatrix(){
+    var cols=[["during","During the attempt"],["immediately","Immediately after"],["open","Later, while open"],["closed","After the quiz is closed"]];
+    var rows=[["attempt","The attempt"],["correctness","Whether correct"],["maxmarks","Maximum marks"],["marks","Marks"],["specificfeedback","Specific feedback"],["generalfeedback","General feedback"],["rightanswer","Right answer"],["overallfeedback","Overall feedback"]];
+    var h='<table class="rmatrix"><thead><tr><th></th>'+cols.map(function(c){return '<th>'+c[1]+'</th>';}).join('')+'</tr></thead><tbody>';
+    rows.forEach(function(r){
+      h+='<tr><td>'+r[1]+'</td>'+cols.map(function(c){
+        var checked = c[0]!=="during" ? ' checked' : '';
+        var forceDis = (r[0]==="attempt"&&c[0]==="during")||(r[0]==="overallfeedback"&&c[0]==="during");
+        return '<td><input type="checkbox" data-rv="'+r[0]+'" data-rvcol="'+c[0]+'"'+checked+(forceDis?' disabled':'')+'></td>';
+      }).join('')+'</tr>';
+    });
+    return h+'</tbody></table>';
+  }
+  function tabSettings(){
+    var nav='<div class="set-nav">'+SET_GROUPS.map(function(g,i){return '<a data-anchor="sg-'+g[0]+'"'+(i===0?' class="on"':'')+'>'+g[1]+'</a>';}).join('')+'</div>';
+    var behaviours=["Deferred feedback","Deferred feedback with CBM","Adaptive mode","Adaptive mode (no penalties)","Immediate feedback","Immediate feedback with CBM","Interactive with multiple tries","Manual grading"];
+    var g={};
+    g.general = field('Name <span class="req">*</span>', '<input class="inp" type="text" value="'+(editData==="create"?"":"Cell Structure & Function Quiz")+'">')
+      + field('Description', '<textarea class="inp" rows="3" style="max-width:none">'+(editData==="create"?"":"Ten questions on cells, membranes and transport.")+'</textarea>')
+      + '<label class="checkrow"><input type="checkbox"> Display description on course page</label>';
+    g.timing = '<div class="field"><label>Open the quiz</label><div class="inline-2"><label class="checkrow"><input type="checkbox" checked> Enable</label><input class="inp" type="text" value="10 March 2026, 09:00" style="max-width:240px"></div></div>'
+      + '<div class="field"><label>Close the quiz</label><div class="inline-2"><label class="checkrow"><input type="checkbox" checked id="f-closeon"> Enable</label><input class="inp" type="text" value="24 March 2026, 23:59" style="max-width:240px"></div></div>'
+      + toggleField('Time limit','30',true,'minutes')
+      + field('When time expires', '<select class="inp" id="f-overdue"><option>Open attempts are submitted automatically</option><option>There is a grace period to submit, but no more answers</option><option>Attempts must be submitted before time expires, or they are not counted</option></select>')
+      + toggleField('Submission grace period','1',false,'days','wrap-grace')
+      + field('Pre-create attempts', sel(["No","Yes — pre-build attempts before opening"],0), 'Only shown when enabled site-wide (quiz | precreateperiod).');
+    g.grade = field('Grade category', sel(["Uncategorised"],0))
+      + field('Grade to pass', '<input class="inp sm" type="text" value="5.00">')
+      + field('Attempts allowed', sel(["Unlimited","1","2","3","4","5","6","7","8","9","10"], 2, "f-attempts"))
+      + field('Grading method', sel(["Highest grade","Average grade","First attempt","Last attempt"],0), 'When multiple attempts are allowed, which grade is recorded.', 'wrap-grademethod')
+      + field('Outcomes', '<label class="checkrow"><input type="checkbox"> Cell biology knowledge</label><label class="checkrow"><input type="checkbox"> Scientific reasoning</label>', 'Only shown when outcomes are enabled site-wide (advanced).');
+    g.layout = field('New page', sel(["Every question","Every 2 questions","Every 3 questions","Every 4 questions","Every 5 questions","Never, all questions on one page"],0) + ' <label class="checkrow" style="margin-top:.5rem"><input type="checkbox"> Repaginate now</label>')
+      + field('Navigation method', sel(["Free","Sequential"],0), 'Sequential forces students through the quiz in order.');
+    g.behaviour = field('Shuffle within questions', yesno(true))
+      + field('How questions behave', sel(behaviours,0,"f-behaviour"))
+      + field('Allow redo within an attempt', sel(["No","Yes"],0), 'Only available for behaviours that finish during the attempt.', 'wrap-redo')
+      + field('Each attempt builds on the last', yesno(false), null, 'wrap-attemptonlast');
+    g.review = '<p class="help" style="margin-top:0">What students may see, and when. Rows = information; columns = timing.</p>' + reviewMatrix();
+    g.appearance = field("Show the user's picture", sel(["No image","Small image","Large image"],0))
+      + field('Decimal places in grades', sel(["0","1","2","3"],2))
+      + field('Decimal places in question grades', sel(["Same as overall","0","1","2","3"],0))
+      + field('Show blocks during attempts', yesno(false));
+    g.restrictions = field('Require password', '<input class="inp" type="text" placeholder="No password" style="max-width:280px">')
+      + field('Require network address', '<input class="inp" type="text" placeholder="e.g. 192.168.10.0/24" style="max-width:280px">')
+      + toggleField('Enforced delay between 1st and 2nd attempts','0',false,'','wrap-delay1')
+      + toggleField('Enforced delay between later attempts','0',false,'','wrap-delay2')
+      + field('Browser security', sel(["None","Full screen pop-up with some JavaScript security"],0))
+      + field('Safe Exam Browser', sel(["No","Yes — configure manually","Yes — upload my own config","Yes — use an existing template"],0), 'Access-rule plugin (quizaccess_seb). Additional SEB fields appear here when enabled.')
+      + field('Allow quiz to be attempted offline (mobile app)', yesno(false), 'Access-rule plugin (quizaccess_offlineattempts).');
+    g.feedback = '<p class="help" style="margin-top:0">Text shown after the attempt, depending on the grade achieved (quiz_feedback).</p>'
+      + '<div class="field"><label>Grade boundary</label><input class="inp sm" type="text" value="100%"></div>'
+      + '<div class="field"><label>Feedback</label><textarea class="inp" rows="2" style="max-width:none">Excellent — you\'ve mastered this topic.</textarea></div>'
+      + '<div class="field"><label>Grade boundary</label><input class="inp sm" type="text" value="50%"></div>'
+      + '<div class="field"><label>Feedback</label><textarea class="inp" rows="2" style="max-width:none">Good effort — review membranes and transport and try again.</textarea></div>'
+      + '<div class="field"><label>Grade boundary</label><input class="inp sm" type="text" value="0%"></div>'
+      + '<button class="btn btn-secondary"><i class="fa-solid fa-plus"></i> Add 3 more feedback fields</button>';
+    g.common = field('Availability', sel(["Show on course page","Hide on course page","Make available but not shown on course page"],0))
+      + field('ID number', '<input class="inp" type="text" style="max-width:220px">')
+      + field('Group mode', sel(["No groups","Separate groups","Visible groups"],0))
+      + field('Grouping', sel(["None"],0));
+    g.restrict = '<p class="help" style="margin-top:0">Restrict this quiz by date, grade, group, profile field or other activity completion.</p><button class="btn btn-secondary"><i class="fa-solid fa-plus"></i> Add restriction…</button>';
+    g.completion = field('Completion tracking', sel(["Do not indicate activity completion","Students can manually mark the activity as completed","Show activity as complete when conditions are met"],2))
+      + '<label class="checkrow"><input type="checkbox" checked> Student must view this activity</label>'
+      + '<label class="checkrow"><input type="checkbox" checked> Student must receive a grade</label>'
+      + '<label class="checkrow"><input type="checkbox"> Student must achieve a passing grade</label>'
+      + '<label class="checkrow"><input type="checkbox"> …or all available attempts completed</label>'
+      + '<label class="checkrow"><input type="checkbox"> Require minimum number of attempts <input class="inp sm" type="text" value="1" style="margin-left:.5rem"></label>';
+    g.tags = field('Tags', '<input class="inp" type="text" placeholder="Enter tags…" style="max-width:none">');
+    g.competencies = field('Course competencies', '<input class="inp" type="text" placeholder="Search competencies…" style="max-width:none">')
+      + field('Upon activity completion', sel(["Do nothing","Attach evidence","Send for review","Complete the competency"],3));
+    var bodyhtml=SET_GROUPS.map(function(gr){ return '<section class="set-group" id="sg-'+gr[0]+'"><h3>'+gr[1]+'</h3>'+(g[gr[0]]||'')+'</section>'; }).join('');
+    return '<div class="set-wrap">'+nav+'<div class="set-body">'+bodyhtml+'</div></div>';
+  }
+
+  /* ---------------- Tab: Grades setup (editgrading.php) ---------------- */
+  function tabGrades(){
+    var intro='<p class="help" style="max-width:none;margin-bottom:1rem">Set up one or more grade items and assign each question to one. Each grade item is reported separately in the gradebook (multiple grade items).</p>';
+    var table='<table class="qtable"><thead><tr><th>Grade item</th><th>Questions</th><th>Total marks</th><th></th></tr></thead><tbody>'
+      + '<tr><td>Quiz (default)</td><td>All 8 questions</td><td>8.00</td><td><a href="#">Rename</a></td></tr>'
+      + '</tbody></table><button class="btn btn-secondary" style="margin-bottom:1.5rem"><i class="fa-solid fa-plus"></i> Add grade item</button>';
+    var assign='<h3 class="sec-h" style="font-size:1rem">Assign questions to grade items</h3><table class="qtable"><thead><tr><th>Question</th><th>Grade item</th></tr></thead><tbody>'
+      + QB.map(function(q){return '<tr><td>'+q.n+'. '+q.name+'</td><td>'+sel(["Quiz (default)"],0).replace('class="inp"','class="inp sm" style="max-width:220px"')+'</td></tr>';}).join('')
+      + '</tbody></table>';
+    return intro+table+assign;
+  }
+
+  /* ---------------- Tab: Overrides (overrideedit.php) ---------------- */
+  function tabOverrides(){
+    var sub='<div class="subtabs"><button class="subtab'+(overrideTab==="user"?" on":"")+'" data-subov="user">User overrides</button><button class="subtab'+(overrideTab==="group"?" on":"")+'" data-subov="group">Group overrides</button></div>';
+    var add='<button class="btn btn-primary" data-add="override" style="margin-bottom:1rem"><i class="fa-solid fa-plus"></i> Add '+overrideTab+' override</button>';
+    var who = overrideTab==="user" ? "User" : "Group";
+    var rowsData = overrideTab==="user"
+      ? [["Amir Hassan","—","28 March 2026, 23:59","45 mins","3","—"],["Jo Nguyen","12 March 2026, 09:00","—","No limit","Unlimited","set"]]
+      : [["Access group B","—","31 March 2026, 23:59","—","2","—"]];
+    var rows=rowsData.map(function(r){return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td><td>'+r[4]+'</td><td>'+(r[5]==="set"?'<i class="fa-solid fa-key" title="Password set"></i>':r[5])+'</td>'
+      + '<td><button class="qb-iconbtn" title="Edit"><i class="fa-solid fa-pen"></i></button><button class="qb-iconbtn" title="Copy"><i class="fa-solid fa-copy"></i></button><button class="qb-iconbtn danger" title="Delete"><i class="fa-solid fa-trash"></i></button></td></tr>';}).join('');
+    var table='<table class="qtable"><thead><tr><th>'+who+'</th><th>Opens</th><th>Closes</th><th>Time limit</th><th>Attempts</th><th>Password</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+    return sub+add+table;
+  }
+
+  /* ---------------- Tab: Question bank ---------------- */
+  function tabBank(){
+    var tools='<div class="qb-toolbar"><label class="checkrow">Category '+sel(["Default for Biology 101 (24)","Cells &amp; membranes (12)","Genetics (18)"],0).replace('class="inp"','class="inp" style="max-width:280px"')+'</label>'
+      + '<button class="btn btn-secondary"><i class="fa-solid fa-plus"></i> Create a new question</button>'
+      + '<span style="flex:1"></span><input class="inp" type="text" placeholder="Filter…" style="max-width:200px"></div>';
+    var qs=[["Aerobic respiration site","Multiple choice","fa-list-ul","Ready"],["Plasma membrane permeability","Multiple choice","fa-list-ul","Ready"],["Osmosis definition","Multiple choice","fa-list-ul","Ready"],["Label the organelle","Drag & drop onto image","fa-image","Draft"],["Enzyme action (essay)","Essay","fa-pen-nib","Ready"],["Cell fluid identification","Short answer","fa-i-cursor","Ready"]];
+    var rows=qs.map(function(q){var draft=q[3]==="Draft";return '<tr><td><input type="checkbox"></td><td><span class="qtype-tag"><span class="qb-qicon" style="width:20px;height:20px"><i class="fa-solid '+q[2]+'"></i></span> '+q[0]+'</span></td>'
+      + '<td>'+q[1]+'</td><td><span class="badge-state '+(draft?"inprogress":"finished")+'">'+q[3]+'</span></td><td>v1</td><td>Mr. Sanders</td>'
+      + '<td><button class="qb-iconbtn" title="Edit"><i class="fa-solid fa-pen"></i></button><button class="qb-iconbtn" title="Preview" data-preview="bank" data-pname="'+q[0]+'"><i class="fa-solid fa-magnifying-glass"></i></button><button class="qb-iconbtn" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button></td></tr>';}).join('');
+    var table='<table class="qtable"><thead><tr><th style="width:32px"></th><th>Question</th><th>Type</th><th>Status</th><th>Version</th><th>Created by</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+    return tools+table;
+  }
+
+  /* ---------------- Tab: Results (report/* subplugins) ---------------- */
+  function tabResults(){
+    var subs=[["grades","Grades"],["responses","Responses"],["statistics","Statistics"],["grading","Manual grading"]];
+    var sub='<div class="subtabs">'+subs.map(function(s){return '<button class="subtab'+(resultTab===s[0]?" on":"")+'" data-subres="'+s[0]+'">'+s[1]+'</button>';}).join('')+'</div>';
+    var note='<div class="note-analysis">Analysis views (report subplugins) — not part of editing, shown for completeness.</div>';
+    var content;
+    if(resultTab==="grades"){
+      var head='<tr><th>First name / Surname</th><th>State</th><th>Completed</th><th>Time taken</th><th>Grade / 10.00</th>'+QB.map(function(q){return '<th>Q'+q.n+'</th>';}).join('')+'</tr>';
+      var students=[["Amir Hassan","Finished","3:20 PM","18:12","6.25"],["Jo Nguyen","Finished","3:44 PM","22:05","8.75"],["Lena Ortiz","In progress","—","—","—"]];
+      var rows=students.map(function(s){return '<tr><td>'+s[0]+'</td><td><span class="badge-state '+(s[1]==="Finished"?"finished":"inprogress")+'">'+s[1]+'</span></td><td>'+s[2]+'</td><td>'+s[3]+'</td><td>'+s[4]+'</td>'+QB.map(function(){return '<td>'+(s[1]==="Finished"?"1.0":"–")+'</td>';}).join('')+'</tr>';}).join('');
+      content='<div class="qb-toolbar"><button class="btn btn-secondary"><i class="fa-solid fa-download"></i> Download</button><button class="btn btn-secondary"><i class="fa-solid fa-arrows-rotate"></i> Regrade</button></div>'
+        + '<div style="overflow:auto"><table class="qtable"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div>';
+    } else if(resultTab==="responses"){
+      content='<table class="qtable"><thead><tr><th>Student</th><th>State</th>'+QB.slice(0,4).map(function(q){return '<th>Q'+q.n+'</th>';}).join('')+'</tr></thead><tbody>'
+        + '<tr><td>Amir Hassan</td><td>Finished</td><td>Mitochondrion ✓</td><td>Selectively permeable ✓</td><td>Diffusion ✗</td><td>Nuclear pore ✓</td></tr>'
+        + '<tr><td>Jo Nguyen</td><td>Finished</td><td>Mitochondrion ✓</td><td>Selectively permeable ✓</td><td>Osmosis ✓</td><td>Nuclear pore ✓</td></tr></tbody></table>';
+    } else if(resultTab==="statistics"){
+      content='<table class="qtable"><thead><tr><th>Q#</th><th>Question</th><th>Facility index</th><th>Discrimination</th><th>Attempts</th></tr></thead><tbody>'
+        + QB.map(function(q,i){var fac=[62,88,41,79,84,55,91,73][i];return '<tr><td>'+q.n+'</td><td>'+q.name+'</td><td>'+fac+'%</td><td>'+(fac>60?"Good":"Review")+'</td><td>24</td></tr>';}).join('')
+        + '</tbody></table><p class="help">Facility = % who got it right; low discrimination flags questions to review.</p>';
+    } else {
+      content='<p class="help" style="margin-top:0">Questions needing manual grading (e.g. essays).</p><table class="qtable"><thead><tr><th>Question</th><th>Type</th><th>To grade</th><th></th></tr></thead><tbody>'
+        + '<tr><td>Enzyme action (essay)</td><td>Essay</td><td>7 responses</td><td><button class="btn btn-secondary">Grade all</button></td></tr></tbody></table>';
+    }
+    return sub+note+content;
+  }
+
+  /* ---------------- question preview (preview.php) ----------------
+     Mirrors question/bank/previewquestion/preview.php: renders one question in a
+     behaviour, with the display options from the URL (behaviour, maxmark,
+     correctness, marks, markdp, feedback, generalfeedback, rightanswer, history)
+     and the Start again / Fill in correct / Submit and finish / Close actions. */
+  function openQuestionPreview(q){
+    q = q || {};
+    var behaviours=["Deferred feedback","Adaptive mode","Adaptive mode (no penalties)","Immediate feedback","Interactive with multiple tries","Deferred feedback with CBM","Immediate feedback with CBM","Manual grading"];
+    var opts = (q.opts||[]).map(function(o){ return '<label class="qopt"><input type="radio" name="pvq"> <span>'+o[1]+'</span></label>'; }).join('')
+      || '<p class="help" style="margin:0">Interactive preview of this question type.</p>';
+    var rsum = "—"; if(q.opts && q.correct){ var m=q.opts.filter(function(o){return o[0]===q.correct;})[0]; if(m) rsum=m[1]; }
+
+    // Header: question-type icon + name + version badge + ID number (idnumber).
+    var header = '<div class="qpv-head"><div style="display:flex;align-items:center;gap:.5rem;min-width:0">'
+      + '<span class="qb-qicon" style="width:26px;height:26px"><i class="fa-solid '+(q.icon||"fa-list-ul")+'"></i></span>'
+      + '<h3 class="modal-title" style="margin:0">'+(q.name||"Question")+'</h3>'
+      + '<span class="ws-badge">Version 3 (latest)</span></div>'
+      + '<button class="qb-iconbtn" data-wsclose title="Close preview"><i class="fa-solid fa-xmark"></i></button></div>'
+      + '<div class="qpv-idnumber">ID number: '+(q.idnumber||"CELL-Q1")+'</div>';
+
+    // The question.
+    var qcard = '<div class="qcard"><div class="qcard-head"><span class="qn">Question 1</span>'
+      + '<span class="qmeta">Not yet answered · Marked out of 1.00</span>'
+      + '<button class="qflag"><i class="fa-regular fa-flag"></i> Flag question</button></div>'
+      + '<div class="qcard-body"><p class="qtext">'+(q.text||q.name||"Question preview")+'</p><div class="qopts">'+opts+'</div></div></div>';
+
+    // Controls (template #previewcontrols): restart / save / fill / finish / close.
+    var controls = '<div class="submitbtns" style="justify-content:flex-start;gap:.5rem;margin:1rem 0;flex-wrap:wrap">'
+      + '<button class="btn btn-primary">Submit and finish</button>'
+      + '<button class="btn btn-secondary">Save</button>'
+      + '<button class="btn btn-secondary">Fill in correct responses</button>'
+      + '<button class="btn btn-secondary">Start again</button>'
+      + '<button class="btn btn-secondary" data-wsclose>Close preview</button></div>';
+
+    // Comments (qbank_comment plugin — collapsible).
+    var comments = '<details class="qpv-opts qpv-comments"><summary>Comments (0)</summary>'
+      + '<textarea class="inp" rows="2" placeholder="Add a comment…"></textarea></details>';
+
+    // Preview options form (attempt options): version, behaviour, max mark, variant.
+    var previewOptions = '<details class="qpv-opts"><summary>Preview options</summary>'
+      + '<p class="help" style="margin:.25rem 0 .75rem">The options you select only affect the preview.</p>'
+      + '<div class="qpv-grid">'
+      + field('Question version', sel(["Always latest","Version 3 (latest)","Version 2","Version 1"],0))
+      + field('How questions behave', sel(behaviours,0))
+      + field('Marked out of', '<input class="inp sm" type="text" value="1.00">')
+      + field('Question variant', sel(["1","2","3"],0))
+      + '</div><button class="btn btn-secondary">Start again with these options</button></details>';
+
+    // Display options form.
+    var displayOptions = '<details class="qpv-opts"><summary>Display options</summary><div class="qpv-grid">'
+      + field('Whether correct', sel(["Not shown","Shown"],1))
+      + field('Marks', sel(["Not shown","Show max mark only","Show mark and max"],2))
+      + field('Decimal places in grades', sel(["0","1","2","3"],2))
+      + field('Specific feedback', sel(["Not shown","Shown"],1))
+      + field('General feedback', sel(["Not shown","Shown"],1))
+      + field('Right answer', sel(["Not shown","Shown"],1))
+      + field('Response history', sel(["Not shown","Shown"],0))
+      + '</div><button class="btn btn-secondary">Update display options</button></details>';
+
+    // Technical information (collapsible).
+    var tech = '<details class="qpv-opts"><summary>Technical information</summary><div class="qpv-tech">'
+      + '<p>Behaviour being used: Deferred feedback</p><p>Minimum fraction: 0.00</p><p>Maximum fraction: 1.00</p>'
+      + '<p>Variant: 1</p><p>Question summary: '+(q.text||q.name||"")+'</p>'
+      + '<p>Right answer summary: '+rsum+'</p><p>Response summary: </p><p>State: Not started</p></div></details>';
+
+    // qbank_exporttoxml plugin.
+    var xml = '<div class="qpv-xml"><a href="#"><i class="fa-solid fa-download"></i> Download this question in Moodle XML format</a></div>';
+
+    openWsModal(header + qcard + controls + comments + previewOptions + displayOptions + tech + xml);
+  }
+
+  /* ---------------- workspace modals ---------------- */
+  function openWsModal(html){ document.getElementById("wsmodalBody").innerHTML=html; document.getElementById("wsmodal").classList.add("show");
+    document.querySelectorAll("[data-wsclose]").forEach(function(b){ b.addEventListener("click", closeWsModal); });
+    document.querySelectorAll(".qchoice, .modal-tabs button").forEach(function(b){ b.addEventListener("click", function(){ if(b.classList.contains("qchoice")) closeWsModal(); }); });
+  }
+  function closeWsModal(){ document.getElementById("wsmodal").classList.remove("show"); }
+  function openChooser(){
+    var qtypes=[["Multiple choice","fa-list-ul","One or more correct answers"],["True/False","fa-toggle-on","A simple true or false"],["Matching","fa-arrows-left-right","Match answers to sub-questions"],["Short answer","fa-i-cursor","Type a word or phrase"],["Numerical","fa-hashtag","A number, with tolerance/units"],["Essay","fa-pen-nib","Written response, graded by hand"],["Select missing words","fa-puzzle-piece","Choose words from dropdowns"],["Drag and drop into text","fa-arrows-up-down-left-right","Drag words into gaps"],["Drag and drop markers","fa-map-pin","Drag markers onto an image"],["Drag and drop onto image","fa-image","Drag items onto a background"],["Calculated","fa-calculator","Numeric with wildcards"],["Ordering","fa-arrow-down-1-9","Put items in order"],["Random short-answer matching","fa-shuffle","Auto-built matching"],["Description","fa-circle-info","Not a question — shows text/media"]];
+    openWsModal('<h3 class="modal-title">Add a question</h3><div class="modal-tabs"><button class="on">Create new</button><button>From question bank</button><button>Add a random question</button></div>'
+      + '<div class="qchooser">'+qtypes.map(function(t){return '<button class="qchoice"><span class="ic"><i class="fa-solid '+t[1]+'"></i></span><span><span class="nm">'+t[0]+'</span><br><span class="ds">'+t[2]+'</span></span></button>';}).join('')+'</div>'
+      + '<div class="modal-actions"><button class="btn btn-secondary" data-wsclose>Cancel</button></div>');
+  }
+  function openRandom(){
+    openWsModal('<h3 class="modal-title">Add a random question</h3>'
+      + field('Category', sel(["Default for Biology 101 (24)","Cells & membranes (12)"],0))
+      + '<label class="checkrow"><input type="checkbox" checked> Include questions from subcategories</label>'
+      + field('Number of random questions', sel(["1","2","3","4","5"],0))
+      + field('Tags (optional)', '<input class="inp" type="text" placeholder="e.g. membranes">')
+      + '<div class="modal-actions"><button class="btn btn-secondary" data-wsclose>Cancel</button><button class="btn btn-primary" data-wsclose>Add random question</button></div>');
+  }
+  function openOverrideForm(){
+    openWsModal('<h3 class="modal-title">Add '+overrideTab+' override</h3>'
+      + field('Override to '+overrideTab, '<input class="inp" type="text" placeholder="Search '+overrideTab+'…">')
+      + '<div class="field"><label>Open the quiz</label><div class="inline-2"><label class="checkrow"><input type="checkbox"> Enable</label><input class="inp" type="text" value="10 March 2026, 09:00" style="max-width:240px" disabled></div></div>'
+      + '<div class="field"><label>Close the quiz</label><div class="inline-2"><label class="checkrow"><input type="checkbox"> Enable</label><input class="inp" type="text" value="24 March 2026, 23:59" style="max-width:240px" disabled></div></div>'
+      + toggleField('Time limit','30',false,'minutes')
+      + field('Attempts allowed', sel(["Unlimited","1","2","3","4","5"],0))
+      + field('Require password', '<input class="inp" type="text" placeholder="No password" style="max-width:260px">')
+      + '<div class="modal-actions"><button class="btn btn-secondary" data-wsclose>Cancel</button><button class="btn btn-primary" data-wsclose>Save override</button></div>');
+  }
+
+  /* ---------------- wiring ---------------- */
+  function wireEdit(view){
+    view.querySelectorAll(".ws-tab").forEach(function(b){ b.addEventListener("click", function(){ editTab=b.dataset.tab; render(); }); });
+    view.querySelectorAll("[data-mact]").forEach(function(b){ b.addEventListener("click", function(){ var a=b.dataset.mact; if(a==="preview") previewFromEdit(); else if(a==="cancel") exitEdit(); }); });
+    view.querySelectorAll("[data-wsdone]").forEach(function(b){ b.addEventListener("click", exitEdit); });
+    view.querySelectorAll("[data-add]").forEach(function(b){ b.addEventListener("click", function(){ var a=b.dataset.add; if(a==="question"||a==="bank") openChooser(); else if(a==="random") openRandom(); else if(a==="override") openOverrideForm(); }); });
+    view.querySelectorAll("[data-del]").forEach(function(b){ b.addEventListener("click", function(){ if(editData==="locked") return; var n=parseInt(b.dataset.del,10); QB=QB.filter(function(q){return q.n!==n;}); render(); }); });
+    view.querySelectorAll("[data-subov]").forEach(function(b){ b.addEventListener("click", function(){ overrideTab=b.dataset.subov; render(); }); });
+    view.querySelectorAll("[data-subres]").forEach(function(b){ b.addEventListener("click", function(){ resultTab=b.dataset.subres; render(); }); });
+    // question preview (builder rows + question bank rows)
+    view.querySelectorAll("[data-preview]").forEach(function(b){ b.addEventListener("click", function(){
+      var v=b.dataset.preview;
+      if(v==="bank"){ openQuestionPreview({name:b.dataset.pname}); }
+      else { var n=parseInt(v,10); openQuestionPreview({name:(QB[n-1]||{}).name, icon:(QB[n-1]||{}).icon, text:(Q[n-1]||{}).text, opts:(Q[n-1]||{}).opts, correct:(Q[n-1]||{}).correct}); }
+    }); });
+    // settings sub-nav: click to scroll
+    view.querySelectorAll(".set-nav a").forEach(function(a){ a.addEventListener("click", function(){
+      view.querySelectorAll(".set-nav a").forEach(function(x){x.classList.remove("on");}); a.classList.add("on");
+      var t=view.querySelector("#"+a.dataset.anchor); if(t) t.scrollIntoView({behavior:"smooth",block:"start"});
+    }); });
+    if(editTab==="settings"){ wireSettings(view); setupSettingsSpy(view); }
+  }
+  /* settings sub-nav scrollspy — highlight the group currently near the top */
+  function setupSettingsSpy(view){
+    if(settingsSpy){ settingsSpy.disconnect(); }
+    var navmap={}; view.querySelectorAll(".set-nav a").forEach(function(a){ navmap[a.dataset.anchor]=a; });
+    settingsSpy=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting){
+        Object.keys(navmap).forEach(function(k){ navmap[k].classList.remove("on"); });
+        var a=navmap[en.target.id]; if(a) a.classList.add("on");
+      }});
+    }, {rootMargin:"-72px 0px -68% 0px", threshold:0});
+    view.querySelectorAll(".set-group").forEach(function(g){ settingsSpy.observe(g); });
+  }
+  function wireSettings(root){
+    function setCell(input, enabled){ if(!input) return; input.disabled=!enabled; var td=input.closest("td"); if(td) td.classList.toggle("disabled",!enabled); }
+    function applyMatrix(){
+      var closeOn=root.querySelector("#f-closeon");
+      ["during","immediately","open","closed"].forEach(function(col){
+        var maxmarks=root.querySelector('[data-rv="maxmarks"][data-rvcol="'+col+'"]');
+        var attempt=root.querySelector('[data-rv="attempt"][data-rvcol="'+col+'"]');
+        var marks=root.querySelector('[data-rv="marks"][data-rvcol="'+col+'"]');
+        setCell(marks, maxmarks && maxmarks.checked);
+        if(col!=="during"){ ["correctness","specificfeedback","generalfeedback","rightanswer"].forEach(function(rv){ setCell(root.querySelector('[data-rv="'+rv+'"][data-rvcol="'+col+'"]'), attempt && attempt.checked); }); }
+      });
+      if(closeOn && !closeOn.checked){ root.querySelectorAll('[data-rvcol="closed"]').forEach(function(el){ setCell(el,false); }); }
+    }
+    function applyAttempts(){ var a=root.querySelector("#f-attempts"); if(!a) return; var one=a.value==="1";
+      ["wrap-grademethod","wrap-attemptonlast","wrap-delay1","wrap-delay2"].forEach(function(id){ var el=root.querySelector("#"+id); if(el) el.style.display=one?"none":"block"; }); }
+    function applyOverdue(){ var o=root.querySelector("#f-overdue"), w=root.querySelector("#wrap-grace"); if(o&&w){ w.style.display=/grace/i.test(o.selectedOptions[0].text)?"block":"none"; } }
+    function applyBehaviour(){ var b=root.querySelector("#f-behaviour"), w=root.querySelector("#wrap-redo"); if(b&&w){ w.style.display=/Immediate|Interactive/.test(b.selectedOptions[0].text)?"block":"none"; } }
+    root.querySelectorAll('[data-rv]').forEach(function(cb){ cb.addEventListener("change", applyMatrix); });
+    var closeOn=root.querySelector("#f-closeon"); if(closeOn) closeOn.addEventListener("change", applyMatrix);
+    var att=root.querySelector("#f-attempts"); if(att) att.addEventListener("change", applyAttempts);
+    var ov=root.querySelector("#f-overdue"); if(ov) ov.addEventListener("change", applyOverdue);
+    var bh=root.querySelector("#f-behaviour"); if(bh) bh.addEventListener("change", applyBehaviour);
+    // advanced-field disclosure + enable/disable toggles
+    root.querySelectorAll(".inline-2 input[type=checkbox]").forEach(function(cb){ cb.addEventListener("change", function(){ var inp=cb.closest(".inline-2").querySelector('input[type=text]'); if(inp) inp.disabled=!cb.checked; }); });
+    applyMatrix(); applyAttempts(); applyOverdue(); applyBehaviour();
+  }
+
+  /* ------------------------------------------------------------------ render */
+  function render(){
+    var view = document.getElementById("view");
+    body.classList.toggle("edit-mode", mode === "edit");
+    if(mode === "edit"){ renderEdit(); return; }
+    if(state === "E1") view.innerHTML = viewE1();
+    else if(state === "E2") view.innerHTML = viewE2();
+    else if(state === "A")  view.innerHTML = viewA();
+    else if(state === "S" || state === "C") view.innerHTML = viewS();
+    else if(state === "R")  view.innerHTML = viewR();
+
+    // wire in-content actions
+    view.querySelectorAll("[data-action]").forEach(function(b){
+      b.addEventListener("click", function(e){ e.preventDefault(); dispatch(b.dataset.action); });
+    });
+    view.querySelectorAll("[data-q]").forEach(function(b){
+      b.addEventListener("click", function(e){ e.preventDefault(); curQ = parseInt(b.dataset.q,10); setState("A"); });
+    });
+    view.querySelectorAll("[data-rq]").forEach(function(b){
+      b.addEventListener("click", function(e){ e.preventDefault(); revIdx = parseInt(b.dataset.rq,10); reviewAll = false; render(); });
+    });
+    view.querySelectorAll("[data-flag]").forEach(function(b){
+      b.addEventListener("click", function(){ Q[curQ].aflag = !Q[curQ].aflag; render(); });
+    });
+    view.querySelectorAll("[data-review]").forEach(function(b){
+      b.addEventListener("click", function(){ reviewAll = b.dataset.review === "all"; render(); });
+    });
+
+    renderIndex();
+    renderFooter();
+    document.getElementById("modal").classList.toggle("show", state === "C");
+    if(state === "C"){
+      document.getElementById("modalWarn").textContent =
+        unanswered>0 ? ("You still have "+unanswered+" question"+(unanswered>1?"s":"")+" without an answer.") : "All questions have been answered.";
+      document.querySelector(".alert-warning").style.display = unanswered>0 ? "flex" : "none";
+    }
+    window.scrollTo(0,0);
+    syncDev();
+  }
+
+  /* ------------------------------------------------------------------ actions */
+  function dispatch(a){
+    switch(a){
+      case "startattempt": setState("A"); break;
+      case "tosummary": setState("S"); break;
+      case "returnattempt": setState("A"); break;
+      case "confirm": setState("C"); break;
+      case "submit": setState("R"); break;
+      case "startreview": case "finishattemptdone": setState("R"); break;
+      case "finishreview": setState("E2"); break;
+      case "nextq": if(curQ<Q.length-1){curQ++; render();} break;
+      case "prevq": if(curQ>0){curQ--; render();} break;
+      case "nextr": if(revIdx<Q.length-1){revIdx++; render();} break;
+      case "prevr": if(revIdx>0){revIdx--; render();} break;
+    }
+  }
+
+  function setState(s){ mode = "flow"; state = s; if(document.body.classList.contains("ci-overlay")) setOpen(false); render(); }
+
+  /* ------------------------------------------------------------------ dev panel */
+  function syncDev(){
+    var edit = mode==="edit";
+    document.querySelectorAll("#devStates .devbtn").forEach(function(b){ b.classList.toggle("on", !edit && b.dataset.state===state); });
+    document.querySelectorAll("#devRole .devbtn").forEach(function(b){ b.classList.toggle("on", b.dataset.role===role); });
+    document.querySelectorAll("#devFA .devbtn").forEach(function(b){ b.classList.toggle("on", b.dataset.fa===faPlace); });
+    document.querySelectorAll("#devTabs .devbtn").forEach(function(b){ b.classList.toggle("on", edit && b.dataset.tab===editTab); });
+    document.querySelectorAll("#devEditData .devbtn").forEach(function(b){ b.classList.toggle("on", b.dataset.editdata===editData); });
+    document.querySelectorAll("#devQnav .devbtn").forEach(function(b){ b.classList.toggle("on", b.dataset.qnav===qNavUI); });
+
+    // Context-aware guidance: gray out options that have no effect in the current
+    // state, so the user is guided to explore each pattern where it applies.
+    function setRow(rowId, enabled, reason){
+      var row=document.getElementById(rowId); if(!row) return;
+      row.querySelectorAll(".devbtn").forEach(function(b){ b.disabled=!enabled; b.title = enabled ? "" : reason; });
+      var h=row.previousElementSibling; if(h && h.tagName==="H5") h.classList.toggle("dim", !enabled);
+    }
+    var flow = mode==="flow";
+    var inAttemptFlow = flow && (state==="A"||state==="S"||state==="C");   // finish button lives here
+    var hasQuestionsUI = flow && (state==="A"||state==="S"||state==="C"||state==="R"); // progress UI applies here
+    setRow("devRole", flow, "Applies to the student flow — not the edit workspace.");
+    setRow("devFA", inAttemptFlow, "Only applies during an attempt (Attempt / Summary / Confirm).");
+    setRow("devQnav", hasQuestionsUI, "Only applies once questions are shown (Attempt / Summary / Results).");
+    setRow("devEditData", edit, "Applies inside the edit workspace — open a workspace tab first.");
+    var caps = {
+      E1:"Entry — no attempts yet. Primary CTA starts the attempt.",
+      E2:"Entry — an attempt is in progress / re-attemptable.",
+      A:"Live attempt. Questions nested in the course index; Finish attempt in footer/header.",
+      S:"Summary of attempt (after Finish attempt). CTA = Submit all and finish.",
+      C:"Confirmation modal before final submit.",
+      R:"Results / review. Toggle one-per-page vs all questions."
+    };
+    var editCaps = {
+      questions:"Builder (edit.php): sections, page breaks, per-question marks, add menu.",
+      settings:"All mod_form fields, sectioned with live conditional show/hide.",
+      grades:"Grade-item setup (editgrading.php) — multiple grade items.",
+      overrides:"User / group overrides (open, close, time limit, attempts, password).",
+      bank:"Question bank — categories, versions, status.",
+      results:"Report subplugins (grades, responses, statistics, manual grading)."
+    };
+    if(edit){
+      document.getElementById("devCap").textContent = "EDIT · "+editData+" — "+editCaps[editTab];
+    } else {
+      var faNote = attemptScreen() && state==="A"
+        ? (faPlace==="footer" ? " Finish button: sticky footer, left of Next." : " Finish button: header action.")
+        : "";
+      var uiNote = attemptScreen()
+        ? (" Progress UI: " + (qNavUI==="index" ? "questions nested in course index." : "survey-style progress bar in content."))
+        : "";
+      document.getElementById("devCap").textContent = caps[state] + faNote + uiNote;
+    }
+  }
+
+  document.getElementById("devStates").addEventListener("click", function(e){
+    var b = e.target.closest("[data-state]"); if(b) setState(b.dataset.state);
+  });
+  document.getElementById("devRole").addEventListener("click", function(e){
+    var b = e.target.closest("[data-role]"); if(!b) return;
+    role = b.dataset.role;
+    body.classList.toggle("role-teacher", role==="teacher");
+    body.classList.toggle("edit-on", role==="teacher");
+    document.getElementById("editSwitch").setAttribute("aria-pressed", role==="teacher" ? "true":"false");
+    render();
+  });
+  document.getElementById("devFA").addEventListener("click", function(e){
+    var b = e.target.closest("[data-fa]"); if(!b) return;
+    faPlace = b.dataset.fa;
+    body.classList.toggle("finish-in-header", faPlace==="header");
+    render();
+  });
+  document.getElementById("devQnav").addEventListener("click", function(e){
+    var b = e.target.closest("[data-qnav]"); if(!b) return;
+    qNavUI = b.dataset.qnav;
+    if(mode==="edit"){ mode="flow"; state="A"; }   // jump to the attempt so the change is visible
+    render();
+  });
+  document.getElementById("devTabs").addEventListener("click", function(e){
+    var b = e.target.closest("[data-tab]"); if(!b) return; enterEdit(b.dataset.tab);
+  });
+  document.getElementById("devEditData").addEventListener("click", function(e){
+    var b = e.target.closest("[data-editdata]"); if(!b) return;
+    editData = b.dataset.editdata;
+    if(mode==="edit") render(); else enterEdit(editTab);
+  });
+
+  /* ------------------------------------------------------------------ modal */
+  document.getElementById("modalCancel").addEventListener("click", function(){ setState("S"); });
+  document.getElementById("modalBack").addEventListener("click", function(){ setState("S"); });
+  document.getElementById("modalConfirm").addEventListener("click", function(){ setState("R"); });
+
+  /* ------------------------------------------------------------------ manage dropdown */
+  var manageMenu = document.getElementById("manageMenu");
+  function closeManage(){ manageMenu.classList.remove("show"); }
+  document.addEventListener("click", function(e){
+    var btn = e.target.closest("[data-manage]");
+    if(btn){
+      e.preventDefault(); e.stopPropagation();
+      manageMenu.innerHTML = '<div class="menu-label">Manage quiz</div>'
+        + '<button class="menu-item" data-mm="questions"><i class="fa-solid fa-pen-to-square"></i> Edit quiz</button>'
+        + '<button class="menu-item" data-mm="settings"><i class="fa-solid fa-gear"></i> Settings</button>'
+        + '<button class="menu-item" data-mm="bank"><i class="fa-solid fa-database"></i> Question bank</button>'
+        + '<button class="menu-item" data-mm="preview"><i class="fa-solid fa-eye"></i> Preview</button>'
+        + '<div class="menu-sep"></div>'
+        + '<button class="menu-item" data-mm="results"><i class="fa-solid fa-chart-simple"></i> Results &amp; grades</button>'
+        + '<button class="menu-item" data-mm="ov-user"><i class="fa-solid fa-user-clock"></i> User overrides</button>'
+        + '<button class="menu-item" data-mm="ov-group"><i class="fa-solid fa-users-gear"></i> Group overrides</button>'
+        + '<div class="menu-sep"></div>'
+        + '<button class="menu-item" data-mm="perm"><i class="fa-solid fa-user-shield"></i> Permissions</button>'
+        + '<button class="menu-item" data-mm="perm"><i class="fa-solid fa-box-archive"></i> Backup</button>';
+      manageMenu.classList.add("show");
+      var r = btn.getBoundingClientRect(), mw = manageMenu.offsetWidth, mh = manageMenu.offsetHeight;
+      var top = r.bottom + 4; if(top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
+      manageMenu.style.top = top + "px";
+      manageMenu.style.left = Math.max(8, Math.min(r.right - mw, window.innerWidth - mw - 8)) + "px";
+      return;
+    }
+    var mi = e.target.closest(".menu-item");
+    if(mi){
+      closeManage();
+      var mm = mi.dataset.mm;
+      if(mm==="preview") previewFromEdit();
+      else if(mm==="ov-user"){ overrideTab="user"; enterEdit("overrides"); }
+      else if(mm==="ov-group"){ overrideTab="group"; enterEdit("overrides"); }
+      else if(mm && mm!=="perm") enterEdit(mm==="questions"?"questions":mm);
+      return;
+    }
+    if(!manageMenu.contains(e.target)) closeManage();
+  });
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape"){ closeManage(); closeWsModal(); if(mode==="flow" && state==="C") setState("S"); } });
+
+  /* ------------------------------------------------------------------ drawers (book + forum behaviour) */
+  function ciOverlay(){ return body.classList.contains("ci-overlay"); }
+  function cbOverlay(){ return body.classList.contains("cb-overlay"); }
+  function setOpen(open){ body.classList.toggle("ci-open", open); }
+  document.getElementById("openBtn").addEventListener("click", function(){ body.classList.add("ci-open"); if(ciOverlay() && cbOverlay()) body.classList.remove("cb-open"); });
+  document.getElementById("closeBtn").addEventListener("click", function(){ body.classList.remove("ci-open"); });
+  document.getElementById("cbOpen").addEventListener("click", function(){ body.classList.add("cb-open"); if(cbOverlay() && ciOverlay()) body.classList.remove("ci-open"); });
+  document.getElementById("cbClose").addEventListener("click", function(){ body.classList.remove("cb-open"); });
+  document.getElementById("backdrop").addEventListener("click", function(){ if(ciOverlay()) body.classList.remove("ci-open"); if(cbOverlay()) body.classList.remove("cb-open"); });
+  document.getElementById("burger").addEventListener("click", function(){ alert("Site navigation — placeholder (not the subject of this prototype)."); });
+
+  document.getElementById("editSwitch").addEventListener("click", function(){
+    var on = this.getAttribute("aria-pressed") === "true";
+    this.setAttribute("aria-pressed", on ? "false":"true");
+    body.classList.toggle("edit-on", !on);
+    closeManage();
+    if(on && mode === "edit") exitEdit();   // turning edit mode off leaves the workspace
+  });
+
+  /* workspace modal close */
+  document.getElementById("wsmodalBack").addEventListener("click", closeWsModal);
+
+  var mqLeft  = window.matchMedia("(max-width:768px)");   // course index overlays <=768
+  var mqRight = window.matchMedia("(max-width:1200px)");  // course blocks overlays <=1200
+  function applyMode(){
+    body.classList.toggle("ci-overlay", mqLeft.matches);
+    body.classList.toggle("cb-overlay", mqRight.matches);
+    if(mqLeft.matches) body.classList.remove("ci-open"); else body.classList.add("ci-open");
+    if(mqRight.matches) body.classList.remove("cb-open");
+  }
+  mqLeft.addEventListener("change", applyMode);
+  mqRight.addEventListener("change", applyMode);
+
+  /* ------------------------------------------------------------------ annotations
+     Blue walkthrough callouts + dashed pulsing ring (ported from the book
+     prototype). Each card shows only while its target element is on screen, so
+     switching quiz state / edit tab surfaces the relevant notes. */
+  var annoLayer = document.getElementById("annoLayer");
+  var annoToggle = document.getElementById("annoToggle");
+  var annoToggleLabel = document.getElementById("annoToggleLabel");
+  var annoCards = Array.prototype.slice.call(document.querySelectorAll(".anno-card"));
+  var annoOn = true;
+  var annoRings = annoCards.map(function(){ var r=document.createElement("div"); r.className="anno-ring"; r.style.display="none"; annoLayer.appendChild(r); return r; });
+  function isElVisible(el){ return !!(el && (el.offsetWidth || el.offsetHeight || el.getClientRects().length)); }
+  function firstVisibleTarget(sel){ var els=document.querySelectorAll(sel); for(var i=0;i<els.length;i++){ if(isElVisible(els[i])) return els[i]; } return null; }
+  function aliveCount(){ return annoCards.filter(function(c){ return c.dataset.dismissed !== "1"; }).length; }
+  function updateAnnoToggleLabel(){ annoToggleLabel.textContent = annoOn ? "Hide annotations" : ("Show annotations (" + aliveCount() + ")"); }
+  function updateAnnotations(){
+    if(!annoLayer) return;
+    var vw=window.innerWidth, vh=window.innerHeight;
+    annoCards.forEach(function(card,i){
+      var ring=annoRings[i];
+      if(!annoOn || card.dataset.dismissed==="1"){ card.style.display="none"; ring.style.display="none"; return; }
+      var target=firstVisibleTarget(card.dataset.target);
+      var tr=target && target.getBoundingClientRect();
+      var visible=tr && tr.width>0 && tr.height>0 && tr.bottom>64 && tr.top<vh-8 && tr.right>0 && tr.left<vw;
+      if(!visible){ card.style.display="none"; ring.style.display="none"; return; }
+      card.style.display="block"; ring.style.display="block";
+      ring.style.left=(tr.left-4)+"px"; ring.style.top=(tr.top-4)+"px"; ring.style.width=(tr.width+8)+"px"; ring.style.height=(tr.height+8)+"px";
+      var cw=card.offsetWidth||230, chh=card.offsetHeight||90, side=card.dataset.side, cl, ct;
+      // flip vertical placement when there isn't room, so the card never lands on its ring
+      if(side==="top" && tr.top - chh - 18 < 72) side="bottom";
+      else if(side==="bottom" && tr.bottom + chh + 18 > vh - 8 && tr.top - chh - 18 >= 72) side="top";
+      if(side==="right"){ cl=tr.right+18; ct=tr.top-6; }
+      else if(side==="top"){ cl=tr.left; ct=tr.top-chh-18; }
+      else if(side==="bottom"){ cl=tr.left; ct=tr.bottom+18; }
+      else { cl=tr.left-cw-18; ct=tr.top-6; }
+      cl=Math.max(8, Math.min(cl, vw-cw-8));
+      // clamp vertically, but for top/bottom sides don't let the clamp push the card onto the target
+      if(side==="top"){ ct=Math.max(72, Math.min(ct, tr.top - chh - 8)); }
+      else if(side==="bottom"){ ct=Math.min(vh - chh - 8, Math.max(ct, tr.bottom + 8)); }
+      else { ct=Math.max(72, Math.min(ct, vh-chh-8)); }
+      card.style.left=cl+"px"; card.style.top=ct+"px";
+    });
+  }
+  annoToggle.addEventListener("click", function(){
+    annoOn=!annoOn; body.classList.toggle("annotations-on", annoOn);
+    if(annoOn && aliveCount()===0){ annoCards.forEach(function(c){ c.dataset.dismissed=""; }); }
+    updateAnnoToggleLabel(); updateAnnotations();
+  });
+  annoCards.forEach(function(card){
+    card.querySelector(".anno-close").addEventListener("click", function(){
+      card.dataset.dismissed="1";
+      if(aliveCount()===0){ annoOn=false; body.classList.remove("annotations-on"); }
+      updateAnnoToggleLabel(); updateAnnotations();
+    });
+  });
+  window.addEventListener("scroll", updateAnnotations, true);
+  window.addEventListener("resize", updateAnnotations);
+  var annoObserver=new MutationObserver(function(){ requestAnimationFrame(updateAnnotations); });
+  annoObserver.observe(document.getElementById("view"), { childList:true, subtree:true });
+  annoObserver.observe(document.getElementById("sections"), { childList:true, subtree:true });
+
+  /* ------------------------------------------------------------------ init */
+  applyMode();
+  render();
+  updateAnnoToggleLabel();
+  updateAnnotations();
+})();
+</script>
+
+<!--
+NOTES (throwaway prototype — delete once reviewed):
+
+Prototype: Quiz activity type. Reuses the book prototype's shell (MDS :root
+tokens, top nav, left course-index drawer, sticky footer) + the forum
+prototype's right "Course Blocks" drawer (verbatim style + behaviour: push
+>=1200, overlay <1200, backdrop, mutually-exclusive with the left index in
+overlay).
+
+Grounded in mod/quiz code:
+- view.php / view_page: entry with state-driven primary button
+  (attemptquiz / reattemptquiz / continueattemptquiz / previewquizstart).
+  Teacher sees attempt-counts + override links (role toggle).
+- The activity "tabs" (Settings / Question bank / Results / Overrides /
+  Preview / Permissions / Backup) collapse into the edit-mode Manage dropdown,
+  positioned exactly as in the book header.
+- attempt.php: the question-navigation grid (navigation_panel_attempt) and the
+  "Finish attempt..." link (endtestlink) move INTO the course index, mirroring
+  book chapters. Finish-attempt PRIMARY button shown in TWO placements behind a
+  dev toggle: (a) sticky footer, to the LEFT of Next; (b) header action.
+- summary.php / summary_page: question/status table + Return to attempt +
+  Submit all and finish (primary).
+- submission_confirmation.mustache: confirmclose copy + amber "N unanswered"
+  warning (shown for free navigation).
+- review.php / review_page: per-question feedback + correct answer via review
+  options; Show all on one page <-> one per page (showall); nav grid colour-
+  coded by correctness; Finish review.
+
+Dev-only: the bottom-left state switcher (states / role / finish-attempt
+placement) is a prototype control — remove for any real implementation.
+
+FIDELITY LEDGER — what maps to real mod/quiz vs. what is net-new
+================================================================
+
+EXISTING (data + concept map to real Moodle):
+- Name, description subtitle (quiz->intro), assessment/pink activity icon.
+- Entry primary button labels (attemptquiz / reattemptquiz / continueattemptquiz
+  / previewquizstart) — view.php buttontext logic.
+- Entry access-rule box (.quizinfo): rendered as sentences, faithful to
+  view_information()/describe_rules() (attempts, time limit, open/close,
+  grading method, grade-to-pass). [FIXED: was a key/value table.]
+- Teacher attempt-counts + overrides links (view_information).
+- E2 attempts table (list_of_attempts): Attempt / State / Marks / Grade / Review;
+  in-progress row + Continue. [FIXED: dropped invented "4 of 8 answered".]
+- E2 current-grade line (view_result_info).
+- Attempt: timer, "Question N / Not yet answered / Marked out of 1.00", flag,
+  multichoice options, Previous/Next page.
+- Nested-question states (answered / not-answered / flagged / correct / incorrect)
+  = real question states.
+- Summary: "Summary of attempt", Question/Status table, Return to attempt,
+  Submit all and finish, "must be submitted by".
+- Confirm modal: confirmclose body + "N without an answer" (free navigation only).
+  [FIXED: body wording aligned to confirmclose.]
+- Review summary rows Started/State/Completed/Time taken/Marks/Grade, and the
+  Feedback row = Overall feedback (quiz_feedback, overallfeedback review option).
+  [FIXED: now static grade-band text, NOT question-aware.]
+- Per-question review: Correct/Incorrect, marks, "The correct answer is: X"
+  (Right answer review option), general/specific feedback slot.
+- Preview notice during the attempt + "Start a new preview" (restart_preview_button).
+  [FIXED: moved off the entry page; reworded to real preview messaging.]
+- Right Course Blocks drawer (Licence, Your teacher) = real blocks + theme drawer.
+
+NET-NEW (retained by agreement — the point of the exploration):
+1. Quiz questions nested INSIDE the course index (like book chapters). Real Moodle
+   puts the question nav in a block, not the course index.
+2. Finish-attempt as a PRIMARY BUTTON in two placements — sticky footer (left of
+   Next) and header action. Real Moodle: a persistent "Finish attempt..." TEXT
+   link at the bottom of the nav block (endtestlink), and the last-page Next
+   relabels to "Finish attempt". Persistence is real; button treatment + footer/
+   header placement is new.
+
+Invented sample DATA (real fields, fictional values): quiz name, dates, the 8
+cell-biology questions + their feedback, marks/grades, "Mr. Sanders", counts.
+
+Other simplifications: single-choice questions only; timer values cosmetic;
+entry/summary/confirm hide the sticky footer (CTAs live in the body); the dev
+state-switcher panel is a prototype-only control.
+
+EDIT / CREATE WORKSPACE (mode==="edit") — entered via the top-nav edit toggle +
+the Manage dropdown (Edit quiz / Settings / Question bank / Preview / Results /
+overrides). One unified workspace serves create (empty state, "Untitled quiz",
+Draft) and edit (populated) and a locked (has-attempts) state. Tabs = the real
+secondary nav. Fidelity:
+- Questions tab = edit.php / edit_renderer.php: sections (editable heading,
+  per-section Shuffle, remove), page breaks, per-question rows (drag, number,
+  type icon, name, preview, Marked-out-of, requires-previous, delete), Maximum
+  grade + Save, Total of marks, Repaginate, Select multiple, Add menu (new →
+  chooser of the real qtypes / from bank / random w/ category+count+tags /
+  section heading). Locked state = structure->can_be_edited()==false.
+- Settings tab = mod_form.php, EVERY field, grouped as Moodle groups, with the
+  4x8 review-options matrix and the real conditional logic (attempts=1 hides
+  grading method/attemptonlast/delays; overdue=grace shows grace period;
+  behaviour gates 'allow redo'; no close date disables the After-close review
+  column; marks disabled unless max marks; feedback fields gated by 'the
+  attempt'). Access-rule plugin fields (SEB, offline attempts, password, subnet,
+  delays, browser security) flagged as plugin/conditional. Max grade lives on the
+  Questions tab (as in code), not in the Grade group.
+- Grades setup = editgrading.php (multiple named grade items + per-question
+  assignment).
+- Overrides = overrides.php/overrideedit.php (user/group list + the real 5
+  fields: open, close, time limit, attempts, password).
+- Question bank / Results = representative fidelity of core_question qbank and
+  the report/* subplugins (grades, responses, statistics, manual grading) —
+  Results flagged as analysis, not editing.
+- Question preview = question/bank/previewquestion/preview.php: the preview icon
+  (builder rows + bank rows) opens a preview with the question in a behaviour +
+  the display-options form matching the real URL params (behaviour, maxmark,
+  correctness, marks, markdp, feedback, generalfeedback, rightanswer, history)
+  and the Start again / Fill in correct responses / Submit and finish actions.
+- Conditional fields shown but flagged: Pre-create attempts (quiz|precreateperiod)
+  and Outcomes (site outcomes enabled) only appear when enabled site-wide.
+Net-new here is presentation only (a unified tabbed workspace + the Manage
+dropdown as entry) — no new fields or actions were invented.
+-->
+</body>
+</html>
