@@ -1,7 +1,8 @@
 name: Deploy prototypes
 
 # Source of truth: main → public/prototypes/**
-# You merge/push to main; this workflow publishes the prototypes.
+# Merge/push to main publishes prototypes to the Hostinger VPS over SSH,
+# and refreshes the slim deploy/prototypes branch.
 on:
   push:
     branches: [main]
@@ -42,46 +43,45 @@ jobs:
           git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git push -f origin deploy/prototypes
 
-  ftp-to-hostinger:
-    name: FTP to Hostinger
+  ssh-to-vps:
+    name: SSH sync to Hostinger VPS
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - name: Check Hostinger FTP secrets
+      - name: Check SSH secrets
         id: check
         env:
-          FTP_SERVER: ${{ secrets.HOSTINGER_FTP_SERVER }}
-          FTP_USERNAME: ${{ secrets.HOSTINGER_FTP_USERNAME }}
-          FTP_PASSWORD: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
-          FTP_SERVER_DIR: ${{ secrets.HOSTINGER_FTP_SERVER_DIR }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          SSH_USERNAME: ${{ secrets.HOSTINGER_SSH_USERNAME }}
+          SSH_PASSWORD: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
+          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          SSH_PATH: ${{ secrets.HOSTINGER_SSH_PATH }}
         run: |
-          if [ -n "${FTP_SERVER}" ] && [ -n "${FTP_USERNAME}" ] && [ -n "${FTP_PASSWORD}" ]; then
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-            if [ -n "${FTP_SERVER_DIR}" ]; then
-              echo "server_dir=${FTP_SERVER_DIR}" >> "$GITHUB_OUTPUT"
-            else
-              echo "server_dir=public_html/prototypes/" >> "$GITHUB_OUTPUT"
-            fi
-          else
+          if [ -z "${SSH_HOST}" ] || [ -z "${SSH_USERNAME}" ] || [ -z "${SSH_PATH}" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::HOSTINGER_FTP_* secrets not set — skipping FTP. Add HOSTINGER_FTP_SERVER, HOSTINGER_FTP_USERNAME, HOSTINGER_FTP_PASSWORD (optional HOSTINGER_FTP_SERVER_DIR)."
+            echo "::notice::Missing HOSTINGER_SSH_HOST / USERNAME / PATH — skipping VPS sync."
+            exit 0
           fi
+          if [ -z "${SSH_PASSWORD}" ] && [ -z "${SSH_KEY}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Set HOSTINGER_SSH_PASSWORD or HOSTINGER_SSH_KEY — skipping VPS sync."
+            exit 0
+          fi
+          echo "configured=true" >> "$GITHUB_OUTPUT"
 
-      - name: Upload public/prototypes to Hostinger
+      - name: Upload public/prototypes to VPS
         if: steps.check.outputs.configured == 'true'
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        uses: appleboy/scp-action@v0.1.7
         with:
-          server: ${{ secrets.HOSTINGER_FTP_SERVER }}
-          username: ${{ secrets.HOSTINGER_FTP_USERNAME }}
-          password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
-          protocol: ftps
-          local-dir: ./public/prototypes/
-          server-dir: ${{ steps.check.outputs.server_dir }}
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            **/.ftp-deploy-sync-state.json
+          host: ${{ secrets.HOSTINGER_SSH_HOST }}
+          username: ${{ secrets.HOSTINGER_SSH_USERNAME }}
+          password: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: 22
+          source: "public/prototypes/*"
+          target: ${{ secrets.HOSTINGER_SSH_PATH }}
+          strip_components: 2
+          overwrite: true
