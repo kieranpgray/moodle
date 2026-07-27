@@ -1,8 +1,7 @@
 name: Deploy prototypes
 
-# Keeps a slim deploy/prototypes branch in sync with public/prototypes on main.
-# Hostinger Git should watch deploy/prototypes and publish into the site's
-# /prototypes directory — never point Hostinger at main (full Moodle tree).
+# Source of truth: main → public/prototypes/**
+# You merge/push to main; this workflow publishes the prototypes.
 on:
   push:
     branches: [main]
@@ -14,12 +13,16 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: deploy-prototypes
+  cancel-in-progress: true
+
 jobs:
   publish-deploy-branch:
+    name: Update deploy/prototypes branch
     runs-on: ubuntu-latest
     steps:
-      - name: Check out main
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
@@ -38,3 +41,47 @@ jobs:
           git commit -m "Deploy prototypes from ${GITHUB_SHA}"
           git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git push -f origin deploy/prototypes
+
+  ftp-to-hostinger:
+    name: FTP to Hostinger
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Check Hostinger FTP secrets
+        id: check
+        env:
+          FTP_SERVER: ${{ secrets.HOSTINGER_FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.HOSTINGER_FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
+          FTP_SERVER_DIR: ${{ secrets.HOSTINGER_FTP_SERVER_DIR }}
+        run: |
+          if [ -n "${FTP_SERVER}" ] && [ -n "${FTP_USERNAME}" ] && [ -n "${FTP_PASSWORD}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            if [ -n "${FTP_SERVER_DIR}" ]; then
+              echo "server_dir=${FTP_SERVER_DIR}" >> "$GITHUB_OUTPUT"
+            else
+              echo "server_dir=public_html/prototypes/" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::HOSTINGER_FTP_* secrets not set — skipping FTP. Add HOSTINGER_FTP_SERVER, HOSTINGER_FTP_USERNAME, HOSTINGER_FTP_PASSWORD (optional HOSTINGER_FTP_SERVER_DIR)."
+          fi
+
+      - name: Upload public/prototypes to Hostinger
+        if: steps.check.outputs.configured == 'true'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.HOSTINGER_FTP_SERVER }}
+          username: ${{ secrets.HOSTINGER_FTP_USERNAME }}
+          password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: ./public/prototypes/
+          server-dir: ${{ steps.check.outputs.server_dir }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/.ftp-deploy-sync-state.json
