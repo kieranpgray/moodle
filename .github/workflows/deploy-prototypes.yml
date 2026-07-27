@@ -56,32 +56,37 @@ jobs:
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USERNAME: ${{ secrets.HOSTINGER_SSH_USERNAME }}
-          SSH_PASSWORD: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
           SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
           SSH_PATH: ${{ secrets.HOSTINGER_SSH_PATH }}
         run: |
-          if [ -z "${SSH_HOST}" ] || [ -z "${SSH_USERNAME}" ] || [ -z "${SSH_PATH}" ]; then
+          if [ -z "${SSH_HOST}" ] || [ -z "${SSH_USERNAME}" ] || [ -z "${SSH_PATH}" ] || [ -z "${SSH_KEY}" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Missing HOSTINGER_SSH_HOST / USERNAME / PATH — skipping VPS sync."
-            exit 0
-          fi
-          if [ -z "${SSH_PASSWORD}" ] && [ -z "${SSH_KEY}" ]; then
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Set HOSTINGER_SSH_PASSWORD or HOSTINGER_SSH_KEY — skipping VPS sync."
+            echo "::notice::Need HOSTINGER_SSH_HOST, USERNAME, PATH, and KEY — skipping VPS sync."
             exit 0
           fi
           echo "configured=true" >> "$GITHUB_OUTPUT"
 
-      - name: Upload public/prototypes to VPS
+      - name: Start ssh-agent
         if: steps.check.outputs.configured == 'true'
-        uses: appleboy/scp-action@v0.1.7
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          host: ${{ secrets.HOSTINGER_SSH_HOST }}
-          username: ${{ secrets.HOSTINGER_SSH_USERNAME }}
-          password: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
-          key: ${{ secrets.HOSTINGER_SSH_KEY }}
-          port: 22
-          source: "public/prototypes/*"
-          target: ${{ secrets.HOSTINGER_SSH_PATH }}
-          strip_components: 2
-          overwrite: true
+          ssh-private-key: ${{ secrets.HOSTINGER_SSH_KEY }}
+
+      - name: Rsync public/prototypes to VPS
+        if: steps.check.outputs.configured == 'true'
+        env:
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          SSH_USERNAME: ${{ secrets.HOSTINGER_SSH_USERNAME }}
+          SSH_PATH: ${{ secrets.HOSTINGER_SSH_PATH }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          rsync -az --delete \
+            -e "ssh -o StrictHostKeyChecking=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=4" \
+            public/prototypes/ \
+            "${SSH_USERNAME}@${SSH_HOST}:${SSH_PATH}/"
+          ssh -o StrictHostKeyChecking=yes \
+            "${SSH_USERNAME}@${SSH_HOST}" \
+            "ls -la '${SSH_PATH}' | head -20"
