@@ -55,7 +55,40 @@ activities with their full date configuration, section/activity visibility and
 access restrictions, and course-level block instances.
 
 It does **not** carry site-level data: user accounts, enrolments to other
-courses, or notifications. For those, see Option B.
+courses, or notifications. For notifications, see the next section.
+
+---
+
+## Notifications
+
+Notifications are site-level, not course-level, so no course backup can carry
+them. Rebuild them on the target instead:
+
+```bash
+php devseed/scripts/seed_notifications.php --users=admin,someteacher,somestudent
+```
+
+This sends one notification for **every registered message provider** to each
+named user, with a spread of ages (2 minutes to 40 days) and roughly a third
+marked read, so the full range of notification rendering can be reviewed.
+
+It is safe to point at any site:
+
+- **Recipients are resolved by username**, not by numeric id, so it does not
+  matter that the ids differ from the machine it was written on. Unknown users
+  are reported and skipped. With no `--users`, it defaults to the site admins.
+- **Providers are read from the database**, so it covers whatever is installed
+  on that site rather than a hardcoded list.
+- **Moodle's root is auto-detected** relative to the script, with `--config=PATH`
+  as an override.
+
+Useful flags: `--dry-run` reports what would be created without writing;
+`--reset` removes everything this script previously created.
+
+Note that `message_send()` silently drops providers whose plugin is disabled
+(on a stock site that's typically the unused enrolment plugins and
+BigBlueButton). The script detects those and inserts them directly, so coverage
+is complete either way — the summary reports the split.
 
 ### What Biology 101 contains
 
@@ -86,8 +119,7 @@ docker exec <php-container> php /path/to/devseed/scripts/<script>.php
 
 | Script | Purpose |
 |---|---|
-| `seed_notifications.php` | Sends one notification per registered message provider to the test accounts |
-| `fix_notifications.php` | Fills providers whose plugin is disabled (`message_send` drops those silently), guarantees popup rows, and re-spreads ages/read states |
+| `seed_notifications.php` | One notification per registered message provider, to users named by `--users`. **Portable — safe on any site.** See above |
 | `seed_course_content.php` | Adds subsection variations to Biology 101 and builds the showcase course |
 | `seed_resource.php` | Adds the file resource that renders the `badge-none` type badge (split out — its generator needs a current user) |
 | `seed_date_matrix.php` | Builds the complete activity date matrix |
@@ -115,9 +147,9 @@ These are **development seeders**. They are not safe on a site with real users.
 - **Paths are hardcoded** to `/var/www/html/public/config.php`. Moodle 5.x uses a
   split docroot — most code sits under `/public`, but CLI scripts stay at the
   repo root. Adjust for the target.
-- **User IDs are hardcoded.** `seed_notifications.php` targets user ids 2, 6, 8
-  and 9 (admin, educator_busy, student_busy, bio_ava on the local instance).
-  Those ids mean different people on any other site — repoint them first.
+- **`seed_notifications.php` is the exception — it is portable.** It resolves
+  users by username and auto-detects the Moodle root, so it is safe to run
+  anywhere. Everything below applies to the *other* scripts.
 - **Course IDs are hardcoded.** The seeders assume Biology 101 is course 15.
 - **They change site-wide settings.** `seed_course_content.php` sets
   `allowstealth = 1`; `seed_blocks.php` enables the `course_summary`, `feedback`,
