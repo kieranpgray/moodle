@@ -731,9 +731,9 @@
       <div class="anno-body">The white bar along the bottom is painted <strong>on top of</strong> the course index, so the last item is hidden behind it and clicks don't reach it. On a long course the final sections can't be opened at all. Try clicking this row.</div>
     </div>
 
-    <!-- side="over" + bias="top": sits on the right drawer so the left stays
-         clear for the clipped-row callout — the first thing to read on load. -->
-    <div class="anno-card" data-target="#drawerRight" data-side="over" data-bias="top" data-when="bug">
+    <!-- side="over" + bias="top": left drawer, same height as before. The
+         clipped-row callout (priority=high) stays in front beside #ciLast. -->
+    <div class="anno-card" data-target="#drawerLeft" data-side="over" data-bias="top" data-when="bug">
       <button class="anno-close" aria-label="Dismiss">&times;</button>
       <div class="anno-title"><i class="fa-solid fa-layer-group"></i> Why it happens</div>
       <div class="anno-body">Both the course index and block drawer are cut off. A recent change moved both drawers <strong>behind</strong> the footer bar. The bar stretches the full width of the window, so wherever it overlaps a drawer, that part of the drawer disappears.<br><br>This only happens on these two page types. Set <em>Page width class</em> to <strong>Full width</strong> and the problem goes away, because there the drawers still sit in front.</div>
