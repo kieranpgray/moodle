@@ -11,6 +11,36 @@ that data on another site.
 
 ---
 
+## Quick start — one command
+
+If you have shell access to the target site:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/kieranpgray/moodle/devseed/biology-test-data/devseed/install.sh -o install.sh
+sh install.sh --moodle=/path/to/moodle --categoryid=1 --users=admin
+```
+
+That downloads the course backups and the notification seeder from this branch,
+restores both courses, and seeds one notification per message provider. Add
+`--dry-run` first to see what it would do without writing anything.
+
+It runs a **preflight version check** and refuses to continue if the target is
+older than the backups (Moodle cannot restore a backup taken on a newer
+version). It is POSIX `sh` — no bash needed, since Moodle containers are often
+Alpine — and uses `curl` or `wget`, whichever is present.
+
+Other flags: `--skip-courses`, `--skip-notifications`, `-h`.
+
+**Verified end to end.** The whole path — download from GitHub, restore, verify
+— was tested into a throwaway category. The restored Biology 101 came back with
+21 sections, 5 subsections, 26 block-drawer blocks and 35/35 activity date
+fields intact; the showcase course kept its hidden sections and stealth
+activity.
+
+If you have no shell access, use the web UI instead — see Option A below.
+
+---
+
 ## What's here
 
 ```
