@@ -1,0 +1,40 @@
+name: Deploy prototypes
+
+# Keeps a slim deploy/prototypes branch in sync with public/prototypes on main.
+# Hostinger Git should watch deploy/prototypes and publish into the site's
+# /prototypes directory — never point Hostinger at main (full Moodle tree).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/prototypes/**'
+      - '.github/workflows/deploy-prototypes.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-deploy-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Publish deploy/prototypes branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          WORK=$(mktemp -d)
+          cp -R public/prototypes/. "$WORK/"
+          cd "$WORK"
+          git init -b deploy/prototypes
+          git add .
+          git commit -m "Deploy prototypes from ${GITHUB_SHA}"
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push -f origin deploy/prototypes
