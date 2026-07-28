@@ -777,8 +777,10 @@
   .who-pick i.sub{ font-style:normal; font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); display:block; }
 
   /* =====================  TOAST  ===================== */
+  /* bottom 4.5rem, not 1.25rem: the annotations toggle is pinned bottom-centre
+     and the two would sit on top of each other. */
   .toast{
-    position:fixed; left:50%; bottom:var(--mds-spacing-lg); transform:translate(-50%,160%);
+    position:fixed; left:50%; bottom:4.5rem; transform:translate(-50%,320%);
     z-index:80;
     background:var(--mds-color-gray-900); color:var(--mds-color-gray-100);
     border-radius:var(--mds-border-radius-pill);
@@ -791,6 +793,83 @@
   }
   .toast[data-open="true"]{ transform:translate(-50%,0); }
   .toast i{ color:var(--mds-color-green-200); font-size:12px; }
+
+  /* =====================  ANNOTATIONS  =====================
+     Blue walkthrough callouts, same convention as the course-index and forum
+     prototypes: a dashed pulsing ring on the target, a blue card with a
+     numbered badge and a close button, and a centred Hide/Show toggle.
+     The layer sits below the scrim (z 50) so callouts never float over a
+     modal or the drawer. */
+  .anno-layer{ position:fixed; inset:0; z-index:45; pointer-events:none; }
+  body:not(.annotations-on) .anno-layer{ display:none; }
+  .anno-ring{
+    position:fixed;
+    border:var(--mds-stroke-weight-md) dashed var(--mds-bg-interactive-primary-default);
+    border-radius:8px;
+    box-shadow:0 0 0 3px rgba(15,108,191,.16);
+    pointer-events:none;
+    animation:annoPulse 1.9s ease-in-out infinite;
+  }
+  @keyframes annoPulse{
+    0%,100%{ box-shadow:0 0 0 3px rgba(15,108,191,.16); }
+    50%{ box-shadow:0 0 0 8px rgba(15,108,191,.06); }
+  }
+  .anno-card{
+    position:fixed; width:234px;
+    background:var(--mds-bg-interactive-primary-default); color:#fff;
+    border-radius:10px; padding:10px 12px 11px;
+    font-size:12px; line-height:1.45;
+    box-shadow:0 10px 28px rgba(0,0,0,.28);
+    pointer-events:auto;
+  }
+  .anno-badge{
+    position:absolute; top:-11px; left:-11px;
+    width:23px; height:23px; border-radius:50%;
+    background:#fff; color:var(--mds-bg-interactive-primary-default);
+    font-weight:700; font-size:12px;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 6px rgba(0,0,0,.25);
+  }
+  .anno-title{
+    font-weight:700; font-size:12px;
+    display:flex; align-items:center; gap:6px; margin:0 16px 3px 0;
+  }
+  .anno-title i{ font-size:12px; }
+  .anno-body{ color:rgba(255,255,255,.92); }
+  .anno-close{
+    position:absolute; top:5px; right:6px;
+    border:none; background:none; color:rgba(255,255,255,.85);
+    font-size:13px; line-height:1; padding:3px;
+  }
+  .anno-close:hover{ color:#fff; }
+  .anno-toggle{
+    position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:46;
+    background:var(--mds-bg-interactive-primary-default); color:#fff;
+    border:none; border-radius:var(--mds-border-radius-pill);
+    padding:9px 16px;
+    font-family:inherit; font-size:13px; font-weight:var(--mds-font-weight-semibold);
+    box-shadow:0 6px 18px rgba(0,0,0,.25);
+    display:flex; align-items:center; gap:8px;
+  }
+  .anno-toggle:hover{ background:var(--mds-bg-interactive-primary-hover); }
+  .anno-toggle i{ font-size:12px; }
+  body:not(.annotations-on) .anno-toggle{ background:var(--mds-text-subtle); }
+
+  /* Guided demo entry point. Sits in the title row so the single most
+     important thing to try is the first control a reviewer sees. */
+  .try-btn{ margin-left:auto; }
+  .try-btn i{ font-size:11px; }
+  .vm-demo-hint{
+    background:var(--mds-bg-interactive-primary-default-light);
+    border:var(--mds-stroke-weight-sm) solid var(--mds-border-feedback-primary);
+    color:var(--mds-text-feedback-primary);
+    border-radius:var(--mds-border-radius-md);
+    padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
+    font-size:.8125rem; line-height:1.45;
+    display:none;
+  }
+  .vm-demo-hint b{ font-weight:var(--mds-font-weight-bold); }
+  .modal[data-demo="true"] .vm-demo-hint{ display:block; }
 
   /* =====================  RESPONSIVE  =====================
      Same breakpoints the other prototypes use: 1024px (nav collapse) and
@@ -819,7 +898,7 @@
   }
 </style>
 </head>
-<body>
+<body class="annotations-on">
 
 <div class="proto-bar">
   <b>Prototype</b>
@@ -862,6 +941,9 @@
     <div class="title-row">
       <h1>Moodle Product Roadmap</h1>
       <span class="count-chip" id="idea-count"></span>
+      <button type="button" class="btn-primary try-btn" id="try-flow">
+        <i class="fa-solid fa-play" aria-hidden="true"></i> Try the voting flow
+      </button>
     </div>
     <p class="view-desc">
       <i class="fa-solid fa-align-left" aria-hidden="true"></i>
@@ -926,6 +1008,11 @@
     <p>One vote per person. The reason you give is the part the team actually reads.</p>
   </div>
   <form class="modal-body" id="vote-form" novalidate>
+    <p class="vm-demo-hint">
+      <b>Guided demo — step 2 of 2.</b> This is the qualitative half of a vote. Type anything (25
+      characters or more) and submit; the prototype will then show your reason on the idea alongside
+      the other voters' and shift the sector breakdown.
+    </p>
     <div class="quoted" id="vm-idea"></div>
     <div class="field" id="f-note">
       <label for="vm-note">Why does this matter where you work? <span class="hint">Required</span></label>
@@ -972,6 +1059,8 @@
     <p>Voting uses the moodle.org account you already have. There is nothing new to create.</p>
   </div>
   <div class="modal-body">
+    <p class="vm-demo-hint"><b>Guided demo — step 1 of 2.</b> Pick any persona; it decides which
+    organisation and sector your vote is attributed to.</p>
     <div class="signin-note">
       <b>Prototype stand-in.</b> In the real thing this hands off to moodle.org and comes back with
       your identity — no password is ever typed on this page. Pick a demo persona to carry on.
@@ -985,6 +1074,52 @@
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ===== annotations: dismissible callouts on the things that are new here ===== -->
+<button class="anno-toggle" id="annoToggle" title="Show or hide the explainer annotations">
+  <i class="fa-solid fa-location-dot"></i> <span id="annoToggleLabel">Hide annotations</span>
+</button>
+<div class="anno-layer" id="annoLayer">
+  <div class="anno-card" data-target="#try-flow" data-side="bottom">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">1</div>
+    <div class="anno-title"><i class="fa-solid fa-play"></i> Start here</div>
+    <div class="anno-body">Runs the whole community-input flow end to end: moodle.org sign-in, a vote with a written reason, then the reason appearing back on the idea.</div>
+  </div>
+  <div class="anno-card" data-target=".seg" data-side="bottom">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">2</div>
+    <div class="anno-title"><i class="fa-solid fa-layer-group"></i> Two JPD boards, one roadmap</div>
+    <div class="anno-body">MDLJPD (Moodle LMS) and MCJPD (MoodleCloud) merged into a single public view, filterable by product. Each board uses different custom-field IDs for the same fields.</div>
+  </div>
+  <div class="anno-card" data-target=".col:nth-child(1) .col-promise" data-side="right">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">3</div>
+    <div class="anno-title"><i class="fa-solid fa-scale-balanced"></i> Each horizon states its promise</div>
+    <div class="anno-body">"Now" means a team is on it; "Later" means intent with no date. Saying so plainly is what stops a public roadmap being read as a set of commitments.</div>
+  </div>
+  <!-- One ring around the whole card footer: the vote count, the reason count and
+       the vote control are a single idea, and separate callouts on the same row
+       just landed on top of each other. -->
+  <div class="anno-card" data-target=".col:nth-child(3) .card:first-child .card-foot" data-side="left">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">4</div>
+    <div class="anno-title"><i class="fa-solid fa-arrow-up"></i> A vote carries a reason</div>
+    <div class="anno-body">Voting opens a form asking why it matters where you work, plus learner numbers and sector. The reason count next to it shows the qualitative half without opening anything — and only appears where people actually wrote something.</div>
+  </div>
+  <div class="anno-card" data-target=".col-more" data-side="top">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">5</div>
+    <div class="anno-title"><i class="fa-solid fa-arrow-down-wide-short"></i> Later is ranked by demand</div>
+    <div class="anno-body">41 of the 67 ideas sit here, so ordering matters more than anywhere else. Columns sort by vote count — the one lever the community actually pulls.</div>
+  </div>
+  <div class="anno-card" data-target=".shipped h2" data-side="right">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">6</div>
+    <div class="anno-title"><i class="fa-solid fa-check"></i> Closing the loop</div>
+    <div class="anno-body">Asking for input creates an obligation to report back. Shipped work stays on the page, and the plan is to publish what moved each quarter, and why.</div>
+  </div>
+</div>
 
 <script id="roadmap-data" type="application/json">{"ideas":[{"key":"MCJPD-7","product":"MoodleCloud","title":"Reduce friction and drop-off in the MoodleCloud Signup","blurb":"We want to ensure that prospective MoodleCloud customers can progress from initial interest to an active site with minimal friction and confusion. This initiative focuses on improving the overall signup journey so that account creation, plan selection, and payment are clearer, better sequenced, and easier to complete.","themes":["Outcomes"],"roadmap":"Now","impact":3.0,"effort":3.0,"productAreas":["Growth"],"personas":["Moodle Administrator"],"segments":["SMB"],"increment":null,"jira":"https://moodle.atlassian.net/browse/MCJPD-7","type":"Idea","bucket":"now","votes":260,"notes":[]},{"key":"MCJPD-8","product":"MoodleCloud","title":"Create more flexible payment and billing expectations","blurb":"Today's MoodleCloud checkout is restricted to annual billing, AUD only, via credit card or PayPal. This creates friction for global buyers who expect familiar digital wallets, local currencies, and the option to pay monthly before committing annually.","themes":["Outcomes"],"roadmap":"Now","impact":4.0,"effort":4.0,"productAreas":["Growth"],"personas":["Moodle Administrator"],"segments":["SMB"],"increment":null,"jira":"https://moodle.atlassian.net/browse/MCJPD-8","type":"Idea","bucket":"now","votes":244,"notes":[]},{"key":"MCJPD-12","product":"MoodleCloud","title":"Increase the baseline value delivered by MoodleCloud","blurb":"Ensure MoodleCloud delivers meaningful, immediately useful value beyond hosting alone. This strengthens the default MoodleCloud experience so customers can run effective learning and training with less configuration, fewer add-ons, and less reliance on external services \u2014 a complete, ready-to-use learning platform from\u2026","themes":["Collaboration"],"roadmap":"Later","impact":4.0,"effort":4.0,"productAreas":["Integrations","Growth"],"personas":["Moodle Administrator"],"segments":["SMB"],"increment":null,"jira":"https://moodle.atlassian.net/browse/MCJPD-12","type":"Idea","bucket":"later","votes":151,"notes":[]},{"key":"MCJPD-13","product":"MoodleCloud","title":"Improve first-time success for new MoodleCloud customers","blurb":"Ensure new MoodleCloud customers can quickly understand how to use their site and achieve meaningful outcomes. This improves onboarding, guidance and early learning experiences so customers feel supported and confident during their first weeks on the platform.","themes":["Collaboration"],"roadmap":"Later","impact":3.0,"effort":3.0,"productAreas":["Administration","Growth"],"personas":["Moodle Administrator"],"segments":["SMB"],"increment":null,"jira":"https://moodle.atlassian.net/browse/MCJPD-13","type":"Idea","bucket":"later","votes":197,"notes":[{"org":"Brightpath Tutoring","sector":"Corporate","size":"Under 500 learners","note":"I set up our site alone on a weekend. I did not know what to do after the site existed."}]},{"key":"MCJPD-15","product":"MoodleCloud","title":"Improve the cost efficiency of delivering MoodleCloud at scale","blurb":"Ensure MoodleCloud can grow sustainably by improving the efficiency of service delivery while maintaining reliability, performance and customer experience. Reducing unnecessary operational and infrastructure cost frees resources to reinvest into product improvements and long-term platform health.","themes":["Outcomes"],"roadmap":"Now","impact":3.0,"effort":3.0,"productAreas":["Administration","Growth"],"personas":["Moodle Administrator"],"segments":["SMB"],"increment":null,"jira":"https://moodle.atlassian.net/browse/MCJPD-15","type":"Idea","bucket":"now","votes":258,"notes":[]},{"key":"MCJPD-17","product":"MoodleCloud","title":"Moodle Version Currency: Continuous Upgrade Cadence","blurb":"MoodleCloud upgrades to each new Moodle release as soon as it becomes available. Customers get early access to new features, security fixes and performance improvements, with less exposure to compatibility issues than they would face on lagging versions.","themes":["Outcomes"],"roadmap":"Now","impact":3.0,"effort":2.0,"productAreas":["Administration"],"personas":["Moodle Administrator"],"segments":["SMB"],"increment":null,"jira":"https://moodle.atlassian.net/browse/MCJPD-17","type":"Idea","bucket":"now","votes":224,"notes":[]},{"key":"MCJPD-18","product":"MoodleCloud","title":"Infrastructure Modernisation and Maintenance","blurb":"Keep the Ubuntu, PHP and PostgreSQL versions behind MoodleCloud within vendor-supported windows on an ongoing basis, and automate deployments through CI/CD. Customers depend on this infrastructure staying secure, performant and supported; falling behind raises security exposure and the risk of instability.","themes":["Outcomes"],"roadmap":"Next","impact":3.0,"effort":3.0,"productAreas":["Administration"],"personas":["Moodle Administrator"],"segments":["SMB"],"increment":null,"jira":"https://moodle.atlassian.net/browse/MCJPD-18","type":"Idea","bucket":"next","votes":266,"notes":[]},{"key":"MCJPD-19","product":"MoodleCloud","title":"Improve leads from the download.moodle.org page","blurb":"download.moodle.org is currently optimised for code distribution rather than helping people get started, so those evaluating Moodle are pointed at a complex self-hosting path first.","themes":[],"roadmap":"Now","impact":4.0,"effort":2.0,"productAreas":["Growth"],"personas":[],"segments":["SMB","Startups"],"increment":null,"jira":"https://moodle.atlassian.net/browse/MCJPD-19","type":"Idea","bucket":"now","votes":314,"notes":[]},{"key":"MDLJPD-9","product":"Moodle LMS","title":"Migrate LTI to Core","blurb":"Lay the foundation for consistent, scalable LTI (Learning Tools Interoperability) support across Moodle by migrating core LTI functionality out of the mod_lti plugin and into a new core_lti subsystem. This change will allow LTI tools to be embedded more flexibly across Moodle components beyond just activities.","themes":["Collaboration"],"roadmap":"Next","impact":3.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":"2026-I2","jira":"https://moodle.atlassian.net/browse/MDLJPD-9","type":"Idea","bucket":"next","votes":226,"notes":[]},{"key":"MDLJPD-10","product":"Moodle LMS","title":"Retire Classic theme","blurb":"Remove the legacy Classic theme (~50k LOC) from core. It blocks modern theme changes and forces double-handling of CSS, so retiring it clears the path for the visual uplift and the React rewrites. A prerequisite that unblocks the rest of the first time experience work.","themes":["Outcomes"],"roadmap":"Now","impact":3.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":"2026-I2","jira":"https://moodle.atlassian.net/browse/MDLJPD-10","type":"Idea","bucket":"now","votes":288,"notes":[]},{"key":"MDLJPD-11","product":"Moodle LMS","title":"Ensure Clear and Consistent Handling of Suspended Users Across Moodle","blurb":"Standardise how suspended users are displayed and managed across Moodle LMS to reduce confusion and improve reliability for educators and administrators.","themes":["Outcomes"],"roadmap":"Later Still","impact":2.0,"effort":5.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-11","type":"Idea","bucket":"later","votes":132,"notes":[{"org":"Rothwell Trust Schools","sector":"K-12","size":"5,000\u201350,000 learners","note":"Suspended students still appear in gradebook exports, so our reporting to the board is wrong."}]},{"key":"MDLJPD-12","product":"Moodle LMS","title":"Implement Open Badges 3.0","blurb":"With the release of the 1EdTech Open Badges 3.0 standard Moodle will benefit from the implementation of OB 3 for future proofing of the system. This is also an opportunity to reduce techdebt in the current implementation.","themes":["Outcomes"],"roadmap":"Next","impact":3.0,"effort":4.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-12","type":"Idea","bucket":"next","votes":214,"notes":[]},{"key":"MDLJPD-13","product":"Moodle LMS","title":"Improve Quiz UX","blurb":"This project aims to modernise Moodle\u2019s quiz interface and make its usage more intuitive. There are two main goals of these updates; to make it easier for teachers to create and manage their quizzes, and to make completing and managing time in quizzes more intuitive for students.","themes":["Creativity"],"roadmap":"Later Still","impact":3.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-13","type":"Idea","bucket":"later","votes":192,"notes":[{"org":"Riverbend Unified School District","sector":"K-12","size":"5,000\u201350,000 learners","note":"Students lose work when the timer expires mid-answer. It is our top support call each exam week."},{"org":"Institut Vall Verda","sector":"K-12","size":"500\u20135,000 learners","note":"Building a 40-question quiz takes a teacher most of an evening. That is the whole barrier."}]},{"key":"MDLJPD-14","product":"Moodle LMS","title":"Enable Seamless Course Migration with Support for Common Cartridge and QTI Standards","blurb":"Add support for Common Cartridge (CC) and Question & Test Interoperability (QTI) formats particularly in backup and restore workflows to improve compatibility with other LMS platforms.","themes":["Collaboration"],"roadmap":"Later Still","impact":4.0,"effort":5.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-14","type":"Idea","bucket":"later","votes":105,"notes":[{"org":"Cape Harbour Polytechnic","sector":"Higher ed","size":"5,000\u201350,000 learners","note":"We buy courseware as Common Cartridge and hand-rebuild it in Moodle every time."}]},{"key":"MDLJPD-18","product":"Moodle LMS","title":"Course view improvements","blurb":"Improve the in-course experience (course index layout and readability, course-view UI), extending the first time experience from the dashboard into the course itself. Scope to be shaped from discovery and visual-uplift carryover.","themes":["Outcomes"],"roadmap":"Next","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":"2026-I3","jira":"https://moodle.atlassian.net/browse/MDLJPD-18","type":"Idea","bucket":"next","votes":206,"notes":[]},{"key":"MDLJPD-19","product":"Moodle LMS","title":"Reimagine the Assignment Grader","blurb":"The current assignment grader was identified as an area of significant user confusion and containing a large number of usability issues. It is also contains a large concentration of YUI code which needs to be removed.","themes":["Outcomes"],"roadmap":"Later","impact":4.0,"effort":4.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-19","type":"Idea","bucket":"later","votes":231,"notes":[{"org":"Northfield Community College","sector":"Higher ed","size":"500\u20135,000 learners","note":"Our markers do 400 submissions a semester in the grader. Every extra click is an hour."},{"org":"Ako Vocational Trust","sector":"Vocational","size":"500\u20135,000 learners","note":"Annotating PDFs breaks on iPad, so our assessors mark on paper and re-key the grades."},{"org":"Lindenau Berufsschule","sector":"Vocational","size":"Under 500 learners","note":"We train every new tutor on grader quirks. That training would disappear if it just worked."}]},{"key":"MDLJPD-21","product":"Moodle LMS","title":"Content management - Improve content Reuse in course","blurb":"As a tactical step along the larger content management rework, the initial work from  has identified content reuse between courses as the highest priority pain point for instructors creating courses.","themes":["Creativity"],"roadmap":"Later Still","impact":3.0,"effort":4.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-21","type":"Idea","bucket":"later","votes":138,"notes":[{"org":"Meridian Corporate Academy","sector":"Corporate","size":"5,000\u201350,000 learners","note":"The same compliance module is copy-pasted into 60 courses. One policy change means 60 edits."},{"org":"Northfield Community College","sector":"Higher ed","size":"500\u20135,000 learners","note":"Reuse would let our subject leads maintain one canonical version instead of forks."}]},{"key":"MDLJPD-22","product":"Moodle LMS","title":"Transform Teacher Materials into Structured Courses with AI Assistance","blurb":"Enable educators to upload files or URLs and have AI intelligently transform them into well-designed Moodle activities and resources grounded in effective learning design principles.","themes":["Outcomes"],"roadmap":"Later","impact":5.0,"effort":5.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-22","type":"Idea","bucket":"later","votes":240,"notes":[]},{"key":"MDLJPD-23","product":"Moodle LMS","title":"Empower Users to Shape AI Quality Through Feedback","blurb":"Introduce a consistent feedback mechanism across all AI-generated content in Moodle LMS, allowing users to rate outputs and share qualitative input. This feedback will be captured by AI placement plugins and used to inform system improvements, model tuning, and future design decisions.","themes":["Outcomes"],"roadmap":"Later Still","impact":2.0,"effort":2.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-23","type":"Idea","bucket":"later","votes":173,"notes":[]},{"key":"MDLJPD-24","product":"Moodle LMS","title":"Keep Learners and Educators Informed with AI-Generated Activity Summaries","blurb":"Leverage AI to generate clear, concise summaries of recent course activity such as updates, submissions, and discussions over defined timeframes (e.g. past week or day). These summaries can be delivered via Matrix chat, email, mobile notifications, or as contextual popups on course entry.","themes":["Outcomes"],"roadmap":"Later Still","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-24","type":"Idea","bucket":"later","votes":173,"notes":[]},{"key":"MDLJPD-25","product":"Moodle LMS","title":"Deliver Personalised, Accessible Learning Support with AI","blurb":"Use AI to generate tailored explanations, examples, and translations that align with individual learner needs based on course context and personal background.","themes":["Creativity"],"roadmap":"Later Still","impact":4.0,"effort":5.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-25","type":"Idea","bucket":"later","votes":152,"notes":[]},{"key":"MDLJPD-26","product":"Moodle LMS","title":"Save Time with AI-Generated Quiz Questions from Course Content","blurb":"Use AI to automatically generate relevant quiz questions such as multiple choice or short answer by analysing existing course materials. This will reduce the manual effort required to create assessments while aligning questions with the actual learning content.","themes":["Creativity"],"roadmap":"Next","impact":4.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-26","type":"Idea","bucket":"next","votes":212,"notes":[]},{"key":"MDLJPD-27","product":"Moodle LMS","title":"Enhance AI Accuracy and Relevance with LMS-Sourced Augmentation","blurb":"Integrate Retrieval-Augmented Generation (RAG) and other data augmentation techniques into Moodle LMS to ground AI-generated responses in real, context-aware information from the platform.","themes":["Creativity"],"roadmap":"Later","impact":4.0,"effort":5.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-27","type":"Idea","bucket":"later","votes":263,"notes":[]},{"key":"MDLJPD-28","product":"Moodle LMS","title":"Empower Learners with Personalised AI Responses","blurb":"Enable users to define their own AI interaction preferences within Moodle LMS, allowing AI-generated content and assistance to be tailored to their individual communication styles, learning needs, and contexts.","themes":["Creativity"],"roadmap":"Later Still","impact":2.0,"effort":2.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-28","type":"Idea","bucket":"later","votes":79,"notes":[]},{"key":"MDLJPD-29","product":"Moodle LMS","title":"Improve Assigments Activity Student Submission experience","blurb":"As a continuation of the other Assignment work the student submission experience has been identified as an area that could gain significantly from a rethink and redesign.","themes":["Outcomes"],"roadmap":"Later Still","impact":3.0,"effort":4.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-29","type":"Idea","bucket":"later","votes":121,"notes":[{"org":"Institut Vall Verda","sector":"K-12","size":"500\u20135,000 learners","note":"Students cannot tell whether their submission actually went through. They submit twice to be safe."}]},{"key":"MDLJPD-30","product":"Moodle LMS","title":"AI: Pre-grading assignments and suggesting feedback","blurb":"This AI system assists in the grading process by analysing assignments based on questions and rubrics. It suggests grades and feedback for each assignment, which the educator can then review and modify as needed. This streamlines the grading process while ensuring human oversight in final assessments.","themes":["Outcomes"],"roadmap":"Later Still","impact":4.0,"effort":4.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-30","type":"Idea","bucket":"later","votes":207,"notes":[]},{"key":"MDLJPD-31","product":"Moodle LMS","title":"Expand AI Model Choice and Deployment Flexibility","blurb":"Enable institutions to integrate a broader range of AI models into Moodle LMS, supporting diverse deployment needs. This work will deliver provider plugins for AWS Bedrock and DeepSeek, giving site administrators the ability to choose AI solutions that align with their organizational requirements for performance, priva\u2026","themes":["Creativity"],"roadmap":"Now","impact":3.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-31","type":"Idea","bucket":"now","votes":313,"notes":[]},{"key":"MDLJPD-32","product":"Moodle LMS","title":"Asset Processing via LTI","blurb":"Implement the LTI Asset Processor profile to support seamless, standards-compliant workflows where tools can process submitted content such as documents, videos, or files, and return structured reports to Moodle LMS.","themes":["Collaboration"],"roadmap":"Later","impact":3.0,"effort":4.0,"productAreas":[],"personas":[],"segments":[],"increment":"2026-I4","jira":"https://moodle.atlassian.net/browse/MDLJPD-32","type":"Idea","bucket":"later","votes":195,"notes":[]},{"key":"MDLJPD-33","product":"Moodle LMS","title":"Expand LTI Integration Across Moodle LMS","blurb":"Extend LTI support beyond traditional activity launches to enable seamless tool integration in key areas of Moodle like: TinyMCE editor, course navigation, and assignment submissions.","themes":["Collaboration"],"roadmap":"Later","impact":3.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-33","type":"Idea","bucket":"later","votes":142,"notes":[]},{"key":"MDLJPD-34","product":"Moodle LMS","title":"Enable LTI Tool Embedding in the TinyMCE Editor","blurb":"Integrate LTI Deep Linking into the TinyMCE editor to allow users to embed rich, interactive content and tools directly within text fields. Educators and students will be able to launch LTI tools from the editor, configure them via modal, and insert either embedded content or external linkstailored to the context and i\u2026","themes":["Creativity"],"roadmap":"Later","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-34","type":"Idea","bucket":"later","votes":168,"notes":[]},{"key":"MDLJPD-35","product":"Moodle LMS","title":"Deliver Clearer, Actionable SMS Notifications with Smart Text and Short URL","blurb":"Improve the usefulness of SMS notifications by introducing intelligent text shortening and support for short, user-specific URLs. This ensures key information like assignment deadlines fits within message length limits while remaining actionable.","themes":["Collaboration"],"roadmap":"Later","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-35","type":"Idea","bucket":"later","votes":125,"notes":[]},{"key":"MDLJPD-36","product":"Moodle LMS","title":"Modernise Multilingual Support with Workflow-Driven Translation Tools","blurb":"Move beyond filter-based multilingual tools by defining a new approach to content translation in Moodle LMS. This initiative will focus on enabling consistent, structured translation of all user-generated content including activity names and areas beyond filterable text.","themes":["Outcomes"],"roadmap":"Later Still","impact":4.0,"effort":4.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-36","type":"Idea","bucket":"later","votes":146,"notes":[{"org":"Universit\u00e9 de Saint-Aubin","sector":"Higher ed","size":"5,000\u201350,000 learners","note":"We publish every course in three languages. Right now that is a spreadsheet and a lot of hope."},{"org":"Global Aid Learning Network","sector":"NGO","size":"50,000+ learners","note":"We deliver in eleven languages across field offices. Translation workflow is the blocker, not content."}]},{"key":"MDLJPD-37","product":"Moodle LMS","title":"Improve Data Registration Uptake with On-Install Site Registration","blurb":"Shift Moodle's site registration process from a post-install opt-in to a streamlined, privacy-conscious step during installation. This change will encourage more sites to share basic, aggregated registration data such as Moodle version, site size, and enabled features right from the start, helping Moodle HQ better unde\u2026","themes":["Outcomes"],"roadmap":"Next","impact":3.0,"effort":2.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-37","type":"Idea","bucket":"next","votes":273,"notes":[]},{"key":"MDLJPD-38","product":"Moodle LMS","title":"Strengthen Aggregated Usage Data Collection for Smarter Product Decisions","blurb":"Enhance Moodle's existing usage data collection framework to capture a broader range of high-value, aggregated metrics such as feature adoption, activity usage patterns, and plugin deployment while maintaining strict privacy boundaries.","themes":["Outcomes"],"roadmap":"Later","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-38","type":"Idea","bucket":"later","votes":207,"notes":[]},{"key":"MDLJPD-39","product":"Moodle LMS","title":"Identify Emerging Trends with Global Moodle Usage Insights","blurb":"Build on the aggregated data infrastructure to surface longitudinal trends in Moodle LMSusage across the global community. This may include shifts in preferred activity types, declining feature usage, or adoption of new plugins and tools.","themes":["Outcomes"],"roadmap":"Later Still","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-39","type":"Idea","bucket":"later","votes":106,"notes":[]},{"key":"MDLJPD-40","product":"Moodle LMS","title":"Improve clarity, consistency, and quality of the Moodle LMS interface","blurb":"Ensure Moodle LMS presents a clear, coherent, and contemporary visual experience that supports effective teaching and learning, without compromising accessibility, usability, or extensibility.","themes":["Creativity"],"roadmap":"Now","impact":5.0,"effort":4.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-40","type":"Idea","bucket":"now","votes":320,"notes":[]},{"key":"MDLJPD-41","product":"Moodle LMS","title":"Improve fairness, scalability, and confidence in assignment marking workflows","blurb":"Ensure Moodle LMS supports reliable, scalable, and pedagogically sound assignment marking for courses with multiple assessors and diverse assessment models.","themes":["Outcomes"],"roadmap":"Now","impact":4.0,"effort":5.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-41","type":"Idea","bucket":"now","votes":319,"notes":[]},{"key":"MDLJPD-43","product":"Moodle LMS","title":"Redevelop Completion API","blurb":"During a recent MUA project it was identified that the internal Completion API was highly problematic and many of the bugfixes that were coming through were putting bandaids on some deeper issues. A proposal has been put forth to redevelop this API and address this","themes":["Outcomes","Tech Transformation"],"roadmap":"Later","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-43","type":"Idea","bucket":"later","votes":189,"notes":[]},{"key":"MDLJPD-44","product":"Moodle LMS","title":"Moodle Forms Revamp","blurb":"The Moodle forms, originally based on Pear's QuickForm, has evolved into a heavily customized and complex standalone version using Mustache templates and Bootstrap classes.","themes":["Creativity","Tech Transformation"],"roadmap":"Later","impact":4.0,"effort":5.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-44","type":"Idea","bucket":"later","votes":216,"notes":[]},{"key":"MDLJPD-45","product":"Moodle LMS","title":"Use a UI framework to help speed up development of front end features","blurb":"Problems Our current way of providing GUI for core features is complex. It requires the use of renderers, templates, and JS. Most GUI is a combination of php generated HTML, and JS. Separating the UI from the backend is difficult. No current components are purely run with web services to communicate with the UI.","themes":["Tech Transformation"],"roadmap":"Now","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-45","type":"Idea","bucket":"now","votes":209,"notes":[]},{"key":"MDLJPD-46","product":"Moodle LMS","title":"Web services conform with conventional industry standards allowing quicker upskilling and easier integration with other services","blurb":"A REST interface is the foundation for further plugin/core interactions, more importantly for any future scope for modularising the platform. Technical hurdles aside, the biggest piece here will be in service design  will complete the framework necessary for hosting a modern set of web services.","themes":["Tech Transformation"],"roadmap":"Next","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-46","type":"Idea","bucket":"next","votes":266,"notes":[]},{"key":"MDLJPD-47","product":"Moodle LMS","title":"Identify and split out heavy load components of core LMS code to allow for easier scaling","blurb":"Problem LMS is one big chunk of code. It is difficult to split out parts of it that see a lot of load in bigger installations. All core plugins are bundled in one repository, and so new updates to the code are tied to the release schedule of core.","themes":["Tech Transformation"],"roadmap":"Later","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-47","type":"Idea","bucket":"later","votes":194,"notes":[]},{"key":"MDLJPD-48","product":"Moodle LMS","title":"Provide a system that allows the reuse of common front end components to save time, foster consistency, and improve accessibility.","blurb":"Problem Creating front end components is time consuming due to most of it needing to be created from scratch There is a lack of consistency between components with the different ways the same things have been implemented Update plugin development and delivery practice to integrate in the new Moodle Design System.","themes":["Tech Transformation"],"roadmap":"Later","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-48","type":"Idea","bucket":"later","votes":230,"notes":[]},{"key":"MDLJPD-49","product":"Moodle LMS","title":"Introduce segmentation of database access to protect data integrity","blurb":"Ensure that the \"service\" responsible for the data is the only code that has access to it. Essentially improve the granularity of access in the database. If we can ensure only the right areas are accessing data there, then it makes it easier to segment.","themes":["Tech Transformation"],"roadmap":"Later","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-49","type":"Idea","bucket":"later","votes":200,"notes":[]},{"key":"MDLJPD-50","product":"Moodle LMS","title":"Enchance code readability, consistency, and maintainability across the codebase","blurb":"Problem Moodle was initially created over 20 years ago and some of the methods of storing data are outdated and hinder performance improvements We have slowly evolved the Moodle system and transitioned to new ways of creating code, but we have not removed all of the old ways, and there is still code that could be used\u2026","themes":["Tech Transformation"],"roadmap":"Now","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-50","type":"Idea","bucket":"now","votes":331,"notes":[]},{"key":"MDLJPD-51","product":"Moodle LMS","title":"Improve our current developer experience to ensure that the available APIs and patterns are encouraged and become the \"easier path\"","blurb":"Problem Developers will still continue to create and update code in outdated or disallowed ways. Normally from copy and pasting code from an old area of Moodle.","themes":["Tech Transformation"],"roadmap":"Later Still","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-51","type":"Idea","bucket":"later","votes":113,"notes":[]},{"key":"MDLJPD-52","product":"Moodle LMS","title":"Trim down Moodle to only include useful and well used features","blurb":"Problem The Moodle code base if large and old, and we have no visibility over which parts are being used, and which bits could be removed. Removing code would help us focus on parts that are being used Orchestrate a review across multiple stakeholders to identify where we can either remove code all together, or remove\u2026","themes":["Tech Transformation"],"roadmap":"Later Still","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-52","type":"Idea","bucket":"later","votes":88,"notes":[{"org":"Selwyn Hosting Co-op","sector":"Partner / Host","size":"50,000+ learners","note":"Every unused feature is still a surface we have to patch and support. Less really is more."}]},{"key":"MDLJPD-53","product":"Moodle LMS","title":"Have only one way of generating JavaScript code (Update, deprecate, remove previous ways of generating this code)","blurb":"Problem Even though we have adopted ES6 as our current way of developing JS we still have our first framework (YUI) being used. YUI is out of support and could be a security problem Update and replace all YUI code Update and replace all jquery code Update and replace all use of AMD code We are proposing introducing ano\u2026","themes":["Tech Transformation"],"roadmap":"Later Still","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-53","type":"Idea","bucket":"later","votes":107,"notes":[]},{"key":"MDLJPD-54","product":"Moodle LMS","title":"Create exemplar core plugins as live examples to complement our documentation of code creation best practices.","blurb":"Problem Developers are likely to struggle with adopting a system of development with out live examples of it in action. Rewrite key plugins that are considered especially unmaintainable into exemplar implementations Identify plugins that will be initial reference implementations of new modernised approaches","themes":["Tech Transformation"],"roadmap":"Later Still","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-54","type":"Idea","bucket":"later","votes":107,"notes":[]},{"key":"MDLJPD-55","product":"Moodle LMS","title":"Simplify plugin development process by reducing undocumented plugin type processes","blurb":"Problem We have a lot of different plugin types for different functionality around Moodle. If a plugin\u2019s functionality spans multiple areas, then it must be split up into new plugins for each area of functionality.","themes":["Tech Transformation"],"roadmap":"Later Still","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-55","type":"Idea","bucket":"later","votes":122,"notes":[]},{"key":"MDLJPD-56","product":"Moodle LMS","title":"Remove reliance on user capability checks in core systems to allow easier component to component communication","blurb":"Problem: Current model is very dependent on current user. However, with a more distributed architecture, how do we maintain the right authorisation? Create extensible, scalable Authorisation model for an asynchronous, distributed architecture We should maintain the flexibility of the current system.","themes":["Tech Transformation"],"roadmap":"Later Still","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-56","type":"Idea","bucket":"later","votes":89,"notes":[]},{"key":"MDLJPD-57","product":"Moodle LMS","title":"Make Moodle plugin deployment easier","blurb":"Problem: Installation of plugins has several pain points we would like to improve: Plugin installation will block the LMS usage for everyone, until complete Compatibility issues, or errors with the plugin will halt the installation process for core Not all plugins can be enabled or disabled Automatically disable plugin\u2026","themes":["Tech Transformation"],"roadmap":"Later Still","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-57","type":"Idea","bucket":"later","votes":69,"notes":[{"org":"Selwyn Hosting Co-op","sector":"Partner / Host","size":"50,000+ learners","note":"We manage 300 client sites. Plugin deployment is the single largest cost in our operation."},{"org":"Meridian Corporate Academy","sector":"Corporate","size":"5,000\u201350,000 learners","note":"Our IT team will not approve plugins they cannot deploy through existing tooling."}]},{"key":"MDLJPD-58","product":"Moodle LMS","title":"Utilize dependency management tools for plugin deployment","blurb":"Problem We currently include all libraries we use in Moodle in the core code which leads to: A larger install file for users Us having to manually maintain versions of the code rather than just pointing to the next version that works with our software Install Third Party library dependencies using Composer Implement Pl\u2026","themes":["Tech Transformation"],"roadmap":"Now","impact":3.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-58","type":"Idea","bucket":"now","votes":262,"notes":[]},{"key":"MDLJPD-59","product":"Moodle LMS","title":"Provide ways of assessing plugin behaviour to better inform developers and admins","blurb":"Problem Site administrators have no visibility on how any plugins are behaving on their site. Some could have serious performance impacts. Currently site admins have to figure out their own ways of determining what is working well and what is not.","themes":["Tech Transformation"],"roadmap":"Later Still","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-59","type":"Idea","bucket":"later","votes":163,"notes":[]},{"key":"MDLJPD-60","product":"Moodle LMS","title":"Deployment of Moodle does not require experienced IT Admins","blurb":"Problem Getting Moodle to work is not so difficult, but when the need arises for performance improvements be made with the deployment, the learning curve becomes extremely steep. Identify and separate into components core code for scalable deployments.","themes":["Tech Transformation"],"roadmap":"Later","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-60","type":"Idea","bucket":"later","votes":118,"notes":[]},{"key":"MDLJPD-61","product":"Moodle LMS","title":"Add Observability support to Moodle LMS platform","blurb":"Diagnosing issues in production systems \u2014 from performance bottlenecks to unexpected errors \u2014 is one of the biggest challenges faced by system administrators. Observability tools help uncover what\u2019s happening inside a system, making it easier to understand, debug, and optimise.","themes":["Tech Transformation"],"roadmap":"Now","impact":2.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-61","type":"Idea","bucket":"now","votes":216,"notes":[]},{"key":"MDLJPD-62","product":"Moodle LMS","title":"Implement New Webservice Framework","blurb":"This project seeks to create a new, standards-compliant, Web Service API for Moodle which puts focus on standardisation, growth, and discoverability. New web services should be easy for developers to write, test, discover, and consume.","themes":["Outcomes","Tech Transformation"],"roadmap":"Now","impact":4.0,"effort":4.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-62","type":"Idea","bucket":"now","votes":336,"notes":[]},{"key":"MDLJPD-63","product":"Moodle LMS","title":"Add OAuth2 Support to new REST framework","blurb":"This feature will be awesome","themes":["Tech Transformation"],"roadmap":"Now","impact":5.0,"effort":3.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-63","type":"Idea","bucket":"now","votes":246,"notes":[]},{"key":"MDLJPD-64","product":"Moodle LMS","title":"Global visual uplift for LMS","blurb":"Ship the global visual layer (font, centre alignment, refreshed icons, primary-nav states, search in the top bar, depth and elevation) so every screen a first-time educator sees feels like a modernised Moodle. The highest-reach, lowest-friction layer of the uplift.","themes":[],"roadmap":"Now","impact":null,"effort":null,"productAreas":[],"personas":[],"segments":[],"increment":"2026-I2","jira":"https://moodle.atlassian.net/browse/MDLJPD-64","type":"Idea","bucket":"now","votes":302,"notes":[]},{"key":"MDLJPD-65","product":"Moodle LMS","title":"Dashboard edit and customisation improvements","blurb":"Resolve the dashboard block-drawer and edit-mode experience: visually uplift the block drawer, open it by default in edit mode, and decide if appears in view mode at all. Additionally, we aim to firm up if we make changes to how \"Edit mode\" is presented, so customisation is obvious.","themes":[],"roadmap":"Later","impact":null,"effort":null,"productAreas":[],"personas":[],"segments":[],"increment":"2026-I4","jira":"https://moodle.atlassian.net/browse/MDLJPD-65","type":"Idea","bucket":"later","votes":106,"notes":[]},{"key":"MDLJPD-67","product":"Moodle LMS","title":"Complete all known LTI decoupling","blurb":"Finish separating LTI from the parts of Moodle it is still entangled with, so LTI tools behave consistently and can be used in more places across the platform.","themes":[],"roadmap":"Later","impact":null,"effort":null,"productAreas":[],"personas":[],"segments":[],"increment":"2026-I4","jira":"https://moodle.atlassian.net/browse/MDLJPD-67","type":"Idea","bucket":"later","votes":211,"notes":[]},{"key":"MDLJPD-69","product":"Moodle LMS","title":"Timeline -> Upcoming Tasks redesign","blurb":"Redesign the Timeline block into \"Upcoming\": rename and subtitle, standalone search, icon filter and sort buttons, row clock icon and divider, new empty state, refreshed activity icons. Depends on the Timeline React rewrite (MDL-88287). Scope decisions still open.","themes":[],"roadmap":"Next","impact":null,"effort":null,"productAreas":[],"personas":[],"segments":[],"increment":"2026-I3","jira":"https://moodle.atlassian.net/browse/MDLJPD-69","type":"Idea","bucket":"next","votes":188,"notes":[]},{"key":"MDLJPD-70","product":"Moodle LMS","title":"Course Overview redesign","blurb":"Build on the React Course Overview block with the design and functional changes held back from the rewrite: 1:1 image ratio, progress display, and view-layout simplification, plus usability additions to the new ellipsis menu such as Copy course link and Change image.","themes":[],"roadmap":"Later","impact":0.0,"effort":0.0,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-70","type":"Idea","bucket":"later","votes":93,"notes":[]},{"key":"MDLJPD-71","product":"Moodle LMS","title":"Course overview react rewrite","blurb":"Rebuild the Course Overview block frontend in React, like-for-like in function. UI only, no behaviour changes. Validates the React workflow in core and lays the component foundation future redesign work on this block.","themes":[],"roadmap":"Now","impact":null,"effort":null,"productAreas":[],"personas":[],"segments":[],"increment":"2026-I2","jira":"https://moodle.atlassian.net/browse/MDLJPD-71","type":"Idea","bucket":"now","votes":202,"notes":[]},{"key":"MDLJPD-72","product":"Moodle LMS","title":"Timeline react rewrite","blurb":"Migrate the Timeline block frontend to ESM + React, like-for-like in function. UI only. The mirror of the Course Overview rewrite: validates React in core and creates the foundation the Upcoming Tasks redesign builds on.","themes":[],"roadmap":"Now","impact":null,"effort":null,"productAreas":[],"personas":[],"segments":[],"increment":"2026-I2","jira":"https://moodle.atlassian.net/browse/MDLJPD-72","type":"Idea","bucket":"now","votes":271,"notes":[]},{"key":"MDLJPD-73","product":"Moodle LMS","title":"Automate bug triage","blurb":"Use automation to do the first pass on incoming bug reports \u2014 routing, de-duplicating and labelling them \u2014 so genuine issues reach a human sooner.","themes":[],"roadmap":"Later","impact":null,"effort":null,"productAreas":[],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MDLJPD-73","type":"Idea","bucket":"later","votes":149,"notes":[]},{"key":"MDLJPD-75","product":"Moodle LMS","title":"Navigation and orientation","blurb":"Decide what the LMS landing surfaces are for (Home, Dashboard, My Courses, catalog), how people move between them, and how a first-time educator gets oriented (teacher vs student view, first-run moment). A decision and discovery initiative, not a build.","themes":[],"roadmap":"Later","impact":null,"effort":null,"productAreas":[],"personas":[],"segments":[],"increment":"2026-I4","jira":"https://moodle.atlassian.net/browse/MDLJPD-75","type":"Idea","bucket":"later","votes":219,"notes":[]}],"shipped":[{"key":"MCJPD-9","product":"MoodleCloud","title":"Giving customers a monthly webinar to learn about our plans and product","blurb":"A monthly opt-in webinar showing what MoodleCloud can do, covering new features and recent Moodle releases. Sessions are recorded and published so customers can catch up in their own time.","themes":["Outcomes"],"roadmap":"Delivered","impact":3.0,"effort":3.0,"productAreas":["Growth"],"personas":["Moodle Administrator"],"segments":["SMB"],"increment":null,"jira":"https://moodle.atlassian.net/browse/MCJPD-9","type":"Idea"},{"key":"MCJPD-10","product":"MoodleCloud","title":"Re-engage trials to convert to paid plans","blurb":"Reach out to people who started a MoodleCloud trial and then went quiet, with a clearer email series and campaigns that help them pick the work back up.","themes":["Collaboration"],"roadmap":"Delivered","impact":3.0,"effort":3.0,"productAreas":["Growth"],"personas":[],"segments":[],"increment":null,"jira":"https://moodle.atlassian.net/browse/MCJPD-10","type":"Idea"},{"key":"MCJPD-11","product":"MoodleCloud","title":"Strengthen MoodleCloud web experiences to support discovery and conversion","blurb":"Ensure MoodleCloud's public web experiences clearly communicate product value, build trust, and support informed decision-making. This focuses on clarity, consistency and alignment across moodlecloud.com and related entry points, so prospective customers understand what MoodleCloud offers and what to expect before sign\u2026","themes":["Collaboration"],"roadmap":"Delivered","impact":3.0,"effort":2.0,"productAreas":["Growth"],"personas":["Moodle Administrator"],"segments":["SMB"],"increment":null,"jira":"https://moodle.atlassian.net/browse/MCJPD-11","type":"Idea"},{"key":"MDLJPD-68","product":"Moodle LMS","title":"Discovery: First time experience","blurb":"Research into what a first-time educator actually meets when they open Moodle for the first time, and where they get stuck. The findings shape the dashboard, course overview and navigation work now on the roadmap.","themes":["Outcomes"],"roadmap":"Delivered","impact":null,"effort":null,"productAreas":[],"personas":[],"segments":[],"increment":"2026-I1","jira":"https://moodle.atlassian.net/browse/MDLJPD-68","type":"Idea"}]}</script>
 
@@ -1324,6 +1459,7 @@
     if (openModalId) $("#" + openModalId).dataset.open = "false";
     openModalId = id;
     $("#" + id).dataset.open = "true";
+    $("#" + id).dataset.demo = String(demoMode);
     $("#scrim").dataset.open = "true";
     document.body.style.overflow = "hidden";
     const first = $("#" + id + " textarea") || $("#" + id + " .who-pick");
@@ -1344,6 +1480,9 @@
 
   /* ---- voting ----------------------------------------------------------- */
   let pendingKey = null;
+  /* True while the guided "Try the voting flow" walkthrough is running, which
+     switches on the step hints inside the two modals. */
+  let demoMode = false;
 
   function requestVote(key) {
     const idea = DATA.ideas.find((i) => i.key === key);
@@ -1397,7 +1536,13 @@
     persist(); closeModal();
     const key = pendingKey;
     pendingKey = null;
+    demoMode = false;
+    $("#vote-modal").dataset.demo = "false";
     refreshAll();
+    /* Open the idea straight after voting. The reason someone just wrote is the
+       whole point of asking for it, so show it landing next to the others and
+       shifting the sector split rather than leaving them on a toast. */
+    openDrawer(key);
     toast("Vote recorded on " + key + ". Thank you — we read every reason.");
   }
 
@@ -1450,18 +1595,150 @@
   $("#mine").addEventListener("click", () => {
     state.mineOnly = !state.mineOnly; renderTools(); renderBoard();
   });
+  /* Backing out abandons the whole flow. closeModal() on its own can't reset
+     demoMode, because the sign-in step closes and immediately reopens as the
+     vote step — that hand-off must keep the demo hints on. */
+  function cancelModal() {
+    demoMode = false;
+    pendingKey = null;
+    closeModal();
+  }
+
   $("#drawer-close").addEventListener("click", closeDrawer);
-  $("#scrim").addEventListener("click", () => { if (openModalId) closeModal(); else closeDrawer(); });
-  document.querySelectorAll("[data-close-modal]").forEach((b) => b.addEventListener("click", closeModal));
+  $("#scrim").addEventListener("click", () => { if (openModalId) cancelModal(); else closeDrawer(); });
+  document.querySelectorAll("[data-close-modal]").forEach((b) => b.addEventListener("click", cancelModal));
   $("#vote-form").addEventListener("submit", submitVote);
   $("#vm-note").addEventListener("input", (e) => { $("#vm-count").textContent = e.target.value.length; });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if (openModalId) closeModal();
+    if (openModalId) cancelModal();
     else if (state.openIdea) closeDrawer();
   });
 
+  /* ---- guided demo -----------------------------------------------------
+     The one path a reviewer must not have to hunt for. Picks an idea that
+     already carries voter reasons, so submitting lands the new reason next to
+     existing ones rather than into an empty section. */
+  const DEMO_IDEA = "MDLJPD-19";
+
+  function startTryFlow() {
+    const idea = DATA.ideas.find((i) => i.key === DEMO_IDEA) || DATA.ideas[0];
+
+    /* Withdraw an existing vote first, so the flow always runs forwards. */
+    if (hasVoted(idea.key)) {
+      delete state.votes[idea.key];
+      persist();
+      refreshAll();
+    }
+
+    demoMode = true;
+    pendingKey = idea.key;
+
+    const card = [...document.querySelectorAll(".card")]
+      .find((c) => c.textContent.indexOf(idea.key) !== -1);
+    if (card) card.scrollIntoView({ block: "center", behavior: "smooth" });
+
+    if (!state.user) { openModal("signin-modal"); return; }
+    openVoteModal(idea);
+  }
+
+  /* ---- annotations ------------------------------------------------------ */
+  const annoLayer = $("#annoLayer");
+  const annoToggle = $("#annoToggle");
+  const annoLabel = $("#annoToggleLabel");
+  const annoCards = [...document.querySelectorAll(".anno-card")];
+  let annoOn = true;
+  const annoRings = annoCards.map(() => {
+    const r = document.createElement("div");
+    r.className = "anno-ring";
+    r.style.display = "none";
+    annoLayer.appendChild(r);
+    return r;
+  });
+
+  const isVisible = (el) =>
+    Boolean(el && (el.offsetWidth || el.offsetHeight || el.getClientRects().length));
+  function firstVisible(sel) {
+    const els = document.querySelectorAll(sel);
+    for (let i = 0; i < els.length; i++) if (isVisible(els[i])) return els[i];
+    return null;
+  }
+  const annoAlive = () => annoCards.filter((c) => c.dataset.dismissed !== "1").length;
+  function updateAnnoLabel() {
+    annoLabel.textContent = annoOn ? "Hide annotations" : "Show annotations (" + annoAlive() + ")";
+  }
+
+  function updateAnnotations() {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    annoCards.forEach((card, i) => {
+      const ring = annoRings[i];
+      if (!annoOn || card.dataset.dismissed === "1") {
+        card.style.display = "none"; ring.style.display = "none"; return;
+      }
+      let target = null;
+      try { target = firstVisible(card.dataset.target); } catch (e) { /* bad selector */ }
+      const tr = target && target.getBoundingClientRect();
+      /* Only draw a callout while its target is actually on screen — otherwise
+         rings pile up at the viewport edge pointing at nothing. */
+      const onScreen = tr && tr.width > 0 && tr.height > 0 &&
+                       tr.bottom > 96 && tr.top < vh - 8 && tr.right > 0 && tr.left < vw;
+      if (!onScreen) { card.style.display = "none"; ring.style.display = "none"; return; }
+
+      card.style.display = "block"; ring.style.display = "block";
+      ring.style.left = (tr.left - 4) + "px";
+      ring.style.top = (tr.top - 4) + "px";
+      ring.style.width = (tr.width + 8) + "px";
+      ring.style.height = (tr.height + 8) + "px";
+
+      const cw = card.offsetWidth || 234, ch = card.offsetHeight || 90;
+      const side = card.dataset.side;
+      let cl, ct;
+      if (side === "right") { cl = tr.right + 18; ct = tr.top - 6; }
+      else if (side === "top") { cl = tr.left; ct = tr.top - ch - 18; }
+      else if (side === "bottom") { cl = tr.left; ct = tr.bottom + 18; }
+      else { cl = tr.left - cw - 18; ct = tr.top - 6; }
+      cl = Math.max(8, Math.min(cl, vw - cw - 8));
+      ct = Math.max(96, Math.min(ct, vh - ch - 8));
+      card.style.left = cl + "px";
+      card.style.top = ct + "px";
+    });
+  }
+
+  annoToggle.addEventListener("click", () => {
+    annoOn = !annoOn;
+    document.body.classList.toggle("annotations-on", annoOn);
+    /* Re-enabling after dismissing everything brings them all back. */
+    if (annoOn && annoAlive() === 0) annoCards.forEach((c) => { c.dataset.dismissed = ""; });
+    updateAnnoLabel(); updateAnnotations();
+  });
+  annoCards.forEach((card) => {
+    card.querySelector(".anno-close").addEventListener("click", () => {
+      card.dataset.dismissed = "1";
+      if (annoAlive() === 0) { annoOn = false; document.body.classList.remove("annotations-on"); }
+      updateAnnoLabel(); updateAnnotations();
+    });
+  });
+  window.addEventListener("scroll", updateAnnotations, true);
+  window.addEventListener("resize", updateAnnotations);
+  /* The board re-renders on every filter and vote, so targets move underneath. */
+  new MutationObserver(() => requestAnimationFrame(updateAnnotations))
+    .observe($("#board"), { childList: true, subtree: true });
+
+  $("#try-flow").addEventListener("click", startTryFlow);
+
   renderWho(); renderPersonas(); renderStats(); renderTools(); renderBoard(); renderShipped();
+  updateAnnoLabel();
+
+  /* Position the callouts on every settling point rather than trusting one
+     frame. Noto Sans arrives as a data URI, so text metrics — and therefore
+     every target's box — change after first paint; without the fonts.ready
+     pass the rings sit a few pixels off whatever they are pointing at. */
+  updateAnnotations();
+  requestAnimationFrame(updateAnnotations);
+  window.addEventListener("load", updateAnnotations);
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(updateAnnotations);
+  }
 })();
 </script>
 
