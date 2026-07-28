@@ -57,7 +57,8 @@
     --mds-color-gray-black:#000;  --mds-color-gray-white:#fff;
     --mds-color-green-100:#d7e4d6; --mds-color-green-200:#aecaad; --mds-color-green-500:#357a32;
     --mds-color-green-800:#153114;
-    --mds-color-red-200:#eaada6;  --mds-color-red-500:#ca3120;
+    --mds-color-red-100:#f4d6d2;  --mds-color-red-200:#eaada6;  --mds-color-red-500:#ca3120;
+    --mds-color-red-600:#a2271a;  --mds-color-yellow-600:#c08a3e;
     --mds-color-yellow-50:#fdf7ed; --mds-color-yellow-100:#fcefdc; --mds-color-yellow-200:#f9deb8;
     --mds-color-yellow-500:#f0ad4e; --mds-color-yellow-800:#60451f;
     --mds-color-orange-100:#ffe3d1; --mds-color-orange-600:#cc5e13;
@@ -75,7 +76,7 @@
     --mds-font-weight-semibold:600; --mds-font-weight-bold:700;
     --mds-line-height-headings-1:3rem;  --mds-line-height-headings-2:2.4rem;
     --mds-line-height-headings-3:2.1rem; --mds-line-height-headings-4:1.8rem;
-    --mds-line-height-headings-6:1.2rem;
+    --mds-line-height-headings-5:1.5rem; --mds-line-height-headings-6:1.2rem;
     --mds-line-height-paragraph-default:1.5rem;
     /* MDS sets tracking to zero everywhere — headings are not tightened. */
     --mds-letter-spacing-default:0rem;
@@ -130,15 +131,23 @@
     --btn:40px;
 
     /* --- prototype-only: roadmap horizon hues -----------------------------
-       Certainty encoded as a hue rotation through MDS brand colours:
-       committed (primary blue) -> planned (cyan) -> intent only (purple).
-       MDS has no horizon/confidence scale — a genuine gap to feed back. */
-    --rm-now:var(--mds-color-blue-500);     --rm-now-wash:var(--mds-color-blue-50);
-    --rm-now-text:var(--mds-color-blue-800);
-    --rm-next:var(--mds-color-cyan-600);    --rm-next-wash:var(--mds-bg-feedback-info-light);
-    --rm-next-text:var(--mds-color-cyan-800);
-    --rm-later:var(--mds-color-purple-500); --rm-later-wash:#f2eef5;
-    --rm-later-text:var(--mds-color-purple-800);
+       Follows the JPD roadmap convention (green -> amber -> rose as the
+       horizon recedes), rebuilt from MDS primitives rather than JPD's own
+       palette. Each horizon needs three steps: a very light column wash, a
+       chip fill, and a text colour dark enough to sit on the chip.
+
+       MDS has no 25-step below its -50s, so the washes are mixed here. That is
+       a real gap: a token set that stops at -50 cannot tint a full panel
+       without going off-system. Worth feeding back. */
+    --rm-now-wash:#e8f3ea;  --rm-now-chip:#bcdcc4;
+    --rm-now-text:var(--mds-color-green-800);  --rm-now-rule:#d3e4d5;
+    --rm-now-solid:var(--mds-color-green-500);
+    --rm-next-wash:#fdf5e4; --rm-next-chip:#f6dda9;
+    --rm-next-text:var(--mds-color-yellow-800); --rm-next-rule:#efe1c4;
+    --rm-next-solid:var(--mds-color-yellow-600);
+    --rm-later-wash:#fceeec; --rm-later-chip:#f3cdc7;
+    --rm-later-text:#6b1a11; --rm-later-rule:#efd7d3;
+    --rm-later-solid:var(--mds-color-red-600);
   }
 
   *{ box-sizing:border-box; }
@@ -278,53 +287,53 @@
   /* Vertical rhythm only — these elements also carry .shell, and a `padding`
      shorthand here would zero out its horizontal gutter and knock the page
      content out of alignment with the nav. Always padding-block on a .shell. */
-  .page-head{ padding-block:var(--mds-spacing-xxl) var(--mds-spacing-xl); }
-  .page-head-grid{
-    display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);
-    gap:var(--mds-spacing-xl) var(--mds-spacing-xxl); align-items:start;
-  }
-  .page-head h1{
-    font-size:var(--mds-font-size-headings-1);
-    line-height:var(--mds-line-height-headings-1);
-    max-width:24ch;
-  }
-  .lede{
-    margin:var(--mds-spacing-md) 0 0;
-    font-size:var(--mds-font-size-paragraph-lead); line-height:1.6;
-    color:var(--mds-text-subtle); max-width:56ch;
-  }
-  .head-stats{ display:flex; gap:var(--mds-spacing-lg); margin:var(--mds-spacing-lg) 0 0; flex-wrap:wrap; }
-  .stat{ display:grid; gap:2px; }
-  .stat b{
-    font-family:var(--mds-font-family-code);
-    font-size:var(--mds-font-size-headings-4); font-weight:var(--mds-font-weight-bold);
-    font-variant-numeric:tabular-nums; line-height:1.1;
-    color:var(--stat-hue,var(--mds-text-default));
-  }
-  .stat span{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); }
+  .page-head{ padding-block:var(--mds-spacing-lg) 0; }
 
-  /* Boost .card */
+  /* Title row, JPD-style: view name, a count chip, then the view description on
+     one line. Compact rather than a marketing hero — this is a working board. */
+  .title-row{ display:flex; align-items:center; gap:var(--mds-spacing-sm); flex-wrap:wrap; }
+  .page-head h1{
+    font-size:var(--mds-font-size-headings-4);
+    line-height:var(--mds-line-height-headings-4);
+  }
+  .count-chip{
+    font-size:.75rem; font-weight:var(--mds-font-weight-semibold);
+    color:var(--mds-text-subtle); background:var(--mds-bg-surface-strong);
+    padding:.15rem var(--mds-spacing-xs); border-radius:var(--mds-border-radius-xs);
+    white-space:nowrap;
+  }
+  .view-desc{
+    display:flex; align-items:baseline; gap:var(--mds-spacing-xs);
+    margin:var(--mds-spacing-xs) 0 0;
+    font-size:var(--mds-font-size-paragraph-small); line-height:1.5;
+    color:var(--mds-text-muted); max-width:88ch;
+  }
+  .view-desc i{ font-size:11px; position:relative; top:-1px; flex:none; }
+
+  /* How-it-works: three inline steps on a hairline, not a boxed card. Keeps the
+     community-voting contract visible without a panel competing with the board. */
   .how{
-    background:var(--mds-bg-surface-subtle);
-    border:var(--mds-stroke-weight-sm) solid var(--mds-border-subtle);
-    border-radius:var(--mds-border-radius-lg);
-    padding:var(--mds-spacing-lg);
+    display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:var(--mds-spacing-md) var(--mds-spacing-xl);
+    margin-top:var(--mds-spacing-lg);
+    padding-top:var(--mds-spacing-md);
+    border-top:var(--mds-stroke-weight-sm) solid var(--mds-border-subtle);
   }
-  .how h2{ margin-bottom:var(--mds-spacing-md); }
-  .how ol{ margin:0; padding:0; list-style:none; display:grid; gap:var(--mds-spacing-sm); }
-  .how li{
-    display:grid; grid-template-columns:1.5rem 1fr; gap:var(--mds-spacing-xs);
+  .how-step{
+    display:grid; grid-template-columns:auto 1fr; gap:var(--mds-spacing-xs);
+    align-items:baseline;
     font-size:var(--mds-font-size-paragraph-small); line-height:1.45;
-    color:var(--mds-text-subtle);
+    color:var(--mds-text-muted);
   }
-  .how li b{ color:var(--mds-text-default); font-weight:var(--mds-font-weight-semibold); }
+  .how-step b{
+    display:block; color:var(--mds-text-default);
+    font-weight:var(--mds-font-weight-semibold);
+  }
   .how-n{
-    font-family:var(--mds-font-family-code); font-size:.75rem;
+    font-family:var(--mds-font-family-code); font-size:.6875rem;
     font-weight:var(--mds-font-weight-bold);
-    color:var(--mds-text-feedback-primary);
-    background:var(--mds-bg-interactive-primary-default-light);
-    border-radius:var(--mds-border-radius-xs);
-    text-align:center; height:1.4rem; line-height:1.4rem;
+    color:var(--mds-text-muted);
+    letter-spacing:.06em;
   }
 
   /* =====================  TOOLBAR  ===================== */
@@ -400,55 +409,78 @@
   /* =====================  BOARD  ===================== */
   .board{
     display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
-    gap:var(--mds-spacing-lg);
-    align-items:start;
+    gap:var(--mds-spacing-md);
+    /* stretch, not start: the washes run to a common baseline so the board reads
+       as three panels rather than three ragged stacks. */
+    align-items:stretch;
     padding-block:var(--mds-spacing-lg) var(--mds-spacing-xxl);
   }
-  .col{ min-width:0; display:flex; flex-direction:column; gap:var(--mds-spacing-sm); }
-  .col-head{
-    background:var(--mds-bg-surface-subtle);
-    border:var(--mds-stroke-weight-sm) solid var(--mds-border-subtle);
-    border-top:var(--mds-stroke-weight-lg) solid var(--hue);
-    border-radius:var(--mds-border-radius-md);
-    padding:var(--mds-spacing-sm) var(--mds-spacing-md) var(--mds-spacing-md);
-    position:sticky; top:calc(var(--nav-h) + 53px); z-index:10;
+  /* A horizon is one tinted panel, JPD-style: the wash carries the colour so the
+     cards inside can stay plain white with a hairline. Full-height, so a short
+     column still reads as a column rather than a stack of orphaned cards. */
+  .col{
+    min-width:0; display:flex; flex-direction:column; gap:var(--mds-spacing-xs);
+    background:var(--wash);
+    border-radius:var(--mds-border-radius-lg);
+    padding:var(--mds-spacing-sm);
+    min-height:26rem;
   }
-  .col-title{ display:flex; align-items:center; gap:var(--mds-spacing-xs); }
-  .col-title h2{ color:var(--hue); }
-  .col-count{
-    margin-left:auto;
-    font-family:var(--mds-font-family-code); font-size:.8125rem;
-    font-weight:var(--mds-font-weight-bold); font-variant-numeric:tabular-nums;
-    color:var(--hue-text); background:var(--hue-wash);
-    padding:var(--mds-spacing-xxs) var(--mds-spacing-xs);
+  .col-head{
+    display:flex; align-items:center; gap:var(--mds-spacing-xs);
+    padding:var(--mds-spacing-xxs) var(--mds-spacing-xxs) var(--mds-spacing-xs);
+  }
+  /* The horizon label is the chip itself — no separate heading colour needed. */
+  .col-head h2{
+    font-size:.8125rem; font-weight:var(--mds-font-weight-bold);
+    letter-spacing:.01em;
+    color:var(--chip-text); background:var(--chip);
+    padding:.2rem var(--mds-spacing-xs);
     border-radius:var(--mds-border-radius-xs);
   }
+  /* text-subtle, not text-muted: muted grey clears 4.5:1 on white but drops to
+     ~4.3 on the tinted wash. Anything sitting on a wash steps up one level. */
+  .col-count{
+    margin-left:auto;
+    font-size:.8125rem; font-weight:var(--mds-font-weight-semibold);
+    font-variant-numeric:tabular-nums;
+    color:var(--mds-text-subtle);
+    padding-right:var(--mds-spacing-xxs);
+  }
   .col-promise{
-    margin:var(--mds-spacing-xxs) 0 0;
-    font-size:var(--mds-font-size-paragraph-small); line-height:1.45;
-    color:var(--mds-text-muted);
+    margin:0 0 var(--mds-spacing-xxs);
+    padding:0 var(--mds-spacing-xxs);
+    font-size:.8125rem; line-height:1.45;
+    color:var(--mds-text-subtle);
   }
   .col-promise em{
     font-style:normal; color:var(--mds-text-default); font-weight:var(--mds-font-weight-semibold);
   }
 
   .cards{ display:flex; flex-direction:column; gap:var(--mds-spacing-xs); list-style:none; margin:0; padding:0; }
+
+  /* Flat white card on the wash. No left accent rail — the column already says
+     which horizon this is, and a rail on every card is just noise. */
   .card{
     background:var(--mds-bg-surface-default);
-    border:var(--mds-stroke-weight-sm) solid var(--mds-border-default);
-    border-left:var(--mds-stroke-weight-lg) solid var(--hue);
+    border:var(--mds-stroke-weight-sm) solid var(--rule);
     border-radius:var(--mds-border-radius-md);
     overflow:hidden;
-    transition:box-shadow .15s ease, border-color .15s ease;
+    transition:border-color .15s ease, box-shadow .15s ease;
   }
-  .card:hover{ box-shadow:var(--mds-shadow-md); }
+  .card:hover{
+    border-color:var(--mds-border-interactive-secondary-default);
+    box-shadow:var(--mds-shadow-sm);
+  }
   .card-open{
     display:block; width:100%; text-align:left; border:0; background:transparent;
-    padding:var(--mds-spacing-sm) var(--mds-spacing-md) var(--mds-spacing-xs);
+    padding:var(--mds-spacing-sm) var(--mds-spacing-sm) var(--mds-spacing-xs);
   }
   .card-open:hover .card-title{ color:var(--mds-text-link-primary-default); }
-  .card-meta{ display:flex; align-items:center; gap:var(--mds-spacing-xs); margin-bottom:var(--mds-spacing-xxs); }
-  .card-key{ font-family:var(--mds-font-family-code); font-size:.75rem; color:var(--mds-text-muted); }
+  .card-meta{ display:flex; align-items:center; gap:var(--mds-spacing-xs); margin-bottom:var(--mds-spacing-xs); }
+  .card-key{
+    font-family:var(--mds-font-family-code); font-size:.6875rem;
+    letter-spacing:.02em; color:var(--mds-text-muted);
+  }
 
   /* Boost .badge */
   .pill{
@@ -462,39 +494,55 @@
   .pill.cloud{ background:var(--mds-bg-feedback-info-subtle); color:var(--mds-text-feedback-info); }
 
   .card-title{
-    display:block; font-size:var(--mds-font-size-paragraph-default);
-    font-weight:var(--mds-font-weight-semibold); line-height:1.35;
+    display:block; font-size:.9375rem;
+    font-weight:var(--mds-font-weight-semibold); line-height:1.4;
     transition:color .15s ease;
   }
   .card-blurb{
     display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical;
     overflow:hidden;
     margin:var(--mds-spacing-xxs) 0 0;
-    font-size:var(--mds-font-size-paragraph-small); line-height:1.45;
+    font-size:.8125rem; line-height:1.5;
     color:var(--mds-text-muted);
   }
+
+  /* Vote row. The count sits on the left as plain type and the control on the
+     right, so a column scans as a ranked list of numbers down the left edge —
+     which is the whole point once the list is sorted by demand. */
   .card-foot{
     display:flex; align-items:center; gap:var(--mds-spacing-xs);
-    padding:var(--mds-spacing-xs) var(--mds-spacing-md) var(--mds-spacing-sm);
+    padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
     border-top:var(--mds-stroke-weight-sm) solid var(--mds-border-subtle);
-    margin-top:var(--mds-spacing-xs);
   }
   .tally{ display:flex; align-items:baseline; gap:var(--mds-spacing-xxs); margin-right:auto; }
   .tally-n{
-    font-family:var(--mds-font-family-code); font-size:var(--mds-font-size-paragraph-default);
-    font-weight:var(--mds-font-weight-bold); font-variant-numeric:tabular-nums; line-height:1;
+    font-size:.9375rem; font-weight:var(--mds-font-weight-bold);
+    font-variant-numeric:tabular-nums; line-height:1;
   }
   .tally-l{ font-size:.75rem; color:var(--mds-text-muted); }
   .tally.is-voted .tally-n{ color:var(--mds-bg-feedback-success-default); }
+  /* Reason count — the community-input signal, and the reason to open a card.
+     Only rendered when reasons exist, so cards stay varied rather than uniform. */
+  .reasons{
+    display:inline-flex; align-items:center; gap:.3rem;
+    font-size:.75rem; color:var(--mds-text-muted);
+    padding-left:var(--mds-spacing-xs);
+    border-left:var(--mds-stroke-weight-sm) solid var(--mds-border-subtle);
+  }
+  .reasons i{ font-size:10px; }
 
   .btn-vote{
-    background:var(--mds-bg-surface-default); color:var(--mds-text-link-primary-default);
-    border-color:var(--mds-bg-interactive-primary-default);
-    padding:var(--mds-spacing-xxs) var(--mds-spacing-md);
-    font-size:var(--mds-font-size-paragraph-small);
+    background:transparent; color:var(--mds-text-link-primary-default);
+    border-color:var(--mds-border-feedback-primary);
+    padding:.2rem var(--mds-spacing-sm);
+    font-size:.8125rem;
   }
-  .btn-vote i{ font-size:11px; }
-  .btn-vote:hover{ background:var(--mds-bg-interactive-primary-default); color:#fff; }
+  .btn-vote i{ font-size:10px; }
+  .btn-vote:hover{
+    background:var(--mds-bg-interactive-primary-default);
+    border-color:var(--mds-bg-interactive-primary-default);
+    color:#fff;
+  }
   .btn-vote[data-voted="true"]{
     background:var(--mds-bg-feedback-success-light);
     border-color:var(--mds-border-feedback-success);
@@ -506,20 +554,21 @@
     color:var(--mds-text-feedback-success);
   }
 
+  /* Sits on the wash, so it reads as part of the column, not as a card. */
   .col-more{
-    border:var(--mds-stroke-weight-sm) dashed var(--mds-border-interactive-secondary-default);
+    border:var(--mds-stroke-weight-sm) solid var(--rule);
     background:transparent; color:var(--mds-text-subtle);
     border-radius:var(--mds-border-radius-md);
-    padding:var(--mds-spacing-sm);
-    font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium);
+    padding:var(--mds-spacing-xs);
+    font-size:.8125rem; font-weight:var(--mds-font-weight-medium);
   }
   .col-more:hover{
-    border-color:var(--mds-bg-interactive-primary-default);
-    color:var(--mds-text-link-primary-default);
-    background:var(--mds-bg-interactive-primary-default-light);
+    border-color:var(--mds-border-interactive-secondary-default);
+    color:var(--mds-text-default);
+    background:rgba(255,255,255,.6);
   }
   .col-empty{
-    border:var(--mds-stroke-weight-sm) dashed var(--mds-border-default);
+    border:var(--mds-stroke-weight-sm) dashed var(--rule);
     border-radius:var(--mds-border-radius-md);
     padding:var(--mds-spacing-xl) var(--mds-spacing-md);
     text-align:center; color:var(--mds-text-muted);
@@ -750,16 +799,15 @@
     :root{ --shell-pad:24px; }
     .burger{ display:flex; }
     .brand .word, .nav-pills, .nav-right-group .nav-icons, .profile .pname, .profile .porg{ display:none; }
-    .page-head-grid{ grid-template-columns:1fr; gap:var(--mds-spacing-xl); }
-    .page-head h1{ font-size:var(--mds-font-size-headings-2); line-height:var(--mds-line-height-headings-2); }
+    .how{ grid-template-columns:1fr; gap:var(--mds-spacing-sm); }
     .board{ grid-template-columns:1fr; }
-    .col-head{ position:static; }
+    .col{ min-height:0; }
     .cards{ display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); }
   }
   @media (max-width:575px){
     :root{ --shell-pad:16px; }
     .page-head{ padding-top:var(--mds-spacing-xl); }
-    .page-head h1{ font-size:var(--mds-font-size-headings-3); line-height:var(--mds-line-height-headings-3); }
+    .page-head h1{ font-size:var(--mds-font-size-headings-5); line-height:var(--mds-line-height-headings-5); }
     .cards{ grid-template-columns:1fr; }
     .search-field{ max-width:none; }
     .bar-row{ grid-template-columns:6.5rem 1fr 2.2rem; }
@@ -811,24 +859,20 @@
 <main>
   <!-- ===== PAGE HEADER ===== -->
   <section class="page-head shell">
-    <div class="page-head-grid">
-      <div>
-        <h1>What we're building, and what you think we should build next.</h1>
-        <p class="lede">
-          This is the work in front of the Moodle product teams, in the open. Everything here is
-          read straight from our internal planning boards — nothing is rewritten for public
-          consumption. Where we haven't committed yet, your vote helps us decide what moves up.
-        </p>
-        <div class="head-stats" id="head-stats"></div>
-      </div>
-      <div class="how">
-        <h2>How voting works</h2>
-        <ol>
-          <li><span class="how-n">1</span><span><b>Sign in with your moodle.org account.</b> The one you already use for the forums, tracker and plugins directory. One vote per idea.</span></li>
-          <li><span class="how-n">2</span><span><b>Tell us why it matters to you.</b> A sentence about your own situation is required — a raw count on its own tells us nothing we can act on.</span></li>
-          <li><span class="how-n">3</span><span><b>We read it and report back.</b> Votes and reasons go to the team that owns the idea, and each quarter we publish what moved and why.</span></li>
-        </ol>
-      </div>
+    <div class="title-row">
+      <h1>Moodle Product Roadmap</h1>
+      <span class="count-chip" id="idea-count"></span>
+    </div>
+    <p class="view-desc">
+      <i class="fa-solid fa-align-left" aria-hidden="true"></i>
+      <span>What the Moodle product teams are working on, in the open — across Moodle LMS and
+      MoodleCloud. Read straight from our planning boards, not rewritten for public consumption.
+      Where we haven't committed yet, your vote helps decide what moves up.</span>
+    </p>
+    <div class="how">
+      <p class="how-step"><span class="how-n">01</span><span><b>Sign in with moodle.org</b>The account you already use for the forums, tracker and plugins directory. One vote per idea.</span></p>
+      <p class="how-step"><span class="how-n">02</span><span><b>Say why it matters to you</b>A sentence about your own situation is required. A raw count on its own tells us nothing we can act on.</span></p>
+      <p class="how-step"><span class="how-n">03</span><span><b>We read it and report back</b>Votes and reasons go to the team that owns the idea. Each quarter we publish what moved, and why.</span></p>
     </div>
   </section>
 
@@ -952,11 +996,11 @@
   const STORE = "moodle-roadmap-proto-v1";
 
   const BUCKETS = [
-    { id: "now", label: "Now", hue: "--rm-now", wash: "--rm-now-wash", text: "--rm-now-text",
+    { id: "now", label: "Now", slug: "now",
       promise: "<em>In build.</em> Committed, with a team working on it right now." },
-    { id: "next", label: "Next", hue: "--rm-next", wash: "--rm-next-wash", text: "--rm-next-text",
+    { id: "next", label: "Next", slug: "next",
       promise: "<em>Committed, not started.</em> Expected to begin as current work clears." },
-    { id: "later", label: "Later", hue: "--rm-later", wash: "--rm-later-wash", text: "--rm-later-text",
+    { id: "later", label: "Later", slug: "later",
       promise: "<em>Intent, no date.</em> We mean to do these. Your votes decide the order." },
   ];
 
@@ -997,8 +1041,14 @@
   const bucketOf = (id) => BUCKETS.find((b) => b.id === id);
   const hasVoted = (key) => Boolean(state.votes[key]);
   const liveVotes = (idea) => idea.votes + (hasVoted(idea.key) ? 1 : 0);
-  const hueVars = (b) =>
-    "--hue: var(" + b.hue + "); --hue-wash: var(" + b.wash + "); --hue-text: var(" + b.text + ");";
+  /* One place that maps a horizon to its four --rm-* steps, so a column, a card
+     and the drawer all read the same palette from a single slug. */
+  const hueVars = (b) => {
+    const p = "--rm-" + b.slug + "-";
+    return "--wash: var(" + p + "wash); --chip: var(" + p + "chip); " +
+           "--chip-text: var(" + p + "text); --rule: var(" + p + "rule); " +
+           "--hue: var(" + p + "solid);";
+  };
 
   /* Stable pseudo-random from an idea key, so the segment mix never jitters. */
   function seeded(key, salt) {
@@ -1066,11 +1116,7 @@
   }
 
   function renderStats() {
-    $("#head-stats").innerHTML = BUCKETS.map((b) =>
-      '<div class="stat" style="--stat-hue: var(' + b.hue + ')">' +
-        '<b>' + DATA.ideas.filter((i) => i.bucket === b.id).length + '</b>' +
-        '<span>' + b.label + '</span></div>').join("") +
-      '<div class="stat"><b>' + DATA.shipped.length + '</b><span>Shipped</span></div>';
+    $("#idea-count").textContent = DATA.ideas.length + " ideas";
   }
 
   function renderTools() {
@@ -1104,6 +1150,7 @@
   function cardHTML(idea) {
     const voted = hasVoted(idea.key);
     const n = liveVotes(idea);
+    const reasons = allNotes(idea).length;
     return '' +
       '<li class="card">' +
         '<button type="button" class="card-open" data-open="' + esc(idea.key) + '">' +
@@ -1119,7 +1166,14 @@
           '<span class="tally' + (voted ? " is-voted" : "") + '">' +
             '<span class="tally-n">' + n + '</span>' +
             '<span class="tally-l">vote' + (n === 1 ? "" : "s") + '</span>' +
-          '</span>' + voteButtonHTML(idea) +
+          '</span>' +
+          /* Only shown where people actually wrote something — an empty
+             "0 reasons" on every card would be noise, not information. */
+          (reasons
+            ? '<span class="reasons"><i class="fa-regular fa-comment" aria-hidden="true"></i>' +
+              reasons + ' reason' + (reasons === 1 ? "" : "s") + '</span>'
+            : "") +
+          voteButtonHTML(idea) +
         '</div>' +
       '</li>';
   }
@@ -1142,10 +1196,11 @@
 
       return '<section class="col" style="' + hueVars(b) + '">' +
           '<div class="col-head">' +
-            '<div class="col-title"><h2>' + b.label + '</h2>' +
-              '<span class="col-count">' + rows.length + '</span></div>' +
-            '<p class="col-promise">' + b.promise + '</p>' +
-          '</div>' + body +
+            '<h2>' + b.label + '</h2>' +
+            '<span class="col-count">' + rows.length + '</span>' +
+          '</div>' +
+          '<p class="col-promise">' + b.promise + '</p>' +
+          body +
         '</section>';
     }).join("");
 
@@ -1231,8 +1286,8 @@
     const b = bucketOf(idea.bucket);
     $("#drawer").setAttribute("style", hueVars(b));
     $("#drawer-tags").innerHTML =
-      '<span class="pill" style="background: var(' + b.wash + '); color: var(' + b.text + ');">' +
-        b.label + '</span>' +
+      '<span class="pill" style="background: var(--rm-' + b.slug + '-chip); ' +
+        'color: var(--rm-' + b.slug + '-text);">' + b.label + '</span>' +
       '<span class="pill ' + (idea.product === "Moodle LMS" ? "lms" : "cloud") + '">' +
         esc(idea.product) + '</span>' +
       (idea.themes || []).map((t) => '<span class="pill">' + esc(t) + '</span>').join("") +
