@@ -7,6 +7,9 @@ on:
       - MOODLE_[0-9]+_STABLE
     tags-ignore:
       - v[0-9]+.[0-9]+.[0-9]+*
+    # Fork-local: throwaway prototypes are static HTML and never need Moodle CI.
+    paths-ignore:
+      - 'public/prototypes/**'
   workflow_dispatch:
     inputs:
       phpunit_extra_options:
