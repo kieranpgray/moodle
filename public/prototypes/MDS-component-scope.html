@@ -1088,7 +1088,7 @@ html { scroll-behavior: smooth; }
     <a href="#f-textarea"><em>1.4</em> Textarea &amp; editor shell</a>
     <a href="#f-switch"><em>1.5</em> Switch</a>
     <a href="#f-check"><em>1.6</em> Checkbox with description</a>
-    <a href="#f-cond"><em>1.7</em> Conditional field</a>
+    <a href="#f-cond"><em>1.7</em> Progressive disclosure</a>
     <a href="#f-lock"><em>1.8</em> Locked field</a>
 
     <div class="rail-group">Priority 2 · Architecture</div>
@@ -1257,6 +1257,10 @@ html { scroll-behavior: smooth; }
       Without a wrapper, every team re-decides where help text sits relative to the label. It's also
       where the accessibility contract lives — <span class="mono">for</span>/<span class="mono">id</span>
       association, <span class="mono">aria-describedby</span> for help, <span class="mono">aria-invalid</span> for errors.</p>
+
+      <p><strong>Include progressive disclosure in this spec</strong> — how a field behaves when a
+      parent control reveals it (see §1.7). Roughly a third of Moodle's course settings form is
+      conditional, so revealed fields are the normal case, not an edge case.</p>
 
       <div class="demo">
         <div class="demo-bar"><span>Specimen</span><span>default · error</span></div>
@@ -1515,58 +1519,66 @@ html { scroll-behavior: smooth; }
     <div class="entry-head">
       <div class="entry-title">
         <span class="ref">1.7</span>
-        <h3>Conditional field indicator</h3>
-        <span class="pill build">Build</span>
+        <h3>Progressive disclosure in forms</h3>
+        <span class="pill extend">Fold into 1.1</span>
       </div>
       <div class="needs">
         <span class="needs-label">Needed by</span>
-        <span class="proto">Course settings ×22</span><span class="proto">Assignment</span><span class="proto">Quiz</span>
+        <span class="proto">Assignment</span><span class="proto">Course settings</span><span class="proto">Quiz</span>
       </div>
     </div>
     <div class="entry-body">
-      <p>A marker on a field explaining <em>why it is visible</em>. <strong>This is the most
-      Moodle-specific item on the list and the highest-value.</strong> Around a third of the course
-      settings form is conditional, which is why two admins comparing screens see genuinely
-      different forms and neither can tell why.</p>
-
       <div class="flag">
-        <b>Why now</b>
-        <span>No mainstream design system has this, because no mainstream product has Moodle's
-        configurability. Building it turns a long-standing support burden into an explained
-        behaviour — and it's the one component on this list that no competitor can borrow.</span>
+        <b>Corrected</b>
+        <span>An earlier version of this page proposed a <strong>"conditional field indicator"</strong>
+        — a badge on each field explaining why it was visible — and called it the highest-value item
+        on the list. <strong>That was a misreading of the prototypes.</strong> Those labels
+        ("Site setting", "Capability", <span class="mono">assignfeedback_comments</span>) were
+        review scaffolding, added so reviewers could trace each field back to its gate in
+        <span class="mono">edit_form.php</span>. The prototype says so in its own stylesheet:
+        fields hidden on the current site carry the caption
+        <em>"Hidden on this site — shown here for review"</em>. None of it was ever meant to reach
+        a user, and raw plugin names certainly weren't. What survives is smaller and sits below.</span>
       </div>
 
+      <p>What <em>is</em> real is the behaviour underneath: turning marking workflow on reveals
+      marking allocation, which reveals the marker count, which reveals the combining method.
+      Moodle already does this with <span class="mono">hideIf</span>. The design question is only
+      <strong>how a newly revealed field announces itself</strong> — so the form visibly responds
+      rather than silently growing.</p>
+
+      <p>That's a behaviour of the field wrapper, not a component of its own. <strong>Scope it as
+      part of §1.1</strong> — reveal transition, indentation or grouping under the parent that
+      triggered it, and the matching screen-reader announcement.</p>
+
       <div class="demo">
-        <div class="demo-bar"><span>Specimen</span><span>site gate · plugin gate · cascade</span></div>
+        <div class="demo-bar"><span>Specimen</span><span>toggle the parent to reveal</span></div>
         <div class="demo-stage">
           <div class="demo-col">
-            <div class="f" style="max-width:26rem">
-              <label class="f-label" for="d-rel">Relative dates mode</label>
-              <div class="sel-wrap">
-                <select class="sel" id="d-rel"><option>No</option><option>Yes</option></select>
-                <svg class="sel-chev" width="14" height="14" aria-hidden="true"><use href="#i-chev"/></svg>
+            <div class="sw-field" style="max-width:26rem">
+              <div class="sw-main">
+                <span class="f-label">Marking workflow</span>
+                <span class="f-help">Marks move through defined states before release.</span>
               </div>
-              <span class="f-tag cond"><svg width="11" height="11" aria-hidden="true"><use href="#i-info"/></svg>
-                Shown because relative dates are enabled site-wide</span>
+              <button class="sw" type="button" data-reveal aria-pressed="true" aria-controls="reveal-kids" aria-label="Marking workflow"></button>
             </div>
 
-            <div class="f" style="max-width:26rem">
-              <label class="f-label" for="d-alloc">Marking allocation</label>
-              <div class="sel-wrap">
-                <select class="sel" id="d-alloc"><option>Yes</option><option>No</option></select>
-                <svg class="sel-chev" width="14" height="14" aria-hidden="true"><use href="#i-chev"/></svg>
+            <div id="reveal-kids" style="padding-left:var(--s-md);border-left:2px solid var(--accent-line);display:flex;flex-direction:column;gap:var(--s-md)">
+              <div class="f" style="max-width:24rem">
+                <label class="f-label" for="d-alloc">Marking allocation</label>
+                <div class="sel-wrap">
+                  <select class="sel" id="d-alloc"><option>Yes</option><option>No</option></select>
+                  <svg class="sel-chev" width="14" height="14" aria-hidden="true"><use href="#i-chev"/></svg>
+                </div>
               </div>
-              <span class="f-tag cond"><svg width="11" height="11" aria-hidden="true"><use href="#i-info"/></svg>
-                Revealed by "Marking workflow: Yes" above</span>
-            </div>
-
-            <div class="f" style="max-width:26rem">
-              <label class="f-label" for="d-mcount">Number of markers</label>
-              <input class="inp" id="d-mcount" type="text" value="2">
-              <span class="f-tag cond"><svg width="11" height="11" aria-hidden="true"><use href="#i-info"/></svg>
-                Revealed by "Marking allocation: Yes" — and gates the combining method below</span>
+              <div class="f" style="max-width:24rem">
+                <label class="f-label" for="d-mcount">Number of markers</label>
+                <input class="inp" id="d-mcount" type="text" value="2">
+              </div>
             </div>
           </div>
+          <p class="caption" style="margin-top:.6rem">Revealed fields sit indented under the control
+          that triggered them, so the relationship is visible without a label explaining it.</p>
         </div>
       </div>
     </div>
@@ -1794,9 +1806,10 @@ html { scroll-behavior: smooth; }
         <b>Changed</b>
         <span><strong>The component has been built</strong> — a full suite with trigger, menu,
         action/select/expandable/multiselect items, headings and dividers, on the WAI-ARIA menu
-        pattern. But <strong>it has no design tokens</strong>, and its own author flagged a
-        hardcoded menu width with a note that no matching token exists. So at the design layer this
-        is still open: the ask here is the token set, not the code.</span>
+        pattern. The remaining gap is narrow and already named: its author had to hardcode the menu
+        width (217px, read off Figma) because no token existed, and asked for
+        <span class="mono">--mds-dropdown-menu-min-width</span> to be minted. <strong>That single
+        token is the ask — not a token family, and not the code.</strong></span>
       </div>
 
       <p><strong>The highest-reuse pattern in the set.</strong> It powers the "Manage"
@@ -2749,10 +2762,11 @@ html { scroll-behavior: smooth; }
       <div class="wave-b">
         <h4>The differentiators</h4>
         <p>Wave 1 makes the forms possible; Wave 2 makes them better than what other platforms
-        ship. The conditional-field work in particular addresses a Moodle-specific problem no
-        off-the-shelf design system solves.</p>
+        ship. The locked-field work in particular addresses a Moodle-specific problem no
+        off-the-shelf design system solves — settings that exist but cannot be changed, with no
+        explanation of why.</p>
         <div class="wave-list">
-          <span>Conditional field indicator</span><span>Locked field indicator</span>
+          <span>Locked field indicator</span>
           <span>Tabbed workspace</span><span>Sticky action footer spec</span><span>Layering tokens</span>
         </div>
       </div>
@@ -2844,6 +2858,16 @@ html { scroll-behavior: smooth; }
 
   /* ---- switch specimens ---- */
   document.addEventListener("click", function (e) {
+    /* progressive-disclosure specimen: parent switch reveals its children */
+    var rev = e.target.closest("[data-reveal]");
+    if (rev) {
+      var on = rev.getAttribute("aria-pressed") !== "true";
+      rev.setAttribute("aria-pressed", on ? "true" : "false");
+      var kids = document.getElementById(rev.getAttribute("aria-controls"));
+      if (kids) { kids.hidden = !on; }
+      return;
+    }
+
     var sw = e.target.closest("[data-sw]");
     if (sw) {
       sw.setAttribute("aria-pressed", sw.getAttribute("aria-pressed") === "true" ? "false" : "true");
