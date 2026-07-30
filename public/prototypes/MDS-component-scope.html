@@ -1,3 +1,8 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MDS Component Scope</title>
 
 <style>
@@ -376,6 +381,7 @@ a { color: var(--accent); }
 .pill.build  { color: var(--status-build);  background: var(--status-build-wash);  border-color: var(--status-build-line); }
 .pill.extend { color: var(--status-extend); background: var(--status-extend-wash); border-color: var(--status-extend-line); }
 .pill.ships  { color: var(--status-ships);  background: var(--status-ships-wash);  border-color: var(--status-ships-line); }
+.pill.inflight { color: #00343c; background: var(--cyan-100); border-color: #99cdd5; }
 
 .needs {
   display: flex;
@@ -1029,6 +1035,9 @@ footer.pagefoot {
 
 html { scroll-behavior: smooth; }
 </style>
+</head>
+<body>
+
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
@@ -1172,37 +1181,50 @@ html { scroll-behavior: smooth; }
   <div class="section-head">
     <span class="section-num">§0</span>
     <div>
-      <h2>What MDS ships today</h2>
-      <p>A strong token layer with a thin component layer. The existing set is well chosen — the prototypes reused all of it.</p>
+      <h2>What MDS has designed today</h2>
+      <p>Measured at the <strong>token</strong> layer — the design source of truth — not the React component code. A component is "designed" when it has tokens, or when the generic semantics already stretch to cover it.</p>
     </div>
   </div>
 
   <div class="prose">
-    <p>Tokens cover colour, typography, spacing, borders, radii, shadows, sizes and breakpoints.
-    That layer is why seven independently built pages look like one product. The component
-    layer is where the work is.</p>
+    <p><strong>354 design tokens</strong> sit on <span class="mono">main</span> across eight groups:
+    primitives, typography, spacing, borders, shadows, colours, sizes and breakpoints. That layer is
+    why seven independently built pages look like one product.</p>
+    <p>Most of it is generic semantics — <span class="mono">bg-*</span>, <span class="mono">text-*</span>,
+    <span class="mono">border-*</span>. MDS mints <em>component-scoped</em> tokens only where those
+    generics don't stretch. Badge and progress-bar are both built components with no tokens of their
+    own, and that's correct, not an omission. <strong>So a missing token family isn't automatically a
+    gap — but a whole missing interaction pattern is.</strong></p>
   </div>
 
   <div class="demo" style="margin-top:var(--s-md)">
-    <div class="demo-bar"><span>Component inventory · v5.1.2</span><span>14 shipped</span></div>
+    <div class="demo-bar"><span>Component-scoped token families · main</span><span>38 tokens</span></div>
     <div class="demo-stage">
       <div class="inventory">
-        <span class="inv">activity-icon</span><span class="inv">avatar</span><span class="inv">badge</span>
-        <span class="inv">button</span><span class="inv">checkbox</span><span class="inv">choicebox</span>
-        <span class="inv">close-button</span><span class="inv">favourite-button</span><span class="inv">link</span>
-        <span class="inv">nav-pill</span><span class="inv">pagination</span><span class="inv">progress-bar</span>
-        <span class="inv">radio</span>
+        <span class="inv">activity icon · 14</span><span class="inv">icon sizes · 8</span>
+        <span class="inv">switch · 7</span><span class="inv">avatar sizes · 6</span>
+        <span class="inv">nav-pill · 3</span>
       </div>
       <div style="height:var(--s-md)"></div>
+      <p class="caption" style="margin-bottom:.5rem">No tokens exist for any of these — each is a design decision not yet made:</p>
       <div class="inventory">
         <span class="inv gap">input</span><span class="inv gap">select</span><span class="inv gap">textarea</span>
-        <span class="inv gap">switch</span><span class="inv gap">menu</span><span class="inv gap">modal</span>
+        <span class="inv gap">dropdown / menu</span><span class="inv gap">modal</span>
         <span class="inv gap">card</span><span class="inv gap">table</span><span class="inv gap">tabs</span>
         <span class="inv gap">drawer</span><span class="inv gap">toast</span><span class="inv gap">banner</span>
         <span class="inv gap">empty-state</span><span class="inv gap">chip</span><span class="inv gap">stepper</span>
+        <span class="inv gap">breadcrumb</span><span class="inv gap">layering</span>
+        <span class="inv gap">motion</span><span class="inv gap">focus ring</span>
       </div>
-      <p class="caption" style="margin-top:var(--s-sm)">Struck-through entries are what the prototypes had to build themselves.</p>
     </div>
+  </div>
+
+  <div class="flag" style="margin-top:var(--s-md);max-width:none">
+    <b>QA note</b>
+    <span>This page was re-checked against <span class="mono">moodlehq/design-system@main</span> on
+    30 July 2026. Published npm is <span class="mono">5.1.2</span>; <span class="mono">main</span>
+    carries <strong>10 tokens beyond it</strong> — seven of them Switch. Three recommendations below
+    changed status as a result, and each says so. Everything else was confirmed still open.</span>
   </div>
 </section>
 
@@ -1406,7 +1428,7 @@ html { scroll-behavior: smooth; }
       <div class="entry-title">
         <span class="ref">1.5</span>
         <h3>Switch</h3>
-        <span class="pill build">Build</span>
+        <span class="pill inflight">Already designed</span>
       </div>
       <div class="needs">
         <span class="needs-label">Needed by</span>
@@ -1414,9 +1436,19 @@ html { scroll-behavior: smooth; }
       </div>
     </div>
     <div class="entry-body">
+      <div class="flag">
+        <b>Done</b>
+        <span><strong>This one is already designed and tokenised — no scoping needed.</strong>
+        Seven Switch tokens are on <span class="mono">main</span> (track and thumb, in default,
+        hover and disabled, plus a track padding) and ship in <span class="mono">5.2.0</span>. The
+        component carries semantic variants for enablement, visibility and lock. Listed here only so
+        the set reads complete.</span>
+      </div>
+
       <p>Semantically different from a checkbox. <strong>A switch means "this takes effect now";
       a checkbox means "this is a value I will save."</strong> Moodle uses checkboxes for both
-      today, which is exactly why edit-mode toggles feel wrong.</p>
+      today, which is exactly why edit-mode toggles feel wrong — and why having this settled
+      matters more than its size suggests.</p>
 
       <div class="demo">
         <div class="demo-bar"><span>Specimen</span><span>try them</span></div>
@@ -1750,7 +1782,7 @@ html { scroll-behavior: smooth; }
       <div class="entry-title">
         <span class="ref">3.1</span>
         <h3>Dropdown / action menu</h3>
-        <span class="pill build">Build</span>
+        <span class="pill inflight">Tokens outstanding</span>
       </div>
       <div class="needs">
         <span class="needs-label">Needed by</span>
@@ -1758,7 +1790,16 @@ html { scroll-behavior: smooth; }
       </div>
     </div>
     <div class="entry-body">
-      <p><strong>The highest-reuse missing component in the set.</strong> It powers the "Manage"
+      <div class="flag">
+        <b>Changed</b>
+        <span><strong>The component has been built</strong> — a full suite with trigger, menu,
+        action/select/expandable/multiselect items, headings and dividers, on the WAI-ARIA menu
+        pattern. But <strong>it has no design tokens</strong>, and its own author flagged a
+        hardcoded menu width with a note that no matching token exists. So at the design layer this
+        is still open: the ask here is the token set, not the code.</span>
+      </div>
+
+      <p><strong>The highest-reuse pattern in the set.</strong> It powers the "Manage"
       menu that book, quiz, forum, assignment and course settings <em>all</em> independently
       proposed to consolidate their secondary navigation into, plus the row actions and the
       context-aware add menu. One component, five prototypes' worth of consolidation.</p>
@@ -2469,7 +2510,7 @@ html { scroll-behavior: smooth; }
       <div class="entry-title">
         <span class="ref">6.5</span>
         <h3>Breadcrumb</h3>
-        <span class="pill build">Build</span>
+        <span class="pill inflight">In progress</span>
       </div>
       <div class="needs">
         <span class="needs-label">Needed by</span>
@@ -2477,6 +2518,12 @@ html { scroll-behavior: smooth; }
       </div>
     </div>
     <div class="entry-body">
+      <div class="flag">
+        <b>Changed</b>
+        <span><strong>Already in flight</strong> — a breadcrumb component is in draft, built on the
+        tooltip and dropdown work. No tokens yet. Worth tracking rather than scoping.</span>
+      </div>
+
       <p>Where you are, and how to get back up. Used on every settings surface in the set.</p>
 
       <div class="demo">
@@ -2688,10 +2735,11 @@ html { scroll-behavior: smooth; }
       <div class="wave-b">
         <h4>Unblocks four prototypes</h4>
         <p>The minimum set that makes any "modernise the settings page" initiative buildable.
-        Every settings surface across book, quiz, assignment and course settings depends on it.</p>
+        Every settings surface across book, quiz, assignment and course settings depends on it.
+        Switch has dropped out of this wave — it's already designed.</p>
         <div class="wave-list">
           <span>Field wrapper</span><span>Text input</span><span>Select</span><span>Textarea shell</span>
-          <span>Switch</span><span>Dropdown menu</span><span>Anchored settings layout</span>
+          <span>Dropdown menu tokens</span><span>Anchored settings layout</span>
         </div>
       </div>
     </div>
@@ -2730,7 +2778,7 @@ html { scroll-behavior: smooth; }
         <p>Everything that makes the set coherent rather than partial.</p>
         <div class="wave-list">
           <span>Stat tile</span><span>Content block</span><span>Empty state</span><span>Notice banner</span>
-          <span>Tab strip overflow</span><span>Preview pane</span><span>Breadcrumb</span>
+          <span>Tab strip overflow</span><span>Preview pane</span>
           <span>The seven atomics</span><span>Motion + focus tokens</span>
         </div>
       </div>
@@ -2747,7 +2795,7 @@ html { scroll-behavior: smooth; }
     <div class="three">
       <span>Form field set</span>
       <span>Anchored settings layout</span>
-      <span>Dropdown menu</span>
+      <span>Dropdown menu tokens</span>
     </div>
   </div>
 
@@ -2840,3 +2888,6 @@ html { scroll-behavior: smooth; }
   });
 })();
 </script>
+
+</body>
+</html>
