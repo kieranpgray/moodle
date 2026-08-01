@@ -2593,9 +2593,9 @@
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
       <div class="anno-badge">1</div>
       <div class="anno-title"><i class="fa-regular fa-eye"></i> Visibility dropdown</div>
-      <div class="anno-body"><strong>Today:</strong> to change who can see an activity you open the &#8942; menu, find Availability, and pick from a submenu &mdash; three steps, and the current setting is only visible as a text badge once it is not the default.<br><br><strong>Here:</strong> it is one control on the card. The icon shows the current setting at a glance, and selecting it offers the three choices straight away &mdash; visible, hidden, or available by link only.<br><br>When you are not editing, activities set to normal show nothing at all. Only the ones that are hidden or link-only carry an icon, and you can select it to read what it means.</div>
+      <div class="anno-body">Today this is reached through the &#8942; menu and reported separately as a badge on the activity. It becomes a single three-state dropdown on the card, showing the current setting at a glance. Fully accessible.</div>
     </div>
-    <div class="anno-card" data-anno="draghandle" data-target=".acard[data-mod='glossary'] .acard-drag" data-side="bottom">
+    <div class="anno-card" data-anno="draghandle" data-target=".acard[data-activity='course-syllabus-study-guide'] .acard-drag" data-side="bottom">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
       <div class="anno-badge">2</div>
       <div class="anno-title"><i class="fa-solid fa-grip-vertical"></i> Drag handle</div>
@@ -3452,8 +3452,15 @@ SECTIONS.push({
     /* data-mod lets an annotation point at one specific activity rather than
        "the first card on the page", which is how the drag-handle note ended
        up pinned to the top of the course. */
+    /* data-activity is a slug of the name, so an annotation can point at ONE
+       activity. data-mod is not enough on its own — there are three books on
+       this page, so ".acard[data-mod='book']" would land on whichever came
+       first rather than the one meant. */
+    var slug = (it.name || '').toLowerCase().replace(/&[a-z]+;/g, ' ')
+                 .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     var html = '<article class="' + cls + '" data-purpose="' + m.purpose + '"'
-      + (it.mod ? ' data-mod="' + esc(it.mod) + '"' : '') + '>'
+      + (it.mod ? ' data-mod="' + esc(it.mod) + '"' : '')
+      + (slug ? ' data-activity="' + slug + '"' : '') + '>'
       + '<div class="acard-body">'
         + '<div class="acard-main">'
           + '<div class="acard-top">'
