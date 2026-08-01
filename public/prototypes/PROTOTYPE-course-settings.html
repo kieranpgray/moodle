@@ -1188,10 +1188,18 @@
   .adesc{ margin:0; font-size:14px; line-height:20px; color:var(--mds-text-muted); }
   .acard-badges{ display:flex; flex-wrap:wrap; align-items:flex-start; gap:var(--mds-spacing-xs); }
 
-  /* hidden-from-students treatment (design: muted label + title, greyed icon) */
+  /* Hidden-from-students treatment, sampled from Figma 4142:55649: the whole
+     identity block desaturates to one grey — type label, activity icon and
+     title all #6a737b, which is --mds-text-muted. The description is already
+     that colour, and the dates and controls are left alone.
+     The title has three possible shapes — a link in view mode, a button with
+     a .ttext span in edit mode, and the bare heading — so all three are
+     targeted. Previously only the link was, which meant the title stayed
+     full-strength in edit mode. */
   .acard.is-hidden .atype{ color:var(--mds-text-muted) !important; }
-  .acard.is-hidden .atitle a{ color:var(--mds-text-muted); }
-  .acard.is-hidden .atype i{ filter:grayscale(1) brightness(1.15); }
+  .acard.is-hidden .atitle,
+  .acard.is-hidden .atitle a,
+  .acard.is-hidden .atitle .ttext{ color:var(--mds-text-muted); }
 
   /* date badges — grey fill, no border, no icon. One treatment for every
      date type (decision D1); the calendar glyph was an in-flight design
