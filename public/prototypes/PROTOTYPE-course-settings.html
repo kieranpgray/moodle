@@ -760,7 +760,6 @@
     background:var(--mds-color-blue-50); color:var(--mds-color-blue-600); }
   .ws-titlerow h1{ margin:0; font-size:var(--mds-font-size-headings-3); line-height:var(--mds-line-height-headings-3);
     font-weight:var(--mds-font-weight-bold); color:var(--mds-text-default); }
-  .ws-titlerow .ws-sub{ margin:.15rem 0 0; font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); }
   .ws-headactions{ margin-left:auto; display:flex; gap:.5rem; align-items:center; }
 
   /* ---- SECONDARY NAVIGATION ----
@@ -778,8 +777,13 @@
        Figma spacing xs/sm 8/12, radius md 8, $font-size-sm 14, weight medium
      ...all of which .nav-pill already sets. Only layout and the trailing
      action are new here. */
-  .ws-secondary{ display:flex; align-items:center; justify-content:space-between;
+  .ws-secondary{ display:flex; align-items:center;
     gap:var(--mds-spacing-md); margin-top:var(--mds-spacing-md); }
+  /* Page actions, on their own row below the nav. Right-aligned, which is
+     where Collapse all already sat horizontally, so it keeps its position
+     on the page and only changes row. */
+  .ws-pageactions{ display:flex; align-items:center; justify-content:flex-end;
+    gap:var(--mds-spacing-xs); margin-top:var(--mds-spacing-xs); }
   .ws-navwrap{ position:relative; flex:1 1 auto; min-width:0; }
   .ws-navwrap.more-right::after{ content:""; position:absolute; right:0; top:0; bottom:0; width:36px;
     pointer-events:none; background:linear-gradient(to right, rgba(255,255,255,0), var(--mds-bg-surface-default)); }
@@ -1548,7 +1552,6 @@
             <span class="ws-tile"><i class="fa-solid fa-graduation-cap"></i></span>
             <div>
               <h1 id="wsTitle">Biology 101</h1>
-              <p class="ws-sub" id="wsSub">Faculty of Science &middot; Semester 2, 2026 &middot; BIO101</p>
             </div>
             <div class="ws-headactions">
               <button class="btn btn-secondary" id="viewCourseBtn"><i class="fa-solid fa-arrow-up-right-from-square"></i> View course</button>
@@ -1572,6 +1575,14 @@
                 <button class="nav-pill" data-tab="more" id="moreTab" aria-haspopup="menu" aria-expanded="false">More</button>
               </nav>
             </div>
+          </div>
+          <!-- Collapse all sits on its own row BELOW the nav, not trailing it.
+               On the nav row it was competing with the tabs for horizontal
+               space — the tab strip already scrolls and overflows into More,
+               so the one element that could yield was the one that is not
+               navigation. It also made the row mean two things at once:
+               "where am I in the course" and "act on what is below". -->
+          <div class="ws-pageactions">
             <button class="ws-collapseall" id="wsCollapseAll">
               <i class="fa-solid fa-down-left-and-up-right-to-center"></i> <span>Collapse all</span>
             </button>
@@ -2247,7 +2258,7 @@
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
       <div class="anno-badge">9</div>
       <div class="anno-title"><i class="fa-solid fa-down-left-and-up-right-to-center"></i> Trailing action slot</div>
-      <div class="anno-body">The design pairs the nav with a right-aligned <strong>Collapse all</strong>. It applies to the course page and the Activities list &mdash; <em>open question for design: what should sit here on Settings, where there is nothing to collapse?</em></div>
+      <div class="anno-body"><strong>Collapse all</strong> now sits on its own row below the nav, still right-aligned. On the nav row it competed with the tabs for width &mdash; and the tab strip already scrolls and overflows into <strong>More</strong>, so the element that should yield is the one that is not navigation. It also stopped the row meaning two things at once: where you are, and what to do to what is below. <em>This answers the open question about Settings: the row is hidden wherever there is nothing to collapse, so only the course page and the Activities list show it.</em></div>
     </div>
     <div class="anno-card" data-anno="anchor" data-target="#settingsNav" data-side="right">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
@@ -3686,6 +3697,16 @@ SECTIONS.push({
       b.classList.toggle("on", b.dataset.state === name);
     });
     document.querySelector("#wsCollapseAll span").textContent = "Collapse all";
+    /* Giving Collapse all its own row made an existing problem visible: it
+       showed on every tab, including Settings, where there is nothing to
+       collapse. Trailing the nav that read as a stray button; on a row of
+       its own it is a whole empty row. So the row is hidden where it has
+       no work to do. Only the course page and the Activities list have
+       collapsible groups. This is the open question annotation 9 raised —
+       answered by removing the control rather than finding something to
+       put beside it. */
+    document.querySelector(".ws-pageactions").style.display =
+      (name === "course" || name === "activities") ? "flex" : "none";
     updateDevName();
     window.scrollTo({ top:0, behavior:"instant" in window ? "instant" : "auto" });
     setTimeout(updateAnnotations, 30);
@@ -3818,9 +3839,6 @@ SECTIONS.push({
     document.getElementById("createBanner").style.display = creating ? "flex" : "none";
     document.getElementById("wsTitle").textContent = creating ? "Add a new course" : "Biology 101";
     document.getElementById("crumbCourse").textContent = creating ? "Add a new course" : "Biology 101";
-    document.getElementById("wsSub").textContent = creating
-      ? "New course in Faculty of Science / Biology"
-      : "Faculty of Science · Semester 2, 2026 · BIO101";
     document.getElementById("saveState").textContent = creating ? "Not saved yet" : "Last saved 4 minutes ago";
     document.getElementById("saveReturnBtn").textContent = creating ? "Save and return" : "Save and return";
     document.getElementById("saveBtn").innerHTML = creating
@@ -4419,9 +4437,23 @@ laid out justify-between. Adopted verbatim:
     falls outside the five the design shows; courseoverview ("Activities",
     weight 3, get_string('activities') -> /course/overview.php,
     global_navigation.php:2048) is the one that belongs there.
-  - Trailing "Collapse all": FA down-left-and-up-right-to-center at icons/xs
-    (12px) + a 14px text/muted label. The course index already renders exactly
-    this control (.ci-collapseall), so the treatment is reused.
+  - "Collapse all": FA down-left-and-up-right-to-center at icons/xs (12px) +
+    a 14px text/muted label. The course index already renders exactly this
+    control (.ci-collapseall), so the treatment is reused.
+DIVERGENCE — Collapse all is NOT trailing the nav. The design lays the row
+out justify-between with the action on the same line as the pills. Here it
+sits on its own row below, still right-aligned, for two reasons:
+  1. The pills already scroll and overflow into More, so the nav row is the
+     one place on the page that is short of horizontal space. The element
+     that should give way is the one that is not navigation.
+  2. The row otherwise means two things at once — "where am I in the course"
+     and "act on everything below" — which are answered by different parts
+     of the same strip.
+The row is hidden on tabs with nothing to collapse, which settles the open
+question this prototype previously flagged as annotation 9 ("what should sit
+here on Settings?"). The answer is nothing: remove the control rather than
+find a companion for it. Only the course page and the Activities list have
+collapsible groups.
 Token mapping (get_variable_defs on the node -> the prototype's :root, all
 1:1 with tokens already present, nothing new invented):
   color/theme/primary #0f6cbf -> --mds-bg-interactive-primary-default (dot)
@@ -4436,10 +4468,12 @@ One deliberate deviation: the design gives the Expand/collapse control a
 10px corner radius and a fixed 118px width. Both are off-token, so the
 prototype uses --mds-border-radius-md (8px) and intrinsic width, consistent
 with this file's "no eyeballed values" rule. Worth confirming with design.
-OPEN QUESTION FOR DESIGN (flagged as annotation 9): the trailing Collapse all
-makes sense on the course page and on Activities, but there is nothing to
-collapse on Settings. Does the slot stay empty, disappear, or take a
-per-destination action?
+RESOLVED (was annotation 9's open question): Collapse all made sense on the
+course page and on Activities but had nothing to collapse on Settings. Now
+that it has a row of its own the row is simply hidden there. It is no longer
+a slot in the nav that needs filling, so "what else goes here?" stops being
+a question — which is the main practical argument for moving it off the nav
+row at all.
 
 Tabs = the real course secondary navigation, from
 lib/classes/navigation/views/secondary.php::get_default_course_mapping():
