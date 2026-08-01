@@ -2337,57 +2337,63 @@
     <i class="fa-solid fa-location-dot"></i> <span id="annoToggleLabel">Hide annotations</span>
   </button>
   <div class="anno-layer" id="annoLayer">
-    <div class="anno-card" data-anno="tabs" data-target=".ws-secondnav" data-side="bottom">
+    <div class="anno-card" data-anno="visibility" data-target=".acard [data-map='vis']" data-side="right">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
       <div class="anno-badge">1</div>
-      <div class="anno-title"><i class="fa-solid fa-folder-tree"></i> Secondary navigation</div>
-      <div class="anno-body">Nav pills taken from the LMS uplift design &mdash; the same component as the top nav, with a dot marking the current destination. The order is the real one: Settings, Participants, Grades, then <strong>Activities</strong>. Everything past that, including Reports and Course reuse, sits under <strong>More</strong>.</div>
+      <div class="anno-title"><i class="fa-regular fa-eye"></i> Visibility dropdown</div>
+      <div class="anno-body">An icon-only menu carrying all <strong>three</strong> states core supports &mdash; show, hide, and available-but-not-shown &mdash; not the two in the design. Stealth is a site-level switch, so where it is on, every activity offers it. The 28px button has a 44px touch target painted underneath. <em>Out of edit mode there is no control at all when the state is the default; any other state becomes a non-interactive indicator you can tap to reveal what it means.</em></div>
     </div>
-    <div class="anno-card" data-anno="collapse" data-target="#wsCollapseAll" data-side="left">
+    <div class="anno-card" data-anno="draghandle" data-target=".acard .acard-drag" data-side="top">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
-      <div class="anno-badge">9</div>
-      <div class="anno-title"><i class="fa-solid fa-down-left-and-up-right-to-center"></i> Trailing action slot</div>
-      <div class="anno-body"><strong>Collapse all</strong> now sits on its own row below the nav, still right-aligned. On the nav row it competed with the tabs for width &mdash; and the tab strip already scrolls and overflows into <strong>More</strong>, so the element that should yield is the one that is not navigation. It also stopped the row meaning two things at once: where you are, and what to do to what is below. <em>This answers the open question about Settings: the row is hidden wherever there is nothing to collapse, so only the course page and the Activities list show it.</em></div>
+      <div class="anno-badge">2</div>
+      <div class="anno-title"><i class="fa-solid fa-grip-vertical"></i> Drag handle</div>
+      <div class="anno-body">16px, sitting flush with the card&rsquo;s padding edge with an 8px gap to the icon &mdash; per 4501:46473. It was previously in a 28px box, which pushed the whole identity cluster right and broke the alignment with the title below. Edit mode only.</div>
+    </div>
+    <div class="anno-card" data-anno="modicon" data-target=".acard .atype" data-side="bottom">
+      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+      <div class="anno-badge">3</div>
+      <div class="anno-title"><i class="fa-solid fa-shapes"></i> Real icons, dynamic label</div>
+      <div class="anno-body">The icons are each module&rsquo;s own <code>monologo.svg</code> from the codebase, not stand-ins, recoloured to the activity purpose. The type label beside it is <strong>edit mode only</strong> &mdash; in view mode the icon carries the type visually and the words stay as screen-reader-only text, because core gives that icon an empty alt outside edit mode and the type is currently announced to nobody.</div>
     </div>
     <div class="anno-card" data-anno="anchor" data-target="#settingsNav" data-side="right">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
-      <div class="anno-badge">2</div>
+      <div class="anno-badge">4</div>
       <div class="anno-title"><i class="fa-solid fa-list-ul"></i> Two-column anchored settings</div>
       <div class="anno-body">Ten collapsed accordions become one scrollable form with a sticky section rail that tracks where you are. Nothing is hidden, and you can see how long the form actually is.</div>
     </div>
     <div class="anno-card" data-anno="format" data-target="#fmtFields" data-side="left">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
-      <div class="anno-badge">3</div>
+      <div class="anno-badge">5</div>
       <div class="anno-title"><i class="fa-solid fa-shuffle"></i> Format settings swap live</div>
       <div class="anno-body">Each course format contributes its own settings. Today changing the format needs an <strong>Update format</strong> button that reloads the page before you can see them. Try switching between Topics, Weekly, Single activity and Social.</div>
     </div>
     <div class="anno-card" data-anno="preview" data-target=".fmt-preview" data-side="left">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
-      <div class="anno-badge">4</div>
+      <div class="anno-badge">6</div>
       <div class="anno-title"><i class="fa-solid fa-eye"></i> Preview the consequence</div>
       <div class="anno-body">Format, section display and hidden-section handling are hard to picture from a dropdown label. The preview shows the shape of the course page the choice produces.</div>
     </div>
     <div class="anno-card" data-anno="cond" data-target="#sec-general .field[data-gate='downloadcontent'] .cond" data-side="right">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
-      <div class="anno-badge">5</div>
+      <div class="anno-badge">7</div>
       <div class="anno-title"><i class="fa-solid fa-toggle-on"></i> Conditional fields are labelled</div>
       <div class="anno-body">Around a third of this form only appears on some sites &mdash; depending on site settings, installed plugins or your capabilities. Flagging them explains why two colleagues see different forms. Use <strong>Site configuration</strong> in the State panel to compare.</div>
     </div>
     <div class="anno-card" data-anno="locked" data-target="#relLockNote" data-side="right">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
-      <div class="anno-badge">6</div>
+      <div class="anno-badge">8</div>
       <div class="anno-title"><i class="fa-solid fa-lock"></i> Say why something is locked</div>
       <div class="anno-body">Relative dates mode is disabled once a course exists, with no explanation given today. Frozen fields state the reason rather than just appearing broken.</div>
     </div>
     <div class="anno-card" data-anno="save" data-target=".ws-savebar" data-side="top">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
-      <div class="anno-badge">7</div>
+      <div class="anno-badge">9</div>
       <div class="anno-title"><i class="fa-solid fa-floppy-disk"></i> Save bar stays in reach</div>
       <div class="anno-body">The sticky save footer already exists for this form. What changes is that it is contained to the content column, so it can no longer paint over the course index &mdash; the fix explored in the sticky-footer prototype.</div>
     </div>
     <div class="anno-card" data-anno="state" data-target=".devswitch" data-side="top">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
-      <div class="anno-badge">8</div>
+      <div class="anno-badge">10</div>
       <div class="anno-title"><i class="fa-solid fa-flask"></i> Prototype state switcher</div>
       <div class="anno-body">Demo-only. Jumps between tabs, between creating and editing a course, and between a fully-configured site and a minimal one. Use the &minus; to minimise it out of the way; click the chip to bring it back.</div>
     </div>
@@ -4231,6 +4237,7 @@ SECTIONS.push({
   function updateAnnotations(){
     if(!annoLayer) return;
     var vw = window.innerWidth, vh = window.innerHeight;
+    var placed = [];
     annoCards.forEach(function(card, i){
       var ring = annoRings[i];
       if(!annoOn || card.dataset.dismissed === "1"){ card.style.display = "none"; ring.style.display = "none"; return; }
@@ -4249,6 +4256,74 @@ SECTIONS.push({
       cl = Math.max(8, Math.min(cl, vw - cw - 8));
       ct = Math.max(72, Math.min(ct, vh - chh - 8));
       card.style.left = cl + "px"; card.style.top = ct + "px";
+      placed.push({ card: card, l: cl, t: ct, w: cw, h: chh });
+    });
+    deoverlap(placed, vw, vh, obstacles());
+  }
+
+  /* Fixed chrome that a card must not hide behind. These are not
+     annotations, so nothing else would ever move them out of the way — the
+     drag-handle card is anchored at the far left of the activity card and
+     landed squarely behind the state panel, which is the same practical
+     problem as two cards colliding. */
+  function obstacles(){
+    return [".devswitch", ".anno-toggle"].map(function(sel){
+      var el = document.querySelector(sel);
+      if(!el || !isElVisible(el)) return null;
+      var r = el.getBoundingClientRect();
+      return { l: r.left, t: r.top, w: r.width, h: r.height, fixed: true };
+    }).filter(Boolean);
+  }
+
+  /* Keep annotation cards off each other.
+
+     There was no collision handling at all: every card was positioned from
+     its own target and nothing checked the result. That was survivable
+     while the visible cards pointed at targets far apart, but the visibility
+     dropdown, the drag handle and the activity icon all anchor to the same
+     card's top row, so their labels land within a few pixels of each other
+     and the text becomes unreadable.
+
+     data-side already separates them by intent — left, right and below —
+     so this only has to resolve what is left.
+
+     Each card is pushed out along the SHORTEST axis that still fits on
+     screen, not always downwards. An earlier version always tried down
+     then up, which ping-ponged: a card would move up off one box, land on
+     another, get sent back down, and run out of passes still overlapping.
+     Minimum-translation is both stable and less disruptive — a 13px corner
+     clip is fixed with a 13px nudge rather than by relocating the card.
+
+     Fixed chrome is seeded first and never moves. Cards then settle
+     top-down against everything already placed. Only genuine intersections
+     move, so a card that was clear keeps the position its side asked for. */
+  function deoverlap(placed, vw, vh, fixedBoxes){
+    placed.sort(function(a, b){ return a.t - b.t || a.l - b.l; });
+    var settled = (fixedBoxes || []).slice();   // immovable, and always in the way
+    var gap = 10;
+    placed.forEach(function(c){
+      for(var pass = 0; pass < settled.length + 2; pass++){
+        var hit = null;
+        for(var j = 0; j < settled.length; j++){
+          var o = settled[j];
+          if(c.l < o.l + o.w && c.l + c.w > o.l && c.t < o.t + o.h && c.t + c.h > o.t){ hit = o; break; }
+        }
+        if(!hit) break;
+        // four ways out, each with the distance it costs and whether it fits
+        var moves = [
+          { d: (hit.t + hit.h + gap) - c.t,        t: hit.t + hit.h + gap, l: c.l },
+          { d: c.t - (hit.t - c.h - gap),          t: hit.t - c.h - gap,   l: c.l },
+          { d: (hit.l + hit.w + gap) - c.l,        t: c.t, l: hit.l + hit.w + gap },
+          { d: c.l - (hit.l - c.w - gap),          t: c.t, l: hit.l - c.w - gap }
+        ].filter(function(m){
+          return m.t >= 72 && m.t + c.h <= vh - 8 && m.l >= 8 && m.l + c.w <= vw - 8;
+        }).sort(function(a, b){ return a.d - b.d; });
+        if(!moves.length) break;              // boxed in; leave it where it is
+        c.t = moves[0].t; c.l = moves[0].l;
+      }
+      c.card.style.top = c.t + "px";
+      c.card.style.left = c.l + "px";
+      settled.push(c);
     });
   }
   annoToggle.addEventListener("click", function(){
