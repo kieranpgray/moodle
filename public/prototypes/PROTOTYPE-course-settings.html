@@ -2800,7 +2800,17 @@ SECTIONS.push({
           + '<div class="acard-top">'
             + '<div class="acard-identity">'
               + (teacher && editing ? '<button type="button" class="acard-drag" aria-label="Move ' + esc(it.name) + '"><i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>' : '')
-              + '<span class="atype" style="color:var(--p-' + m.purpose + ')"><i class="' + m.icon + '" aria-hidden="true"></i>' + m.label + '</span>'
+              /* Activity type label: edit mode only (decision D27). In view
+                 mode the icon carries the type visually — but the label is
+                 kept as visually hidden text rather than dropped, because
+                 outside edit mode core's icon has an empty alt and the type
+                 is currently announced to nobody. Removing it outright
+                 would leave screen reader users worse off than today (D18). */
+              + '<span class="atype" style="color:var(--p-' + m.purpose + ')">'
+                + '<i class="' + m.icon + '" aria-hidden="true"></i>'
+                + (editing ? '<span class="tlabel">' + m.label + '</span>'
+                           : '<span class="sr-only">' + m.label + '</span>')
+              + '</span>'
             + '</div>'
             + (actions ? '<div class="acard-actions">' + actions + '</div>' : '')
           + '</div>'
