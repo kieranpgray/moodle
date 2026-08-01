@@ -1272,6 +1272,28 @@
   .acard.is-hidden .atitle a,
   .acard.is-hidden .atitle .ttext{ color:var(--mds-text-muted); }
 
+  /* ------------------------------------------------------------------
+     TYPE LABEL IN GREY — a deliberate divergence, made on request.
+
+     Both Figma nodes put this text in the purpose colour: sampling the
+     ink gives #db1a74 for "Assignment" in 4501:46419 and #008196 for the
+     content modules in 4515:51706. Worth knowing if this ever gets
+     compared back against the design.
+
+     The ICON keeps the purpose colour. .atype still carries it inline,
+     and only the text overrides, so the colour coding is not lost — it
+     is just carried by the icon alone, with the label reading as the
+     quiet caption it is rather than competing with the title beneath.
+
+     --mds-text-subtle #495057 rather than --mds-text-muted #6a737b, so
+     that a hidden card's label is still a visible step further down.
+     Both clear AA on #f8f9fa (8.2:1 and 4.7:1). The hidden rule above
+     sets .atype with !important, but this targets .tlabel, so the
+     is-hidden override below is needed to win it back.
+     ------------------------------------------------------------------ */
+  .atype .tlabel{ color:var(--mds-text-subtle); }
+  .acard.is-hidden .atype .tlabel{ color:var(--mds-text-muted); }
+
   /* Date badges — restyled to Figma 4501:47709 (Badges component), with the
      in-card positioning taken from 4501:47679.
 
