@@ -1335,6 +1335,27 @@
     display:inline; font-size:12px; font-weight:500; white-space:nowrap;
   }
 
+  /* ---- completion control ----
+     Teacher: a disclosure listing the conditions. Student: a state pill.
+     Wider than the icon-only triggers, so it opts out of the 28px box. */
+  .comp-btn{
+    width:auto; gap:6px; padding:0 10px; height:28px;
+    font-size:13px; font-weight:500; white-space:nowrap;
+  }
+  .comp-btn .cchev{ font-size:10px; }
+  .comp-btn.is-done{ color:var(--mds-color-green-500,#357a32); }
+  .comp-panel{
+    position:absolute; top:calc(100% + 6px); right:0; z-index:40;
+    min-width:min(220px, calc(100vw - 32px)); max-width:min(300px, calc(100vw - 32px));
+    padding:14px 16px; background:var(--surface);
+    border:1px solid var(--mds-border-default); border-radius:8px;
+    box-shadow:0 6px 20px rgba(29,33,37,.14); text-align:left;
+  }
+  .comp-panel[hidden]{ display:none; }
+  .comp-head{ margin:0 0 6px; font-size:15px; font-weight:650; line-height:1.3; }
+  .comp-list{ margin:0; padding-left:20px; }
+  .comp-list li{ font-size:14px; line-height:22px; color:var(--mds-text-subtle); }
+
   /* ---- menu: MDS dropdown pattern ----
      design.moodle.com/98292f05f/p/8381b3-dropdown. Panel with border,
      radius and shadow; rows of icon + name + optional description;
@@ -2493,19 +2514,54 @@ SECTIONS.push({
   function chipHTML(c){
     return '<span class="chip ' + c.cls + '"><i class="' + c.icon + '"></i>' + esc(c.text) + '</span>';
   }
+  /* The completion-status footer ("Done.", "No submission yet." and the
+     rest) is gone: completion now lives in the card's control row, which
+     is where the design puts it. Only a grade still warrants a footer,
+     because it is separate information and has nowhere else to go. */
   function footHTML(it){
-    var f = it.foot;
-    if(!f && it.manual){
-      return '<div class="afoot"><button class="todo-btn" data-todo>'
-        + '<i class="fa-regular fa-circle"></i>To do<i class="fa-solid fa-chevron-down"></i></button></div>';
+    var grade = (it.foot && it.foot.grade) || it.grade;
+    if(!grade) return '';
+    return '<div class="afoot"><span class="grade">' + esc(grade) + '</span></div>';
+  }
+
+  /* Completion conditions shown to a teacher. Core's condition wording;
+     per-item override via it.completion. */
+  function completionConditions(it){
+    if(it.completion) return it.completion;
+    if(it.manual) return ["Mark as done"];
+    var m = it.mod;
+    if(m === "assign") return ["View", "Make a submission", "Receive a grade"];
+    if(m === "quiz") return ["View", "Receive a grade"];
+    if(m === "workshop") return ["View", "Make a submission"];
+    if(m === "forum") return ["View", "Post replies or discussions"];
+    if(m === "choice" || m === "feedback") return ["View", "Make a choice"];
+    return ["View"];
+  }
+
+  var compSeq = 0;
+  /* Teacher: a disclosure listing what students must do. Not a menu — it
+     offers no choices — so it is a button with aria-expanded controlling a
+     panel, not menu/menuitem roles.
+     Student: the completion state as a pill, matching the design's "To Do". */
+  function completionHTML(it, teacher){
+    if(!teacher){
+      var doneState = it.done || (it.foot && it.foot.cls === "done");
+      return '<button type="button" class="idd-btn comp-btn' + (doneState ? ' is-done' : '') + '">'
+        + '<i class="' + (doneState ? "fa-solid fa-circle-check" : "fa-regular fa-circle")
+        + '" aria-hidden="true"></i>'
+        + '<span class="ctext">' + (doneState ? "Done" : "To do") + '</span>'
+        + '<i class="fa-solid fa-chevron-down cchev" aria-hidden="true"></i></button>';
     }
-    if(!f && it.done) f = { icon:"fa-solid fa-circle-check", cls:"done", text:"Done." };
-    if(!f && !it.grade) return '';
-    var grade = (f && f.grade) || it.grade;
-    var html = '<div class="afoot' + (f && f.teacher ? ' teacheronly' : '') + '">';
-    if(f) html += '<i class="' + f.icon + '"></i><span>' + esc(f.text) + '</span>';
-    if(grade) html += '<span class="grade">' + esc(grade) + '</span>';
-    return html + '</div>';
+    var id = "comp" + (++compSeq);
+    var items = completionConditions(it).map(function(c){ return '<li>' + esc(c) + '</li>'; }).join('');
+    return '<div class="idd" data-comp>'
+      + '<button type="button" class="idd-btn comp-btn" aria-expanded="false" aria-controls="' + id + '">'
+        + '<span class="ctext">Completion</span>'
+        + '<i class="fa-solid fa-chevron-down cchev" aria-hidden="true"></i>'
+      + '</button>'
+      + '<div class="comp-panel" id="' + id + '" hidden>'
+        + '<p class="comp-head">Students must</p><ul class="comp-list">' + items + '</ul>'
+      + '</div></div>';
   }
   /* ============================================================
      VISIBILITY + GROUP MODE — the two icon-only dropdowns.
@@ -2718,9 +2774,7 @@ SECTIONS.push({
       }
     }
     if(it.manual || it.done || it.foot){
-      actions += '<button type="button" class="idd-btn has-label comp-btn" style="width:auto;gap:6px;padding:0 10px">'
-        + '<span class="lbl" style="display:inline">Completion</span>'
-        + '<i class="fa-solid fa-chevron-down" style="font-size:10px" aria-hidden="true"></i></button>';
+      actions += completionHTML(it, teacher);
     }
     if(teacher && editing){
       actions += '<button type="button" class="idd-btn" aria-label="Activity menu for ' + esc(it.name) + '">'
@@ -3057,10 +3111,39 @@ SECTIONS.push({
     openTip = dd;
   }
 
+  /* ---- completion disclosure (teacher) ----
+     A button controlling a panel. No menu roles: it presents information,
+     it does not offer choices. */
+  var openComp = null;
+  function closeComp(returnFocus){
+    if(!openComp) return;
+    var b = openComp.querySelector(".comp-btn");
+    openComp.querySelector(".comp-panel").hidden = true;
+    b.setAttribute("aria-expanded","false");
+    var was = openComp; openComp = null;
+    if(returnFocus) b.focus();
+    return was;
+  }
+  function toggleComp(dd){
+    if(openComp === dd){ closeComp(true); return; }
+    closeComp(false);
+    dd.querySelector(".comp-panel").hidden = false;
+    dd.querySelector(".comp-btn").setAttribute("aria-expanded","true");
+    openComp = dd;
+  }
+
   document.addEventListener("click", function(e){
+    var comp = e.target.closest("[data-comp] .comp-btn");
+    if(comp){ e.preventDefault(); toggleComp(comp.closest("[data-comp]")); return; }
+    if(openComp && !e.target.closest("[data-comp]")) closeComp(false);
+
     var stat = e.target.closest(".idd-static");
     if(stat){ e.preventDefault(); toggleTip(stat.closest("[data-idd]")); return; }
     if(openTip && !e.target.closest("[data-static]")) closeTip();
+  });
+
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape" && openComp) closeComp(true);
   });
 
   /* Escape dismisses any visible tooltip regardless of where focus sits.
