@@ -1201,14 +1201,41 @@
   .acard.is-hidden .atitle a,
   .acard.is-hidden .atitle .ttext{ color:var(--mds-text-muted); }
 
-  /* date badges — grey fill, no border, no icon. One treatment for every
-     date type (decision D1); the calendar glyph was an in-flight design
-     change and is not in 4501:46473. */
+  /* Date badges — restyled to Figma 4501:47709 (Badges component), with the
+     in-card positioning taken from 4501:47679.
+
+     This replaces the earlier grey-filled pill. Every value below is the
+     token the component references, and each one already existed in this
+     file, so nothing new was invented:
+       bg/feedback/secondary/subtle  #f8f9fa  -> --mds-bg-surface-subtle
+       border/feedback/secondary     #e9ecef  -> --mds-border-subtle
+       text/feedback/secondary       #343a40  -> --mds-color-gray-800
+       border radius/sm              6px      -> --mds-border-radius-sm
+       spacing/xxs, spacing/xs       4px, 8px -> padding
+       UI text/UI small              Noto Sans Medium 14/12
+     Frame is 254x20 with the label at x=8 y=4 (238x12), so the 20px height
+     is the OUTER box and the 1px stroke sits inside it — hence an explicit
+     height with border-box rather than letting padding + line-height add up.
+
+     Three things changed materially from the old treatment, all of which
+     make it more legible rather than less: the fill went lighter and picked
+     up a border (so the badge still reads as a discrete object on the
+     subtle-background cards inside subsections, where a fill alone would
+     have disappeared), the text went from --mds-text-subtle #495057 to
+     #343a40, and the size went 13px -> 14px Medium. Contrast is 11.6:1.
+
+     Still no calendar glyph, and still one treatment for every date type
+     (decision D1) — 4501:47709 is a plain text badge, which confirms the
+     call made against 4501:46473 rather than reversing it. */
   .adate{
-    display:inline-flex; align-items:center;
-    padding:2px 10px; border:0; border-radius:var(--mds-border-radius-pill);
-    background:var(--mds-bg-surface-strong,#e9ecef); color:var(--mds-text-subtle);
-    font-size:13px; line-height:20px; white-space:nowrap;
+    display:inline-flex; align-items:center; height:20px;
+    padding:var(--mds-spacing-xxs) var(--mds-spacing-xs);
+    border:1px solid var(--mds-border-subtle);
+    border-radius:var(--mds-border-radius-sm);
+    background:var(--mds-bg-surface-subtle);
+    color:var(--mds-color-gray-800);
+    font-size:14px; font-weight:500; line-height:12px;
+    white-space:nowrap;
   }
 
   /* ---------- control cluster ---------- */
@@ -2791,7 +2818,7 @@ SECTIONS.push({
 
     var chips = (it.chips || []).map(chipHTML).join('');
     var dates = (it.dates || []).map(function(d){
-      return '<span class="adate"><i class="fa-regular fa-calendar" aria-hidden="true"></i>' + esc(d) + '</span>';
+      return '<span class="adate">' + esc(d) + '</span>';
     }).join('');
 
     var html = '<article class="' + cls + '" data-purpose="' + m.purpose + '">'
@@ -4028,8 +4055,21 @@ CARD GEOMETRY — measured from 4501:46473
   8px gap. It was previously in a 28px box, which over-indented the whole
   identity cluster; that is fixed. Controls are 28x28 on an 8px rhythm,
   completion pill 132 wide. Top row -> title 8px, title -> description
-  4px, card body -> dates 16px. Date badges are grey-filled pills with no
-  border and no calendar glyph.
+  4px, card body -> dates 16px.
+
+DATE BADGES — style from 4501:47709, position from 4501:47679
+  Style: 20px tall, 4px/8px padding, 6px radius, #f8f9fa fill, 1px #e9ecef
+  border, #343a40 text at 14px Medium. No calendar glyph — the component is
+  a plain text badge, which confirms rather than reverses decision D1.
+  Position: the dates row is a sibling of the card info block, flush with
+  the card's left padding edge (x=17, same as the handle and the title —
+  it is NOT indented to the title text). 16px above it, 16px below it to
+  the restrictions block, and 8px between the two badges. Both dates sit
+  on one row and wrap together, so an activity with an open and a close
+  date shows them side by side rather than stacked.
+  The 20px height is the outer box in Figma (label at y=4, 12px tall, in a
+  20px frame), so the stroke is inside it — set explicitly with border-box
+  instead of letting padding and line-height add up to 22px.
 
 DIVERGENCES FROM THE FIGMA — all deliberate, all worth a decision
   1. TOOLTIP REBUILT, NOT REMOVED. The states page labels the trigger with
