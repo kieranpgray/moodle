@@ -772,13 +772,28 @@
      Trigger: core renders it as .btn.text-primary, i.e. a link-coloured text
      button rather than an outlined one, so it reads as a mode switch and not
      a peer of Save. Only shown while editing, as in core. */
+  /* Sampled 1:1 from Figma 4183:36007. There is no border and no fill —
+     scanning the render across the button and down its edges finds only the
+     page grey, so it is plain text with an icon, sitting in the title row
+     beside the course name.
+       text/subtle          #495057   NOT the link blue this had
+       UI text/UI default   16px regular (measured: 12px of ink, and the
+                            label is ascender-only, so 12 / 0.75 = 16)
+       icons/xs             12px pencil
+       spacing/xs           8px between label and icon
+     Contrast is 8.2:1 on the page background. */
   .btn-bulk{ border:1px solid transparent; background:none; cursor:pointer;
-    color:var(--mds-text-link-default,#0f6cbf); font-family:inherit;
-    font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium,500);
-    display:inline-flex; align-items:center; gap:.4rem; padding:6px 10px;
+    color:var(--mds-text-subtle); font-family:inherit;
+    font-size:var(--mds-font-size-body); font-weight:var(--mds-font-weight-regular,400);
+    display:inline-flex; align-items:center; gap:var(--mds-spacing-xs); padding:2px 4px;
     border-radius:var(--mds-border-radius-md); white-space:nowrap; }
-  .btn-bulk:hover{ background:var(--mds-bg-surface-subtle); }
+  .btn-bulk i{ font-size:12px; }
+  .btn-bulk:hover{ background:var(--mds-bg-surface-subtle); color:var(--mds-text-default); }
   .btn-bulk:focus-visible{ outline:2px solid var(--mds-focus-default,#0f6cbf); outline-offset:2px; }
+  /* Not in 4183:36007, which only shows the button at rest. Kept because
+     this is a mode toggle and the resting style gives no signal that bulk
+     mode is on — aria-pressed says so to assistive tech, and this says the
+     same thing visually. */
   .btn-bulk[aria-pressed="true"]{ background:var(--mds-bg-nav-pill-selected,#e9ecef); color:var(--mds-text-default); }
   body:not(.edit-on) #bulkEnableBtn, body.role-student #bulkEnableBtn{ display:none; }
 
