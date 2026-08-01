@@ -1112,19 +1112,54 @@
      ACTIVITY CARD — rebuilt to Figma MDL-87755 node 4515:51706.
      Class names and structure follow the mds-activity-card component
      from the climate-change-course prototype so the two stay portable;
-     values are re-expressed against this file's --mds-*/--p-* tokens.
+     values are re-expressed against this file's --mds- and --p- tokens.
+     (Do not write those two prefixes with a slash between the asterisks —
+     "--mds-*" followed by "/" closes this comment, which is exactly what
+     happened here and silently killed the whole card block below.)
      Replaces the older .acard treatment (kept below for the subsection
      table blocks that still use it).
      ============================================================ */
+  /* THREE STATES, sampled pixel by pixel from the three nodes rather than
+     inferred from the token lists — the lists are near-identical across all
+     three and only differ by which tokens are absent, which is too weak to
+     build on.
+       default 4501:46419   fill #f8f9fa   border 1px #e9ecef
+       hover   4501:46473   fill #ffffff   border 1px #e9ecef
+       focus   4501:46446   fill #f8f9fa   border 2px #0f6cbf
+     Two corrections fall out of that:
+
+     1. The default fill is #f8f9fa, NOT transparent. It only looked right
+        before because the page behind it happens to be the same grey. On a
+        white surface — a subsection, or any container that is not the page
+        background — a transparent card would have gone white, i.e. it would
+        have looked permanently hovered.
+     2. Focus returns to the DEFAULT grey. It is not "hover plus a blue
+        border"; the blue border replaces the grey one and the fill goes
+        back. */
   .acard{
     display:flex; align-items:flex-start; gap:var(--mds-spacing-md);
     width:100%; padding:var(--mds-spacing-md);
-    background:transparent; border:1px solid var(--mds-border-subtle);
+    background:var(--mds-bg-surface-subtle);
+    border:1px solid var(--mds-border-subtle);
     border-radius:var(--mds-border-radius-xl);
-    transition:background-color .15s ease, border-color .15s ease;
+    transition:background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
   }
-  .acard:hover{ background:var(--surface); box-shadow:none; }
-  .acard:has(:focus-visible){ border-width:2px; border-color:var(--mds-focus-default,#0f6cbf); }
+  /* border-color is restated because the older .acard:hover further up sets
+     --border-ring and would otherwise still win on that one property */
+  .acard:hover{
+    background:var(--mds-bg-surface-default);
+    border-color:var(--mds-border-subtle);
+    box-shadow:none;
+  }
+  /* The focus frame is 280px tall against 278 for the other two: the 2px
+     stroke grows the card 1px per side rather than eating into it. So this
+     is a 1px border plus a 1px ring OUTSIDE it, not border-width:2px —
+     which on a border-box element would have held the outer size and shrunk
+     the content box instead, nudging every card's contents 1px on focus. */
+  .acard:has(:focus-visible){
+    border-color:var(--mds-focus-default,#0f6cbf);
+    box-shadow:0 0 0 1px var(--mds-focus-default,#0f6cbf);
+  }
   .acard.dimmed{ opacity:1; }            /* dimming now comes from --hidden */
   .acard-body{ flex:1 0 0; min-width:0; display:flex; flex-direction:column; gap:var(--mds-spacing-md); }
   .acard-main{ display:flex; flex-direction:column; gap:var(--mds-spacing-xs); }
@@ -1176,8 +1211,18 @@
     flex:0 0 auto; color:var(--mds-text-subtle); font-size:12px;
     opacity:0; transition:opacity .12s ease;
   }
-  /* plain :focus as well as :focus-visible — the pencil is an affordance,
-     so revealing it whenever the control has focus is the safer rule */
+  /* The reveal is scoped to the CARD, not the title. Comparing 4501:46419
+     (default, no pencil) with 4501:46473 (hover, pencil present): what is
+     hovered in that node is the card, and the pencil is already showing
+     before the pointer reaches the title. Scoping it to .titlebtn:hover
+     meant crossing the card revealed nothing and the pencil only appeared
+     once you were on the words — which is the wrong way round, since the
+     point of showing it is to tell you the title is editable BEFORE you
+     try. Focus is on the card too, matching 4501:46446.
+     Plain :focus as well as :focus-visible — the pencil is an affordance,
+     so revealing it whenever the control has focus is the safer rule. */
+  .acard:hover .tpencil,
+  .acard:has(:focus-visible) .tpencil,
   .titlebtn:hover .tpencil,
   .titlebtn:focus .tpencil,
   .titlebtn:focus-visible .tpencil{ opacity:1; }
@@ -4240,8 +4285,50 @@ settings, Move, Duplicate, Assign roles, Group mode, Activity link,
 Delete). If this ships, it needs a replacement path in the same change.
 Out of edit mode the title is a link exactly as today.
 
-CARD GEOMETRY — measured from 4501:46473
-  Card padding 17px. Top row: handle 16 at x=0, activity icon 24 at x=24,
+CARD STATES — sampled pixel by pixel, not inferred
+  default 4501:46419   fill #f8f9fa   border 1px #e9ecef   no pencil
+  hover   4501:46473   fill #ffffff   border 1px #e9ecef   pencil shown
+  focus   4501:46446   fill #f8f9fa   border 2px #0f6cbf   pencil shown
+  Sampling was necessary because get_variable_defs returns almost the same
+  list for all three nodes; the states differ only by which token is absent
+  (hover alone has bg/surface/default, focus alone has border/interactive/
+  primary/default), which is far too weak to build from.
+  Three things this corrected:
+  - The default fill is #f8f9fa, not transparent. It had only looked right
+    because the page behind it is the same grey; on a white surface the
+    card would have rendered white, i.e. permanently hovered.
+  - Focus returns to the default grey. It is not hover-plus-a-blue-border.
+  - Focus grows the card 1px per side (the frame is 280 tall against 278),
+    so it is a 1px border plus a 1px ring outside, NOT border-width:2px,
+    which on a border-box element holds the outer size and shrinks the
+    content box instead — nudging the card's contents on every focus.
+  Divergence left in place: when a card is BOTH hovered and focused the
+  fill stays white. Figma shows focus at rest with the grey fill, but
+  suppressing hover feedback under the pointer is the worse of the two.
+  Also from the default/hover pair: the edit pencil reveals on CARD hover,
+  not title hover. In 4501:46473 what is hovered is the card and the pencil
+  is already showing before the pointer reaches the title — which is the
+  right way round, since the job of the pencil is to say the title is
+  editable BEFORE you try it.
+
+WARNING — a comment in this file once silently deleted the whole card block
+  The header comment above .acard contained "--mds-*" immediately followed
+  by "/", which closes a CSS comment. Everything to the next */ was parsed
+  as CSS, the parser threw away rules until it resynced, and .acard and its
+  state rules never existed. The card had been rendering with the OLD 2020
+  treatment the whole time — white fill, 8px radius, #dee2e6 border, 20px
+  horizontal padding — while every measurement in these notes described a
+  block that was not running. Nothing errors; it just quietly does nothing.
+  If a card change appears to have no effect, check this first:
+    document.styleSheets -> count rules whose selector starts .acard
+  There should be 20. Before the fix there was 1.
+
+CARD GEOMETRY — measured from 4501:46473 (which is the HOVER node)
+  Card padding 17px in Figma; built as 16px (spacing/md) + the 1px border,
+  which lands the handle on the same pixel and keeps the padding on a token
+  rather than a one-off value. Verified in the browser: relative to the
+  content box the handle is at 0, the icon at 24 and the label at 56.
+  Top row: handle 16 at x=0, activity icon 24 at x=24,
   type label at x=56 — the grip sits flush with the padding edge with an
   8px gap. It was previously in a 28px box, which over-indented the whole
   identity cluster; that is fixed. Controls are 28x28 on an 8px rhythm,
