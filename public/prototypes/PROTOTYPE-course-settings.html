@@ -2343,7 +2343,7 @@
       <div class="anno-title"><i class="fa-regular fa-eye"></i> Visibility dropdown</div>
       <div class="anno-body">An icon-only menu carrying all <strong>three</strong> states core supports &mdash; show, hide, and available-but-not-shown &mdash; not the two in the design. Stealth is a site-level switch, so where it is on, every activity offers it. The 28px button has a 44px touch target painted underneath. <em>Out of edit mode there is no control at all when the state is the default; any other state becomes a non-interactive indicator you can tap to reveal what it means.</em></div>
     </div>
-    <div class="anno-card" data-anno="draghandle" data-target=".acard .acard-drag" data-side="top">
+    <div class="anno-card" data-anno="draghandle" data-target=".acard[data-mod='glossary'] .acard-drag" data-side="top">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
       <div class="anno-badge">2</div>
       <div class="anno-title"><i class="fa-solid fa-grip-vertical"></i> Drag handle</div>
@@ -2352,8 +2352,8 @@
     <div class="anno-card" data-anno="modicon" data-target=".acard .atype" data-side="bottom">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
       <div class="anno-badge">3</div>
-      <div class="anno-title"><i class="fa-solid fa-shapes"></i> Real icons, dynamic label</div>
-      <div class="anno-body">The icons are each module&rsquo;s own <code>monologo.svg</code> from the codebase, not stand-ins, recoloured to the activity purpose. The type label beside it is <strong>edit mode only</strong> &mdash; in view mode the icon carries the type visually and the words stay as screen-reader-only text, because core gives that icon an empty alt outside edit mode and the type is currently announced to nobody.</div>
+      <div class="anno-title"><i class="fa-solid fa-shapes"></i> Activity type label</div>
+      <div class="anno-body">The label appears while you are <strong>editing</strong>, where it helps you tell one activity from another at a glance. It is not shown when you are just viewing the course, and students never see it. The icon is the module&rsquo;s own icon from Moodle, not a stand-in.</div>
     </div>
     <div class="anno-card" data-anno="anchor" data-target="#settingsNav" data-side="right">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
@@ -3141,7 +3141,11 @@ SECTIONS.push({
     var dates = datesHTML(it);
     if(dates) chips = '';
 
-    var html = '<article class="' + cls + '" data-purpose="' + m.purpose + '">'
+    /* data-mod lets an annotation point at one specific activity rather than
+       "the first card on the page", which is how the drag-handle note ended
+       up pinned to the top of the course. */
+    var html = '<article class="' + cls + '" data-purpose="' + m.purpose + '"'
+      + (it.mod ? ' data-mod="' + esc(it.mod) + '"' : '') + '>'
       + '<div class="acard-body">'
         + '<div class="acard-main">'
           + '<div class="acard-top">'
