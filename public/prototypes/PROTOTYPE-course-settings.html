@@ -1426,6 +1426,16 @@
   }
   .acard-drag:active{ cursor:grabbing; }
   .acard-drag:focus-visible{ outline:2px solid var(--mds-focus-default,#0f6cbf); outline-offset:2px; }
+  /* Held state. The card lifts so the change is visible without relying on
+     the announcement, and the handle cursor closes, matching what a pointer
+     drag looks like at the same moment. */
+  .acard-drag[aria-pressed="true"]{ cursor:grabbing; color:var(--mds-bg-interactive-primary-default,#0f6cbf); }
+  .acard.is-grabbed{
+    border-color:var(--mds-bg-interactive-primary-default,#0f6cbf);
+    box-shadow:0 0 0 1px var(--mds-bg-interactive-primary-default,#0f6cbf), 0 6px 16px rgba(0,0,0,.12);
+    background:var(--mds-bg-surface-default);
+  }
+  @media (prefers-reduced-motion:reduce){ .acard.is-grabbed{ box-shadow:0 0 0 2px var(--mds-bg-interactive-primary-default,#0f6cbf); } }
 
   /* ============================================================
      ICON-ONLY DROPDOWN — the component under test.
@@ -2391,6 +2401,10 @@
     </div>
   </footer>
 
+  <!-- One shared description for every drag handle, referenced by
+       aria-describedby. Announced after the handle's name on focus. -->
+  <div id="dragHelp" class="sr-only">Press Enter or Space to pick up, then use the up and down arrow keys to move. Press Enter to drop, or Escape to cancel.</div>
+
   <div class="manage-menu" id="moreMenu" role="menu"></div>
   <div class="ci-menu" id="ciMenu" role="menu"></div>
   <div class="ci-toast" id="ciToast" aria-live="polite"></div>
@@ -3276,7 +3290,14 @@ SECTIONS.push({
                     + '<label class="sr-only" for="cmCheckbox' + cid + '">Select ' + esc(it.name) + '</label>'
                     + '</span>'
                   : '')
-              + (teacher && editing ? '<button type="button" class="acard-drag" aria-label="Move ' + esc(it.name) + '"><i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>' : '')
+              /* aria-pressed carries the grabbed state — NOT aria-grabbed,
+                 which ARIA deprecated. aria-describedby points at one shared
+                 instruction node so the name stays short. */
+              + (teacher && editing
+                  ? '<button type="button" class="acard-drag" aria-label="Move ' + esc(it.name) + '"'
+                    + ' aria-pressed="false" aria-describedby="dragHelp">'
+                    + '<i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>'
+                  : '')
               /* Activity type label: edit mode only (decision D27). In view
                  mode the icon carries the type visually — but the label is
                  kept as visually hidden text rather than dropped, because
@@ -3376,6 +3397,17 @@ SECTIONS.push({
   var live = document.createElement("div");
   live.className = "sr-only"; live.setAttribute("role","status"); live.setAttribute("aria-live","polite");
   document.body.appendChild(live);
+  /* Shared announcer. Cleared first because setting the same string twice
+     running is not a change, so it would not be re-announced — which matters
+     for repeated arrow-key moves that land on the same wording.
+     setTimeout, NOT requestAnimationFrame: rAF does not run while the tab is
+     hidden or throttled, which silently swallowed every announcement when
+     this was first written. A status message must not depend on the page
+     painting. */
+  window.__announce = function(msg){
+    live.textContent = "";
+    setTimeout(function(){ live.textContent = msg; }, 30);
+  };
 
   var openIdd = null;
   function iddItems(dd){ return Array.prototype.slice.call(dd.querySelectorAll(".idd-item")); }
@@ -3592,9 +3624,16 @@ SECTIONS.push({
      (WCAG 2.1.1). aria-expanded carries the state.
      ============================================================ */
   var openTip = null;
-  function closeTip(){
+  /* hush = true when the user actively dismissed it (Escape). Removing
+     tip-open alone is not enough: the trigger still has focus, and
+     ".idd-static:focus-visible ~ .idd-tip" would keep the tooltip on screen,
+     so Escape appeared to do nothing. WCAG 1.4.13 requires it to go away
+     without the user moving focus. tip-hushed is cleared again on mouseleave
+     and focusout, so leaving and returning brings it back. */
+  function closeTip(hush){
     if(!openTip) return;
     openTip.classList.remove("tip-open");
+    if(hush) openTip.classList.add("tip-hushed");
     var b = openTip.querySelector(".idd-static");
     if(b) b.setAttribute("aria-expanded","false");
     openTip = null;
@@ -3650,7 +3689,16 @@ SECTIONS.push({
      and the earlier handler only fired when the trigger itself had focus. */
   document.addEventListener("keydown", function(e){
     if(e.key !== "Escape") return;
-    if(openTip){ var b = openTip.querySelector(".idd-static"); closeTip(); if(b) b.focus(); return; }
+    /* hush: this is a deliberate dismissal, and focus stays on the trigger */
+    if(openTip){ var b = openTip.querySelector(".idd-static"); closeTip(true); if(b) b.focus(); return; }
+    /* The tooltip is also shown by :focus-visible alone, with nothing
+       "open" to close. That path was missed: the earlier handler matched
+       .idd-btn only, so a view-mode indicator (.idd-static) reached by
+       keyboard had no way to dismiss its tooltip at all — a 1.4.13 failure.
+       Match whichever control actually has focus. */
+    var focused = document.activeElement;
+    var fdd = focused && focused.closest && focused.closest(".idd");
+    if(fdd){ fdd.classList.add("tip-hushed"); return; }
     /* only the control actually under the pointer — hushing every .idd
        would leave ones never hovered stuck hushed, since the un-hush runs
        on mouseleave */
@@ -4281,6 +4329,131 @@ SECTIONS.push({
   });
 
   /* ============================================================
+     KEYBOARD DRAG AND DROP
+
+     The recommendation, and why this shape:
+
+     Pointer dragging has no keyboard equivalent, so a drag-only handle
+     fails SC 2.1.1 Keyboard (Level A) outright. The convention that has
+     settled across the industry — react-beautiful-dnd, Atlassian's
+     Pragmatic drag-and-drop, GitHub's own lists — is a "grab, move, drop"
+     model driven from the handle:
+
+       Enter / Space   pick the item up, and drop it again
+       Arrow Up/Down   move it while held
+       Escape          cancel and put it back where it started
+       Tab             cancel, so focus can always leave
+
+     Deliberately NOT aria-grabbed / aria-dropeffect. Those were deprecated
+     in ARIA 1.1 and dropped in 1.2 — support was never real and authoring
+     them today produces markup screen readers ignore. State is carried by
+     aria-pressed on the handle, which is a plain toggle button state that
+     works everywhere, and by live-region text.
+
+     Every transition is announced, because a sighted user sees the card
+     move and a screen reader user has nothing otherwise. The wording gives
+     position and total ("3 of 6"), since "moved up" alone does not say
+     where you have got to. The instructions are attached with
+     aria-describedby rather than folded into the button name, so the name
+     stays "Move Biology Glossary" and does not read the whole key list
+     every time the handle is focused.
+
+     PROTOTYPE LIMIT: this reorders the DOM only, not the underlying data,
+     so the original order returns if the cards are re-rendered (toggling
+     edit mode does that). Enough to judge the interaction; a real build
+     would move the item and persist it.
+     ============================================================ */
+  (function(){
+    var grabbed = null, origin = null, originNext = null;
+
+    function siblings(card){
+      return [].slice.call(card.parentElement.children).filter(function(n){
+        return n.classList && n.classList.contains("acard"); });
+    }
+    function posOf(card){
+      var s = siblings(card);
+      return { i: s.indexOf(card) + 1, n: s.length };
+    }
+    function nameOf(card){
+      var t = card.querySelector(".atitle");
+      return t ? t.textContent.replace(/\s+/g, " ").trim() : "activity";
+    }
+    function sectionOf(card){
+      var sec = card.closest(".scard, .subcard");
+      var h = sec && sec.querySelector(".stitle, .shead h3, .subhead .stitle");
+      return h ? h.textContent.trim() : "this section";
+    }
+
+    function grab(handle){
+      var card = handle.closest(".acard");
+      if(!card) return;
+      grabbed = card; origin = card.parentElement; originNext = card.nextElementSibling;
+      card.classList.add("is-grabbed");
+      handle.setAttribute("aria-pressed", "true");
+      var p = posOf(card);
+      window.__announce(nameOf(card) + " grabbed. Position " + p.i + " of " + p.n + " in " +
+        sectionOf(card) + ". Use the up and down arrow keys to move, Enter to drop, Escape to cancel.");
+    }
+    function release(card, msg){
+      var handle = card.querySelector(".acard-drag");
+      card.classList.remove("is-grabbed");
+      if(handle){ handle.setAttribute("aria-pressed", "false"); handle.focus(); }
+      grabbed = null; origin = null; originNext = null;
+      if(msg) window.__announce(msg);
+    }
+    function drop(card){
+      var p = posOf(card);
+      release(card, nameOf(card) + " dropped at position " + p.i + " of " + p.n + ".");
+    }
+    function cancel(card){
+      if(origin){ origin.insertBefore(card, originNext); }
+      var p = posOf(card);
+      release(card, "Move cancelled. " + nameOf(card) + " returned to position " + p.i + " of " + p.n + ".");
+    }
+    function move(card, dir){
+      var s = siblings(card), i = s.indexOf(card), j = i + dir;
+      if(j < 0 || j >= s.length){
+        var q = posOf(card);
+        window.__announce("Already at " + (dir < 0 ? "the top" : "the bottom") +
+          ". Position " + q.i + " of " + q.n + ".");
+        return;
+      }
+      if(dir < 0) card.parentElement.insertBefore(card, s[j]);
+      else card.parentElement.insertBefore(s[j], card);
+      card.querySelector(".acard-drag").focus();   /* the node moved; keep focus on it */
+      var p = posOf(card);
+      window.__announce(nameOf(card) + " moved to position " + p.i + " of " + p.n + ".");
+    }
+
+    document.addEventListener("keydown", function(e){
+      var handle = e.target.closest && e.target.closest(".acard-drag");
+      if(!handle && !grabbed) return;
+
+      if(!grabbed){
+        if(e.key === "Enter" || e.key === " " || e.key === "Spacebar"){
+          e.preventDefault(); grab(handle);
+        }
+        return;
+      }
+      /* held: the handle owns these keys until it is dropped or cancelled */
+      if(e.key === "ArrowUp"){   e.preventDefault(); move(grabbed, -1); return; }
+      if(e.key === "ArrowDown"){ e.preventDefault(); move(grabbed,  1); return; }
+      if(e.key === "Enter" || e.key === " " || e.key === "Spacebar"){
+        e.preventDefault(); drop(grabbed); return;
+      }
+      if(e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); cancel(grabbed); return; }
+      /* never trap Tab — 2.1.2. Cancelling is the safe reading: the user
+         moved on without confirming, so nothing should be committed. */
+      if(e.key === "Tab"){ cancel(grabbed); return; }
+    }, true);
+
+    /* clicking away while held also cancels rather than silently committing */
+    document.addEventListener("pointerdown", function(e){
+      if(grabbed && !e.target.closest(".acard-drag")) cancel(grabbed);
+    }, true);
+  })();
+
+  /* ============================================================
      BULK ACTIONS
 
      Mirrors core_courseformat/local/content/bulkedittools.js closely enough
@@ -4673,6 +4846,145 @@ the activity ellipsis menu has no View or Open item (it has Edit
 settings, Move, Duplicate, Assign roles, Group mode, Activity link,
 Delete). If this ships, it needs a replacement path in the same change.
 Out of edit mode the title is a link exactly as today.
+
+===========================================================================
+ACCESSIBILITY BEHAVIOUR SPEC — written to be lifted into tickets
+Each item is self-contained: what it does, which success criterion drives
+it, and what has to be true to call it done. Verified in-browser against
+this prototype unless the item says otherwise.
+===========================================================================
+
+A11Y-1  Icon-only dropdown: name, role, value            SC 4.1.2 (A)
+  The visibility and group triggers are <button aria-haspopup="true"> with
+  aria-expanded reflecting the open state. The menu is role="menu" with
+  aria-labelledby pointing at the trigger; options are role="menuitemradio"
+  with aria-checked maintained across changes.
+  The name carries the CURRENT STATE, not just the feature: "Availability:
+  Shown on course page", "Group mode: Separate groups". It must be updated
+  whenever the value changes.
+  Done when: name reads feature + current state; aria-expanded flips on open
+  and close; exactly one option has aria-checked="true" and it follows
+  selection; the trigger name changes with the value.
+
+A11Y-2  Icon-only dropdown: keyboard                     SC 2.1.1, 2.1.2 (A)
+  Enter or Space opens (native button activation). ArrowDown and ArrowUp
+  also open. Inside: arrows cycle with wraparound, Home and End jump to
+  first and last. Escape closes. Tab closes and moves on — never trapped.
+  Focus opens ON the checked option, not the first.
+  Done when: every one of those keys behaves as listed, and focus is never
+  held inside the menu.
+
+A11Y-3  Icon-only dropdown: focus return                 SC 2.4.3 (A)
+  Closing by Escape, by choosing an option, or by Tab returns focus to the
+  trigger. Never to the body.
+  Done when: document.activeElement is the trigger after each of the three.
+
+A11Y-4  State change is announced                        SC 4.1.3 (AA)
+  A polite live region announces the new value: "Availability changed to
+  Hidden from students". Same for group mode and for renaming ("Renamed to
+  X"). The region must be role="status" aria-live="polite".
+  IMPLEMENTATION NOTE, learned the hard way: write the message on a
+  setTimeout, not requestAnimationFrame. rAF does not run in a hidden or
+  throttled tab, which silently swallowed every announcement here. Clear
+  the region first, or an identical repeat message is not re-announced.
+  Done when: each change writes to the region; repeated identical messages
+  still announce; announcements fire with the tab backgrounded.
+
+A11Y-5  View mode shows information, not dead controls   SC 4.1.2 (A)
+  Out of edit mode the default state renders NOTHING. Any other state
+  renders a focusable <button> — deliberately not disabled, because a
+  disabled control is skipped by keyboard and announces as unavailable
+  rather than as information. It carries the full state in its name.
+  Done when: default state renders no element; other states are reachable
+  by Tab, are not disabled, and their name states the value.
+
+A11Y-6  Tooltip is dismissable                           SC 1.4.13 (AA)
+  The tooltip appears on hover AND on keyboard focus, and on tap for touch.
+  Escape must remove it WITHOUT the user moving pointer or focus. It stays
+  dismissed until the control is left and re-entered.
+  THE TRAP: removing an "open" class is not enough when the tooltip is also
+  shown by :focus-visible — the CSS puts it straight back and Escape looks
+  broken. A separate "hushed" state has to beat both, and it must apply to
+  the view-mode indicator, not only the editable trigger. That gap was a
+  real failure here: the handler matched .idd-btn and the indicator is
+  .idd-static, so it never fired.
+  Done when: Escape hides it from hover, from focus, and from tap, on both
+  the editable trigger and the view-mode indicator; it returns after
+  leaving and re-entering.
+
+A11Y-7  Keyboard drag and drop                           SC 2.1.1 (A)
+  A drag handle with no keyboard path fails outright. The model:
+    Enter / Space  pick up, and drop
+    Arrow Up/Down  move while held
+    Escape         cancel, restoring the ORIGINAL position
+    Tab            cancel and let focus leave — never trap
+  State goes on aria-pressed. Do NOT use aria-grabbed or aria-dropeffect:
+  deprecated in ARIA 1.1, gone in 1.2, ignored by screen readers.
+  Instructions go in aria-describedby, not the button name, so the name
+  stays "Move Biology Glossary" rather than reciting the key list on every
+  focus.
+  Every transition announces with position and total, because "moved up"
+  does not say where you got to:
+    "X grabbed. Position 4 of 6 in General. Use the up and down arrow keys
+     to move, Enter to drop, Escape to cancel."
+    "X moved to position 3 of 6."
+    "Already at the top. Position 1 of 6."
+    "X dropped at position 3 of 6."
+    "Move cancelled. X returned to position 4 of 6."
+  Focus must follow the moved element, since the node itself relocates.
+  Done when: all four keys behave as listed; Escape restores the position
+  held BEFORE pick-up, not the last one; focus stays on the handle after
+  every move; each transition announces.
+
+A11Y-8  Pointer alternative for dragging       SC 2.5.7 (AA, WCAG 2.2)
+  Not required by 2.1, but it lands in 2.2 and the keyboard model above
+  already satisfies it. Keep the activity menu's Move item as the
+  single-pointer path; if the handle replaces it, this is a regression.
+
+A11Y-9  Focus is visible on every new control            SC 2.4.7 (AA)
+  2px solid #0f6cbf with offset on the handle, the title button, both
+  dropdowns and the menu. 5.09:1 against the card and 5.36:1 against the
+  hover white — 1.4.11 wants 3:1.
+  Done when: every interactive element in the card shows an indicator at
+  3:1 or better against whatever is behind it in every card state.
+
+A11Y-10 Inline title editing                     SC 2.5.3 (A), 3.3.2 (A)
+  The button name contains the visible text: "Biology Glossary — select to
+  rename". The input carries aria-label "Rename {name}". The trigger is
+  display:none while editing so it is not a phantom tab stop. Escape
+  cancels and restores the old value; Enter commits; both return focus to
+  the trigger; the new name is announced.
+  Done when: visible text is a substring of the name; the input has a
+  programmatic label; focus returns on both exit paths; no hidden tab stop.
+
+A11Y-11 Touch has no hover                              SC 2.1.1 (A)
+  Anything revealed on hover needs a non-hover path. The edit pencil is
+  forced visible under @media (hover:none); the tooltip opens on tap.
+  Done when: with a touch emulator, every hover-revealed affordance is
+  reachable and every tooltip openable.
+
+OPEN / NOT YET SATISFIED
+  - Drag reorder changes the DOM only, not the backing data, so the order
+    resets on re-render. Real implementation must persist and re-render.
+  - The ellipsis "activity menu" is an inert stub: no aria-haspopup, opens
+    nothing. It announces as a button that does nothing — fix or remove.
+  - Drag handle target is 16x16 with no touch pad, while the dropdowns
+    carry a 44x44 one. Not a 2.1 AA failure (2.5.5 is AAA, 2.5.8 is 2.2)
+    but inconsistent and small for the tablet requirement.
+  - Dropdown trigger border is 1.3:1 against its fill. Passes 1.4.11 on the
+    argument that the 8.18:1 icon identifies the control, but for an
+    icon-only button that argument is worth making consciously.
+
+COULD NOT BE VERIFIED HERE — needs a person
+  - Real screen reader output (VoiceOver, NVDA). The dropdown names come
+    from clipped .sr-only text rather than aria-label; that is the standard
+    visually-hidden pattern and is included in the name computation, but
+    the browser tooling used here does not compute it, so it is asserted
+    rather than observed.
+  - Real touch: tap-to-open tooltip, and target sizes in the hand.
+  - focusout un-hushing the tooltip. The pane never held document focus
+    (document.hasFocus() was false), so the blur path could not be
+    exercised. The mouseleave path was verified.
 
 PAGE SURFACES — sampled from 4515:51706 and 4515:51722
   The course page is ONE FLAT GREY. Page background, section cards,
