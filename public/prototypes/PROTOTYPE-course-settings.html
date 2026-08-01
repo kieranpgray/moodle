@@ -552,7 +552,9 @@
   body.mode-settings .settings-view{ display:flex; flex-direction:column; min-height:calc(100vh - var(--nav-h) - var(--mds-spacing-lg)); }
   body.mode-settings .settings-body{ flex:1 0 auto; }
   body.mode-settings .layout{ padding-bottom:0; }
-  body.mode-settings .cln-footer{ display:none; }
+  /* :not(.bulk-footer) — the bulk bar reuses .cln-footer for its containment
+     but belongs to the course page, so the settings-only hiding must skip it */
+  body.mode-settings .cln-footer:not(.bulk-footer){ display:none; }
   body.mode-settings .toggle-col-right, body.mode-settings .drawer-right{ display:none; }
   .settings-head{ margin-bottom:var(--mds-spacing-lg); }
   .settings-eyebrow{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); color:var(--mds-text-muted);
@@ -752,7 +754,7 @@
   .ws-savebar{ display:flex; align-items:center; gap:var(--mds-spacing-xs); width:100%; }
   .ws-savebar .sb-left{ margin-right:auto; font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted);
     display:flex; align-items:center; gap:.4rem; }
-  body:not(.tab-settings) .cln-footer{ display:none; }
+  body:not(.tab-settings) .cln-footer:not(.bulk-footer){ display:none; }
 
   .ws-head{ padding:var(--mds-spacing-lg) 0 0; }
   .ws-eyebrow{ display:flex; align-items:center; gap:.4rem; font-size:var(--mds-font-size-paragraph-small);
@@ -765,6 +767,62 @@
   .ws-titlerow h1{ margin:0; font-size:var(--mds-font-size-headings-3); line-height:var(--mds-line-height-headings-3);
     font-weight:var(--mds-font-weight-bold); color:var(--mds-text-default); }
   .ws-headactions{ margin-left:auto; display:flex; gap:.5rem; align-items:center; }
+
+  /* ---- BULK ACTIONS ----
+     Trigger: core renders it as .btn.text-primary, i.e. a link-coloured text
+     button rather than an outlined one, so it reads as a mode switch and not
+     a peer of Save. Only shown while editing, as in core. */
+  .btn-bulk{ border:1px solid transparent; background:none; cursor:pointer;
+    color:var(--mds-text-link-default,#0f6cbf); font-family:inherit;
+    font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium,500);
+    display:inline-flex; align-items:center; gap:.4rem; padding:6px 10px;
+    border-radius:var(--mds-border-radius-md); white-space:nowrap; }
+  .btn-bulk:hover{ background:var(--mds-bg-surface-subtle); }
+  .btn-bulk:focus-visible{ outline:2px solid var(--mds-focus-default,#0f6cbf); outline-offset:2px; }
+  .btn-bulk[aria-pressed="true"]{ background:var(--mds-bg-nav-pill-selected,#e9ecef); color:var(--mds-text-default); }
+  body:not(.edit-on) #bulkEnableBtn, body.role-student #bulkEnableBtn{ display:none; }
+
+  /* Card checkbox — hidden until bulk mode, matching core's .bulkselect.d-none */
+  .bulkselect{ display:none; align-items:center; flex:0 0 auto; }
+  body.bulk-on .bulkselect{ display:inline-flex; }
+  .bulkselect input{ width:16px; height:16px; margin:0; cursor:pointer; accent-color:var(--mds-bg-interactive-primary-default,#0f6cbf); }
+  .bulkselect input:focus-visible{ outline:2px solid var(--mds-focus-default,#0f6cbf); outline-offset:2px; }
+  /* in bulk mode the drag handle is not the operative control, so it steps back */
+  body.bulk-on .acard-drag{ display:none; }
+  .acard.bulk-selected{ background:var(--mds-color-blue-50,#e7f0f9); border-color:var(--mds-bg-interactive-primary-default,#0f6cbf); }
+
+  .bulk-footer[hidden]{ display:none; }
+  .bulkbar{ display:flex; align-items:center; gap:var(--mds-spacing-md); width:100%; }
+  .bulk-selectall{ display:flex; align-items:center; gap:.5rem; flex:0 0 auto;
+    font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); }
+  .bulk-selectall input{ width:16px; height:16px; margin:0; cursor:pointer; accent-color:var(--mds-bg-interactive-primary-default,#0f6cbf); }
+  .bulk-selectall input:focus-visible{ outline:2px solid var(--mds-focus-default,#0f6cbf); outline-offset:2px; }
+  .bulk-actions{ list-style:none; margin:0 auto; padding:0; display:flex; align-items:center; gap:var(--mds-spacing-lg); }
+  .bulk-action{ display:flex; flex-direction:column; align-items:center; gap:2px;
+    border:1px solid transparent; background:none; cursor:pointer; padding:4px 8px;
+    border-radius:var(--mds-border-radius-md); color:var(--mds-text-subtle); font-family:inherit;
+    font-size:var(--mds-font-size-paragraph-small); line-height:1.2; }
+  .bulk-action i{ font-size:16px; }
+  .bulk-action:hover:not(:disabled){ background:var(--mds-bg-surface-subtle); color:var(--mds-text-default); }
+  .bulk-action:focus-visible{ outline:2px solid var(--mds-focus-default,#0f6cbf); outline-offset:2px; }
+  /* Core disables the actions until something is selected. A disabled button is
+     the right semantic here — it is genuinely inoperable, and the count next to
+     it says why, so it is not an unexplained dead control. */
+  .bulk-action:disabled{ opacity:.45; cursor:default; }
+  .bulk-right{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex:0 0 auto; }
+  .bulk-close{ border:1px solid transparent; background:none; cursor:pointer; padding:2px 6px;
+    border-radius:var(--mds-border-radius-sm); color:var(--mds-text-subtle); font-size:16px; line-height:1; }
+  .bulk-close:hover{ background:var(--mds-bg-surface-subtle); color:var(--mds-text-default); }
+  .bulk-close:focus-visible{ outline:2px solid var(--mds-focus-default,#0f6cbf); outline-offset:2px; }
+  .bulk-count{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); white-space:nowrap; }
+  @media (max-width:720px){
+    .bulk-actions{ gap:var(--mds-spacing-sm); }
+    .bulk-action span{ display:none; }        /* titles still carry the name */
+  }
+  /* The annotations toggle is parked at the bottom centre, which is exactly
+     where the bulk actions sit — it landed on top of Availability. Lift it
+     clear while the bar is up. */
+  body.bulk-on .anno-toggle{ bottom:calc(var(--footer-h) + 12px); }
 
   /* ---- SECONDARY NAVIGATION ----
      Adopted from Figma MDL-87755 "LMS uplift phase 1", node 209:2799
@@ -1643,7 +1701,13 @@
               <h1 id="wsTitle">Biology 101</h1>
             </div>
             <div class="ws-headactions">
-              <button class="btn btn-secondary" id="viewCourseBtn"><i class="fa-solid fa-arrow-up-right-from-square"></i> View course</button>
+              <!-- Bulk actions, from core's bulkedittoggler. The label is the
+                   real string (courseformat/bulkedit = "Bulk actions") and the
+                   label comes BEFORE the icon, as the template has it. Core
+                   only renders this while editing, so it is hidden otherwise. -->
+              <button class="btn btn-bulk" id="bulkEnableBtn" data-for="enableBulk" aria-pressed="false">
+                Bulk actions <i class="fa-solid fa-list-check" aria-hidden="true"></i>
+              </button>
             </div>
           </div>
 
@@ -2273,6 +2337,50 @@
             <button type="button" class="btn btn-ghost" id="cancelBtn">Cancel</button>
             <button type="button" class="btn btn-secondary" id="saveReturnBtn">Save and return</button>
             <button type="button" class="btn btn-primary" id="saveBtn"><i class="fa-solid fa-check"></i> Save and display</button>
+          </div>
+        </div>
+      </div>
+      <div class="cln-rightspacer"></div>
+    </div>
+  </footer>
+
+  <!-- ===== BULK ACTIONS STICKY FOOTER =====
+       Structure and content taken from core_courseformat/local/content/
+       bulkedittools.mustache: a Select all checkbox, the actions centred, then
+       a close button and the live count. The four activity actions and their
+       order are cm_control_items() in bulkedittools.php — Availability
+       (t/show), Duplicate (t/copy), Move (i/dragdrop), Delete (i/delete) —
+       and the strings are core's: "Bulk actions", "Close bulk actions",
+       "{n} selected".
+
+       It reuses .cln-footer's containment so it cannot paint over the course
+       index or blocks drawer, which is the MDL-88411 fix the sticky-footer
+       prototype explored. Core's version is full-bleed and does overlap. -->
+  <footer class="cln-footer bulk-footer" id="bulkFooter" data-for="bulkedittools"
+          aria-label="Bulk actions" hidden>
+    <div class="cln-shell">
+      <div class="cln-indexspacer"></div>
+      <div class="cln-region">
+        <div class="bulkbar">
+          <div class="bulk-selectall">
+            <input type="checkbox" id="bulkSelectAll" data-for="selectall">
+            <label for="bulkSelectAll">Select all</label>
+          </div>
+          <ul class="bulk-actions" data-for="bulkactions">
+            <li><button type="button" class="bulk-action" data-action="cmAvailability" title="Edit availability">
+              <i class="fa-regular fa-eye-slash" aria-hidden="true"></i><span>Availability</span></button></li>
+            <li><button type="button" class="bulk-action" data-action="cmDuplicate" title="Duplicate activities">
+              <i class="fa-regular fa-copy" aria-hidden="true"></i><span>Duplicate</span></button></li>
+            <li><button type="button" class="bulk-action" data-action="moveCm" title="Move activities">
+              <i class="fa-solid fa-up-down-left-right" aria-hidden="true"></i><span>Move</span></button></li>
+            <li><button type="button" class="bulk-action" data-action="cmDelete" title="Delete activities">
+              <i class="fa-regular fa-trash-can" aria-hidden="true"></i><span>Delete</span></button></li>
+          </ul>
+          <div class="bulk-right">
+            <button type="button" class="bulk-close" id="bulkCancel" data-action="bulkcancel"
+                    aria-label="Close bulk actions"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+            <!-- role=status so the count is announced as it changes, as core does -->
+            <div class="bulk-count" id="bulkCount" data-for="bulkcount" role="status">0 selected</div>
           </div>
         </div>
       </div>
@@ -3066,10 +3174,14 @@ SECTIONS.push({
       + '</button>';
   }
 
+  /* stands in for the real cmid — only needs to be unique and stable enough
+     to tie a checkbox to its label */
+  var cmSeq = 0;
   function activityHTML(it){
     if(it.block) return '<div class="ablock">' + it.block + '</div>';
     if(it.sub)   return subsectionHTML(it.sub);
     var m = modOf(it);
+    var cid = ++cmSeq;
 
     /* legacy flag: teacheronly meant "hidden from students" */
     var vis = it.vis || (it.teacheronly ? "hide" : "show");
@@ -3150,6 +3262,17 @@ SECTIONS.push({
         + '<div class="acard-main">'
           + '<div class="acard-top">'
             + '<div class="acard-identity">'
+              /* Bulk select checkbox, from core's cm/bulkselect.mustache: it is
+                 rendered alongside the handle and hidden until bulk mode, and
+                 its label is visually hidden and names the activity, so it does
+                 not announce as a bare "checkbox". Core's string is
+                 selectcm = "Select {$a}". */
+              + (teacher && editing
+                  ? '<span class="bulkselect" data-for="cmBulkSelect">'
+                    + '<input type="checkbox" id="cmCheckbox' + cid + '" data-action="toggleSelectionCm" data-bulkcheckbox="1">'
+                    + '<label class="sr-only" for="cmCheckbox' + cid + '">Select ' + esc(it.name) + '</label>'
+                    + '</span>'
+                  : '')
               + (teacher && editing ? '<button type="button" class="acard-drag" aria-label="Move ' + esc(it.name) + '"><i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>' : '')
               /* Activity type label: edit mode only (decision D27). In view
                  mode the icon carries the type visually — but the label is
@@ -3828,6 +3951,9 @@ SECTIONS.push({
   }
 
   function showTab(name){
+    /* bulk mode belongs to the course page; carrying its footer onto Settings
+       would leave actions pointing at activities that are no longer on screen */
+    if(name !== "course" && window.__bulkExit) window.__bulkExit();
     document.querySelectorAll(".ws-panel").forEach(function(p){
       p.classList.toggle("active", p.dataset.panel === name);
     });
@@ -4146,10 +4272,100 @@ SECTIONS.push({
     toastEl.textContent = msg; toastEl.classList.add("show");
     clearTimeout(toastEl._t); toastEl._t = setTimeout(function(){ toastEl.classList.remove("show"); }, 2600);
   }
-  ["saveBtn","saveReturnBtn","cancelBtn","viewCourseBtn"].forEach(function(id){
+  ["saveBtn","saveReturnBtn","cancelBtn"].forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.addEventListener("click", function(){ toast('“' + el.textContent.trim() + '” — no server in a prototype'); });
   });
+
+  /* ============================================================
+     BULK ACTIONS
+
+     Mirrors core_courseformat/local/content/bulkedittools.js closely enough
+     to judge the interaction: entering bulk mode reveals a checkbox on every
+     activity and a sticky footer; the actions stay disabled until something
+     is selected; the count is a live region so it is announced as it changes.
+
+     Two deliberate differences from core, both worth a decision:
+       1. The footer is contained to the content column rather than full
+          bleed, so it cannot paint over the course index or the blocks
+          drawer (the MDL-88411 problem).
+       2. Escape leaves bulk mode. Core has no keyboard exit other than
+          tabbing to the close button, and a mode you can enter with one
+          click should be as cheap to leave.
+     ============================================================ */
+  (function(){
+    var toggle = document.getElementById("bulkEnableBtn");
+    var footer = document.getElementById("bulkFooter");
+    if(!toggle || !footer) return;
+    var countEl  = document.getElementById("bulkCount");
+    var selectAll = document.getElementById("bulkSelectAll");
+    var cancel   = document.getElementById("bulkCancel");
+    var actions  = [].slice.call(footer.querySelectorAll(".bulk-action"));
+
+    /* No visibility filter here. Scoping by .ws-panel.active is enough, and
+       an offsetParent test made this return nothing the moment bulk mode was
+       switched off — which left every card still painted as selected, because
+       the loop that clears .bulk-selected had nothing to iterate. */
+    function boxes(){
+      return [].slice.call(document.querySelectorAll('.ws-panel.active [data-bulkcheckbox]'));
+    }
+    function selected(){ return boxes().filter(function(b){ return b.checked; }); }
+
+    function refresh(){
+      var all = boxes(), sel = selected(), n = sel.length;
+      countEl.textContent = n + " selected";
+      actions.forEach(function(a){ a.disabled = n === 0; });
+      selectAll.checked = all.length > 0 && n === all.length;
+      selectAll.indeterminate = n > 0 && n < all.length;
+      all.forEach(function(b){
+        var card = b.closest(".acard");
+        if(card) card.classList.toggle("bulk-selected", b.checked);
+      });
+    }
+
+    function setBulk(on){
+      body.classList.toggle("bulk-on", on);
+      toggle.setAttribute("aria-pressed", on ? "true" : "false");
+      footer.hidden = !on;
+      if(!on){
+        boxes().forEach(function(b){ b.checked = false; });
+        selectAll.checked = false; selectAll.indeterminate = false;
+      }
+      refresh();
+      /* leaving the mode must not strand focus on a control that is gone */
+      if(!on) toggle.focus();
+    }
+
+    toggle.addEventListener("click", function(){
+      setBulk(!body.classList.contains("bulk-on"));
+    });
+    cancel.addEventListener("click", function(){ setBulk(false); });
+    selectAll.addEventListener("change", function(){
+      var v = selectAll.checked;
+      boxes().forEach(function(b){ b.checked = v; });
+      refresh();
+    });
+    document.addEventListener("change", function(e){
+      if(e.target.matches("[data-bulkcheckbox]")) refresh();
+    });
+    actions.forEach(function(a){
+      a.addEventListener("click", function(){
+        var n = selected().length;
+        toast('“' + a.querySelector("span").textContent + '” on ' + n +
+              (n === 1 ? " activity" : " activities") + " — no server in a prototype");
+      });
+    });
+    document.addEventListener("keydown", function(e){
+      if(e.key === "Escape" && body.classList.contains("bulk-on")
+         && !document.querySelector('[data-idd].is-open, .titleinput')){
+        setBulk(false);
+      }
+    });
+    /* leaving edit mode or switching tab must not leave the footer behind */
+    ["editSwitch"].forEach(function(){});
+    window.__bulkExit = function(){ if(body.classList.contains("bulk-on")) setBulk(false); };
+    refresh();
+  })();
   document.querySelectorAll(".mcard").forEach(function(c){
     c.addEventListener("click", function(){ toast('“' + c.querySelector("h3").textContent + '” — opens the real page, not built here'); });
   });
@@ -4160,6 +4376,9 @@ SECTIONS.push({
     var on = editSwitch.getAttribute("aria-pressed") === "true";
     editSwitch.setAttribute("aria-pressed", on ? "false" : "true");
     body.classList.toggle("edit-on", !on);
+    /* bulk mode only exists inside edit mode, and its checkboxes are rebuilt
+       away below, so leave it before the cards are regenerated */
+    if(window.__bulkExit) window.__bulkExit();
     /* the control cluster differs by mode, so the cards are rebuilt */
     if(window.renderCourse) window.renderCourse();
   });
