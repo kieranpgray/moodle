@@ -1702,11 +1702,14 @@
             </div>
             <div class="ws-headactions">
               <!-- Bulk actions, from core's bulkedittoggler. The label is the
-                   real string (courseformat/bulkedit = "Bulk actions") and the
-                   label comes BEFORE the icon, as the template has it. Core
-                   only renders this while editing, so it is hidden otherwise. -->
+                   real string (courseformat/bulkedit = "Bulk actions") and it
+                   comes BEFORE the icon, as the template has it. The icon is
+                   core's own i/bulk_edit, which is Font Awesome's solid pencil
+                   (pix/i/bulk_edit.svg is the FA6 pencil path verbatim) — not
+                   a list or checklist glyph. Core only renders this while
+                   editing, so it is hidden otherwise. -->
               <button class="btn btn-bulk" id="bulkEnableBtn" data-for="enableBulk" aria-pressed="false">
-                Bulk actions <i class="fa-solid fa-list-check" aria-hidden="true"></i>
+                Bulk actions <i class="fa-solid fa-pencil" aria-hidden="true"></i>
               </button>
             </div>
           </div>
