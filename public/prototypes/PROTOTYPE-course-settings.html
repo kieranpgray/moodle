@@ -112,7 +112,11 @@
     margin:0;
     font-family:var(--mds-font-family-base);
     color:var(--mds-text-default);
-    background:var(--mds-bg-surface-default);
+    /* #f8f9fa, sampled off 4515:51706. The whole course page is one flat
+       grey — page, section cards and activity cards are all bg/surface/
+       subtle, separated only by 1px #e9ecef outlines. There is no white
+       surface anywhere on it except small controls. This was white. */
+    background:var(--mds-bg-surface-subtle);
     -webkit-font-smoothing:antialiased;
   }
   a{ color:var(--mds-bg-interactive-primary-default); text-decoration:none; }
@@ -1011,8 +1015,15 @@
   }
   .collapse-all i{ font-size:12px; }
   /* ---------- SECTION CARD ---------- */
+  /* Section card, sampled at 1:1 from 4515:51722: fill #f8f9fa, 1px #e9ecef,
+     16px radius (the left border runs straight from y=15). Identical to the
+     activity card's default state — the section is not a white container
+     holding grey cards, both are the same grey and the outline is the only
+     thing separating them. Was white with a #dee2e6 border at 12px. */
   .scard{
-    background:var(--surface); border:1px solid var(--border-default); border-radius:var(--r-lg);
+    background:var(--mds-bg-surface-subtle);
+    border:1px solid var(--mds-border-subtle);
+    border-radius:var(--mds-border-radius-xl);
     margin-top:16px; overflow:hidden;
   }
   .shead{ display:flex; align-items:center; gap:12px; padding:16px 20px; cursor:pointer; }
@@ -1097,7 +1108,9 @@
   .ablock th{ background:var(--bg-subtle); font-weight:600; color:var(--text-default); }
   .ablock p{ margin:0; }
   /* subsection = nested collapsible card */
-  .subcard{ border:1px solid var(--border-default); border-radius:var(--r-md); background:var(--surface); overflow:hidden; }
+  /* nested subsection — 4515:51801 is the same Molecule/Course section
+     component, so it takes the same treatment as .scard */
+  .subcard{ border:1px solid var(--mds-border-subtle); border-radius:var(--mds-border-radius-xl); background:var(--mds-bg-surface-subtle); overflow:hidden; }
   .subhead{ display:flex; align-items:center; gap:12px; padding:14px 20px; cursor:pointer; }
   .subhead:hover .schev{ background:var(--border-default); }
   .subhead .stitle{ margin:0; font-size:16px; font-weight:600; }
@@ -1105,7 +1118,9 @@
   .subcard.collapsed .subbody, .subcard.collapsed .subempty{ display:none; }
   .subcard.collapsed .schev{ transform:rotate(-90deg); }
   .subbody{ padding:0 20px 18px; display:flex; flex-direction:column; gap:12px; }
-  .subbody .acard{ background:var(--bg-subtle); }
+  /* (a rule giving nested cards their own --bg-subtle fill used to sit here.
+     Removed: every card is --mds-bg-surface-subtle now, so it was a no-op
+     that read as though nesting changed the fill. It does not.) */
   .subempty{ font-size:14px; color:var(--text-muted); font-style:italic; padding:0 20px 18px; }
 
   /* ============================================================
@@ -4284,6 +4299,24 @@ the activity ellipsis menu has no View or Open item (it has Edit
 settings, Move, Duplicate, Assign roles, Group mode, Activity link,
 Delete). If this ships, it needs a replacement path in the same change.
 Out of edit mode the title is a link exactly as today.
+
+PAGE SURFACES — sampled from 4515:51706 and 4515:51722
+  The course page is ONE FLAT GREY. Page background, section cards,
+  subsection cards and activity cards are all #f8f9fa (bg/surface/subtle)
+  with a 1px #e9ecef (border/subtle) outline at 16px radius. Scanning the
+  full-page render across and down finds no white surface anywhere on it —
+  only the small controls (chevron button, search field, completion
+  dropdown) and thin antialiased border lines.
+  What this replaced: a white page with white section cards at #dee2e6 /
+  12px radius. The section was reading as a container holding cards; it is
+  not. Nothing is layered on the course page — the outline is the only
+  thing separating a section from the page or a card from its section.
+  This does NOT change the activity card's states. Hover is still white,
+  which is the whole point: on a page with no other white surface, hover is
+  the only thing that lifts, so it reads harder than it did against a white
+  section. Focus is still the grey fill plus the blue outline. Verified
+  after the change: default #f8f9fa, hover #ffffff, focus #f8f9fa + 1px
+  #0f6cbf border + 1px ring, no layout shift.
 
 CARD STATES — sampled pixel by pixel, not inferred
   default 4501:46419   fill #f8f9fa   border 1px #e9ecef   no pencil
