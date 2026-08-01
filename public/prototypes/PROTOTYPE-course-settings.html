@@ -369,7 +369,32 @@
   .cb-title{ font-size:var(--mds-font-size-heading-6); font-weight:var(--mds-typography-font-weight-semibold); }
   .cb-block{ background:var(--mds-bg-surface-default); border:var(--mds-stroke-weight-sm) solid var(--mds-border-subtle); border-radius:var(--mds-border-radius-sm); padding:var(--mds-spacing-sm) 0; margin-bottom:var(--mds-spacing-xs); }
   .cb-block-head{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:0 var(--mds-spacing-md); }
-  .cb-block-head .grip{ color:var(--mds-text-muted); font-size:12px; }
+  /* The container ring and the grabbed lift were defined on .acard only, so
+     blocks got the handle's own outline but none of the surrounding feedback
+     — a block being dragged or focused looked inert next to a card. Same
+     values as .acard:has(:focus-visible) and .acard.is-grabbed. */
+  .cb-block:has(:focus-visible){
+    border-color:var(--mds-focus-default,#0f6cbf);
+    box-shadow:0 0 0 1px var(--mds-focus-default,#0f6cbf);
+  }
+  .cb-block.is-grabbed{
+    border-color:var(--mds-bg-interactive-primary-default,#0f6cbf);
+    box-shadow:0 0 0 1px var(--mds-bg-interactive-primary-default,#0f6cbf), 0 6px 16px rgba(0,0,0,.12);
+  }
+  @media (prefers-reduced-motion:reduce){
+    .cb-block.is-grabbed{ box-shadow:0 0 0 2px var(--mds-bg-interactive-primary-default,#0f6cbf); }
+  }
+
+  /* Block drag handle. Reuses .acard-drag for the handle's own styling —
+     cursor, focus outline, pressed state — and the same keyboard model,
+     since the drag code keys off that class. .cb-drag adds the edit-mode
+     gate, because a block's handle is static markup rather than
+     conditionally rendered.
+     The 16px handle plus the 8px gap is what indents the block title, which
+     is the same offset the activity card's top row uses. In view mode the
+     handle goes and the title closes up, exactly as the card does. */
+  body:not(.edit-on) .cb-drag{ display:none; }
+  .cb-drag{ flex:0 0 16px; }
   .cb-block-title{ font-size:var(--mds-font-size-heading-6); font-weight:var(--mds-typography-font-weight-medium); color:var(--mds-text-subtle); }
   .cb-block-divider{ height:var(--mds-stroke-weight-sm); background:var(--mds-border-subtle); margin:var(--mds-spacing-sm) 0; }
   .cb-block-body{ padding:0 var(--mds-spacing-md); font-size:var(--mds-font-size-small); }
@@ -803,7 +828,9 @@
   .bulkselect input{ width:16px; height:16px; margin:0; cursor:pointer; accent-color:var(--mds-bg-interactive-primary-default,#0f6cbf); }
   .bulkselect input:focus-visible{ outline:2px solid var(--mds-focus-default,#0f6cbf); outline-offset:2px; }
   /* in bulk mode the drag handle is not the operative control, so it steps back */
-  body.bulk-on .acard-drag{ display:none; }
+  /* scoped to .acard: bulk mode is about selecting activities, so it has no
+     business hiding the drawer blocks' handles */
+  body.bulk-on .acard .acard-drag{ display:none; }
   .acard.bulk-selected{ background:var(--mds-color-blue-50,#e7f0f9); border-color:var(--mds-bg-interactive-primary-default,#0f6cbf); }
 
   .bulk-footer[hidden]{ display:none; }
@@ -874,10 +901,16 @@
 
   /* trailing Expand/collapse — same glyph, label and muted treatment the
      course index already uses for its own Collapse all (.ci-collapseall) */
-  .ws-collapseall{ flex:0 0 auto; display:flex; align-items:center; gap:10px; height:32px;
+  /* Type matches .btn-bulk, sampled from 4183:36007 — 16px regular in
+     text/subtle with a 12px icon and an 8px gap. These two are the only
+     bare text actions in the header area, so them differing in size, weight
+     and colour was the anomaly. Icon size and the 8px gap were already
+     right; size went 14 -> 16, weight to regular, colour muted -> subtle
+     (#6a737b -> #495057, which also takes it from 4.7:1 to 7.8:1). */
+  .ws-collapseall{ flex:0 0 auto; display:flex; align-items:center; gap:var(--mds-spacing-xs); height:32px;
     padding:6px var(--mds-spacing-sm); border:none; background:none; cursor:pointer;
-    border-radius:var(--mds-border-radius-md); color:var(--mds-text-muted); font-family:inherit;
-    font-size:var(--mds-font-size-paragraph-small); line-height:var(--mds-line-height-paragraph-small);
+    border-radius:var(--mds-border-radius-md); color:var(--mds-text-subtle); font-family:inherit;
+    font-size:var(--mds-font-size-body); font-weight:var(--mds-font-weight-regular,400);
     white-space:nowrap; }
   .ws-collapseall:hover{ background:var(--mds-bg-surface-subtle); color:var(--mds-text-default); }
   .ws-collapseall i{ font-size:12px; } /* Figma icons/xs */
@@ -1445,6 +1478,13 @@
      the announcement, and the handle cursor closes, matching what a pointer
      drag looks like at the same moment. */
   .acard-drag[aria-pressed="true"]{ cursor:grabbing; color:var(--mds-bg-interactive-primary-default,#0f6cbf); }
+  /* touch-action:none stops a touch drag scrolling the page instead of
+     moving the item — without it the gesture is claimed by the scroller
+     before the handler ever sees it */
+  .acard-drag{ touch-action:none; }
+  /* while a pointer drag is running, nothing else should select or hover */
+  body.dnd-dragging{ user-select:none; cursor:grabbing; }
+  body.dnd-dragging .acard:hover{ background:var(--mds-bg-surface-subtle); }
   .acard.is-grabbed{
     border-color:var(--mds-bg-interactive-primary-default,#0f6cbf);
     box-shadow:0 0 0 1px var(--mds-bg-interactive-primary-default,#0f6cbf), 0 6px 16px rgba(0,0,0,.12);
@@ -2327,7 +2367,7 @@
           <span class="cb-title">Course Blocks</span>
         </div>
         <div class="cb-block">
-          <div class="cb-block-head"><span class="grip"><i class="fa-solid fa-grip-vertical"></i></span><span class="cb-block-title">Course completion status</span></div>
+          <div class="cb-block-head"><button type="button" class="acard-drag cb-drag" data-drag-item=".cb-block" aria-label="Move Course completion status block" aria-pressed="false" aria-describedby="dragHelp"><i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button><span class="cb-block-title">Course completion status</span></div>
           <div class="cb-block-divider"></div>
           <div class="cb-block-body">
             <div class="row" style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Your progress</span><span id="cbProgressCount">&mdash;</span></div>
@@ -2336,12 +2376,12 @@
           </div>
         </div>
         <div class="cb-block">
-          <div class="cb-block-head"><span class="cb-block-title">Activity types in this course</span></div>
+          <div class="cb-block-head"><button type="button" class="acard-drag cb-drag" data-drag-item=".cb-block" aria-label="Move Activity types in this course block" aria-pressed="false" aria-describedby="dragHelp"><i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button><span class="cb-block-title">Activity types in this course</span></div>
           <div class="cb-block-divider"></div>
           <div class="cb-block-body"><div class="cb-legend" id="cbLegend"></div></div>
         </div>
         <div class="cb-block">
-          <div class="cb-block-head"><span class="cb-block-title">Your teacher</span></div>
+          <div class="cb-block-head"><button type="button" class="acard-drag cb-drag" data-drag-item=".cb-block" aria-label="Move Your teacher block" aria-pressed="false" aria-describedby="dragHelp"><i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button><span class="cb-block-title">Your teacher</span></div>
           <div class="cb-block-divider"></div>
           <div class="cb-teacher"><span class="cb-avatar">ES</span><div><div class="name">Dr. Emily Sanders</div><div class="role">Senior Lecturer, Fleetwood</div></div></div>
         </div>
@@ -2481,7 +2521,7 @@
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
       <div class="anno-badge">1</div>
       <div class="anno-title"><i class="fa-regular fa-eye"></i> Visibility dropdown</div>
-      <div class="anno-body">An icon-only menu carrying all <strong>three</strong> states core supports &mdash; show, hide, and available-but-not-shown &mdash; not the two in the design. Stealth is a site-level switch, so where it is on, every activity offers it. The 28px button has a 44px touch target painted underneath. <em>Out of edit mode there is no control at all when the state is the default; any other state becomes a non-interactive indicator you can tap to reveal what it means.</em></div>
+      <div class="anno-body"><strong>Today:</strong> to change who can see an activity you open the &#8942; menu, find Availability, and pick from a submenu &mdash; three steps, and the current setting is only visible as a text badge once it is not the default.<br><br><strong>Here:</strong> it is one control on the card. The icon shows the current setting at a glance, and selecting it offers the three choices straight away &mdash; visible, hidden, or available by link only.<br><br>When you are not editing, activities set to normal show nothing at all. Only the ones that are hidden or link-only carry an icon, and you can select it to read what it means.</div>
     </div>
     <div class="anno-card" data-anno="draghandle" data-target=".acard[data-mod='glossary'] .acard-drag" data-side="bottom">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
@@ -2493,7 +2533,7 @@
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
       <div class="anno-badge">3</div>
       <div class="anno-title"><i class="fa-solid fa-shapes"></i> Activity type label</div>
-      <div class="anno-body">The label appears while you are <strong>editing</strong>, where it helps you tell one activity from another at a glance. It is not shown when you are just viewing the course, and students never see it. The icon is the module&rsquo;s own icon from Moodle, not a stand-in.</div>
+      <div class="anno-body">The label appears while you are <strong>editing</strong>, where it helps you tell one activity from another at a glance. It is not shown when you are just viewing the course, and students never see it.</div>
     </div>
     <div class="anno-card" data-anno="anchor" data-target="#settingsNav" data-side="right">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
@@ -4431,33 +4471,41 @@ SECTIONS.push({
      would move the item and persist it.
      ============================================================ */
   (function(){
-    var grabbed = null, origin = null, originNext = null;
+    var grabbed = null, origin = null, originNext = null, grabbedSel = ".acard";
 
-    function siblings(card){
-      return [].slice.call(card.parentElement.children).filter(function(n){
-        return n.classList && n.classList.contains("acard"); });
+    /* One implementation, two kinds of thing. The handle declares what it
+       moves with data-drag-item; activity cards leave it off and default to
+       .acard. Blocks in the right-hand drawer reuse the same handle class and
+       therefore the same keyboard model, focus ring, announcements and
+       cancel semantics — copying it would have let the two drift. */
+    function selOf(handle){ return (handle && handle.getAttribute("data-drag-item")) || ".acard"; }
+    function siblings(item, sel){
+      return [].slice.call(item.parentElement.children).filter(function(n){
+        return n.matches && n.matches(sel || grabbedSel); });
     }
-    function posOf(card){
-      var s = siblings(card);
-      return { i: s.indexOf(card) + 1, n: s.length };
+    function posOf(item, sel){
+      var s = siblings(item, sel);
+      return { i: s.indexOf(item) + 1, n: s.length };
     }
-    function nameOf(card){
-      var t = card.querySelector(".atitle");
-      return t ? t.textContent.replace(/\s+/g, " ").trim() : "activity";
+    function nameOf(item){
+      var t = item.querySelector(".atitle, .cb-block-title");
+      return t ? t.textContent.replace(/\s+/g, " ").trim() : "item";
     }
-    function sectionOf(card){
-      var sec = card.closest(".scard, .subcard");
-      var h = sec && sec.querySelector(".stitle, .shead h3, .subhead .stitle");
+    function sectionOf(item){
+      var sec = item.closest(".scard, .subcard, .cb-card");
+      var h = sec && sec.querySelector(".stitle, .shead h3, .subhead .stitle, .cb-title");
       return h ? h.textContent.trim() : "this section";
     }
 
     function grab(handle){
-      var card = handle.closest(".acard");
+      var sel = selOf(handle);
+      var card = handle.closest(sel);
       if(!card) return;
+      grabbedSel = sel;
       grabbed = card; origin = card.parentElement; originNext = card.nextElementSibling;
       card.classList.add("is-grabbed");
       handle.setAttribute("aria-pressed", "true");
-      var p = posOf(card);
+      var p = posOf(card, sel);
       window.__announce(nameOf(card) + " grabbed. Position " + p.i + " of " + p.n + " in " +
         sectionOf(card) + ". Use the up and down arrow keys to move, Enter to drop, Escape to cancel.");
     }
@@ -4487,7 +4535,8 @@ SECTIONS.push({
       }
       if(dir < 0) card.parentElement.insertBefore(card, s[j]);
       else card.parentElement.insertBefore(s[j], card);
-      card.querySelector(".acard-drag").focus();   /* the node moved; keep focus on it */
+      var h = card.querySelector(".acard-drag");
+      if(h) h.focus();                            /* the node moved; keep focus on it */
       var p = posOf(card);
       window.__announce(nameOf(card) + " moved to position " + p.i + " of " + p.n + ".");
     }
@@ -4517,6 +4566,96 @@ SECTIONS.push({
     /* clicking away while held also cancels rather than silently committing */
     document.addEventListener("pointerdown", function(e){
       if(grabbed && !e.target.closest(".acard-drag")) cancel(grabbed);
+    }, true);
+
+    /* ----------------------------------------------------------------
+       POINTER DRAGGING
+
+       Pointer events rather than the HTML5 drag-and-drop API. HTML5 DnD
+       does not fire on touch at all, and this has had to work on a tablet
+       from the start — pointerdown/move/up is one code path for mouse,
+       touch and pen. It also reuses the reorder, announce and cancel
+       functions above, so the two input methods cannot drift apart.
+
+       A drag only starts after the pointer has moved 4px. Below that it is
+       a click, and the handle stays clickable — without the threshold a
+       twitchy mouse turns every click into a no-op drag.
+
+       Live reordering uses the midpoint rule: the dragged item is inserted
+       before the first sibling whose vertical centre is below the pointer.
+       That is what makes the list part while you move rather than only
+       settling on release.
+       ---------------------------------------------------------------- */
+    var ptr = null;
+
+    function ptrSiblings(){
+      return siblings(ptr.item, ptr.sel).filter(function(n){ return n !== ptr.item; });
+    }
+    function ptrReorder(y){
+      var after = null;
+      ptrSiblings().some(function(n){
+        var r = n.getBoundingClientRect();
+        if(y < r.top + r.height / 2){ after = n; return true; }
+        return false;
+      });
+      if(after){ if(after !== ptr.item.nextElementSibling) ptr.item.parentElement.insertBefore(ptr.item, after); }
+      else { ptr.item.parentElement.appendChild(ptr.item); }
+    }
+    function ptrEnd(commit){
+      if(!ptr) return;
+      /* read everything off ptr BEFORE clearing it — an earlier version
+         nulled origin and then tried to restore from it, so cancelling a
+         mouse drag silently committed instead */
+      var item = ptr.item, active = ptr.active, handle = ptr.handle,
+          from = ptr.origin, next = ptr.originNext, id = ptr.id;
+      try { handle.releasePointerCapture(id); } catch(_){}
+      body.classList.remove("dnd-dragging");
+      ptr = null;
+      if(!active) return;                      /* never passed the threshold — it was a click */
+      grabbed = item;                          /* release() clears the shared state */
+      if(commit){ drop(item); return; }
+      if(from) from.insertBefore(item, next);
+      var p = posOf(item);
+      release(item, "Move cancelled. " + nameOf(item) + " returned to position " +
+        p.i + " of " + p.n + ".");
+    }
+
+    document.addEventListener("pointerdown", function(e){
+      var handle = e.target.closest && e.target.closest(".acard-drag");
+      if(!handle || e.button !== 0) return;
+      if(grabbed) cancel(grabbed);             /* a keyboard grab was open */
+      var sel = selOf(handle), item = handle.closest(sel);
+      if(!item) return;
+      e.preventDefault();                      /* no text selection, no scroll on touch */
+      ptr = { handle: handle, item: item, sel: sel, id: e.pointerId,
+              y0: e.clientY, active: false,
+              origin: item.parentElement, originNext: item.nextElementSibling };
+      try { handle.setPointerCapture(e.pointerId); } catch(_){}
+    });
+
+    document.addEventListener("pointermove", function(e){
+      if(!ptr) return;
+      if(!ptr.active){
+        if(Math.abs(e.clientY - ptr.y0) < 4) return;
+        ptr.active = true;
+        grabbedSel = ptr.sel;
+        origin = ptr.origin; originNext = ptr.originNext;
+        ptr.item.classList.add("is-grabbed");
+        ptr.handle.setAttribute("aria-pressed", "true");
+        body.classList.add("dnd-dragging");
+        /* announced for the same reason the keyboard path announces: a
+           screen reader user may well be driving a pointer */
+        var p = posOf(ptr.item, ptr.sel);
+        window.__announce(nameOf(ptr.item) + " picked up. Position " + p.i + " of " + p.n + ".");
+      }
+      ptrReorder(e.clientY);
+    });
+
+    document.addEventListener("pointerup",     function(){ ptrEnd(true);  });
+    document.addEventListener("pointercancel", function(){ ptrEnd(false); });
+    /* Escape mid-drag cancels, matching the keyboard model */
+    document.addEventListener("keydown", function(e){
+      if(ptr && ptr.active && e.key === "Escape"){ e.preventDefault(); ptrEnd(false); }
     }, true);
   })();
 
