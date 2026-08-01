@@ -107,7 +107,14 @@
   }
 
   *{ box-sizing:border-box; }
-  html,body{ height:100%; }
+  /* min-height, NOT height. A sticky element only sticks for as long as its
+     containing block is on screen, and height:100% pinned body's box to the
+     viewport — 720px against 9845px of content. The top bar therefore stuck
+     for the first ~655px of scroll and then scrolled away with the box,
+     which read as it hiding. min-height keeps the "at least a full viewport"
+     behaviour anything else relies on, while letting the box grow with the
+     content so the bar stays put for the whole page. */
+  html,body{ min-height:100%; }
   body{
     margin:0;
     font-family:var(--mds-font-family-base);
@@ -125,8 +132,22 @@
   .shell{ max-width:var(--shell-max); margin:0 auto; padding:0 var(--shell-pad); }
 
   /* =====================  TOP NAV  ===================== */
-  .topbar{ position:sticky; top:0; z-index:40; background:var(--mds-bg-surface-subtle); border-bottom:1px solid var(--mds-border-subtle); }
-  .topbar-inner{ height:var(--nav-h); display:flex; align-items:center; justify-content:space-between; gap:var(--mds-spacing-md); }
+  /* fixed, not sticky. Sticky only holds while the element's containing
+     block is on screen, so the bar was leaving with the end of body's box —
+     and even with the min-height fix above it still lifted off in the last
+     65px of the page. Fixed has no containing-block dependency, so the bar
+     is there for every scroll position including the very bottom.
+     body then needs a spacer, since the bar no longer occupies flow.
+     The bar is made to measure exactly --nav-h INCLUDING its border, by
+     taking the border off the inner height. Otherwise it is 65px while
+     every "calc(var(--nav-h) + ...)" offset in this file — the course
+     index, the blocks drawer, both toggles — assumes 64, and they all end
+     up a pixel under it. One rule here beats correcting each of them. */
+  .topbar{ position:fixed; top:0; left:0; right:0; z-index:40;
+    background:var(--mds-bg-surface-subtle); border-bottom:1px solid var(--mds-border-subtle); }
+  body{ padding-top:var(--nav-h); }
+  /* minus the border, so the header's total height is exactly --nav-h */
+  .topbar-inner{ height:calc(var(--nav-h) - 1px); display:flex; align-items:center; justify-content:space-between; gap:var(--mds-spacing-md); }
   .nav-left{ display:flex; align-items:center; gap:2rem; min-width:0; }
   .brand{ display:flex; align-items:center; gap:.5rem; height:40px; }
   .brand .mark{ font-size:26px; }
@@ -1181,14 +1202,65 @@
   .atitle{ margin:0; font-size:17px; font-weight:600; line-height:1.35; letter-spacing:-.1px; }
   .atitle a{ color:var(--text-default); }
   .adesc{ margin:6px 0 0; font-size:14px; line-height:1.55; color:var(--text-subtle); }
+  /* Restrictions, sampled 1:1 from Figma 4501:46378:
+       fill    #f8f9fa  (same grey as everything else on this page)
+       border  1px #dee2e6  — border/default, NOT the #e9ecef used elsewhere.
+               It is the one element on the card that steps up a shade, which
+               is what stops it reading as another date badge.
+       radius  16px (border radius/xl), matching the card itself
+       text    #495057 at 16px regular, with the lead-in bolded
+       icon    18px lock at #495057, 8px from the text
+       padding 16px
+       "Show more" is text/link/primary/default #0f6cbf.
+     Was: 13px text, 8px radius, #e9ecef border, 10/12px padding. */
   .arestrict{
-    display:flex; align-items:center; gap:10px; margin-top:12px; padding:10px 12px;
-    background:var(--bg-subtle); border:1px solid var(--border-subtle); border-radius:var(--r-md);
-    font-size:13px; color:var(--text-subtle);
+    display:flex; align-items:flex-start; gap:var(--mds-spacing-xs);
+    margin-top:var(--mds-spacing-sm); padding:var(--mds-spacing-md);
+    background:var(--mds-bg-surface-subtle); border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-xl);
+    font-size:var(--mds-font-size-body); line-height:24px; color:var(--mds-text-subtle);
   }
-  .arestrict > i{ font-size:12px; flex:0 0 auto; color:var(--text-muted); }
+  .arestrict > i{ font-size:18px; flex:0 0 auto; color:var(--mds-text-subtle); line-height:24px; }
   .arestrict .txt{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .arestrict .showmore{ flex:0 0 auto; color:var(--primary); cursor:pointer; white-space:nowrap; }
+  /* core emits <strong> in its condition strings; <b> is here for the older
+     demo data that used it */
+  .arestrict .txt b, .arestrict .txt strong{ font-weight:var(--mds-font-weight-semibold,600); color:var(--mds-text-default); }
+  /* a real button: this expands and collapses content, so it has to be
+     reachable and it has to say which state it is in. It was a <span>,
+     which no keyboard could get to at all. */
+  .arestrict .showmore{
+    flex:0 0 auto; border:0; background:none; padding:0 0 0 var(--mds-spacing-xs);
+    color:var(--mds-text-link-default,#0f6cbf); cursor:pointer; white-space:nowrap;
+    font-family:inherit; font-size:inherit; line-height:24px;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .arestrict .showmore:hover{ text-decoration:underline; }
+  .arestrict .showmore:focus-visible{ outline:2px solid var(--mds-focus-default,#0f6cbf); outline-offset:2px; border-radius:4px; }
+  /* Edit affordance, from the card states 4501:46419/46446 where the
+     Restrictions instance shows an "Edit restrictions" row. Hidden in the
+     standalone 46378, which is the view-mode variant — so it follows edit
+     mode, like every other editing affordance on the card. */
+  .arestrict-edit{
+    display:none; margin-top:var(--mds-spacing-sm); padding-top:var(--mds-spacing-sm);
+    border-top:1px solid var(--mds-border-subtle);
+  }
+  body.edit-on .acard .arestrict-wrap .arestrict-edit{ display:block; }
+  .arestrict-edit button{
+    border:0; background:none; padding:2px 4px; cursor:pointer; font-family:inherit;
+    font-size:var(--mds-font-size-body); color:var(--mds-text-subtle);
+    display:inline-flex; align-items:center; gap:var(--mds-spacing-xs);
+    border-radius:var(--mds-border-radius-sm);
+  }
+  .arestrict-edit button i{ font-size:12px; }
+  .arestrict-edit button:hover{ background:var(--mds-bg-surface-strong); color:var(--mds-text-default); }
+  .arestrict-edit button:focus-visible{ outline:2px solid var(--mds-focus-default,#0f6cbf); outline-offset:2px; }
+  /* the wrapper carries the box so the edit row sits inside the same border */
+  .arestrict-wrap{
+    margin-top:var(--mds-spacing-sm); padding:var(--mds-spacing-md);
+    background:var(--mds-bg-surface-subtle); border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-xl);
+  }
+  .arestrict-wrap .arestrict{ margin:0; padding:0; background:none; border:0; border-radius:0; }
   .arestrict.open .txt{ white-space:normal; }
   .afoot{
     display:flex; align-items:center; gap:10px; margin:14px -20px 0; padding:12px 20px 0;
@@ -2811,7 +2883,7 @@ SECTIONS.push({
     { mod:"quiz", name:"Quiz 1: Cellular Respiration",
       desc:"Ten-minute check on respiration. You may attempt it twice; your highest score counts.",
       dates:["Closes: Monday, 3 August 2026, 11:59 PM"],
-      restrict:"Not available unless: The activity <b>Assignment 1: Enzyme lab report</b> is marked complete." },
+      restrict:"Not available unless: The activity <strong>Assignment 1: Enzyme lab report</strong> is marked complete" },
     /* FORMAT 7 — four dates in two named groups. Only mod_workshop gets
        here, and it is the case that motivates the grouping in 4501:47700:
        flat, core's own strings would give four badges reading "Submissions
@@ -2878,9 +2950,9 @@ SECTIONS.push({
       ]}},
     { sub:{ title:"Restricted contents (nested)", items:[
         { mod:"page", name:"Unlocks in 30 days (greyed out with info)", desc:"Test page 4",
-          dimmed:true, restrict:"Not available until: <b>26 August 2026</b>." },
+          dimmed:true, restrict:"Not available unless: It is on or after <strong>26 August 2026</strong>" },
         { mod:"page", name:"Completely hidden until unlocked", desc:"Test page 5",
-          teacheronly:true, restrict:"Hidden entirely from students until <b>26 August 2026</b>." }
+          teacheronly:true, restrict:"Not available (hidden) unless: It is on or after <strong>26 August 2026</strong>" }
       ]}}
   ]
 });
@@ -2908,6 +2980,7 @@ SECTIONS.push({
     { mod:"lesson", name:"Interactive: Monohybrid crosses", desc:"Work through a monohybrid cross step by step.",
       chips:[{cls:"meta", icon:"fa-solid fa-layer-group", text:"9 pages"}] },
     { mod:"quiz", name:"Quiz 2: Mendelian genetics", desc:"Apply Punnett squares and Mendel's laws.",
+      restrict:"Not available unless: The activity <strong>Interactive: Monohybrid crosses</strong> is marked complete",
       chips:[{cls:"meta", icon:"fa-regular fa-clock", text:"20 min"},{cls:"meta", icon:"fa-solid fa-rotate-right", text:"1 attempt"}],
       foot:{icon:"fa-solid fa-circle-xmark", cls:"missed", text:"Closed 15 July 2026 — no attempt submitted."} }
   ]
@@ -2929,6 +3002,9 @@ SECTIONS.push({
   items:[
     { mod:"workshop", name:"Peer review: Evolution essay",
       desc:"Write a 500-word essay: “Describe two lines of evidence for evolution by natural selection.” You will then peer-assess two classmates' essays against a rubric.",
+      /* several conditions — this is the card that exercises the truncation
+         and the Show more control in 4501:46378 */
+      restrict:"Not available unless: The <strong>previous activity with completion</strong> is marked complete, You achieve a score within a certain range in <strong>Quiz 2: Mendelian genetics</strong>, and You belong to <strong>Lab Group A</strong>",
       chips:[{cls:"meta", icon:"fa-solid fa-diagram-predecessor", text:"Submission phase"}],
       foot:{icon:"fa-solid fa-circle-exclamation", cls:"todo", text:"Submission phase open — you have not submitted."} },
     { mod:"forum", name:"Debate: Is the peppered moth the best example of natural selection?",
@@ -2947,6 +3023,7 @@ SECTIONS.push({
     { mod:"choice", name:"Vote: Field-trip destination", desc:"Where should our ecology field trip go?" },
     { mod:"assign", name:"Capstone: Ecosystem case study",
       desc:"Choose a local ecosystem and analyse its energy flow, key species interactions and one human impact. 1000 words plus a food-web diagram.",
+      restrict:"Not available unless: You achieve higher than a certain score in <strong>Assignment 2: Mitosis vs Meiosis diagram</strong>",
       chips:[{cls:"meta", icon:"fa-solid fa-percent", text:"Worth 30%"},{cls:"meta", icon:"fa-solid fa-file-word", text:"1000 words"}] },
     { mod:"feedback", name:"End-of-course feedback", desc:"Your anonymous feedback helps improve Biology 101.",
       chips:[{cls:"meta", icon:"fa-solid fa-user-secret", text:"Anonymous"}] }
@@ -3424,9 +3501,22 @@ SECTIONS.push({
         + dates + chips + '</div>';
     }
     if(it.restrict){
-      html += '<div class="arestrict"><i class="fa-solid fa-lock"></i>'
-        + '<span class="txt">' + it.restrict + '</span>'
-        + '<span class="showmore" data-showmore>Show more <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></span>'
+      /* The wrapper owns the box so the "Edit restrictions" row sits inside
+         the same border, as it does in the card state nodes. */
+      html += '<div class="arestrict-wrap">'
+        + '<div class="arestrict"><i class="fa-solid fa-lock" aria-hidden="true"></i>'
+          + '<span class="txt" id="restr' + cid + '">' + it.restrict + '</span>'
+          + '<button type="button" class="showmore" data-showmore aria-expanded="false"'
+            + ' aria-controls="restr' + cid + '">'
+            + '<span class="sm-label">Show more</span>'
+            + '<i class="fa-solid fa-chevron-down" aria-hidden="true" style="font-size:9px"></i>'
+          + '</button>'
+        + '</div>'
+        + '<div class="arestrict-edit">'
+          + '<button type="button" data-editrestrict>'
+            + 'Edit restrictions <i class="fa-solid fa-pencil" aria-hidden="true"></i>'
+          + '</button>'
+        + '</div>'
         + '</div>';
     }
     return html + footHTML(it) + '</div></article>';
@@ -3937,10 +4027,18 @@ SECTIONS.push({
     var more = e.target.closest("[data-showmore]");
     if(more){
       var box = more.closest(".arestrict");
-      box.classList.toggle("open");
-      more.innerHTML = box.classList.contains("open")
-        ? 'Show less <i class="fa-solid fa-chevron-up" style="font-size:9px"></i>'
-        : 'Show more <i class="fa-solid fa-chevron-down" style="font-size:9px"></i>';
+      var open = !box.classList.contains("open");
+      box.classList.toggle("open", open);
+      /* aria-expanded carries the state; only the label and the chevron are
+         rewritten, so the button element and its focus survive the toggle */
+      more.setAttribute("aria-expanded", open ? "true" : "false");
+      more.querySelector(".sm-label").textContent = open ? "Show less" : "Show more";
+      more.querySelector("i").className = "fa-solid fa-chevron-" + (open ? "up" : "down");
+      return;
+    }
+    var editRestrict = e.target.closest("[data-editrestrict]");
+    if(editRestrict){
+      toast("“Edit restrictions” — opens the restrict access dialog, not built here");
       return;
     }
 
