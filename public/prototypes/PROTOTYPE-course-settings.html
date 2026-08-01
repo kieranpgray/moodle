@@ -1237,6 +1237,34 @@
     font-size:14px; font-weight:500; line-height:12px;
     white-space:nowrap;
   }
+  /* the label span mirrors core's date-item-label. Deliberately given no
+     treatment of its own — 4501:47709 renders the badge in one weight and
+     one colour — but it exists so the question stays open.
+     The gap is doing the work of the word space: .adate is inline-flex, so
+     the whitespace between the label span and the date text becomes an
+     anonymous flex item and is dropped, giving "Closes:Monday". 4px is
+     spacing/xxs and reads as a normal space at 14px. */
+  .adate{ column-gap:var(--mds-spacing-xxs); }
+  .adate-label{ font:inherit; color:inherit; }
+
+  /* Grouped dates (workshop only), from Figma 4501:47700: the label sits
+     ABOVE its badge row, not beside it — "Submissions:" at y=0, 18px tall,
+     with the badges at y=22, so a 4px gap. 12px between the two groups
+     (spacing/sm, the one spacing token on that frame not accounted for by
+     the badges themselves). The group label colour is NOT sampled — both
+     labels are hidden in the node that was shared, so --mds-text-subtle is
+     a judgement call, subdued enough to read as a heading for the row
+     rather than competing with the badges. */
+  .acard-badges.is-grouped{
+    flex-direction:column; align-items:flex-start; gap:var(--mds-spacing-sm);
+  }
+  .adate-group{ display:flex; flex-direction:column; gap:var(--mds-spacing-xxs); }
+  .adate-grouplabel{
+    font-size:14px; font-weight:500; line-height:18px; color:var(--mds-text-subtle);
+  }
+  .adate-row{
+    display:flex; flex-wrap:wrap; align-items:center; gap:var(--mds-spacing-xs);
+  }
 
   /* ---------- control cluster ---------- */
   .acard-actions{ display:flex; align-items:center; gap:8px; flex:0 0 auto; }
@@ -2311,20 +2339,33 @@ var PURPOSE_LABEL = {
    ==========================================================================*/
 var SECTIONS = [];
 
+/* ---------------------------------------------------------------------------
+   SECTIONS 0-6 — THE DATE HALF. Every activity here carries dates and none
+   carries a chip, so the date formats can be judged without a "5 chapters"
+   pill sitting beside them looking like the same kind of object.
+   Between them these seven sections cover every shape core can produce:
+   one date, two dates, four grouped dates, each tense combination, and the
+   large number of activities whose module has no dates class at all.
+   Sections 7-12 are the mirror image — chips, no dates.
+   ------------------------------------------------------------------------ */
+
 SECTIONS.push({
   title:"General",
   items:[
+    /* page has no dates class — nothing renders, which is the common case */
     { mod:"page", name:"Start Here: How this course works", desc:"Read this first.", done:true },
+    /* FORMAT 1 — a single date. mod_forum contributes exactly one, "Due:",
+       and there is no matching open date, so this is the only shape a forum
+       can ever have. */
     { mod:"forum", name:"Course Q&amp;A",
       desc:"Ask anything about the course here. This is a Q&amp;A forum: you must post your own answer before you can see other students' replies.",
       vis:"show", group:"separate",
-      chips:[{cls:"meta", icon:"fa-solid fa-reply", text:"12 replies"}] },
+      dates:["Due: Friday, 4 September 2026, 5:00 PM"] },
     { mod:"book", name:"Course Syllabus &amp; Study Guide",
       desc:"Everything you need to know about how this course is run and assessed.",
-      chips:[{cls:"meta", icon:"fa-solid fa-list-ol", text:"5 chapters"}], manual:true },
+      manual:true },
     { mod:"glossary", name:"Biology Glossary",
-      desc:"Key terms used throughout Biology 101. Terms are auto-linked wherever they appear in the course.",
-      chips:[{cls:"meta", icon:"fa-solid fa-a", text:"48 entries"}] },
+      desc:"Key terms used throughout Biology 101. Terms are auto-linked wherever they appear in the course." },
     /* Non-default visibility states live in the FIRST section on purpose.
        View mode renders nothing for a default state, so if every activity
        up here were "show on course page" the page would look as though the
@@ -2333,8 +2374,7 @@ SECTIONS.push({
       desc:"An optional but excellent video series covering the whole course.",
       vis:"stealth" },
     { mod:"resource", name:"Printable syllabus (file)", desc:"Download and keep a copy of the syllabus.",
-      vis:"hide",
-      chips:[{cls:"meta", icon:"fa-regular fa-file-pdf", text:"PDF · 420 KB"}] }
+      vis:"hide" }
   ]
 });
 
@@ -2343,8 +2383,12 @@ SECTIONS.push({
   summary:"What is life? Characteristics of living things, levels of biological organisation, and how scientists ask and answer questions.",
   items:[
     { mod:"page", name:"Reading: What is Life?", desc:"Core reading for Topic 1.", done:true },
+    /* FORMAT 2 — a pair, both in the past. Core swaps to the past form per
+       date, so a finished activity reads "Opened:" / "Closed:" rather than
+       carrying any separate "this has ended" marker. */
     { mod:"choice", name:"Poll: Which topic are you most excited about?", desc:"Help shape optional extra sessions.",
       vis:"show", group:"none",
+      dates:["Opened: Monday, 6 July 2026, 9:00 AM","Closed: Friday, 17 July 2026, 5:00 PM"],
       foot:{icon:"fa-solid fa-circle-check", cls:"done", text:"Done. You answered “Genetics”."} , done:true },
     /* hidden from students — the state the Figma card shows dimmed */
     /* groupforced mirrors $cm->coursegroupmodeforce — core drops to a static
@@ -2352,9 +2396,11 @@ SECTIONS.push({
        setting overrides the activity and there is nothing to choose. Kept
        off the first card on the page so the first group control anyone
        meets is a live one. */
+    /* date-capable module with no date SET — renders nothing, same as a page.
+       Worth having on the page: "no dates" is not the same as "no dates
+       possible", and neither state should look like a rendering failure. */
     { mod:"forum", name:"Introduce yourself", desc:"Tell the class who you are and why you are taking Biology 101.",
       vis:"hide", group:"visible", groupforced:true,
-      chips:[{cls:"meta", icon:"fa-solid fa-reply", text:"31 replies"}],
       foot:{icon:"fa-solid fa-circle-check", cls:"done", text:"Done. Posted 6 July 2026."}, done:true }
   ]
 });
@@ -2363,16 +2409,23 @@ SECTIONS.push({
   title:"The Chemistry of Life",
   summary:"Atoms, bonds, water, pH, and the four classes of biological macromolecules: carbohydrates, lipids, proteins and nucleic acids.",
   items:[
+    /* CORRECTION: this card previously carried "Opens:"/"Closes:" dates.
+       mod_book has no classes/dates.php, so core cannot produce a date for
+       a book under any configuration — the badges were wrong, not merely
+       unrepresentative. Same for the url below. */
     { mod:"book", name:"Textbook: The Chemistry of Life",
       desc:"A short textbook chapter with sub-chapters — use the table of contents to navigate.",
-      vis:"show", group:"none", stealthok:true,
-      dates:["Opens: Saturday, 1 August, 8.30 AM","Closes: Monday, 10 August, 8.30 AM"],
-      chips:[{cls:"meta", icon:"fa-solid fa-list-ol", text:"4 chapters"}], done:true },
+      vis:"show", group:"none", stealthok:true, done:true },
     /* stealth — available by link but off the course page. The third state
        the Figma states page has no icon for. */
     { mod:"url", name:"Video: The properties of water", desc:"A 10-minute primer on why water is so important to life.",
       vis:"stealth", group:"visible", stealthok:true, groupforced:false,
-      chips:[{cls:"meta", icon:"fa-regular fa-clock", text:"10 min"}], manual:true },
+      manual:true },
+    /* FORMAT 3 — a pair, both in the future. Nothing has happened yet, so
+       both dates take the present form. */
+    { mod:"data", name:"Database: Macromolecule catalogue",
+      desc:"Add an entry for each macromolecule you meet in this topic: class, monomer, and where it turns up in the body.",
+      dates:["Opens: Saturday, 1 August 2026, 9:00 AM","Closes: Monday, 10 August 2026, 5:00 PM"] },
     { block:'<h4>Quick reference: the four macromolecules</h4>'
       + '<table><tr><th>Class</th><th>Monomer</th><th>Function</th></tr>'
       + '<tr><td>Carbohydrate</td><td>Monosaccharide</td><td>Energy, structure</td></tr>'
@@ -2386,14 +2439,18 @@ SECTIONS.push({
   title:"Cell Structure &amp; Function",
   summary:"Prokaryotic vs eukaryotic cells, organelles, and the endomembrane system. The cell as the basic unit of life.",
   items:[
+    /* FORMAT 4 — a pair with MIXED tense: open in the past, closing in the
+       future. This is the live-right-now state and the most common one on
+       a real course page, and it is the case that makes clear the tense is
+       chosen per date rather than per activity. */
     { mod:"lesson", name:"Interactive: A Tour of the Cell",
       desc:"A self-paced lesson. Move through the pages using the navigation buttons.",
-      chips:[{cls:"meta", icon:"fa-solid fa-layer-group", text:"14 pages"}], done:true },
+      dates:["Opened: Monday, 20 July 2026, 9:00 AM","Closes: Friday, 31 July 2026, 5:00 PM"], done:true },
+    /* h5pactivity has no dates class */
     { mod:"h5pactivity", name:"Interactive: Identify the organelle", desc:"A short interactive multiple-choice activity.",
       foot:{icon:"fa-solid fa-circle-check", cls:"done", text:"Done. Best attempt 8/10."}, grade:"80%", done:true },
     { mod:"folder", name:"Lab resources: Microscopy",
-      desc:"Slides, worksheets and a microscopy checklist for this week's lab.",
-      chips:[{cls:"meta", icon:"fa-regular fa-folder-open", text:"6 files"}] }
+      desc:"Slides, worksheets and a microscopy checklist for this week's lab." }
   ]
 });
 
@@ -2414,9 +2471,13 @@ SECTIONS.push({
   summary:"Energy, ATP, activation energy and how enzymes catalyse the reactions of life.",
   items:[
     { mod:"page", name:"Reading: How enzymes work", desc:"Core reading for Topic 5." },
+    /* FORMAT 5 — assign's own pair. The second label is "Due:", not
+       "Closes:", because mod_assign supplies its own strings; a submission
+       deadline is not the same idea as an activity closing, and core is
+       careful about that. Shown in the past form. */
     { mod:"assign", name:"Assignment 1: Enzyme lab report",
       desc:"Submit your write-up of the catalase enzyme practical. Include a hypothesis, method, results table and discussion. Online text and a file attachment are both accepted.",
-      chips:[{cls:"date", icon:"fa-regular fa-calendar", text:"Due 23 Jul 2026"}],
+      dates:["Opened: Monday, 13 July 2026, 9:00 AM","Due: Thursday, 23 July 2026, 5:00 PM"],
       foot:{icon:"fa-solid fa-circle-check", cls:"done", text:"Done. Submitted 22 July 2026 — graded."}, grade:"78 / 100", done:true }
   ]
 });
@@ -2426,20 +2487,59 @@ SECTIONS.push({
   summary:"Glycolysis, the Krebs cycle and oxidative phosphorylation — how cells harvest energy from glucose.",
   items:[
     { mod:"page", name:"Reading: From glucose to ATP", desc:"Core reading for Topic 6." },
+    /* FORMAT 6 — a CLOSE date with no open date. The two dates are
+       independent in every module that has both, so a lone "Closes:" is as
+       valid as a lone "Opens:" and the badge must not assume a pair. Also
+       the only card on the page where a date sits above a restriction, to
+       check the 16px rhythm between them holds. */
     { mod:"quiz", name:"Quiz 1: Cellular Respiration",
       desc:"Ten-minute check on respiration. You may attempt it twice; your highest score counts.",
-      chips:[{cls:"meta", icon:"fa-regular fa-clock", text:"10 min"},{cls:"meta", icon:"fa-solid fa-rotate-right", text:"2 attempts"}],
+      dates:["Closes: Monday, 3 August 2026, 11:59 PM"],
       restrict:"Not available unless: The activity <b>Assignment 1: Enzyme lab report</b> is marked complete." },
+    /* FORMAT 7 — four dates in two named groups. Only mod_workshop gets
+       here, and it is the case that motivates the grouping in 4501:47700:
+       flat, core's own strings would give four badges reading "Submissions
+       opened:", "Submissions close:", "Assessments open:", "Assessments
+       close:" — the phase repeated in every one. Hoisting it into a group
+       label lets the badges use the short forms.
+       Note the tense still varies inside a group: submissions opened, and
+       close on Friday. */
+    { mod:"workshop", name:"Peer review: Respiration pathway diagrams",
+      desc:"Submit your annotated diagram of glycolysis and the Krebs cycle, then assess two classmates' diagrams against the rubric.",
+      dategroups:[
+        { label:"Submissions:", dates:[
+            "Opened: Monday, 20 July 2026, 9:00 AM",
+            "Closes: Friday, 31 July 2026, 5:00 PM"] },
+        { label:"Assessments:", dates:[
+            "Opens: Saturday, 1 August 2026, 9:00 AM",
+            "Closes: Friday, 7 August 2026, 5:00 PM"] }
+      ] },
     { sub:{ title:"Respiration pathways (nested)", items:[
         { mod:"page", name:"Glycolysis explained", desc:"Test page 1" },
         { mod:"page", name:"The Krebs cycle", desc:"Description shown on the course page, to show the altcontent surface." },
-        { mod:"forum", name:"Respiration Q&amp;A", desc:"Test forum 1",
-          chips:[{cls:"meta", icon:"fa-solid fa-reply", text:"4 replies"}] },
+        { mod:"forum", name:"Respiration Q&amp;A", desc:"Test forum 1" },
         { block:'<p>Inline label inside a subsection — renders without its own card in non-editing view.</p>' }
       ]}},
     { sub:{ title:"Empty subsection (no activities)", items:[] }}
   ]
 });
+
+/* ---------------------------------------------------------------------------
+   SECTIONS 7-12 — THE CHIP HALF. Counts and properties only: chapters,
+   replies, entries, pages, files, duration, attempts, weighting. No dates.
+
+   Chips are NOT a core feature. Core renders the activity dates and, for a
+   few modules, an "activitybadge" (mod_book's chapter count, mod_resource's
+   file type and size); everything else here is proposed. Keeping them apart
+   from the dates is what makes that distinction legible — the date badges
+   are grounded in \core\activity_dates, these are an idea to react to.
+
+   Three date-shaped chips were removed from these sections ("Due 23 Jul
+   2026", "Due in 3 days · 30 Jul 2026", "10 Jul – 15 Jul 2026"). They used
+   a different vocabulary from core's ("Due in 3 days", a date RANGE in one
+   badge), so a reviewer comparing halves would have been comparing the real
+   date model against an invented one.
+   ------------------------------------------------------------------------ */
 
 SECTIONS.push({
   title:"Photosynthesis",
@@ -2471,7 +2571,7 @@ SECTIONS.push({
       chips:[{cls:"meta", icon:"fa-solid fa-table-cells", text:"23 entries"}] },
     { mod:"assign", name:"Assignment 2: Mitosis vs Meiosis diagram",
       desc:"Upload a labelled diagram (image or PDF) comparing mitosis and meiosis.",
-      chips:[{cls:"date warn", icon:"fa-regular fa-calendar", text:"Due in 3 days · 30 Jul 2026"}],
+      chips:[{cls:"meta", icon:"fa-regular fa-image", text:"Image or PDF"},{cls:"meta", icon:"fa-solid fa-percent", text:"Worth 15%"}],
       foot:{icon:"fa-solid fa-circle-exclamation", cls:"todo", text:"No submission yet."} }
   ]
 });
@@ -2485,7 +2585,7 @@ SECTIONS.push({
     { mod:"lesson", name:"Interactive: Monohybrid crosses", desc:"Work through a monohybrid cross step by step.",
       chips:[{cls:"meta", icon:"fa-solid fa-layer-group", text:"9 pages"}] },
     { mod:"quiz", name:"Quiz 2: Mendelian genetics", desc:"Apply Punnett squares and Mendel's laws.",
-      chips:[{cls:"date", icon:"fa-regular fa-calendar", text:"10 Jul – 15 Jul 2026"}],
+      chips:[{cls:"meta", icon:"fa-regular fa-clock", text:"20 min"},{cls:"meta", icon:"fa-solid fa-rotate-right", text:"1 attempt"}],
       foot:{icon:"fa-solid fa-circle-xmark", cls:"missed", text:"Closed 15 July 2026 — no attempt submitted."} }
   ]
 });
@@ -2524,7 +2624,7 @@ SECTIONS.push({
     { mod:"choice", name:"Vote: Field-trip destination", desc:"Where should our ecology field trip go?" },
     { mod:"assign", name:"Capstone: Ecosystem case study",
       desc:"Choose a local ecosystem and analyse its energy flow, key species interactions and one human impact. 1000 words plus a food-web diagram.",
-      chips:[{cls:"date", icon:"fa-regular fa-calendar", text:"Due 13 Aug 2026"},{cls:"meta", icon:"fa-solid fa-percent", text:"Worth 30%"}] },
+      chips:[{cls:"meta", icon:"fa-solid fa-percent", text:"Worth 30%"},{cls:"meta", icon:"fa-solid fa-file-word", text:"1000 words"}] },
     { mod:"feedback", name:"End-of-course feedback", desc:"Your anonymous feedback helps improve Biology 101.",
       chips:[{cls:"meta", icon:"fa-solid fa-user-secret", text:"Anonymous"}] }
   ]
@@ -2548,6 +2648,70 @@ SECTIONS.push({
   /* ---------- activity card ---------- */
   function chipHTML(c){
     return '<span class="chip ' + c.cls + '"><i class="' + c.icon + '"></i>' + esc(c.text) + '</span>';
+  }
+
+  /* ------------------------------------------------------------------
+     ACTIVITY DATES
+
+     Every label below is a real core string, not invented. The set comes
+     from the ten modules that implement \core\activity_dates:
+
+       core_course   Opens: / Opened: / Closes: / Closed:
+                     (quiz, choice, lesson, data, feedback, scorm, bbb)
+       mod_assign    Opens: / Opened: / Due:
+       mod_forum     Due:
+       mod_workshop  Submissions open: / Submissions opened:
+                     Submissions close: / Submissions closed:
+                     Assessments open:  / Assessments opened:
+                     Assessments close: / Assessments closed:
+
+     Two things fall out of that list and both are demonstrated in the
+     top half of the course:
+
+     1. Tense is per-date, not per-activity. Each module picks the past
+        form once that date has passed ($timeopen > $now ? 'opens' :
+        'opened'), so a live activity shows "Opened:" next to "Closes:".
+        Every combination is on the page.
+     2. The count varies from one to four. Forum has a single date,
+        assign and the core_course modules have up to two, workshop has
+        up to four. The modules with no dates class at all — page, book,
+        url, resource, folder, glossary, h5pactivity — show nothing, and
+        that is most of the course.
+
+     Core renders each one as
+       <span class="date-item-label">Opens:</span> 6 April 2021, 6:46 PM
+     (core_course/activity_date), so the label span is kept here even
+     though 4501:47709 gives it no separate treatment. It costs nothing
+     and it leaves "should the label be weighted differently?" open as a
+     styling decision rather than closing it off in the markup.
+     ------------------------------------------------------------------ */
+  function dateBadge(d){
+    var i = d.indexOf(':');
+    if(i < 0) return '<span class="adate">' + esc(d) + '</span>';
+    return '<span class="adate"><span class="adate-label">' + esc(d.slice(0, i + 1)) + '</span> '
+      + esc(d.slice(i + 1).trim()) + '</span>';
+  }
+  /* Grouped dates come from Figma 4501:47700, which wraps the badge row
+     in named "Submissions" / "Assessments" frames each with its own
+     label above the row. Only workshop produces enough dates to need it.
+
+     NET NEW, and worth a decision: when the group label is shown, the
+     badges inside drop their own prefix — "Submissions: [Opened: ...]"
+     rather than "Submissions opened:" repeated twice. Core has no
+     grouping concept, so its strings carry the phase in every badge,
+     which is why four workshop dates read so repetitively today. The
+     group label is what makes the shorter core_course strings reusable
+     for workshop. */
+  function datesHTML(it){
+    if(it.dategroups){
+      return it.dategroups.map(function(g){
+        return '<div class="adate-group">'
+          + '<span class="adate-grouplabel">' + esc(g.label) + '</span>'
+          + '<div class="adate-row">' + g.dates.map(dateBadge).join('') + '</div>'
+          + '</div>';
+      }).join('');
+    }
+    return (it.dates || []).map(dateBadge).join('');
   }
   /* The completion-status footer ("Done.", "No submission yet." and the
      rest) is gone: completion now lives in the card's control row, which
@@ -2816,10 +2980,16 @@ SECTIONS.push({
         + '<i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i></button>';
     }
 
+    /* Dates and chips are mutually exclusive, and the guard is here rather
+       than left to the demo data so it cannot drift. The top half of the
+       course carries dates, the bottom half carries chips, and nothing
+       carries both — otherwise a row of "Due: 23 July" next to "5 chapters"
+       reads as one undifferentiated strip of grey pills and neither idea
+       can be judged on its own. Both are badge-shaped, so proximity alone
+       implies they are the same kind of thing; they are not. */
     var chips = (it.chips || []).map(chipHTML).join('');
-    var dates = (it.dates || []).map(function(d){
-      return '<span class="adate">' + esc(d) + '</span>';
-    }).join('');
+    var dates = datesHTML(it);
+    if(dates) chips = '';
 
     var html = '<article class="' + cls + '" data-purpose="' + m.purpose + '">'
       + '<div class="acard-body">'
@@ -2846,7 +3016,10 @@ SECTIONS.push({
           + '<h4 class="atitle">' + titleHTML(it.name, teacher && editing) + '</h4>';
     if(it.desc) html += '<p class="adesc">' + esc(it.desc) + '</p>';
     html += '</div>';
-    if(dates || chips) html += '<div class="acard-badges">' + dates + chips + '</div>';
+    if(dates || chips){
+      html += '<div class="acard-badges' + (it.dategroups ? ' is-grouped' : '') + '">'
+        + dates + chips + '</div>';
+    }
     if(it.restrict){
       html += '<div class="arestrict"><i class="fa-solid fa-lock"></i>'
         + '<span class="txt">' + it.restrict + '</span>'
@@ -4070,6 +4243,53 @@ DATE BADGES — style from 4501:47709, position from 4501:47679
   The 20px height is the outer box in Figma (label at y=4, 12px tall, in a
   20px frame), so the stroke is inside it — set explicitly with border-box
   instead of letting padding and line-height add up to 22px.
+
+DATES AND CHIPS ARE SPLIT DOWN THE COURSE
+  Sections 0-6 carry dates and no chips. Sections 7-12 carry chips and no
+  dates. activityHTML() enforces it rather than trusting the data, so it
+  cannot drift back.
+
+  The reason is that the two are not the same kind of information and they
+  were reading as though they were. Dates come from \core\activity_dates
+  and are real; chips are a proposal. Side by side, both badge-shaped, the
+  proposal borrowed the credibility of the real thing and neither could be
+  judged on its own. Three chips were removed that made this worse by
+  carrying dates in a vocabulary core does not use: "Due in 3 days · 30 Jul
+  2026" and a range, "10 Jul – 15 Jul 2026", both in one badge.
+
+  The seven date shapes on the page, and why each is there:
+    1  one date            forum "Due:" — forum contributes only this one
+    2  two, both past      choice "Opened:" / "Closed:"
+    3  two, both future    data   "Opens:" / "Closes:"
+    4  two, mixed tense    lesson "Opened:" / "Closes:" — live right now,
+                           the most common real state, and the case that
+                           shows tense is per DATE not per activity
+    5  assign's pair       "Opened:" / "Due:" — assign supplies its own
+                           strings; a submission deadline is not an
+                           activity closing and core keeps them distinct
+    6  close, no open      quiz "Closes:" alone — the two dates are set
+                           independently, so the badge cannot assume a pair
+    7  four, grouped       workshop, below
+  Plus two negative cases that must not look like a rendering failure:
+  a module with no dates class at all (page, book, url, resource, folder,
+  glossary, h5pactivity — most of the course), and a date-capable module
+  with no date set (the "Introduce yourself" forum).
+
+GROUPED DATES — NET NEW, needs a decision
+  From 4501:47700, which wraps the badge row in named "Submissions" /
+  "Assessments" frames, each with its own label above the row. Only
+  workshop produces enough dates to need it: four.
+  The proposal is that when the group label is shown, the badges inside
+  drop their prefix. Core has no grouping concept, so mod_workshop's
+  strings carry the phase in every badge — flat, the four read
+  "Submissions opened:", "Submissions close:", "Assessments open:",
+  "Assessments close:". The group label is what lets them fall back to
+  the short core_course forms. Tense still varies inside a group.
+  Two things are NOT sampled and are judgement calls: the group label
+  colour (both labels are hidden in the node that was shared, so
+  --mds-text-subtle is a guess) and the 12px between groups, taken from
+  spacing/sm being the one token on that frame the badges do not account
+  for.
 
 DIVERGENCES FROM THE FIGMA — all deliberate, all worth a decision
   1. TOOLTIP REBUILT, NOT REMOVED. The states page labels the trigger with
