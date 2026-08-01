@@ -2811,8 +2811,15 @@ SECTIONS.push({
     { mod:"forum", name:"Discussion: C3, C4 and CAM plants",
       desc:"Why did different photosynthetic strategies evolve? Share an example plant.",
       chips:[{cls:"meta", icon:"fa-solid fa-reply", text:"7 replies"}], manual:true },
+    /* IMPLICIT STEALTH lives here. Both activities below are set to "show" —
+       neither has a stealth setting on it — but the section is hidden, so
+       cm_info::is_stealth() is true for both and core offers them the stealth
+       wording rather than "Show on course page". This is the half of the
+       feature with no switch behind it, and the half people trip over. */
     { sub:{ title:"Hidden subsection (teacher only)", hidden:true, items:[
-        { mod:"page", name:"Draft notes (inside hidden subsection)", desc:"Test page 3" }
+        { mod:"page", name:"Draft notes (inside hidden subsection)", desc:"Test page 3" },
+        { mod:"url", name:"Marking rubric (linked from the assignment brief)",
+          desc:"Set to “show”, but the section is hidden — so it is off the course page and reachable only by the link in the brief. This is stealth without anyone setting stealth." }
       ]}},
     { sub:{ title:"Restricted contents (nested)", items:[
         { mod:"page", name:"Unlocks in 30 days (greyed out with info)", desc:"Test page 4",
@@ -3106,6 +3113,12 @@ SECTIONS.push({
      labelWhen lists the states that get a visible word in variant B. */
   function iddHTML(feature, map, current, order, opts){
     opts = opts || {};
+    /* Identify the map by what it IS, not by object identity. The
+       hidden-section variant is a fresh object built from VIS, so
+       "map === VIS" was false for it and every implicitly-stealth control
+       got tagged data-map="grp" — which is what the tooltip and menu
+       wiring keys off, so they were reading it as a group control. */
+    var mapName = (map && map.stealth) ? "vis" : "grp";
     var cur = map[current] || map[order[0]];
     var wantsLabel = (opts.labelWhen || []).indexOf(current) >= 0;
     var lblCls = wantsLabel ? " has-label" : "";
@@ -3123,7 +3136,7 @@ SECTIONS.push({
        exposing it twice would only stutter. */
     if(!opts.interactive){
       return '<span class="idd" data-idd data-static data-feature="' + esc(feature) + '" data-map="'
-          + (map === VIS ? "vis" : "grp") + '">'
+          + mapName + '">'
         + '<button type="button" class="idd-static' + lblCls + '" aria-expanded="false">'
           + '<i class="' + cur.icon + '" aria-hidden="true"></i>'
           /* aria-hidden: in variant B this word is visible, and without this
@@ -3153,7 +3166,7 @@ SECTIONS.push({
     }).join('');
 
     return '<div class="idd" data-idd data-feature="' + esc(feature) + '" data-map="'
-        + (map === VIS ? "vis" : "grp") + '">'
+        + mapName + '">'
       + '<button type="button" class="idd-btn' + lblCls + '" id="' + id + '"'
         + ' aria-haspopup="true" aria-expanded="false"'
         + (opts.disabled ? ' disabled' : '') + '>'
@@ -3194,11 +3207,12 @@ SECTIONS.push({
   /* stands in for the real cmid — only needs to be unique and stable enough
      to tie a checkbox to its label */
   var cmSeq = 0;
-  function activityHTML(it){
+  function activityHTML(it, ctx){
     if(it.block) return '<div class="ablock">' + it.block + '</div>';
     if(it.sub)   return subsectionHTML(it.sub);
     var m = modOf(it);
     var cid = ++cmSeq;
+    var sectionHidden = !!(ctx && ctx.sectionHidden);
 
     /* legacy flag: teacheronly meant "hidden from students" */
     var vis = it.vis || (it.teacheronly ? "hide" : "show");
@@ -3238,7 +3252,26 @@ SECTIONS.push({
          offers all three. It is a site-level switch, not a per-activity one;
          the earlier per-item flag was wrong and left most cards with two
          options. Option order is core's: show, hide, stealth. */
-      var stealthok = SITE.allowstealth && it.stealthok !== false;
+      /* IMPLICIT STEALTH — cm_info::is_stealth() is
+             !$this->visibleoncoursepage
+             || ($this->visible && $section && !$section->visible)
+         so there are TWO ways to be stealth. The second one has no stealth
+         setting behind it at all: an activity that is simply "shown", sitting
+         in a section that is hidden, is stealth because the section it would
+         have appeared in is not on the page. Core is explicit about this in
+         get_selected_choice_value(): "All visible activities in a hidden
+         section are considered stealth but they don't use the stealth
+         attribute for it. It is just implicit."
+         Two consequences, both from core:
+           - create_choice_list() labels the first option with the STEALTH
+             string when the section is hidden:
+               $label = $this->section->visible ? 'show' : 'stealth';
+             so "Show on course page" is not offered — the same value is
+             presented as "Make available but don't show on course page".
+           - allow_stealth_module_visibility() is
+             !$section->section || $section->visible, so inside a hidden
+             section the explicit third state is NOT offered. Two options. */
+      var stealthok = SITE.allowstealth && it.stealthok !== false && !sectionHidden;
       var visOrder = stealthok ? ["show","hide","stealth"] : ["show","hide"];
       if(visOrder.indexOf(vis) < 0) visOrder.push(vis);
       /* Edit mode: the trigger is on every card (decision D16, a change
@@ -3246,9 +3279,23 @@ SECTIONS.push({
          show_visibility() is !$mod->visible || $mod->is_stealth(), so an
          activity on its default "show on course page" renders nothing at
          all, and hidden or stealth renders the disabled indicator. */
-      if(editing || vis !== "show"){
-        actions += iddHTML("Availability", VIS, vis, visOrder,
-          { interactive: editing, labelWhen:["hide","stealth"] });
+      /* In a hidden section the "show" VALUE is presented with the stealth
+         STRINGS — same choice, different words, because that is what it
+         actually does there. The value stays "show" so the state model still
+         matches core's. */
+      var visMap = VIS;
+      if(sectionHidden){
+        visMap = { hide: VIS.hide, stealth: VIS.stealth };
+        visMap.show = Object.assign({}, VIS.stealth, {
+          desc: "This section is hidden, so the activity is not on the course page. Students can still reach it with a direct link."
+        });
+      }
+      /* show_visibility() is !$mod->visible || $mod->is_stealth(), and in a
+         hidden section a "shown" activity IS stealth — so unlike anywhere
+         else on the page, it gets an indicator in view mode too. */
+      if(editing || vis !== "show" || sectionHidden){
+        actions += iddHTML("Availability", visMap, vis, visOrder,
+          { interactive: editing, labelWhen:["hide","stealth"].concat(sectionHidden ? ["show"] : []) });
       }
     }
     if(it.manual || it.done || it.foot){
@@ -3331,8 +3378,13 @@ SECTIONS.push({
   }
   function subsectionHTML(sub){
     var real = (sub.items || []).filter(function(i){ return i.mod; });
+    /* the section's own visibility has to reach the activity: inside a hidden
+       section core treats a visible activity as stealth (see IMPLICIT STEALTH
+       in activityHTML), so the card cannot work it out on its own */
     var bodyhtml = (sub.items || []).length
-      ? '<div class="subbody">' + sub.items.map(activityHTML).join('') + '</div>'
+      ? '<div class="subbody">' + sub.items.map(function(i){
+          return activityHTML(i, { sectionHidden: !!sub.hidden });
+        }).join('') + '</div>'
       : '<div class="subempty">No activities in this subsection yet.</div>';
     return '<section class="subcard collapsed' + (sub.hidden ? ' teacheronly' : '') + '">'
       + '<div class="subhead" data-toggle="sub">'
@@ -4985,6 +5037,55 @@ COULD NOT BE VERIFIED HERE — needs a person
   - focusout un-hushing the tooltip. The pane never held document focus
     (document.hasFocus() was false), so the blur path could not be
     exercised. The mouseleave path was verified.
+
+STEALTH — what it is, and the two ways to get there
+  Site setting: "Allow stealth activities" ($CFG->allowstealth, OFF by
+  default, Site administration > Advanced features). Its own help text is
+  the clearest statement of the feature: "activities can be made available
+  but not shown in visible sections of the course page. If so, links to
+  stealth activities must be provided from elsewhere... Stealth activities
+  are still listed in the gradebook and other reports."
+  So it is not hiding. The activity works normally for students — they can
+  open it, submit to it, be graded on it — it simply has no tile on the
+  course page. Reaching it depends on a link somewhere else.
+
+  cm_info::is_stealth() is
+      !$this->visibleoncoursepage
+      || ($this->visible && $section && !$section->visible)
+  which is TWO different situations:
+
+  1. EXPLICIT. The teacher picked "Make available but don't show on course
+     page". visible=1, visibleoncoursepage=0. Offered only where
+     $CFG->allowstealth is on AND the format allows it; topics returns
+     !$section->section || $section->visible, i.e. section 0 or a visible
+     section. On the prototype: "Recommended channel: Crash Course
+     Biology" in General, "Video: The properties of water" in Chemistry.
+
+  2. IMPLICIT — the confusing one, and the reason this got added. An
+     activity set to plain "show", sitting in a HIDDEN section, is stealth
+     even though nobody set anything stealth on it. Core says so in
+     get_selected_choice_value(): "All visible activities in a hidden
+     section are considered stealth but they don't use the stealth
+     attribute for it. It is just implicit."
+     Two things follow, both taken from core:
+       - create_choice_list() relabels the first option
+         ($label = $section->visible ? 'show' : 'stealth'), so the teacher
+         is never offered "Show on course page" there — the same value is
+         presented as "Make available but don't show on course page".
+       - the explicit third state is NOT offered, because
+         allow_stealth_module_visibility() is false in a hidden section.
+         Two options, not three.
+     On the prototype: both activities in "Hidden subsection (teacher
+     only)" under Photosynthesis. Neither carries a stealth setting.
+     Because is_stealth() is true, show_visibility() is also true, so they
+     are the one case where an activity set to "show" still displays an
+     availability indicator in view mode.
+
+  Watch out: iddHTML identifies which map it was handed by looking for a
+  stealth key, not by object identity. The hidden-section variant is a new
+  object built from VIS, and an identity check tagged it data-map="grp" —
+  which the tooltip and menu wiring key off, so those controls behaved as
+  group controls.
 
 PAGE SURFACES — sampled from 4515:51706 and 4515:51722
   The course page is ONE FLAT GREY. Page background, section cards,
