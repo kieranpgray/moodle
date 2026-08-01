@@ -2752,6 +2752,15 @@ SECTIONS.push({
     { mod:"book", name:"Course Syllabus &amp; Study Guide",
       desc:"Everything you need to know about how this course is run and assessed.",
       manual:true },
+    /* FORMAT 6 — a CLOSE date with no open date. The two dates are
+       independent in every module that has both, so a lone "Closes:" is as
+       valid as a lone "Opens:" and the badge must not assume a pair. Also
+       the only card on the page where a date sits above a restriction, to
+       check the 16px rhythm between them holds. */
+    { mod:"quiz", name:"Quiz 1: Cellular Respiration",
+      desc:"Ten-minute check on respiration. You may attempt it twice; your highest score counts.",
+      dates:["Closes: Monday, 3 August 2026, 11:59 PM"],
+      restrict:"Not available unless: The activity <strong>Assignment 1: Enzyme lab report</strong> is marked complete" },
     { mod:"glossary", name:"Biology Glossary",
       desc:"Key terms used throughout Biology 101. Terms are auto-linked wherever they appear in the course." },
     /* Non-default visibility states live in the FIRST section on purpose.
@@ -2875,15 +2884,6 @@ SECTIONS.push({
   summary:"Glycolysis, the Krebs cycle and oxidative phosphorylation — how cells harvest energy from glucose.",
   items:[
     { mod:"page", name:"Reading: From glucose to ATP", desc:"Core reading for Topic 6." },
-    /* FORMAT 6 — a CLOSE date with no open date. The two dates are
-       independent in every module that has both, so a lone "Closes:" is as
-       valid as a lone "Opens:" and the badge must not assume a pair. Also
-       the only card on the page where a date sits above a restriction, to
-       check the 16px rhythm between them holds. */
-    { mod:"quiz", name:"Quiz 1: Cellular Respiration",
-      desc:"Ten-minute check on respiration. You may attempt it twice; your highest score counts.",
-      dates:["Closes: Monday, 3 August 2026, 11:59 PM"],
-      restrict:"Not available unless: The activity <strong>Assignment 1: Enzyme lab report</strong> is marked complete" },
     /* FORMAT 7 — four dates in two named groups. Only mod_workshop gets
        here, and it is the case that motivates the grouping in 4501:47700:
        flat, core's own strings would give four badges reading "Submissions
