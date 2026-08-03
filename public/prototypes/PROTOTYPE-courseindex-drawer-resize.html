@@ -180,13 +180,16 @@
     position:relative;
   }
 
-  /* floating open-toggle column (shown when index closed).
-     align-self:stretch gives the sticky button vertical range to stick. */
+  /* open-toggle column. Boost-faithful: core's toggles are position:fixed in
+     the #page gutters and cost the content column NOTHING — so here the
+     column is absolutely positioned in the shell's 48px gutter (out of flow)
+     and hidden entirely when its drawer is open (core's display:none
+     behaviour). top..bottom stretch preserves the sticky button's range. */
   .toggle-col{
-    flex:0 0 auto; width:var(--btn); margin-right:12px; align-self:stretch;
+    position:absolute; left:4px; top:var(--sp-lg); bottom:0; width:var(--btn);
     display:flex; justify-content:center;
   }
-  body.ci-open .toggle-col{ width:0; margin-right:0; overflow:hidden; }
+  body.ci-open .toggle-col{ display:none; }
 
   .ci-toggle{
     width:var(--btn); height:var(--btn); border:none; cursor:pointer;
@@ -411,16 +414,18 @@
   .width-readout.show{ opacity:.92; }
 
   /* =====================  COURSE CONTENT  =====================
-     content-col fills the space between the index and the blocks button;
-     its children are capped at --content-max and centred, so the page reads
-     centered in the available width (matches main-branch behaviour) instead
-     of pinned to the left. */
+     Boost-faithful model of .main-inner: the column IS the 830px box
+     ($course-content-maxwidth applies to main-inner INCLUDING its padding),
+     centred in the region left over after the drawers — so visible cards are
+     830 − 2×23 = 784px, exactly what core renders, and they shrink at core's
+     rate when the index is dragged wider. The 23px gutters model core's
+     main-inner 0.5rem (8px) + div[role=main] 15px. */
   .content-col{
     flex:1 1 auto; min-width:0;
-    display:flex; flex-direction:column; align-items:center;
-    padding:0 40px;
+    max-width:var(--content-max); margin:0 auto;
+    padding:0 23px;
   }
-  .content-col > *{ width:100%; max-width:var(--content-max); }
+  .content-col > *{ width:100%; }
 
   .course-header{ margin-bottom:var(--sp-md); }
   .title-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
@@ -576,8 +581,12 @@
   .add-new-section .lbl{ display:block; font-size:12px; }
 
   /* ---- right "Course Blocks" drawer (push on desktop, no drag handle) ---- */
-  .toggle-col-right{ flex:0 0 auto; width:var(--btn); margin-left:12px; align-self:stretch; display:flex; justify-content:center; }
-  body.cb-open .toggle-col-right{ width:0; margin-left:0; overflow:hidden; }
+  /* mirrored out-of-flow gutter column (see .toggle-col) */
+  .toggle-col-right{
+    position:absolute; right:4px; top:var(--sp-lg); bottom:0; width:var(--btn);
+    display:flex; justify-content:center;
+  }
+  body.cb-open .toggle-col-right{ display:none; }
   .blocks-btn{
     position:sticky; top:calc(var(--nav-h) + var(--sp-lg));
     width:var(--btn); height:var(--btn); border:none; border-radius:var(--r-sm);
@@ -805,7 +814,7 @@
     :root{ --shell-pad:24px; }
     .burger{ display:flex; }
     .nav-left .brand, .nav-left .nav-pills{ display:none; }
-    .content-col{ padding:0 24px; }
+    .content-col{ padding:0 23px; } /* core keeps 8+15px gutters at md+ */
   }
 
   /* sidebars overlay from 768px or less. The WHOLE drawer (position:fixed)
@@ -825,7 +834,7 @@
       width:300px; max-width:85vw; height:100%; max-height:none; overflow-y:auto;
       transform:none;
     }
-    body.ci-overlay .toggle-col{ width:var(--btn); margin-right:12px; overflow:visible; }
+    body.ci-overlay .toggle-col{ position:static; width:var(--btn); margin-right:12px; display:flex; justify-content:center; }
 
     /* right course-blocks overlay (mirrors the left) */
     body.cb-overlay .drawer-right{
@@ -838,7 +847,7 @@
       width:300px; max-width:85vw; height:100%; max-height:none; overflow-y:auto;
       transform:none;
     }
-    body.cb-overlay .toggle-col-right{ width:var(--btn); margin-left:12px; overflow:visible; }
+    body.cb-overlay .toggle-col-right{ position:static; width:var(--btn); margin-left:12px; display:flex; justify-content:center; }
   }
 
   @media (max-width:767px){
