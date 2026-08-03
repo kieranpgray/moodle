@@ -40,9 +40,15 @@
     --amber-bg:#fdf3e7; --amber-text:#8a5a00;
     --activity-magenta:#c2185b; --activity-teal:#0f7b8a; --activity-teal-bg:#d7ecef;
     --ci-row-hover:#e1e4e6; /* course-index row hover bg (for overlaid actions) */
-    /* layout */
+    /* layout — nav geometry per the top-nav max-width spec/prototype
+       (PROTOTYPE-topnav-maxwidth.html): bar height 60px ($navbar-height),
+       contents capped to a FIXED shell (identical on every page) with 48px
+       side padding. Cap candidates from that work: 1320px (proposed) or
+       1440px (design) — switchable in the dev State panel. Here the page row
+       shares the same shell so nav + furniture align (the target
+       composition). */
     --shell-max:1440px; --shell-pad:48px;
-    --nav-h:64px;
+    --nav-h:60px;
     --ci-width:285px; --ci-min:285px; --ci-max:640px;
     --cb-width:315px;      /* right "Course Blocks" drawer (no resize) */
     --sitenav-width:300px; /* hamburger site-nav overlay */
@@ -70,10 +76,14 @@
     padding:0 var(--shell-pad);
   }
 
-  /* =====================  TOP NAV  ===================== */
+  /* =====================  TOP NAV  =====================
+     Exact model from the top-nav max-width spec: the BAR (background +
+     bottom border) spans the full viewport; only its CONTENTS are capped to
+     the shell (max-width + 48px padding, centred). White bar, 1px #e9ecef
+     bottom border, 60px tall. */
   .topbar{
     position:sticky; top:0; z-index:40;
-    background:var(--bg-subtle);
+    background:#fff;
     border-bottom:1px solid var(--border-subtle);
   }
   .topbar-inner{
@@ -1194,6 +1204,11 @@
       <button class="devbtn on" data-page="course">Course page</button>
       <button class="devbtn" data-page="forum">Forum (full-width)</button>
     </div>
+    <h5>Nav cap</h5>
+    <div class="devrow" id="capSwitch">
+      <button class="devbtn on" data-cap="1440px">1440 (design)</button>
+      <button class="devbtn" data-cap="1320px">1320 (proposed)</button>
+    </div>
   </div>
   <div class="debug" id="debug" title="Click to hide dev overlays"></div>
   <div class="hint" title="Click to hide dev overlays">Edit mode on → hover any course-index row for <b>+</b> (add) / <b>…</b> (more) and drag to reorder. The book expands to its chapters (TOC now inline). Toggle Edit mode to see the clean student view. <b>(click to hide)</b></div>
@@ -1611,6 +1626,16 @@
     var btn = e.target.closest(".devbtn"); if(!btn) return;
     pageSwitch.querySelectorAll(".devbtn").forEach(function(b){ b.classList.toggle("on", b === btn); });
     body.classList.toggle("show-forum", btn.dataset.page === "forum");
+    updateDebug();
+  });
+  /* nav cap switcher — the two candidates from the top-nav max-width work.
+     The shell token drives BOTH the nav contents and the page row, so
+     flipping it shows the whole composition at each cap. */
+  var capSwitch = document.getElementById("capSwitch");
+  capSwitch.addEventListener("click", function(e){
+    var btn = e.target.closest(".devbtn"); if(!btn) return;
+    capSwitch.querySelectorAll(".devbtn").forEach(function(b){ b.classList.toggle("on", b === btn); });
+    document.documentElement.style.setProperty("--shell-max", btn.dataset.cap);
     updateDebug();
   });
   /* minimise/restore the state switcher (same pattern as the other prototypes) */
