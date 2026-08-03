@@ -3268,8 +3268,16 @@ SECTIONS.push({
               restrictions which may be set)"). Dropping it is a design
               decision, not an oversight — see NOTES. */
   var VIS = {
-    show:    { icon:"fa-regular fa-eye",       state:"Shown on course page",
-               tip:"Visible to students",  short:"Visible",
+    /* "Available", not "Visible": the group mode control next to it uses
+       "Visible" for visible groups, and the same word twice on one card
+       meaning two different things is worse than either word alone.
+       state says "Available on course page" rather than "Shown on course
+       page" so the accessible name contains the visible word. WCAG 2.5.3
+       Label in Name is about what a voice-control user can say: seeing
+       "Available", they will say "click Available", and a name built from
+       "Shown" would not match. The menu option keeps core's wording. */
+    show:    { icon:"fa-regular fa-eye",       state:"Available on course page",
+               tip:"Visible to students",  short:"Available",
                name:"Show on course page", desc:"" },
     hide:    { icon:"fa-regular fa-eye-slash", state:"Hidden from students",
                tip:"Hidden from students", short:"Hidden",
