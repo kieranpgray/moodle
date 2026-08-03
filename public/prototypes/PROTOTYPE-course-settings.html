@@ -1665,16 +1665,35 @@
      shown on hover AND keyboard focus, dismissable with Escape, and
      hoverable. It is supplementary decoration only — the state is always
      in the button's accessible name, which is what carries it on touch. */
+  /* position:fixed, placed by placeTip(). It used to be absolute inside the
+     .idd wrapper, which put it inside .scard / .subcard — both of which clip
+     their overflow so the grey body follows the card's rounded corners. A tip
+     wider than the space to the card edge was cut off mid-word. Fixed
+     positioning escapes the clip; placeTip() then centres it on the trigger
+     and clamps it to the viewport so it also survives the page edges.
+     It stays pointer-interactive on purpose: it is still a DOM child of .idd,
+     so hovering the tip itself keeps .idd:hover true and the tip on screen.
+     WCAG 1.4.13 requires exactly that — pointer-events:none here would let it
+     vanish the moment the pointer moved onto it. */
   .idd-tip{
-    position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%);
-    z-index:45; padding:5px 9px; border-radius:6px;
+    position:fixed; left:0; top:0;
+    z-index:70; padding:5px 9px; border-radius:6px;
     background:var(--mds-color-gray-900,#1d2125); color:#fff;
     font-size:12px; line-height:16px; white-space:nowrap;
     opacity:0; visibility:hidden; transition:opacity .12s ease;
   }
+  /* --tip-arrow is the trigger's centre measured from the tip's left edge, so
+     the arrow keeps pointing at the control even when the tip has been
+     clamped sideways and is no longer centred on it. */
   .idd-tip::after{
-    content:""; position:absolute; top:100%; left:50%; transform:translateX(-50%);
+    content:""; position:absolute; top:100%; left:var(--tip-arrow,50%);
+    transform:translateX(-50%);
     border:5px solid transparent; border-top-color:var(--mds-color-gray-900,#1d2125);
+  }
+  /* flipped below the trigger when there is no room above */
+  .idd-tip.tip-below::after{
+    top:auto; bottom:100%;
+    border-top-color:transparent; border-bottom-color:var(--mds-color-gray-900,#1d2125);
   }
   .idd:hover > .idd-tip,
   .idd-btn:focus-visible ~ .idd-tip,
@@ -3935,7 +3954,58 @@ SECTIONS.push({
     dd.classList.add("tip-open");
     b.setAttribute("aria-expanded","true");
     openTip = dd;
+    placeTip(dd);
   }
+
+  /* ---- tooltip placement ----
+     The tip is position:fixed because .scard and .subcard clip their overflow,
+     which used to cut a wide tip off at the card edge. Fixed takes it out of
+     that clip, but then nothing positions it, so it is measured and placed
+     here: centred over the trigger, clamped to the viewport, flipped below
+     when there is no room above. Visibility is still entirely CSS-driven —
+     this only ever sets coordinates. */
+  function placeTip(dd){
+    if(!dd) return;
+    var tip = dd.querySelector(".idd-tip");
+    var trig = dd.querySelector(".idd-btn, .idd-static");
+    if(!tip || !trig) return;
+    var t = trig.getBoundingClientRect();
+    /* visibility:hidden still lays out, so the tip can be measured before
+       it is shown — no flash of a wrongly placed tooltip */
+    var w = tip.offsetWidth, h = tip.offsetHeight, gap = 8, edge = 8;
+    var cx = t.left + t.width / 2;
+    var left = Math.max(edge, Math.min(cx - w / 2, window.innerWidth - w - edge));
+    var top = t.top - h - gap, below = false;
+    if(top < edge){ top = t.bottom + gap; below = true; }
+    tip.classList.toggle("tip-below", below);
+    tip.style.left = Math.round(left) + "px";
+    tip.style.top = Math.round(top) + "px";
+    tip.style.setProperty("--tip-arrow", Math.round(cx - left) + "px");
+  }
+
+  /* Hover and focus show the tip through CSS alone, so there is no single
+     "about to show" hook — place it on the events that precede either. */
+  document.addEventListener("mouseover", function(e){
+    var dd = e.target.closest && e.target.closest("[data-idd]");
+    if(dd) placeTip(dd);
+  });
+  document.addEventListener("focusin", function(e){
+    var dd = e.target.closest && e.target.closest("[data-idd]");
+    if(dd) placeTip(dd);
+  });
+  /* fixed coordinates go stale the moment anything scrolls, so re-place
+     whatever is currently showing. Capture phase catches scrolls in the
+     course index and other inner scrollers, not just the page. */
+  function replaceVisibleTip(){
+    if(openTip) placeTip(openTip);
+    var hovered = document.querySelector("[data-idd]:hover");
+    if(hovered && hovered !== openTip) placeTip(hovered);
+    var focused = document.activeElement &&
+      document.activeElement.closest && document.activeElement.closest("[data-idd]");
+    if(focused && focused !== openTip) placeTip(focused);
+  }
+  window.addEventListener("scroll", replaceVisibleTip, true);
+  window.addEventListener("resize", replaceVisibleTip);
 
   /* ---- completion disclosure (teacher) ----
      A button controlling a panel. No menu roles: it presents information,
