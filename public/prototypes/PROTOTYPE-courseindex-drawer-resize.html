@@ -43,7 +43,7 @@
     /* layout */
     --shell-max:1440px; --shell-pad:48px;
     --nav-h:64px;
-    --ci-width:285px; --ci-min:285px; --ci-max:560px;
+    --ci-width:285px; --ci-min:285px; --ci-max:640px;
     --cb-width:315px;      /* right "Course Blocks" drawer (no resize) */
     --sitenav-width:300px; /* hamburger site-nav overlay */
     --content-max:873px;
@@ -195,6 +195,9 @@
     transition:width .32s cubic-bezier(.4,0,.2,1);
   }
   body.ci-open #drawer{ width:var(--ci-width); }
+  /* while dragging the handle, kill the width transition so the edge tracks the
+     cursor 1:1 with no easing lag (the transition is only for open/close) */
+  body.dragging #drawer{ transition:none; }
   .ci-card{
     width:var(--ci-width); background:var(--bg-strong); border-radius:var(--r-md);
     padding:0 var(--sp-sm) var(--sp-md);
@@ -654,6 +657,55 @@
   }
   body.hide-dev .debug, body.hide-dev .hint{ display:none; }
 
+  /* dev page switcher — flip the main pane between a responsive course page and
+     a legacy full-width activity (forum) to exercise the float fallback. */
+  .pageswitch{
+    position:fixed; bottom:62px; right:14px; z-index:60;
+    display:flex; gap:0; background:#fff; border:1px solid var(--border-default);
+    border-radius:8px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,.12);
+  }
+  .pageswitch button{
+    border:none; background:#fff; cursor:pointer; font-size:11px; font-weight:600;
+    color:var(--text-subtle); padding:7px 10px;
+  }
+  .pageswitch button + button{ border-left:1px solid var(--border-default); }
+  .pageswitch button.active{ background:var(--primary); color:#fff; }
+  body.hide-dev .pageswitch{ display:none; }
+
+  /* two page bodies live in the content column; JS shows one at a time */
+  .page-forum{ display:none; }
+  body.show-forum .page-course{ display:none; }
+  body.show-forum .page-forum{ display:block; }
+  /* the forum has no right "Course Blocks" drawer in the current design —
+     hide it (and its toggle) so the demo matches the real page */
+  body.show-forum .toggle-col-right,
+  body.show-forum .drawer-right{ display:none; }
+
+  /* forum = deliberately width-sensitive: the discussion table can't reflow
+     below its min-width, standing in for real legacy / embedded activity
+     content that overflows when the content column is squeezed. */
+  .forum-head h1{ margin:0 0 4px; font-size:26px; font-weight:800; letter-spacing:-.2px; }
+  .forum-head .sub{ color:var(--text-muted); font-size:14px; margin-bottom:18px; }
+  .forum-note{
+    display:flex; gap:10px; align-items:flex-start;
+    background:#eaf3fb; border:1px solid #bcdcf5; border-radius:8px;
+    padding:10px 12px; margin-bottom:16px; font-size:12.5px; color:#155287; line-height:1.5;
+  }
+  .forum-note i{ margin-top:1px; }
+  /* mirrors Bootstrap's .table-responsive: a wide table gets a contained
+     horizontal scroll inside its own box, so a narrow column never breaks the
+     page — exactly how the real mod/forum discussion list behaves. */
+  .forum-table-wrap{ overflow-x:auto; border:1px solid var(--border-default); border-radius:8px; }
+  table.forum-table{
+    min-width:700px; width:100%; border-collapse:collapse; font-size:13px; background:#fff;
+  }
+  table.forum-table th, table.forum-table td{
+    text-align:left; padding:11px 14px; border-bottom:1px solid var(--border-default); white-space:nowrap;
+  }
+  table.forum-table th{ background:var(--bg-subtle); color:var(--text-subtle); font-weight:600; }
+  table.forum-table td .disc{ font-weight:600; color:var(--text-default); }
+  table.forum-table tr:last-child td{ border-bottom:none; }
+
   /* ---- annotations (dismissible walkthrough callouts) ---- */
   .anno-layer{ position:fixed; inset:0; z-index:70; pointer-events:none; }
   body.annos-off .anno-layer{ display:none; }
@@ -762,6 +814,23 @@
     .ai-meta{ padding-left:0; }
   }
 </style>
+<script>
+  /* PROTOTYPE persistence — restore the saved course-index width BEFORE first
+     paint so the drawer renders at the right size with no flash/jump. This
+     mimics production, where the server reads get_user_preferences('drawer-
+     index-width') and emits it as an inline --drawer-left-width custom property
+     in the initial HTML. (localStorage is only the client stand-in here.) */
+  (function(){
+    try {
+      var MINW = 285, MAXW = 640;
+      var saved = parseInt(localStorage.getItem("ci-width"), 10);
+      if (!isNaN(saved)) {
+        var w = Math.max(MINW, Math.min(MAXW, saved)); // clamp on read
+        document.documentElement.style.setProperty("--ci-width", w + "px");
+      }
+    } catch(e){}
+  })();
+</script>
 </head>
 <body class="ci-open edit-on">
 
@@ -833,12 +902,13 @@
         <button class="ci-collapseall"><i class="fa-solid fa-down-left-and-up-right-to-center"></i>Collapse all</button>
         <div id="sections"></div>
       </div>
-      <div class="resize-handle" id="resizeHandle" tabindex="0" role="separator" aria-orientation="vertical" aria-label="Resize course index (arrow keys)" aria-valuemin="285" aria-valuemax="560" aria-valuenow="285"></div>
+      <div class="resize-handle" id="resizeHandle" tabindex="0" role="separator" aria-orientation="vertical" aria-label="Resize course index (arrow keys)" aria-valuemin="285" aria-valuemax="640" aria-valuenow="285"></div>
       <div class="width-readout" id="widthReadout">285px</div>
     </div>
 
     <!-- main course content -->
     <main class="content-col">
+     <div class="page page-course">
       <div class="course-header">
         <div class="title-row">
           <h1>Climate change</h1>
@@ -1003,6 +1073,31 @@
         <span class="circle"><i class="fa-solid fa-pencil"></i></span>
         <span class="lbl">Add new section</span>
       </div>
+     </div><!-- /.page-course -->
+
+     <div class="page page-forum">
+      <div class="forum-head">
+        <h1>Announcements</h1>
+        <div class="sub">Forum · General news and announcements from your tutors</div>
+      </div>
+      <div class="forum-note">
+        <i class="fa-solid fa-circle-info"></i>
+        <span>Full-width activity. As the course index widens, this page's column just narrows — the index <b>pushes</b>, it doesn't float. Wide content (this discussion table) is wrapped like Moodle's real <code>.table-responsive</code>, so it gains a <b>contained horizontal scroll</b> rather than breaking the page. Drag the index wider to see the table scroll inside its own box.</span>
+      </div>
+      <div class="forum-table-wrap">
+        <table class="forum-table">
+          <thead>
+            <tr><th>Discussion</th><th>Started by</th><th>Group</th><th>Replies</th><th>Unread</th><th>Last post</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="disc">Welcome to the course — start here</span></td><td>Mr. Sanders</td><td>All participants</td><td>12</td><td>3</td><td>24 Jul 2026, 9:14 AM</td></tr>
+            <tr><td><span class="disc">Assessment 1 submission window now open</span></td><td>Mr. Sanders</td><td>All participants</td><td>4</td><td>0</td><td>23 Jul 2026, 4:02 PM</td></tr>
+            <tr><td><span class="disc">Field trip logistics and safety briefing</span></td><td>A. Okafor</td><td>Cohort B</td><td>27</td><td>7</td><td>22 Jul 2026, 11:48 AM</td></tr>
+            <tr><td><span class="disc">Reading list updated for week 6</span></td><td>Mr. Sanders</td><td>All participants</td><td>1</td><td>0</td><td>20 Jul 2026, 8:30 AM</td></tr>
+          </tbody>
+        </table>
+      </div>
+     </div><!-- /.page-forum -->
     </main>
 
     <!-- right "Course Blocks" drawer (push on desktop, overlay <=768) -->
@@ -1065,6 +1160,10 @@
   <div class="anno-layer" id="annoLayer"></div>
   <button class="anno-toggle" id="annoToggle"><i class="fa-solid fa-location-dot"></i><span id="annoToggleLabel">Hide annotations</span></button>
 
+  <div class="pageswitch" id="pageSwitch" title="Dev: switch the main pane">
+    <button data-page="course" class="active">Course page</button>
+    <button data-page="forum">Forum (full-width)</button>
+  </div>
   <div class="debug" id="debug" title="Click to hide dev overlays"></div>
   <div class="hint" title="Click to hide dev overlays">Edit mode on → hover any course-index row for <b>+</b> (add) / <b>…</b> (more) and drag to reorder. The book expands to its chapters (TOC now inline). Toggle Edit mode to see the clean student view. <b>(click to hide)</b></div>
 
@@ -1371,6 +1470,7 @@
   }
   mq.addEventListener("change", applyMode);
   applyMode();
+  window.addEventListener("resize", updateDebug);
 
   /* ---- edit mode toggle (cosmetic) ---- */
   var editSwitch = document.getElementById("editSwitch");
@@ -1383,7 +1483,7 @@
   /* ---- drag to resize (desktop push mode only) ---- */
   var handle = document.getElementById("resizeHandle");
   var readout = document.getElementById("widthReadout");
-  var MIN = 285, MAX = 560;
+  var MIN = 285, MAX = 640;
   var dragging = false, startX = 0, startWidth = 0;
 
   function setWidth(px){
@@ -1393,6 +1493,31 @@
     handle.setAttribute("aria-valuenow", Math.round(px));
     updateDebug();
   }
+
+  /* Persist the chosen width. PROTOTYPE stand-in for production's
+     setUserPreference('drawer-index-width', px) → user_preferences table.
+     Called on resize *end* only (drag-up / keypress), never per mousemove. */
+  function persistWidth(){
+    try {
+      var w = Math.round(parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ci-width")));
+      localStorage.setItem("ci-width", w);
+    } catch(e){}
+  }
+  /* On load the width was already applied pre-paint by the <head> restore
+     script (mimicking the server-rendered inline value); just sync the
+     handle's announced value + readout to it. */
+  (function syncWidthUI(){
+    var w = Math.round(parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ci-width")));
+    readout.textContent = w + "px";
+    handle.setAttribute("aria-valuenow", w);
+  })();
+
+  /* The index simply PUSHES: it widens and the page content column narrows to
+     suit. Moodle content is fluid and wraps wide elements (e.g. forum tables in
+     .table-responsive) for a contained local scroll, so a narrower column
+     degrades gracefully — no floating overlay needed. Below 768px the drawer
+     already overlays (handled by applyMode). */
+
   /* keyboard resize — makes the handle genuinely Tab-accessible */
   handle.addEventListener("keydown", function(e){
     if(body.classList.contains("ci-overlay")) return;
@@ -1403,7 +1528,7 @@
     else if(e.key === "Home") setWidth(MIN);
     else if(e.key === "End") setWidth(MAX);
     else handled = false;
-    if(handled){ e.preventDefault(); readout.classList.add("show"); clearTimeout(handle._t); handle._t = setTimeout(function(){ readout.classList.remove("show"); }, 700); }
+    if(handled){ e.preventDefault(); persistWidth(); readout.classList.add("show"); clearTimeout(handle._t); handle._t = setTimeout(function(){ readout.classList.remove("show"); }, 700); }
   });
   handle.addEventListener("mousedown", function(e){
     if(body.classList.contains("ci-overlay")) return;
@@ -1416,9 +1541,10 @@
   window.addEventListener("mouseup", function(){
     if(!dragging) return;
     dragging = false; handle.classList.remove("dragging"); body.classList.remove("dragging");
+    persistWidth(); // write once at drag end (debounced equivalent)
     setTimeout(function(){ readout.classList.remove("show"); }, 400);
   });
-  handle.addEventListener("dblclick", function(){ setWidth(285); });
+  handle.addEventListener("dblclick", function(){ setWidth(285); persistWidth(); });
 
   /* ---- course tabs: horizontal scroll fade affordance ---- */
   var tabsScroll = document.getElementById("tabsScroll");
@@ -1446,6 +1572,16 @@
   }
   window.addEventListener("resize", updateDebug);
   updateDebug();
+
+  /* dev page switcher: swap the main pane between the course page and a
+     full-width forum to show how each responds as the index widens/narrows */
+  var pageSwitch = document.getElementById("pageSwitch");
+  pageSwitch.addEventListener("click", function(e){
+    var btn = e.target.closest("button"); if(!btn) return;
+    pageSwitch.querySelectorAll("button").forEach(function(b){ b.classList.toggle("active", b === btn); });
+    body.classList.toggle("show-forum", btn.dataset.page === "forum");
+    updateDebug();
+  });
 
   /* click either dev overlay to hide both */
   document.querySelector(".debug").addEventListener("click", function(){ body.classList.add("hide-dev"); });
