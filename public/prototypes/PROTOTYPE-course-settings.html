@@ -1579,10 +1579,23 @@
   .acard-drag[aria-pressed="true"]{ cursor:grabbing; color:var(--mds-bg-interactive-primary-default,#0f6cbf); }
   /* touch-action:none stops a touch drag scrolling the page instead of
      moving the item — without it the gesture is claimed by the scroller
-     before the handler ever sees it */
-  .acard-drag{ touch-action:none; }
+     before the handler ever sees it.
+     The -webkit- pair is what makes the handle usable on iPad. Safari starts
+     a long-press text selection and raises the callout menu on touch-and-hold
+     regardless of preventDefault() in pointerdown, so it has to be refused in
+     CSS. Unprefixed user-select alone is not enough on iOS. */
+  .acard-drag{
+    touch-action:none;
+    -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none;
+  }
+  /* Selection has to be off from the moment of contact, not from the moment
+     the drag passes its 4px threshold — iOS begins selecting during the hold,
+     so waiting for .dnd-dragging lets the selection start before we suppress
+     it. .dnd-holding goes on at pointerdown and covers that window. */
+  body.dnd-holding{ -webkit-user-select:none; user-select:none; }
   /* while a pointer drag is running, nothing else should select or hover */
-  body.dnd-dragging{ user-select:none; cursor:grabbing; }
+  body.dnd-dragging{ -webkit-user-select:none; user-select:none; cursor:grabbing; }
   body.dnd-dragging .acard:hover{ background:var(--mds-bg-surface-subtle); }
   .acard.is-grabbed{
     border-color:var(--mds-bg-interactive-primary-default,#0f6cbf);
@@ -1703,13 +1716,15 @@
   .idd-static[aria-expanded="true"]{ background:var(--mds-bg-surface-strong,#e9ecef); }
   .idd-static .lbl{ display:none; }
 
-  /* variant B: show the word alongside the icon for non-default states */
-  body.cardvariant-b .idd-btn.has-label,
-  body.cardvariant-b .idd-static.has-label{
+  /* variant B (the default): the word sits beside the icon on EVERY state,
+     not just the exceptional ones, so the control never relies on icon
+     discrimination alone. Edit mode only — .idd-static never gets .has-label,
+     so a view-mode indicator stays a bare icon and the read-only page keeps
+     its density. */
+  body.cardvariant-b .idd-btn.has-label{
     width:auto; gap:6px; padding:0 10px; border-radius:var(--mds-border-radius-pill);
   }
-  body.cardvariant-b .idd-btn.has-label .lbl,
-  body.cardvariant-b .idd-static.has-label .lbl{
+  body.cardvariant-b .idd-btn.has-label .lbl{
     display:inline; font-size:12px; font-weight:500; white-space:nowrap;
   }
 
@@ -1806,7 +1821,7 @@
   .ci-row.ci-subhead i{ font-size:10px; margin-right:.2rem; }
 </style>
 </head>
-<body class="ci-open annotations-on showgated edit-on">
+<body class="ci-open annotations-on showgated edit-on cardvariant-b">
 
   <!-- ===== TOP NAV (identical to the activity prototypes) ===== -->
   <header class="topbar">
@@ -2598,10 +2613,10 @@
       <button class="devbtn" data-mode="create">Create new course</button>
       <button class="devbtn" data-mode="locked">Completion locked</button>
     </div>
-    <h5 style="margin-top:.5rem">Activity card &mdash; icon-only dropdowns</h5>
+    <h5 style="margin-top:.5rem">Activity card &mdash; dropdown labels (edit mode)</h5>
     <div class="devrow" id="devCardVariant">
-      <button class="devbtn on" data-cardvariant="a">A &mdash; icon only</button>
-      <button class="devbtn" data-cardvariant="b">B &mdash; icon + word when not default</button>
+      <button class="devbtn" data-cardvariant="a">A &mdash; icon only</button>
+      <button class="devbtn on" data-cardvariant="b">B &mdash; icon + word on every state</button>
     </div>
     <h5 style="margin-top:.5rem">Site configuration</h5>
     <div class="devrow" id="devGates">
@@ -3268,8 +3283,7 @@ SECTIONS.push({
      map       — VIS or GRP
      current   — current state key
      order     — option keys to offer, in order
-     opts      — {interactive:Boolean, disabled:Boolean, labelWhen:[keys]}
-     labelWhen lists the states that get a visible word in variant B. */
+     opts      — {interactive:Boolean, disabled:Boolean} */
   function iddHTML(feature, map, current, order, opts){
     opts = opts || {};
     /* Identify the map by what it IS, not by object identity. The
@@ -3279,8 +3293,11 @@ SECTIONS.push({
        wiring keys off, so they were reading it as a group control. */
     var mapName = (map && map.stealth) ? "vis" : "grp";
     var cur = map[current] || map[order[0]];
-    var wantsLabel = (opts.labelWhen || []).indexOf(current) >= 0;
-    var lblCls = wantsLabel ? " has-label" : "";
+    /* Every state carries its word, including the default one — the control
+       should never ask the reader to tell two eye glyphs apart. Interactive
+       only: a view-mode indicator is not something you act on, so it stays a
+       bare icon and the read-only page keeps its density. */
+    var lblCls = opts.interactive ? " has-label" : "";
     var aName  = feature + ": " + cur.state;
 
     /* view mode / no capability — an indicator, not a disabled button.
@@ -3398,7 +3415,7 @@ SECTIONS.push({
         var grpInteractive = editing && !it.groupforced;
         if(grpInteractive || grp !== "none"){
           actions += iddHTML("Group mode", GRP, grp, ["none","separate","visible"],
-            { interactive: grpInteractive, labelWhen:["separate","visible"] });
+            { interactive: grpInteractive });
         }
       }
       /* Stealth availability, per core:
@@ -3454,7 +3471,7 @@ SECTIONS.push({
          else on the page, it gets an indicator in view mode too. */
       if(editing || vis !== "show" || sectionHidden){
         actions += iddHTML("Availability", visMap, vis, visOrder,
-          { interactive: editing, labelWhen:["hide","stealth"].concat(sectionHidden ? ["show"] : []) });
+          { interactive: editing });
       }
     }
     if(it.manual || it.done || it.foot){
@@ -3728,8 +3745,9 @@ SECTIONS.push({
     btn.querySelector(".sr-only").textContent = feat + ": " + o.state;
     var tip = dd.querySelector(".idd-tip");
     if(tip) tip.textContent = o.tip;
-    var labelWhen = dd.dataset.map === "vis" ? ["hide","stealth"] : ["separate","visible"];
-    btn.classList.toggle("has-label", labelWhen.indexOf(key) >= 0);
+    /* every state is labelled, so the class never comes off — only the word
+       inside it changes. This path only ever runs on an interactive trigger. */
+    btn.classList.add("has-label");
 
     /* card-level treatment follows the visibility state */
     if(dd.dataset.map === "vis"){
@@ -4779,6 +4797,7 @@ SECTIONS.push({
           from = ptr.origin, next = ptr.originNext, id = ptr.id;
       try { handle.releasePointerCapture(id); } catch(_){}
       body.classList.remove("dnd-dragging");
+      body.classList.remove("dnd-holding");
       ptr = null;
       if(!active) return;                      /* never passed the threshold — it was a click */
       grabbed = item;                          /* release() clears the shared state */
@@ -4796,6 +4815,10 @@ SECTIONS.push({
       var sel = selOf(handle), item = handle.closest(sel);
       if(!item) return;
       e.preventDefault();                      /* no text selection, no scroll on touch */
+      /* iOS ignores the preventDefault above for its long-press selection, so
+         suppress it in CSS from the instant of contact rather than waiting for
+         the drag to pass its threshold */
+      body.classList.add("dnd-holding");
       ptr = { handle: handle, item: item, sel: sel, id: e.pointerId,
               y0: e.clientY, active: false,
               origin: item.parentElement, originNext: item.nextElementSibling };
