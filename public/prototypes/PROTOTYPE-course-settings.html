@@ -852,6 +852,14 @@
   /* scoped to .acard: bulk mode is about selecting activities, so it has no
      business hiding the drawer blocks' handles */
   body.bulk-on .acard .acard-drag{ display:none; }
+  /* Section and subsection headers use the same leading slot as the activity
+     card: the grip holds it in edit mode, the checkbox in bulk mode. One slot,
+     two occupants, so the header content indents by the same amount either way
+     and nothing shifts when bulk mode opens. */
+  .shead-drag{ flex:0 0 16px; }
+  body.bulk-on .shead .shead-drag,
+  body.bulk-on .subhead .shead-drag{ display:none; }
+  .shead .bulkselect, .subhead .bulkselect{ flex:0 0 auto; }
   .acard.bulk-selected{ background:var(--mds-color-blue-50,#e7f0f9); border-color:var(--mds-bg-interactive-primary-default,#0f6cbf); }
 
   .bulk-footer[hidden]{ display:none; }
@@ -1141,18 +1149,25 @@
     font-size:14px; background:none; border:none; cursor:pointer; padding:8px 4px;
   }
   .collapse-all i{ font-size:12px; }
-  /* ---------- SECTION CARD ---------- */
-  /* Section card, sampled at 1:1 from 4515:51722: fill #f8f9fa, 1px #e9ecef,
-     16px radius (the left border runs straight from y=15). Identical to the
-     activity card's default state — the section is not a white container
-     holding grey cards, both are the same grey and the outline is the only
-     thing separating them. Was white with a #dee2e6 border at 12px. */
+  /* ---------- SECTION CARD ----------
+     Sampled 1:1 from 4205:43741. The section is TWO regions, not one fill:
+       header  y 2-148   #ffffff   title, progress, description
+       divider y 149     1px #e9ecef, FULL container width, no inset
+       body    y 150+    #f8f9fa   the activity cards
+     The divider runs edge to edge — it is not inset to the cards' 16px
+     margin, which is what separates it from an activity card's own top
+     border (that one is inset, at y=166).
+     This supersedes the earlier reading from 4515:51722, where the section
+     was one flat grey throughout. The two nodes disagree; see decision D3 in
+     COURSE-PAGE-UPLIFT-TICKETS.md. A collapsed section has no body, so no
+     divider — which is why "Assessment" in that node shows none. */
   .scard{
-    background:var(--mds-bg-surface-subtle);
+    background:var(--mds-bg-surface-default);
     border:1px solid var(--mds-border-subtle);
     border-radius:var(--mds-border-radius-xl);
     margin-top:16px; overflow:hidden;
   }
+  .stop{ background:var(--mds-bg-surface-default); }
   .shead{ display:flex; align-items:center; gap:12px; padding:16px 20px; cursor:pointer; }
   .schev{
     width:32px; height:32px; flex:0 0 auto; border:none; border-radius:var(--r-md);
@@ -1168,13 +1183,19 @@
     font-size:14px; color:var(--text-subtle); white-space:nowrap;
   }
   .shead .sstatus .fa-check{ color:var(--success); }
-  .sbar{ height:4px; margin:0 20px; border-radius:var(--r-pill); background:var(--bg-strong); overflow:hidden; }
-  .sbar > span{ display:block; height:100%; border-radius:var(--r-pill); background:var(--primary); transition:width .3s ease; }
-  .sbar.full > span{ background:var(--success); }
-  .sbody{ padding:16px 20px 20px; }
+  /* Per-section progress bar removed. The "N of M activities done" status in
+     the header carries the same information without a second, purely
+     decorative encoding of it. */
+  /* border-top IS the divider. It sits on the body rather than the header so
+     it disappears with the body when the section collapses. */
+  .sbody{
+    padding:16px 20px 20px;
+    background:var(--mds-bg-surface-subtle);
+    border-top:1px solid var(--mds-border-subtle);
+  }
   .scard.collapsed .sbody{ display:none; }
-  .scard.collapsed .sbar{ margin-bottom:16px; }
-  .ssummary{ margin:0 0 16px; font-size:15px; line-height:1.6; color:var(--text-subtle); }
+  /* now sits in .stop, so it carries its own horizontal padding */
+  .ssummary{ margin:0; padding:0 20px 16px; font-size:15px; line-height:1.6; color:var(--text-subtle); }
   .acards{ display:flex; flex-direction:column; gap:12px; }
   /* ---------- ACTIVITY CARD (Figma 4020-37900) ---------- */
   .acard{
@@ -1288,18 +1309,24 @@
   /* subsection = nested collapsible card */
   /* nested subsection — 4515:51801 is the same Molecule/Course section
      component, so it takes the same treatment as .scard */
-  .subcard{ border:1px solid var(--mds-border-subtle); border-radius:var(--mds-border-radius-xl); background:var(--mds-bg-surface-subtle); overflow:hidden; }
+  /* Subsections take the same two-region treatment as .scard: white header,
+     full-width divider, grey body. Confirmed by design — 4205:43741 only
+     shows the collapsed state, so the expanded body is not sampled there. */
+  .subcard{ border:1px solid var(--mds-border-subtle); border-radius:var(--mds-border-radius-xl); background:var(--mds-bg-surface-default); overflow:hidden; }
   .subhead{ display:flex; align-items:center; gap:12px; padding:14px 20px; cursor:pointer; }
   .subhead:hover .schev{ background:var(--border-default); }
   .subhead .stitle{ margin:0; font-size:16px; font-weight:600; }
   .subhead .sstatus{ margin-left:auto; font-size:13px; color:var(--text-muted); white-space:nowrap; }
   .subcard.collapsed .subbody, .subcard.collapsed .subempty{ display:none; }
   .subcard.collapsed .schev{ transform:rotate(-90deg); }
-  .subbody{ padding:0 20px 18px; display:flex; flex-direction:column; gap:12px; }
+  .subbody{ padding:16px 20px 18px; display:flex; flex-direction:column; gap:12px;
+    background:var(--mds-bg-surface-subtle); border-top:1px solid var(--mds-border-subtle); }
   /* (a rule giving nested cards their own --bg-subtle fill used to sit here.
      Removed: every card is --mds-bg-surface-subtle now, so it was a no-op
      that read as though nesting changed the fill. It does not.) */
-  .subempty{ font-size:14px; color:var(--text-muted); font-style:italic; padding:0 20px 18px; }
+  /* the empty message stands in for the body, so it takes the body treatment */
+  .subempty{ font-size:14px; color:var(--text-muted); font-style:italic; padding:16px 20px 18px;
+    background:var(--mds-bg-surface-subtle); border-top:1px solid var(--mds-border-subtle); }
 
   /* ============================================================
      ACTIVITY CARD — rebuilt to Figma MDL-87755 node 4515:51706.
@@ -3538,8 +3565,20 @@ SECTIONS.push({
           return activityHTML(i, { sectionHidden: !!sub.hidden });
         }).join('') + '</div>'
       : '<div class="subempty">No activities in this subsection yet.</div>';
+    var subEdit = document.body.classList.contains("edit-on")
+      && !document.body.classList.contains("role-student");
+    var sid = (subsectionHTML.n = (subsectionHTML.n || 0) + 1);
     return '<section class="subcard collapsed' + (sub.hidden ? ' teacheronly' : '') + '">'
       + '<div class="subhead" data-toggle="sub">'
+        /* same leading slot as .shead — see the note there */
+        + (subEdit ? '<span class="bulkselect">'
+            + '<input type="checkbox" id="subCheckbox' + sid + '" data-bulkcheckbox="1">'
+            + '<label class="sr-only" for="subCheckbox' + sid + '">Select subsection ' + esc(sub.title) + '</label>'
+            + '</span>' : '')
+        + (subEdit ? '<button type="button" class="acard-drag shead-drag"'
+            + ' data-drag-item=".subcard" aria-label="Move ' + esc(sub.title) + '"'
+            + ' aria-pressed="false" aria-describedby="dragHelp">'
+            + '<i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>' : '')
         + '<button class="schev" tabindex="-1"><i class="fa-solid fa-chevron-down"></i></button>'
         + '<h3 class="stitle">' + titleHTML(sub.title, canEditTitles()) + '</h3>'
         + (sub.hidden ? '<span class="chip meta" style="margin-left:8px"><i class="fa-regular fa-eye-slash"></i>Hidden from students</span>' : '')
@@ -3562,20 +3601,41 @@ SECTIONS.push({
   }
   function sectionHTML(sec, i){
     var c = countSection(sec);
-    var pct = c.total ? Math.round(c.done / c.total * 100) : 0;
+    var secEdit = document.body.classList.contains("edit-on")
+      && !document.body.classList.contains("role-student");
     var status = c.total === 0 ? '' :
       (c.done === c.total ? 'All done <i class="fa-solid fa-check"></i>'
         : c.done === 0 ? 'Not started'
         : c.done + ' of ' + c.total + ' activities done');
+    /* .stop is the white header region, .sbody the grey body. The summary
+       sits in the header, above the divider, per 4205:43741 — the divider
+       falls between the description and the first activity, not above it. */
     return '<section class="scard' + (sec.collapsed ? ' collapsed' : '') + '" id="sec-' + i + '">'
-      + '<div class="shead" data-toggle="sec">'
-        + '<button class="schev" tabindex="-1"><i class="fa-solid fa-chevron-down"></i></button>'
-        + '<h2 class="stitle">' + titleHTML(sec.title, canEditTitles()) + '</h2>'
-        + (status ? '<span class="sstatus">' + status + '</span>' : '')
-      + '</div>'
-      + '<div class="sbar' + (pct === 100 ? ' full' : '') + '"><span style="width:' + pct + '%"></span></div>'
-      + '<div class="sbody">'
+      + '<div class="stop">'
+        + '<div class="shead" data-toggle="sec">'
+          /* leading slot — same pattern as the activity card. The grip holds it
+             in edit mode, the bulk checkbox holds it in bulk mode, and it
+             indents the header content either way so nothing shifts. */
+          /* Section 0 is neither movable nor bulk-selectable — core's move_at()
+             refuses to move it or to move anything into position 0, and it has
+             no bulk checkbox today. It gets no slot at all: an empty indent
+             with nothing in it reads as a misalignment, so the header closes
+             up instead. */
+          + (secEdit && i > 0 ? '<span class="bulkselect">'
+              + '<input type="checkbox" id="secCheckbox' + i + '" data-bulkcheckbox="1">'
+              + '<label class="sr-only" for="secCheckbox' + i + '">Select section ' + esc(sec.title) + '</label>'
+              + '</span>' : '')
+          + (secEdit && i > 0 ? '<button type="button" class="acard-drag shead-drag"'
+              + ' data-drag-item=".scard" aria-label="Move ' + esc(sec.title) + '"'
+              + ' aria-pressed="false" aria-describedby="dragHelp">'
+              + '<i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>' : '')
+          + '<button class="schev" tabindex="-1"><i class="fa-solid fa-chevron-down"></i></button>'
+          + '<h2 class="stitle">' + titleHTML(sec.title, canEditTitles()) + '</h2>'
+          + (status ? '<span class="sstatus">' + status + '</span>' : '')
+        + '</div>'
         + (sec.summary ? '<p class="ssummary">' + sec.summary + '</p>' : '')
+      + '</div>'
+      + '<div class="sbody">'
         + '<div class="acards">' + (sec.items || []).map(activityHTML).join('') + '</div>'
       + '</div></section>';
   }
@@ -4025,10 +4085,14 @@ SECTIONS.push({
 
   /* ---------- course-page interactions ---------- */
   document.addEventListener("click", function(e){
-    var secHead = e.target.closest('[data-toggle="sec"]');
+    /* the whole header is the collapse toggle, so the controls sitting in its
+       leading slot have to opt out or grabbing a section would collapse it */
+    var inSlot = e.target.closest && e.target.closest(".bulkselect, .acard-drag");
+
+    var secHead = inSlot ? null : e.target.closest('[data-toggle="sec"]');
     if(secHead){ secHead.closest(".scard").classList.toggle("collapsed"); return; }
 
-    var subHead = e.target.closest('[data-toggle="sub"]');
+    var subHead = inSlot ? null : e.target.closest('[data-toggle="sub"]');
     if(subHead){ subHead.closest(".subcard").classList.toggle("collapsed"); return; }
 
     var more = e.target.closest("[data-showmore]");
@@ -4593,7 +4657,7 @@ SECTIONS.push({
       return { i: s.indexOf(item) + 1, n: s.length };
     }
     function nameOf(item){
-      var t = item.querySelector(".atitle, .cb-block-title");
+      var t = item.querySelector(".atitle, .cb-block-title, .stitle");
       return t ? t.textContent.replace(/\s+/g, " ").trim() : "item";
     }
     function sectionOf(item){
