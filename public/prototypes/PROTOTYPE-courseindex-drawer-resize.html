@@ -172,9 +172,15 @@
   .profile .pname{ font-size:14px; font-weight:500; color:var(--text-default); }
   .profile .fa-chevron-down{ font-size:8px; color:var(--text-subtle); }
 
-  /* =====================  PAGE LAYOUT  ===================== */
+  /* =====================  PAGE LAYOUT  =====================
+     The page row spans the SAME bound as the nav (--shell-max) but with NO
+     inner padding, so the course index and blocks drawer sit flush to that
+     bound — i.e. the furniture is exactly as wide as the top navigation.
+     (Nesting the drawers inside the nav's 48px text padding would steal 96px
+     from the row and squeeze the reading column below core's width.) */
   .layout{
     display:flex; align-items:flex-start;
+    max-width:var(--shell-max); margin:0 auto;
     padding-top:var(--sp-lg); padding-bottom:64px;
     min-height:calc(100vh - var(--nav-h));
     position:relative;
@@ -683,11 +689,9 @@
      never blocks the screen it describes. */
   .devpanel{
     position:fixed; bottom:16px; z-index:60; width:170px;
-    /* bottom-left like the book prototype, aligned with the shell's (course
-       index's) left content edge; clamps to the pad on narrow viewports */
-    /* 100% (not 100vw) so the centring maths ignores the scrollbar, matching
-       the shell's own centring */
-    left:max(var(--shell-pad), calc((100% - var(--shell-max)) / 2 + var(--shell-pad)));
+    /* bottom-left, aligned with the course index's left edge (the shell
+       bound); 100% not 100vw so the centring ignores the scrollbar */
+    left:max(12px, calc((100% - var(--shell-max)) / 2));
     background:#fff; border:1px solid var(--border-default); border-radius:var(--r-md);
     box-shadow:0 8px 28px rgba(0,0,0,.16); padding:var(--sp-sm);
   }
@@ -921,7 +925,7 @@
   </header>
 
   <!-- ===== PAGE ===== -->
-  <div class="layout shell">
+  <div class="layout">
 
     <!-- floating open-toggle (shown when index closed) -->
     <div class="toggle-col">
