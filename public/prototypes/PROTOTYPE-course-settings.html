@@ -1623,7 +1623,11 @@
   .idd-btn{
     position:relative; display:inline-flex; align-items:center; justify-content:center;
     width:28px; height:28px; padding:0;
-    border:1px solid var(--mds-border-default); border-radius:6px;
+    /* border radius/md from 4501:46511 — every control in the row is the same
+       8px rounded rectangle, whether it is icon-only, icon+word or the wider
+       Completion button. Was 6px. */
+    border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-md);
     background:var(--surface); color:var(--mds-text-subtle);
     font-size:13px; line-height:1; cursor:pointer;
     transition:background-color .12s ease, color .12s ease, border-color .12s ease;
@@ -1704,7 +1708,7 @@
   .idd-static{
     position:relative; display:inline-flex; align-items:center; justify-content:center;
     width:28px; height:28px; padding:0; font-size:13px; font:inherit; line-height:1;
-    border:1px solid transparent; border-radius:6px;
+    border:1px solid transparent; border-radius:var(--mds-border-radius-md);
     background:var(--mds-bg-surface-subtle,#f8f9fa); color:#6a737b; cursor:pointer;
   }
   .idd-static::after{
@@ -1721,8 +1725,11 @@
      discrimination alone. Edit mode only — .idd-static never gets .has-label,
      so a view-mode indicator stays a bare icon and the read-only page keeps
      its density. */
+  /* No radius of its own: growing to fit a word must not change the corner.
+     4501:46511 keeps every control in the row on border radius/md, so the
+     labelled variant inherits .idd-btn's 8px rather than becoming a pill. */
   body.cardvariant-b .idd-btn.has-label{
-    width:auto; gap:6px; padding:0 10px; border-radius:var(--mds-border-radius-pill);
+    width:auto; gap:6px; padding:0 10px;
   }
   body.cardvariant-b .idd-btn.has-label .lbl{
     display:inline; font-size:12px; font-weight:500; white-space:nowrap;
