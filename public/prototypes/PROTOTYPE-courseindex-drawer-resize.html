@@ -657,20 +657,44 @@
   }
   body.hide-dev .debug, body.hide-dev .hint{ display:none; }
 
-  /* dev page switcher — flip the main pane between a responsive course page and
-     a legacy full-width activity (forum) to exercise the float fallback. */
-  .pageswitch{
-    position:fixed; bottom:62px; right:14px; z-index:60;
-    display:flex; gap:0; background:#fff; border:1px solid var(--border-default);
-    border-radius:8px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,.12);
+  /* dev state switcher — flip the main pane between the course page and a
+     full-width activity (forum). Same devpanel pattern as the other
+     prototypes: a small fixed card that minimises to a "State" pill so it
+     never blocks the screen it describes. */
+  .devpanel{
+    position:fixed; bottom:62px; right:14px; z-index:60; width:170px;
+    background:#fff; border:1px solid var(--border-default); border-radius:var(--r-md);
+    box-shadow:0 8px 28px rgba(0,0,0,.16); padding:var(--sp-sm);
   }
-  .pageswitch button{
-    border:none; background:#fff; cursor:pointer; font-size:11px; font-weight:600;
-    color:var(--text-subtle); padding:7px 10px;
+  .devpanel h5{
+    margin:0 0 6px; font-size:.625rem; text-transform:uppercase;
+    letter-spacing:.5px; color:var(--text-muted); padding-right:26px;
   }
-  .pageswitch button + button{ border-left:1px solid var(--border-default); }
-  .pageswitch button.active{ background:var(--primary); color:#fff; }
-  body.hide-dev .pageswitch{ display:none; }
+  .devrow{ display:flex; flex-wrap:wrap; gap:4px; }
+  .devbtn{
+    border:1px solid var(--border-default); background:var(--bg-subtle);
+    border-radius:var(--r-sm); padding:4px 8px; cursor:pointer;
+    font-size:.6875rem; color:var(--text-subtle); font-weight:500;
+  }
+  .devbtn:hover{ background:var(--bg-strong); }
+  .devbtn.on{ background:var(--primary); color:#fff; border-color:transparent; }
+  /* collapse/restore */
+  .devmin{
+    position:absolute; top:6px; right:6px; width:22px; height:22px;
+    border:1px solid var(--border-default); background:var(--bg-subtle);
+    border-radius:var(--r-sm); cursor:pointer; color:var(--text-subtle);
+    display:flex; align-items:center; justify-content:center; gap:6px; font-size:10px;
+  }
+  .devmin:hover{ background:var(--bg-strong); color:var(--text-default); }
+  .devpanel.min{ width:auto; padding:4px; }
+  .devpanel.min > *:not(.devmin){ display:none; }
+  .devpanel.min .devmin{
+    position:static; width:auto; height:26px; padding:0 var(--sp-xs);
+    border-color:transparent; background:var(--primary); color:#fff;
+    font-size:.6875rem; font-weight:500;
+  }
+  .devpanel.min .devmin:hover{ background:var(--primary-dark); color:#fff; }
+  body.hide-dev .devpanel{ display:none; }
 
   /* two page bodies live in the content column; JS shows one at a time */
   .page-forum{ display:none; }
@@ -1160,9 +1184,16 @@
   <div class="anno-layer" id="annoLayer"></div>
   <button class="anno-toggle" id="annoToggle"><i class="fa-solid fa-location-dot"></i><span id="annoToggleLabel">Hide annotations</span></button>
 
-  <div class="pageswitch" id="pageSwitch" title="Dev: switch the main pane">
-    <button data-page="course" class="active">Course page</button>
-    <button data-page="forum">Forum (full-width)</button>
+  <!-- ===== DEV STATE SWITCHER (prototype only — delete for merge) ===== -->
+  <div class="devpanel" id="devPanel">
+    <button class="devmin" id="devMin" aria-expanded="true" title="Minimise the state switcher">
+      <i class="fa-solid fa-minus" id="devMinIcon"></i><span id="devMinLabel"></span>
+    </button>
+    <h5>Page</h5>
+    <div class="devrow" id="pageSwitch">
+      <button class="devbtn on" data-page="course">Course page</button>
+      <button class="devbtn" data-page="forum">Forum (full-width)</button>
+    </div>
   </div>
   <div class="debug" id="debug" title="Click to hide dev overlays"></div>
   <div class="hint" title="Click to hide dev overlays">Edit mode on → hover any course-index row for <b>+</b> (add) / <b>…</b> (more) and drag to reorder. The book expands to its chapters (TOC now inline). Toggle Edit mode to see the clean student view. <b>(click to hide)</b></div>
@@ -1577,11 +1608,23 @@
      full-width forum to show how each responds as the index widens/narrows */
   var pageSwitch = document.getElementById("pageSwitch");
   pageSwitch.addEventListener("click", function(e){
-    var btn = e.target.closest("button"); if(!btn) return;
-    pageSwitch.querySelectorAll("button").forEach(function(b){ b.classList.toggle("active", b === btn); });
+    var btn = e.target.closest(".devbtn"); if(!btn) return;
+    pageSwitch.querySelectorAll(".devbtn").forEach(function(b){ b.classList.toggle("on", b === btn); });
     body.classList.toggle("show-forum", btn.dataset.page === "forum");
     updateDebug();
   });
+  /* minimise/restore the state switcher (same pattern as the other prototypes) */
+  (function(){
+    var panel = document.getElementById("devPanel");
+    var btn = document.getElementById("devMin");
+    btn.addEventListener("click", function(){
+      var min = panel.classList.toggle("min");
+      btn.setAttribute("aria-expanded", String(!min));
+      btn.title = min ? "Restore the state switcher" : "Minimise the state switcher";
+      document.getElementById("devMinIcon").className = min ? "fa-solid fa-flask" : "fa-solid fa-minus";
+      document.getElementById("devMinLabel").textContent = min ? "State" : "";
+    });
+  })();
 
   /* click either dev overlay to hide both */
   document.querySelector(".debug").addEventListener("click", function(){ body.classList.add("hide-dev"); });
