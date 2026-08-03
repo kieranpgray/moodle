@@ -232,7 +232,6 @@
   .ci-row:hover{ background:rgba(0,0,0,.04); }
   .ci-row.current{ background:var(--mds-bg-interactive-primary-default); }
   .ci-row.current .txt, .ci-row.current .num, .ci-row.current .act-icon{ color:#fff; }
-  .ci-row.current .act-icon{ background:rgba(255,255,255,.22); }
   .ci-row .txt{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); color:var(--mds-text-subtle);
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
   /* MDS activity-icon (small tile): radius-lg + category bg/icon */
@@ -241,6 +240,26 @@
   .act-icon.file{ background:var(--mds-activity-icon-file-bg); color:var(--mds-activity-icon-file-icon); }
   .act-icon.communication{ background:var(--mds-activity-icon-communication-bg); color:var(--mds-activity-icon-communication-icon); }
   .act-icon.assessment{ background:var(--mds-activity-icon-assessment-bg); color:var(--mds-activity-icon-assessment-icon); }
+
+  /* Course index: the glyph only, in its purpose colour, with no tile behind
+     it — per 4640:28147. This is deliberately NOT the course page treatment,
+     where MDL-87840 puts the same icon in a filled rounded container. The
+     index is a dense list where a tile on every row reads as noise; the card
+     is a single object where the tile is the thing that identifies it. Same
+     icon, two treatments, on purpose. */
+  .ci-row .act-icon{
+    background:none; border-radius:0; width:16px; height:16px; font-size:13px;
+  }
+
+  /* Completion, leading the row per 4640:28147. Rendered only where the
+     activity has completion tracking — an activity without it gets no circle
+     and no reserved slot, so the row closes up rather than showing an empty
+     indent. */
+  .ci-comp{ flex:0 0 auto; width:16px; font-size:13px; display:flex;
+    align-items:center; justify-content:center; }
+  .ci-comp.done{ color:var(--mds-bg-interactive-primary-default,#0f6cbf); }
+  .ci-comp.todo{ color:var(--mds-text-muted); }
+  .ci-row.current .ci-comp{ color:#fff; }
 
   /* book row (expandable) + chapters */
   .ci-book-chevron{ width:12px; border:none; background:none; padding:0; cursor:pointer; color:var(--mds-text-muted); font-size:9px; flex:0 0 auto; transition:transform .15s ease; }
@@ -1840,8 +1859,9 @@
   .ws-panel[data-panel="course"] .collapse-all{ display:none; } /* lives in the secondary nav */
   body.role-student .teacheronly{ display:none; }
 
-  /* course-index rows carrying the merged course data */
-  .ci-tick{ margin-left:auto; font-size:11px; color:var(--mds-color-green-500); flex:0 0 auto; }
+  /* course-index rows carrying the merged course data.
+     (.ci-tick removed — completion is now .ci-comp, leading the row rather
+     than a green tick pinned to its right edge.) */
   .ci-row.ci-subhead{ font-weight:var(--mds-font-weight-semibold); color:var(--mds-text-muted);
     font-size:var(--mds-font-size-paragraph-small); cursor:default; }
   .ci-row.ci-subhead i{ font-size:10px; margin-right:.2rem; }
@@ -4128,11 +4148,20 @@ SECTIONS.push({
         return;
       }
       var m = modOf(it);
+      /* completion leads the row and only appears where the activity tracks
+         it; the icon carries its purpose colour but no tile behind it */
+      var tracked = !!(it.manual || it.done || it.foot);
       html += '<div class="ci-row' + (it.teacheronly ? ' teacheronly' : '') + '">'
-        + '<span class="act-icon" style="background:var(--p-' + m.purpose + '-bg);color:var(--p-' + m.purpose + ')">'
+        + (tracked
+            ? '<span class="ci-comp ' + (it.done ? 'done' : 'todo') + '">'
+              + '<i class="' + (it.done ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle')
+              + '" aria-hidden="true"></i>'
+              + '<span class="sr-only">' + (it.done ? 'Completed' : 'Not completed') + '</span>'
+              + '</span>'
+            : '')
+        + '<span class="act-icon" style="color:var(--p-' + m.purpose + ')">'
         + modIcon(it, 11) + '</span>'
         + '<span class="txt">' + esc(it.name) + '</span>'
-        + (it.done ? '<i class="fa-solid fa-circle-check ci-tick" title="Completed"></i>' : '')
         + '</div>';
     });
     return html;
