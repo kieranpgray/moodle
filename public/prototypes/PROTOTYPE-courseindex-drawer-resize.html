@@ -40,6 +40,8 @@
     --amber-bg:#fdf3e7; --amber-text:#8a5a00;
     --activity-magenta:#c2185b; --activity-teal:#0f7b8a; --activity-teal-bg:#d7ecef;
     --ci-row-hover:#e1e4e6; /* course-index row hover bg (for overlaid actions) */
+    /* measurement guides (shared vocabulary with the topnav prototype) */
+    --g-nav:#1971c2; --g-shell:#f08c00; --g-extent:#2f9e44; --g-col:#d6336c;
     /* layout — nav geometry per the top-nav max-width spec/prototype
        (PROTOTYPE-topnav-maxwidth.html): bar height 60px ($navbar-height),
        contents capped to a FIXED shell (identical on every page) with 48px
@@ -725,6 +727,49 @@
   .devpanel.min .devmin:hover{ background:var(--primary-dark); color:#fff; }
   body.hide-dev .devpanel{ display:none; }
 
+  /* =====  ALIGNMENT GUIDES + MEASUREMENT READOUT  =====
+     Ported from PROTOTYPE-topnav-maxwidth.html so both prototypes measure the
+     composition the same way and use the same vocabulary:
+       nav contents    — where the logo/avatar sit (inside the nav's padding)
+       cap             — the shell bound the nav is capped to
+       page furniture  — outermost extent of drawers + content
+       reading column  — the actual cards (main-inner minus its gutters) */
+  .guide{
+    position:fixed; top:0; bottom:0; width:0; z-index:59;
+    pointer-events:none; display:none; border-left:1px dashed;
+  }
+  body.guides-on .guide{ display:block; }
+  .guide::after{
+    content:attr(data-label);
+    position:absolute; left:3px; font-size:10px; color:#fff;
+    padding:1px 5px; border-radius:3px; white-space:nowrap;
+  }
+  .g-nav{ border-color:var(--g-nav); border-left-style:solid; }
+  .g-shell{ border-color:var(--g-shell); }
+  .g-extent{ border-color:var(--g-extent); }
+  .g-col{ border-color:var(--g-col); }
+  .g-nav::after{ background:var(--g-nav); bottom:178px; }
+  .g-shell::after{ background:var(--g-shell); bottom:156px; }
+  .g-extent::after{ background:var(--g-extent); bottom:134px; }
+  .g-col::after{ background:var(--g-col); bottom:112px; }
+
+  .measure-bar{
+    position:fixed; left:0; right:0; bottom:0; z-index:100; display:none;
+    background:#1d2125; color:#adb5bd; padding:9px 16px; font-size:12px;
+    flex-wrap:wrap; gap:6px 18px; align-items:center;
+    font-variant-numeric:tabular-nums; box-shadow:0 -2px 12px rgba(0,0,0,.25);
+  }
+  body.guides-on .measure-bar{ display:flex; }
+  body.hide-dev .measure-bar{ display:none; }
+  .measure-bar b{ color:#fff; font-weight:600; }
+  .measure-bar .swatch{ display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:5px; vertical-align:middle; }
+  .measure-bar .ok{ color:#51cf66; font-weight:700; }
+  .measure-bar .near{ color:#ffd43b; font-weight:700; }
+  .measure-bar .bad{ color:#ff8787; font-weight:700; }
+  /* lift the other dev aids clear of the readout bar */
+  body.guides-on .devpanel, body.guides-on .debug{ bottom:66px; }
+  body.guides-on .hint{ bottom:126px; }
+
   /* two page bodies live in the content column; JS shows one at a time */
   .page-forum{ display:none; }
   body.show-forum .page-course{ display:none; }
@@ -1352,7 +1397,22 @@
       <button class="devbtn on" data-cap="1440px">1440 (design)</button>
       <button class="devbtn" data-cap="1320px">1320 (proposed)</button>
     </div>
+    <h5>Measure</h5>
+    <div class="devrow">
+      <button class="devbtn" id="guidesBtn">Guides</button>
+    </div>
   </div>
+
+  <!-- alignment guides (same instrumentation as the topnav prototype) -->
+  <div class="guide g-nav"    id="gNavL"    data-label="nav contents"></div>
+  <div class="guide g-nav"    id="gNavR"    data-label="nav contents"></div>
+  <div class="guide g-shell"  id="gShellL"  data-label="cap"></div>
+  <div class="guide g-shell"  id="gShellR"  data-label="cap"></div>
+  <div class="guide g-extent" id="gExtentL" data-label="page furniture"></div>
+  <div class="guide g-extent" id="gExtentR" data-label="page furniture"></div>
+  <div class="guide g-col"    id="gColL"    data-label="reading column"></div>
+  <div class="guide g-col"    id="gColR"    data-label="reading column"></div>
+  <div class="measure-bar" id="measureBar"></div>
   <div class="debug" id="debug" title="Click to hide dev overlays"></div>
   <div class="hint" title="Click to hide dev overlays">Edit mode on → hover any course-index row for <b>+</b> (add) / <b>…</b> (more) and drag to reorder. The book expands to its chapters (TOC now inline). Toggle Edit mode to see the clean student view. <b>(click to hide)</b></div>
 
@@ -1758,9 +1818,97 @@
     debugEl.innerHTML =
       "viewport: <b>" + vw + "px</b> · mode: <b>" + mode + "</b><br>" +
       "index: <b>" + left + "</b> (" + w + "px) · blocks: <b>" + right + "</b>";
+    refreshGuides();                                  // immediate
+    if(typeof scheduleGuides === "function") scheduleGuides(); // after animations settle
   }
   window.addEventListener("resize", updateDebug);
   updateDebug();
+
+  /* ---- alignment guides + measurement readout (ported from the topnav
+     max-width prototype so both use the same vocabulary and maths) ---- */
+  var measureBar = document.getElementById("measureBar");
+  var G = {
+    navL:document.getElementById("gNavL"),       navR:document.getElementById("gNavR"),
+    shellL:document.getElementById("gShellL"),   shellR:document.getElementById("gShellR"),
+    extentL:document.getElementById("gExtentL"), extentR:document.getElementById("gExtentR"),
+    colL:document.getElementById("gColL"),       colR:document.getElementById("gColR")
+  };
+  /* content box = border box minus padding (what the eye reads as the edge) */
+  function contentBox(el){
+    var r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+    return { left:r.left + parseFloat(cs.paddingLeft), right:r.right - parseFloat(cs.paddingRight) };
+  }
+  /* outermost extent of the page furniture: the content column plus whichever
+     drawers are actually open — the width the page needs to read as one
+     contained composition */
+  function pageExtent(){
+    var col = contentBox(document.querySelector(".content-col"));
+    var l = col.left, r = col.right;
+    [[document.getElementById("drawer"), "ci-open"],
+     [document.getElementById("drawerRight"), "cb-open"]].forEach(function(pair){
+      if(!body.classList.contains(pair[1])) return;
+      var b = pair[0].getBoundingClientRect();
+      if(b.width < 1) return;
+      l = Math.min(l, b.left); r = Math.max(r, b.right);
+    });
+    return { left:l, right:r };
+  }
+  function place(g, x){ g.style.left = Math.round(x) + "px"; }
+  function cls(d){ var a = Math.abs(d); return a <= 1 ? "ok" : (a <= 8 ? "near" : "bad"); }
+
+  function refreshGuides(){
+    /* measureBar/G are assigned below updateDebug's first call — guard for it */
+    if(!measureBar || !body.classList.contains("guides-on")) return;
+    var nav   = contentBox(document.querySelector(".topbar-inner"));
+    var col   = contentBox(document.querySelector(".content-col"));
+    var ext   = pageExtent();
+    var layout= document.querySelector(".layout").getBoundingClientRect(); // the cap bound
+    var shell = { left:layout.left, right:layout.right };
+
+    place(G.navL, nav.left);       place(G.navR, nav.right);
+    place(G.shellL, shell.left);   place(G.shellR, shell.right);
+    place(G.extentL, ext.left);    place(G.extentR, ext.right);
+    place(G.colL, col.left);       place(G.colR, col.right);
+
+    /* furniture vs the cap: 0 means the drawers are exactly as wide as the nav */
+    var fL = Math.round(ext.left - shell.left);
+    var fR = Math.round(shell.right - ext.right);
+    var worst = Math.max(Math.abs(fL), Math.abs(fR));
+    var verdict = worst <= 1 ? '<span class="ok">flush with the cap</span>'
+                : worst <= 8 ? '<span class="near">within ' + worst + 'px</span>'
+                : (fL < 0 || fR < 0)
+                  ? '<span class="bad">outside the cap by ' + Math.max(-fL, -fR) + 'px</span>'
+                  : '<span class="bad">inside the cap by ' + worst + 'px</span>';
+
+    var colW = Math.round(col.right - col.left);
+    var vw = Math.round(window.innerWidth);
+    var cap = Math.round(parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--shell-max")));
+
+    measureBar.innerHTML =
+      '<span>Viewport <b>' + vw + 'px</b> · cap <b>' + cap + 'px</b></span>' +
+      '<span><i class="swatch" style="background:var(--g-nav)"></i>Nav contents <b>' +
+        Math.round(nav.left) + ' &rarr; ' + Math.round(nav.right) + '</b></span>' +
+      '<span><i class="swatch" style="background:var(--g-extent)"></i>Page furniture <b>' +
+        Math.round(ext.left) + ' &rarr; ' + Math.round(ext.right) + '</b> &nbsp;' + verdict + '</span>' +
+      '<span><i class="swatch" style="background:var(--g-col)"></i>Reading column <b>' + colW + 'px</b> &nbsp;' +
+        '<span class="' + cls(colW - 784) + '">' + (colW >= 784 ? '+' : '') + (colW - 784) + ' vs core 784</span></span>' +
+      (vw < cap + 40 ? '<span class="near">Widen past ' + cap + 'px — the cap only bites above it.</span>' : '');
+  }
+  /* Drawer widths animate over ~320ms. Measure immediately, on the transition
+     actually ending, AND again on a timer as a backstop for environments that
+     throttle or drop transition frames — otherwise the readout can be left
+     showing the pre-animation value. (Same guard as the topnav prototype.) */
+  var guideTimer;
+  function scheduleGuides(){ clearTimeout(guideTimer); guideTimer = setTimeout(refreshGuides, 400); }
+  document.getElementById("drawer").addEventListener("transitionend", refreshGuides);
+  document.getElementById("drawerRight").addEventListener("transitionend", refreshGuides);
+
+  var guidesBtn = document.getElementById("guidesBtn");
+  guidesBtn.addEventListener("click", function(){
+    var on = body.classList.toggle("guides-on");
+    guidesBtn.classList.toggle("on", on);
+    refreshGuides();
+  });
 
   /* dev page switcher: swap the main pane between the course page and a
      full-width forum to show how each responds as the index widens/narrows */
