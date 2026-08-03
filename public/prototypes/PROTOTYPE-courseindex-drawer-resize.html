@@ -734,30 +734,86 @@
   body.show-forum .toggle-col-right,
   body.show-forum .drawer-right{ display:none; }
 
-  /* forum = deliberately width-sensitive: the discussion table can't reflow
-     below its min-width, standing in for real legacy / embedded activity
-     content that overflows when the content column is squeezed. */
-  .forum-head h1{ margin:0 0 4px; font-size:26px; font-weight:800; letter-spacing:-.2px; }
-  .forum-head .sub{ color:var(--text-muted); font-size:14px; margin-bottom:18px; }
-  .forum-note{
-    display:flex; gap:10px; align-items:flex-start;
-    background:#eaf3fb; border:1px solid #bcdcf5; border-radius:8px;
-    padding:10px 12px; margin-bottom:16px; font-size:12.5px; color:#155287; line-height:1.5;
+  /* =====  FORUM (mod/forum/view.php) — faithful to core  =====
+     Core facts this reproduces:
+     - pagelayout-incourse WITHOUT limitedwidth → .main-inner max-width:100%,
+       i.e. the page runs FULL WIDTH (no 830px cap).
+     - Discussion list wrapped in Bootstrap .table-responsive → overflow-x:auto
+       at EVERY width. No columns are ever hidden; the table scrolls inside its
+       own box instead (verified: no d-none/d-*-table-cell in the template).
+     - table.discussion-list.generaltable: 0.75rem cell padding, border-top on
+       .generaltable and on every th/td.
+     - #page-mod-forum-view table .fit-content{ width:1px; white-space:nowrap }
+       and .limit-width{ max-width:200px; nowrap; ellipsis } (modules.scss).
+     - .discussion-list .topic{ font-weight:inherit } — discussion cells are
+       <th scope="row"> but must not render bold. */
+  body.show-forum .content-col{ max-width:none; }   /* full-width page */
+  .visually-hidden{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
   }
-  .forum-note i{ margin-top:1px; }
-  /* mirrors Bootstrap's .table-responsive: a wide table gets a contained
-     horizontal scroll inside its own box, so a narrow column never breaks the
-     page — exactly how the real mod/forum discussion list behaves. */
-  .forum-table-wrap{ overflow-x:auto; border:1px solid var(--border-default); border-radius:8px; }
-  table.forum-table{
-    min-width:700px; width:100%; border-collapse:collapse; font-size:13px; background:#fff;
+
+  .activity-header h1{ margin:0 0 6px; font-size:28px; font-weight:700; letter-spacing:-.2px; }
+  .activity-header .activity-desc{ color:var(--text-default); font-size:15px; line-height:1.5; }
+  .activity-header{ padding-bottom:16px; margin-bottom:8px; }
+
+  /* tertiary navigation / action bar (forum_actionbar.mustache):
+     .d-flex.flex-wrap with the subscribe toggle pushed right at sm+ */
+  .tertiary-navigation{ padding:12px 0 16px; }
+  .tertiary-navigation .tn-row{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .tertiary-navigation .navitem.push-right{ margin-left:auto; }
+  @media (max-width:575.98px){ .tertiary-navigation .navitem.push-right{ margin-left:0; } }
+  .forum-search{
+    display:flex; align-items:center; gap:6px; height:36px; padding:0 10px;
+    border:1px solid var(--border-default); border-radius:var(--r-sm);
+    background:#fff; color:var(--text-muted); font-size:14px; min-width:200px;
   }
-  table.forum-table th, table.forum-table td{
-    text-align:left; padding:11px 14px; border-bottom:1px solid var(--border-default); white-space:nowrap;
+  .btn-primary-core{
+    display:inline-flex; align-items:center; height:36px; padding:0 14px;
+    background:var(--primary); color:#fff; border-radius:var(--r-sm);
+    font-size:14px; font-weight:400; white-space:nowrap;
   }
-  table.forum-table th{ background:var(--bg-subtle); color:var(--text-subtle); font-weight:600; }
-  table.forum-table td .disc{ font-weight:600; color:var(--text-default); }
-  table.forum-table tr:last-child td{ border-bottom:none; }
+  .subscribe-toggle{ display:flex; align-items:center; gap:8px; font-size:14px; color:var(--text-default); white-space:nowrap; }
+  .subscribe-toggle .sw{ width:36px; height:20px; border-radius:800px; background:var(--primary); position:relative; flex:0 0 auto; }
+  .subscribe-toggle .sw::after{ content:""; position:absolute; top:2px; left:18px; width:16px; height:16px; border-radius:50%; background:#fff; }
+
+  /* Bootstrap .table-responsive — contained horizontal scroll, all widths */
+  .table-responsive{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  /* core tables.scss: "Fix visually hidden text in responsive tables" —
+     absolutely-positioned .visually-hidden escapes the scroll container and
+     drags a horizontal scrollbar onto the whole page, so it is made relative
+     inside responsive tables. */
+  .table-responsive .visually-hidden{ position:relative; display:block; }
+  table.discussion-list{
+    width:100%; border-collapse:collapse; background:#fff; font-size:14px;
+    border-top:1px solid var(--border-default);
+  }
+  table.discussion-list th, table.discussion-list td{
+    padding:.75rem; border-top:1px solid var(--border-default);
+    text-align:left; vertical-align:middle;
+  }
+  table.discussion-list thead th{ font-weight:700; color:var(--text-default); white-space:nowrap; }
+  table.discussion-list thead th a{ color:var(--text-default); }
+  /* core: th.topic must not inherit the bold th style */
+  table.discussion-list th.topic{ font-weight:inherit; }
+  table.discussion-list th.topic a{ color:var(--primary); }
+  table.discussion-list .fit-content{ width:1px; white-space:nowrap; }
+  table.discussion-list .limit-width{ max-width:200px; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
+  table.discussion-list .cell-flex{ display:flex; align-items:center; gap:.5rem; }
+  table.discussion-list .userpicture{
+    width:35px; height:35px; border-radius:50%; flex:0 0 auto;
+    background:var(--bg-strong); color:var(--text-subtle);
+    display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600;
+  }
+  table.discussion-list .author-info{ max-width:calc(100% - 35px - .5rem); overflow:hidden; }
+  table.discussion-list .author-info .nm{ line-height:1.3; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; }
+  table.discussion-list .author-info .dt a{ color:var(--primary); font-size:13px; line-height:1.3; }
+  table.discussion-list td.text-center{ text-align:center; }
+  table.discussion-list .unread-badge{
+    display:inline-block; margin-left:6px; padding:0 6px; border-radius:800px;
+    background:var(--primary); color:#fff; font-size:12px; font-weight:600;
+  }
+  table.discussion-list .sub-bell{ color:var(--text-muted); }
 
   /* ---- annotations (dismissible walkthrough callouts) ---- */
   .anno-layer{ position:fixed; inset:0; z-index:70; pointer-events:none; }
@@ -1128,25 +1184,93 @@
       </div>
      </div><!-- /.page-course -->
 
+     <!-- mod/forum/view.php — full-width activity page (no limitedwidth) -->
      <div class="page page-forum">
-      <div class="forum-head">
+      <div class="activity-header">
         <h1>Announcements</h1>
-        <div class="sub">Forum · General news and announcements from your tutors</div>
+        <div class="activity-desc">General news and announcements from your tutors. Everyone is subscribed to this forum by default.</div>
       </div>
-      <div class="forum-note">
-        <i class="fa-solid fa-circle-info"></i>
-        <span>Full-width activity. As the course index widens, this page's column just narrows — the index <b>pushes</b>, it doesn't float. Wide content (this discussion table) is wrapped like Moodle's real <code>.table-responsive</code>, so it gains a <b>contained horizontal scroll</b> rather than breaking the page. Drag the index wider to see the table scroll inside its own box.</span>
+
+      <!-- forum_actionbar.mustache: search · new discussion · subscribe toggle -->
+      <div class="tertiary-navigation">
+        <div class="tn-row">
+          <div class="navitem">
+            <div class="forum-search"><i class="fa-solid fa-magnifying-glass"></i> Search forums</div>
+          </div>
+          <div class="navitem"><span class="btn-primary-core">Add discussion topic</span></div>
+          <div class="navitem push-right">
+            <span class="subscribe-toggle"><span class="sw"></span> Subscribed</span>
+          </div>
+        </div>
       </div>
-      <div class="forum-table-wrap">
-        <table class="forum-table">
+
+      <!-- discussion_list.mustache -->
+      <div class="table-responsive">
+        <table class="discussion-list generaltable">
           <thead>
-            <tr><th>Discussion</th><th>Started by</th><th>Group</th><th>Replies</th><th>Unread</th><th>Last post</th></tr>
+            <tr>
+              <th scope="col" class="fit-content"><span class="visually-hidden">Status</span></th>
+              <th scope="col">Discussion</th>
+              <th scope="col" class="group fit-content">Group</th>
+              <th scope="col" class="author fit-content">Started by</th>
+              <th scope="col" class="lastpost fit-content">Last post</th>
+              <th scope="col" class="fit-content text-center">Replies</th>
+              <th scope="col" class="fit-content"><span class="visually-hidden">Actions</span></th>
+            </tr>
           </thead>
           <tbody>
-            <tr><td><span class="disc">Welcome to the course — start here</span></td><td>Mr. Sanders</td><td>All participants</td><td>12</td><td>3</td><td>24 Jul 2026, 9:14 AM</td></tr>
-            <tr><td><span class="disc">Assessment 1 submission window now open</span></td><td>Mr. Sanders</td><td>All participants</td><td>4</td><td>0</td><td>23 Jul 2026, 4:02 PM</td></tr>
-            <tr><td><span class="disc">Field trip logistics and safety briefing</span></td><td>A. Okafor</td><td>Cohort B</td><td>27</td><td>7</td><td>22 Jul 2026, 11:48 AM</td></tr>
-            <tr><td><span class="disc">Reading list updated for week 6</span></td><td>Mr. Sanders</td><td>All participants</td><td>1</td><td>0</td><td>20 Jul 2026, 8:30 AM</td></tr>
+            <tr>
+              <td class="fit-content text-center"><i class="fa-solid fa-thumbtack sub-bell" title="Pinned"></i></td>
+              <th scope="row" class="topic"><a href="#">Welcome to the course — start here</a></th>
+              <td class="group fit-content limit-width">All participants</td>
+              <td class="author fit-content limit-width">
+                <div class="cell-flex"><span class="userpicture">MS</span><div class="author-info"><div class="nm">Mr. Sanders</div></div></div>
+              </td>
+              <td class="lastpost fit-content limit-width">
+                <div class="cell-flex"><span class="userpicture">AO</span><div class="author-info"><div class="nm">A. Okafor</div><div class="dt"><a href="#">24 Jul 2026</a></div></div></div>
+              </td>
+              <td class="fit-content text-center">12<span class="unread-badge">3</span></td>
+              <td class="fit-content text-center"><i class="fa-regular fa-bell sub-bell" title="Subscribed"></i></td>
+            </tr>
+            <tr>
+              <td class="fit-content text-center"></td>
+              <th scope="row" class="topic"><a href="#">Assessment 1 submission window now open</a></th>
+              <td class="group fit-content limit-width">All participants</td>
+              <td class="author fit-content limit-width">
+                <div class="cell-flex"><span class="userpicture">MS</span><div class="author-info"><div class="nm">Mr. Sanders</div></div></div>
+              </td>
+              <td class="lastpost fit-content limit-width">
+                <div class="cell-flex"><span class="userpicture">MS</span><div class="author-info"><div class="nm">Mr. Sanders</div><div class="dt"><a href="#">23 Jul 2026</a></div></div></div>
+              </td>
+              <td class="fit-content text-center">4</td>
+              <td class="fit-content text-center"><i class="fa-regular fa-bell sub-bell" title="Subscribed"></i></td>
+            </tr>
+            <tr>
+              <td class="fit-content text-center"></td>
+              <th scope="row" class="topic"><a href="#">Field trip logistics and safety briefing for the coastal ecosystems module</a></th>
+              <td class="group fit-content limit-width">Cohort B — Marine Biology stream</td>
+              <td class="author fit-content limit-width">
+                <div class="cell-flex"><span class="userpicture">AO</span><div class="author-info"><div class="nm">A. Okafor</div></div></div>
+              </td>
+              <td class="lastpost fit-content limit-width">
+                <div class="cell-flex"><span class="userpicture">JL</span><div class="author-info"><div class="nm">J. Lindqvist-Andersson</div><div class="dt"><a href="#">22 Jul 2026</a></div></div></div>
+              </td>
+              <td class="fit-content text-center">27<span class="unread-badge">7</span></td>
+              <td class="fit-content text-center"><i class="fa-regular fa-bell sub-bell" title="Subscribed"></i></td>
+            </tr>
+            <tr>
+              <td class="fit-content text-center"></td>
+              <th scope="row" class="topic"><a href="#">Reading list updated for week 6</a></th>
+              <td class="group fit-content limit-width">All participants</td>
+              <td class="author fit-content limit-width">
+                <div class="cell-flex"><span class="userpicture">MS</span><div class="author-info"><div class="nm">Mr. Sanders</div></div></div>
+              </td>
+              <td class="lastpost fit-content limit-width">
+                <div class="cell-flex"><span class="userpicture">MS</span><div class="author-info"><div class="nm">Mr. Sanders</div><div class="dt"><a href="#">20 Jul 2026</a></div></div></div>
+              </td>
+              <td class="fit-content text-center">1</td>
+              <td class="fit-content text-center"><i class="fa-regular fa-bell-slash sub-bell" title="Not subscribed"></i></td>
+            </tr>
           </tbody>
         </table>
       </div>
