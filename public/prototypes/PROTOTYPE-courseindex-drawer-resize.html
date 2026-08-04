@@ -429,6 +429,11 @@
   .resize-handle{
     position:absolute; top:0; right:0; width:8px; height:100%;
     cursor:col-resize; z-index:5;
+    /* Required for touch. Without it Safari claims the gesture for panning
+       and the drag never reaches us — pointermove simply stops firing. */
+    touch-action:none;
+    -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none;   /* no long-press callout on iOS */
   }
   body:not(.ci-open) .resize-handle, body.ci-overlay .resize-handle{ display:none; }
   .resize-handle::after{
@@ -438,7 +443,19 @@
   .resize-handle:hover::after, .resize-handle.dragging::after,
   .resize-handle:focus-visible::after{ background:var(--primary); }
   .resize-handle:focus-visible{ outline:2px solid var(--primary); outline-offset:-1px; }
-  body.dragging{ cursor:col-resize !important; user-select:none; }
+
+  /* Touch devices: an 8px target is unusable with a finger and fails the 24px
+     minimum (WCAG 2.5.8). Widen the grab zone and show the grip line
+     permanently — there is no hover on touch, so a hover-only affordance is
+     invisible. Scoped to coarse pointers so the wider zone doesn't sit over
+     the row action buttons for mouse users. */
+  @media (pointer: coarse){
+    .resize-handle{ width:24px; }
+    .resize-handle::after{ left:11px; background:var(--border-ring); }
+    .resize-handle.dragging::after{ background:var(--primary); }
+  }
+
+  body.dragging{ cursor:col-resize !important; -webkit-user-select:none; user-select:none; }
   .width-readout{
     position:absolute; bottom:12px; right:12px; font-size:11px;
     background:var(--text-default); color:#fff; padding:2px 6px; border-radius:4px;
@@ -1789,7 +1806,7 @@
   var handle = document.getElementById("resizeHandle");
   var readout = document.getElementById("widthReadout");
   var MIN = 285, MAX = 640;
-  var dragging = false, startX = 0, startWidth = 0;
+  var dragging = false, startX = 0, startWidth = 0, moved = false, lastTapTime = 0;
 
   function setWidth(px){
     px = Math.max(MIN, Math.min(MAX, px));
@@ -1836,20 +1853,44 @@
     else handled = false;
     if(handled){ e.preventDefault(); persistWidth(); readout.classList.add("show"); clearTimeout(handle._t); handle._t = setTimeout(function(){ readout.classList.remove("show"); }, 700); }
   });
-  handle.addEventListener("mousedown", function(e){
+  /* Pointer Events, not mouse events. iOS/iPadOS Safari does not fire
+     mousemove during a touch drag — it only synthesises a mousedown/mouseup/
+     click burst *after* a tap completes — so a mouse-only handler can never
+     track a finger. pointerdown/move/up covers mouse, touch and pen in one
+     path, which is also what the production module is specced to use.
+     setPointerCapture keeps events coming to the handle even when the finger
+     strays outside it mid-drag, so no window-level listeners are needed. */
+  handle.addEventListener("pointerdown", function(e){
     if(body.classList.contains("ci-overlay")) return;
-    dragging = true; startX = e.clientX;
+    dragging = true; moved = false; startX = e.clientX;
     startWidth = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ci-width"));
     handle.classList.add("dragging"); body.classList.add("dragging"); readout.classList.add("show");
+    try { handle.setPointerCapture(e.pointerId); } catch(err){}
     e.preventDefault();
   });
-  window.addEventListener("mousemove", function(e){ if(dragging) setWidth(startWidth + (e.clientX - startX)); });
-  window.addEventListener("mouseup", function(){
+  handle.addEventListener("pointermove", function(e){
+    if(!dragging) return;
+    if(Math.abs(e.clientX - startX) > 2) moved = true;
+    setWidth(startWidth + (e.clientX - startX));
+  });
+  function endDrag(e){
     if(!dragging) return;
     dragging = false; handle.classList.remove("dragging"); body.classList.remove("dragging");
+    try { handle.releasePointerCapture(e.pointerId); } catch(err){}
     persistWidth(); // write once at drag end (debounced equivalent)
     setTimeout(function(){ readout.classList.remove("show"); }, 400);
-  });
+
+    /* Double-tap to reset — the touch equivalent of the desktop double-click.
+       iOS reserves double-tap for zoom and won't reliably deliver dblclick on
+       a drag handle, so detect it ourselves. Only counts if the pointer never
+       moved, otherwise two quick drags would reset the width. */
+    if(!moved && e.pointerType !== "mouse"){
+      if(e.timeStamp - lastTapTime < 350){ setWidth(285); persistWidth(); lastTapTime = 0; }
+      else lastTapTime = e.timeStamp;
+    }
+  }
+  handle.addEventListener("pointerup", endDrag);
+  handle.addEventListener("pointercancel", endDrag);
   handle.addEventListener("dblclick", function(){ setWidth(285); persistWidth(); });
 
   /* ---- course tabs: horizontal scroll fade affordance ---- */
@@ -2147,6 +2188,28 @@ on desktop (content centred between them) and OVERLAY with a backdrop at
 <=991.98px — Boost's `lg`, i.e. CORE's existing threshold, kept deliberately so
 this work doesn't change tablet behaviour.
 Right drawer has NO drag handle (fixed 315px); left keeps drag-resize.
+
+Resize input uses POINTER EVENTS (pointerdown/move/up + setPointerCapture), not
+mouse events, so mouse, touch and pen all take the same path. This is what makes
+it work on iPad: iOS Safari never fires mousemove during a touch drag, it only
+synthesises a mousedown/mouseup/click burst after a tap completes, so a
+mouse-only handler can never follow a finger. Three things are required together
+and all three are easy to miss:
+  1. pointer events instead of mouse events;
+  2. `touch-action:none` on the handle, or Safari claims the gesture for panning
+     and pointermove stops firing mid-drag;
+  3. a >=24px grab zone on coarse pointers (WCAG 2.5.8) with the grip line shown
+     permanently — there is no hover on touch, so a hover-only affordance is
+     invisible.
+Double-tap resets to 285px (iOS reserves double-tap for zoom and won't reliably
+deliver dblclick on a drag handle); the tap only counts if the pointer never
+moved, so two quick drags don't reset the width.
+
+NOTE ON iPad ORIENTATION: the handle is hidden below Boost's `lg` (991.98px)
+because the drawer overlays there rather than pushing. So an iPad in portrait
+shows no handle on most models (iPad mini 744pt, 11" 834pt) — that is by design,
+not a bug. Landscape (1024/1194pt) and the 12.9" in portrait (1024pt) are in
+push mode and resize normally.
 The nav hamburger (shown <=1024px) opens a separate site-navigation overlay.
 One overlay open at a time; backdrop / Esc close them.
 
