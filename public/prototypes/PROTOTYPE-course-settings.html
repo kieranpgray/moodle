@@ -2862,6 +2862,12 @@ var SECTIONS = [];
 
 SECTIONS.push({
   title:"General",
+  /* Section 0 carries the course-level introduction rather than a topic
+     description — it is the one section that is about the whole course, so
+     the summary reads as orientation rather than as a syllabus line. Gives
+     the section header something to render above its divider, which is where
+     the layered treatment is most visible. */
+  summary:"A first-year introduction to cell biology, genetics and evolution, with weekly labs and a field study in semester two. Start with the items below — they cover how the course runs, how you will be assessed, and where to get help — then work through the topics in order.",
   items:[
     /* page has no dates class — nothing renders, which is the common case */
     { mod:"page", name:"Start Here: How this course works", desc:"Read this first.", done:true },
