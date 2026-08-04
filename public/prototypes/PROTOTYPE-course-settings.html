@@ -532,6 +532,15 @@
     .resize-handle.dragging::after{ background:var(--mds-bg-interactive-primary-default); }
   }
   body.ci-dragging{ cursor:col-resize !important; -webkit-user-select:none; user-select:none; }
+  /* While the handle is held, kill the width transitions so the edge tracks
+     the cursor 1:1. The .32s easing exists for open and close; leaving it on
+     during a drag makes the panel chase the pointer a third of a second
+     behind. All three follow --ci-width and all three have to be suppressed,
+     or the drawer, the card and the content spacer arrive at different times
+     and the column visibly shears. */
+  body.ci-dragging #drawer,
+  body.ci-dragging .ci-card,
+  body.ci-dragging .cln-indexspacer{ transition:none; }
   .width-readout{ position:absolute; top:8px; right:12px; z-index:6; background:var(--mds-color-gray-900); color:#fff;
     font-size:.6875rem; padding:2px 6px; border-radius:var(--mds-border-radius-xs); opacity:0; transition:opacity .12s ease; pointer-events:none; }
   .width-readout.show{ opacity:1; }
