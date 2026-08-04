@@ -227,7 +227,11 @@
   .ci-section.collapsed > .ci-activities{ display:none; }
 
   .ci-activities{ padding-left:var(--mds-spacing-md); display:flex; flex-direction:column; gap:var(--mds-spacing-xxs); }
-  .ci-row{ position:relative; display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
+  /* 4px between the indicator, the icon and the label — spacing/xxs, per
+     4640:28147. Was spacing/sm (12px), which pushed the icon to 36px from the
+     row's content edge and the label to 64px where the design puts them at 28
+     and 48. */
+  .ci-row{ position:relative; display:flex; align-items:center; gap:var(--mds-spacing-xxs); padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
     border-radius:var(--mds-border-radius-sm); cursor:pointer; min-width:0; border:none; background:none; width:100%; text-align:left; }
   .ci-row:hover{ background:rgba(0,0,0,.04); }
   .ci-row.current{ background:var(--mds-bg-interactive-primary-default); }
@@ -258,7 +262,7 @@
   /* Fixed 24px, not a minimum — per 4640:28147. A floor would still let a
      wider glyph push the row sideways; a fixed box cannot, so the column
      holds whatever goes in it, including nothing. */
-  .ci-comp{ flex:0 0 24px; width:24px; font-size:13px; display:flex;
+  .ci-comp{ flex:0 0 24px; width:24px; font-size:16px; display:flex;
     align-items:center; justify-content:center; }
   .ci-comp.done{ color:var(--mds-bg-interactive-primary-default,#0f6cbf); }
   .ci-comp.todo{ color:var(--mds-text-muted); }
@@ -4190,7 +4194,10 @@ SECTIONS.push({
               : '')
           + '</span>'
         + '<span class="act-icon" style="color:var(--p-' + m.purpose + ')">'
-        + modIcon(it, 11) + '</span>'
+        /* 16px, filling its 16px box — the design's Activity icon is SM/16.
+           Was 11, which left 2.5px of dead space each side and read as the
+           icon being padded away from the label. */
+        + modIcon(it, 16) + '</span>'
         + '<span class="txt">' + esc(it.name) + '</span>'
         + '</div>';
     });
