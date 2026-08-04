@@ -255,7 +255,10 @@
      activity has completion tracking — an activity without it gets no circle
      and no reserved slot, so the row closes up rather than showing an empty
      indent. */
-  .ci-comp{ flex:0 0 auto; width:16px; font-size:13px; display:flex;
+  /* Fixed 24px, not a minimum — per 4640:28147. A floor would still let a
+     wider glyph push the row sideways; a fixed box cannot, so the column
+     holds whatever goes in it, including nothing. */
+  .ci-comp{ flex:0 0 24px; width:24px; font-size:13px; display:flex;
     align-items:center; justify-content:center; }
   .ci-comp.done{ color:var(--mds-bg-interactive-primary-default,#0f6cbf); }
   .ci-comp.todo{ color:var(--mds-text-muted); }
@@ -501,12 +504,30 @@
   .ci-chapter-row.ci-hidden .ci-chapter .num::after{ content:" (hidden)"; font-size:.7rem; }
 
   /* ---- drag-to-resize the course index width ---- */
-  .resize-handle{ position:absolute; top:0; right:0; width:8px; height:100%; cursor:col-resize; z-index:5; }
+  /* touch-action:none or Safari claims the gesture for panning and
+     pointermove stops firing mid-drag. The -webkit- pair stops iOS starting a
+     text selection or raising the callout menu on touch-and-hold, which
+     preventDefault() alone does not. */
+  .resize-handle{
+    position:absolute; top:0; right:0; width:8px; height:100%; cursor:col-resize; z-index:5;
+    touch-action:none;
+    -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none;
+  }
   body:not(.ci-open) .resize-handle, body.ci-overlay .resize-handle{ display:none; }
   .resize-handle::after{ content:""; position:absolute; top:0; bottom:0; left:3px; width:2px; background:transparent; transition:background .12s ease; }
   .resize-handle:hover::after, .resize-handle.dragging::after, .resize-handle:focus-visible::after{ background:var(--mds-bg-interactive-primary-default); }
   .resize-handle:focus-visible{ outline:2px solid var(--mds-bg-interactive-primary-default); outline-offset:-1px; }
-  body.ci-dragging{ cursor:col-resize !important; user-select:none; }
+  /* Touch: an 8px target is unusable with a finger and fails the 24px minimum
+     (WCAG 2.5.8). Widen the grab zone and show the grip permanently, since
+     there is no hover to reveal it. Scoped to coarse pointers so the wider
+     zone does not sit over the row controls for mouse users. */
+  @media (pointer: coarse){
+    .resize-handle{ width:24px; }
+    .resize-handle::after{ left:11px; background:var(--mds-border-default); }
+    .resize-handle.dragging::after{ background:var(--mds-bg-interactive-primary-default); }
+  }
+  body.ci-dragging{ cursor:col-resize !important; -webkit-user-select:none; user-select:none; }
   .width-readout{ position:absolute; top:8px; right:12px; z-index:6; background:var(--mds-color-gray-900); color:#fff;
     font-size:.6875rem; padding:2px 6px; border-radius:var(--mds-border-radius-xs); opacity:0; transition:opacity .12s ease; pointer-events:none; }
   .width-readout.show{ opacity:1; }
@@ -1647,7 +1668,12 @@
        Completion button. Was 6px. */
     border:1px solid var(--mds-border-default);
     border-radius:var(--mds-border-radius-md);
-    background:var(--surface); color:var(--mds-text-subtle);
+    /* No fill of its own — the card shows through, so the control reads as
+       part of the card rather than a white chip sitting on it. Was
+       var(--surface), i.e. white, which floated against the grey card and
+       against the white one a subsection sits on. Covers all four controls
+       in the row: visibility, group mode, completion and the ⋮ menu. */
+    background:transparent; color:var(--mds-text-subtle);
     font-size:13px; line-height:1; cursor:pointer;
     transition:background-color .12s ease, color .12s ease, border-color .12s ease;
   }
@@ -4148,17 +4174,21 @@ SECTIONS.push({
         return;
       }
       var m = modOf(it);
-      /* completion leads the row and only appears where the activity tracks
-         it; the icon carries its purpose colour but no tile behind it */
+      /* Completion leads the row, and its slot is ALWAYS rendered — an
+         activity that tracks nothing gets an empty 24px box rather than no
+         box. That is what keeps the checks, the empty circles and every
+         activity name on the same column, in sections and subsections alike,
+         instead of untracked rows sliding left. The icon carries its purpose
+         colour with no tile behind it. */
       var tracked = !!(it.manual || it.done || it.foot);
       html += '<div class="ci-row' + (it.teacheronly ? ' teacheronly' : '') + '">'
-        + (tracked
-            ? '<span class="ci-comp ' + (it.done ? 'done' : 'todo') + '">'
-              + '<i class="' + (it.done ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle')
-              + '" aria-hidden="true"></i>'
-              + '<span class="sr-only">' + (it.done ? 'Completed' : 'Not completed') + '</span>'
-              + '</span>'
-            : '')
+        + '<span class="ci-comp' + (tracked ? (it.done ? ' done' : ' todo') : '') + '">'
+          + (tracked
+              ? '<i class="' + (it.done ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle')
+                + '" aria-hidden="true"></i>'
+                + '<span class="sr-only">' + (it.done ? 'Completed' : 'Not completed') + '</span>'
+              : '')
+          + '</span>'
         + '<span class="act-icon" style="color:var(--p-' + m.purpose + ')">'
         + modIcon(it, 11) + '</span>'
         + '<span class="txt">' + esc(it.name) + '</span>'
@@ -4679,7 +4709,8 @@ SECTIONS.push({
   (function(){
     var handle = document.getElementById("resizeHandle");
     var readout = document.getElementById("widthReadout");
-    var MIN = 285, MAX = 560, dragging = false, startX = 0, startW = 0;
+    var MIN = 285, MAX = 560, DEFAULT_W = 300;
+    var dragging = false, startX = 0, startW = 0, moved = false, lastTap = 0;
     function ciW(){ return parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ci-width")) || 300; }
     function setW(px){
       px = Math.max(MIN, Math.min(MAX, px));
@@ -4688,19 +4719,41 @@ SECTIONS.push({
       handle.setAttribute("aria-valuenow", Math.round(px));
       updateAnnotations();
     }
-    handle.addEventListener("mousedown", function(e){
+    /* Pointer Events, not mouse events. iOS Safari never fires mousemove
+       during a touch drag — it only synthesises a mousedown/mouseup/click
+       burst after a tap completes — so a mouse-only handler can never follow
+       a finger. pointerdown/move/up covers mouse, touch and pen in one path.
+       setPointerCapture keeps events coming to the handle when the finger
+       strays outside it, so no window-level listeners are needed. */
+    handle.addEventListener("pointerdown", function(e){
       if(body.classList.contains("ci-overlay")) return;
-      dragging = true; startX = e.clientX; startW = ciW();
+      dragging = true; moved = false; startX = e.clientX; startW = ciW();
       handle.classList.add("dragging"); body.classList.add("ci-dragging"); readout.classList.add("show");
+      try { handle.setPointerCapture(e.pointerId); } catch(err){}
       e.preventDefault();
     });
-    window.addEventListener("mousemove", function(e){ if(dragging) setW(startW + (e.clientX - startX)); });
-    window.addEventListener("mouseup", function(){
+    handle.addEventListener("pointermove", function(e){
+      if(!dragging) return;
+      if(Math.abs(e.clientX - startX) > 2) moved = true;
+      setW(startW + (e.clientX - startX));
+    });
+    function endDrag(e){
       if(!dragging) return;
       dragging = false; handle.classList.remove("dragging"); body.classList.remove("ci-dragging");
+      try { handle.releasePointerCapture(e.pointerId); } catch(err){}
       setTimeout(function(){ readout.classList.remove("show"); }, 400);
-    });
-    handle.addEventListener("dblclick", function(){ setW(300); });
+      /* Double-tap to reset, the touch equivalent of double-click: iOS
+         reserves double-tap for zoom and will not reliably deliver dblclick
+         on a drag handle. Only counts when the pointer never moved, so two
+         quick drags do not reset the width. */
+      if(!moved && e.pointerType !== "mouse"){
+        if(e.timeStamp - lastTap < 350){ setW(DEFAULT_W); lastTap = 0; }
+        else lastTap = e.timeStamp;
+      }
+    }
+    handle.addEventListener("pointerup", endDrag);
+    handle.addEventListener("pointercancel", endDrag);
+    handle.addEventListener("dblclick", function(){ setW(DEFAULT_W); });
     handle.addEventListener("keydown", function(e){
       if(body.classList.contains("ci-overlay")) return;
       var cur = ciW(), step = e.shiftKey ? 48 : 24, h = true;
