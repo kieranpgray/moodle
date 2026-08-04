@@ -953,8 +953,8 @@
      media-breakpoint-down() mixin. Flagged in the ticket for confirmation.
 
      Independent of the header, the sidebars (index + blocks) switch from
-     push to overlay at <=768px — so 769-1024 is burger nav WITH push
-     sidebars. */
+     push to overlay below Boost's `lg` (<=991.98px), which is where CORE
+     already switches — so 992-1024 is burger nav WITH push sidebars. */
   @media (max-width:1024px){
     .burger{ display:flex; }
     .nav-left .brand, .nav-left .nav-pills{ display:none; }
@@ -966,11 +966,20 @@
     .search{ width:184px; }
   }
 
-  /* sidebars overlay from 768px or less. The WHOLE drawer (position:fixed)
+  /* Sidebars overlay below Boost's `lg` — 991.98px, i.e. Bootstrap's
+     media-breakpoint-down(lg). This DELIBERATELY matches core: core's drawers
+     are position:fixed at every width, and the side-by-side "push" is produced
+     by margining the page aside (layout.scss:195, `margin-left:285px`) only
+     from `lg` up; below that core's own comment calls the drawer "a modal with
+     a backdrop effect". Decision: do not change where push starts in this work
+     — keep core's threshold so the resize/chrome tickets don't smuggle in a
+     tablet behaviour change.
+
+     The WHOLE drawer (position:fixed)
      slides off-screen when closed — not just the inner card — otherwise the
      closed drawer's fixed box stays over the content and intercepts taps on
      the toggle buttons (that was the "button does nothing on mobile" bug). */
-  @media (max-width:768px){
+  @media (max-width:991.98px){
     /* left course index overlay (scope to #drawer so the right drawer,
        which also has class .drawer, isn't captured) */
     body.ci-overlay #drawer{
@@ -1368,7 +1377,7 @@
      </div><!-- /.page-forum -->
     </main>
 
-    <!-- right "Course Blocks" drawer (push on desktop, overlay <=768) -->
+    <!-- right "Course Blocks" drawer (push on desktop, overlay <=991.98) -->
     <div class="drawer drawer-right" id="drawerRight">
       <div class="cb-card">
         <div class="cb-header">
@@ -1746,8 +1755,9 @@
   backdrop.addEventListener("click", closeOverlays);
   document.addEventListener("keydown", function(e){ if(e.key === "Escape") closeOverlays(); });
 
-  /* ---- overlay vs push at 768px (sidebars); nav burger is separate at 1024 ---- */
-  var mq = window.matchMedia("(max-width:768px)");
+  /* ---- overlay vs push at Boost's lg (991.98px, matching core); the nav
+         burger is a separate, design-specified threshold at 1024px ---- */
+  var mq = window.matchMedia("(max-width:991.98px)");
   function applyMode(){
     var overlay = mq.matches;
     body.classList.toggle("ci-overlay", overlay);
@@ -1810,8 +1820,9 @@
   /* The index simply PUSHES: it widens and the page content column narrows to
      suit. Moodle content is fluid and wraps wide elements (e.g. forum tables in
      .table-responsive) for a contained local scroll, so a narrower column
-     degrades gracefully — no floating overlay needed. Below 768px the drawer
-     already overlays (handled by applyMode). */
+     degrades gracefully — no floating overlay needed. Below Boost's `lg`
+     (991.98px) the drawer already overlays, exactly as core does today
+     (handled by applyMode). */
 
   /* keyboard resize — makes the handle genuinely Tab-accessible */
   handle.addEventListener("keydown", function(e){
@@ -2133,7 +2144,9 @@ Real-implementation grounding (for the eventual MDL work):
 
 Sidebars (this pass): left Course Index + right Course Blocks both PUSH content
 on desktop (content centred between them) and OVERLAY with a backdrop at
-<=768px. Right drawer has NO drag handle (fixed 315px); left keeps drag-resize.
+<=991.98px — Boost's `lg`, i.e. CORE's existing threshold, kept deliberately so
+this work doesn't change tablet behaviour.
+Right drawer has NO drag handle (fixed 315px); left keeps drag-resize.
 The nav hamburger (shown <=1024px) opens a separate site-navigation overlay.
 One overlay open at a time; backdrop / Esc close them.
 
