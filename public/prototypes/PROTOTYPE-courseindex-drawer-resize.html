@@ -42,15 +42,21 @@
     --ci-row-hover:#e1e4e6; /* course-index row hover bg (for overlaid actions) */
     /* measurement guides (shared vocabulary with the topnav prototype) */
     --g-nav:#1971c2; --g-shell:#f08c00; --g-extent:#2f9e44; --g-col:#d6336c;
-    /* layout — nav geometry per the top-nav max-width spec/prototype
-       (PROTOTYPE-topnav-maxwidth.html): bar height 60px ($navbar-height),
-       contents capped to a FIXED shell (identical on every page) with 48px
-       side padding. Cap candidates from that work: 1320px (proposed) or
-       1440px (design) — switchable in the dev State panel. Here the page row
-       shares the same shell so nav + furniture align (the target
-       composition). */
-    --shell-max:1440px; --shell-pad:48px;
-    --nav-h:60px;
+    /* layout — nav geometry per the FIGMA HEADER COMPONENT (node 105:189,
+       "MDL-87755 LMS uplift phase 1"). That component is the authority for
+       every measure in this bar; where it disagreed with the earlier top-nav
+       analysis prototype, the component wins (that prototype modelled CORE's
+       60px white bar as the baseline, not the target design).
+         - bar height 64px  = spacing/sm 12 top + 40 content + 12 bottom
+         - surface bg/surface/subtle #f8f9fa, 1px border/subtle #e9ecef below
+         - contents inset spacing/lg 20px (spacing/md 16px on mobile)
+         - 1440 is a real MAX-WIDTH: past it the bar surface still spans the
+           viewport, but the inner row caps and centres, so contents always
+           span 1400px. (Confirmed with design.)
+       The dev State panel can still swap the cap to 1320 to test that
+       candidate from the top-nav work. */
+    --shell-max:1440px; --shell-pad:20px;
+    --nav-h:64px;
     --ci-width:285px; --ci-min:285px; --ci-max:640px;
     --cb-width:315px;      /* right "Course Blocks" drawer (no resize) */
     --sitenav-width:300px; /* hamburger site-nav overlay */
@@ -80,13 +86,14 @@
   }
 
   /* =====================  TOP NAV  =====================
-     Exact model from the top-nav max-width spec: the BAR (background +
-     bottom border) spans the full viewport; only its CONTENTS are capped to
-     the shell (max-width + 48px padding, centred). White bar, 1px #e9ecef
-     bottom border, 60px tall. */
+     Figma header component 105:189. The BAR (surface + bottom border) spans
+     the full viewport; only its CONTENTS are capped to the shell (1440
+     max-width + 20px padding, centred), so at >=1440 the contents always
+     span exactly 1400px. bg/surface/subtle #f8f9fa, 1px #e9ecef bottom
+     border, 64px tall. */
   .topbar{
     position:sticky; top:0; z-index:40;
-    background:#fff;
+    background:var(--bg-subtle);
     border-bottom:1px solid var(--border-subtle);
   }
   .topbar-inner{
@@ -100,10 +107,11 @@
   .brand .word b{ display:block; font-weight:800; font-size:17px; letter-spacing:.2px; }
   .brand .word span{ display:block; font-size:11px; letter-spacing:2px; color:var(--text-subtle); }
 
+  /* Figma "Main Navigation": 28px tall, 4px between pills. */
   .nav-pills{ display:flex; align-items:center; gap:var(--sp-xxs); }
   .nav-pill{
     display:flex; align-items:center; gap:var(--sp-xxs);
-    padding:var(--sp-xs) var(--sp-sm);
+    height:28px; padding:0 var(--sp-sm);
     border-radius:var(--r-md); border:none; background:transparent;
     font-size:14px; font-weight:500; color:var(--text-subtle); cursor:pointer;
     white-space:nowrap;
@@ -129,21 +137,27 @@
     color:var(--text-subtle); font-size:14px;
   }
   .search i{ font-size:12px; }
+  /* mobile-only collapsed search — Figma sizes it as a peer of the other
+     28x28 icon buttons, not as a shrunken search field */
   .search-icon-btn{
     display:none;
-    width:36px; height:36px; border:none; background:transparent; border-radius:var(--r-md);
-    color:var(--text-subtle); cursor:pointer; align-items:center; justify-content:center;
+    width:28px; height:28px; border:none; background:transparent; border-radius:var(--r-sm);
+    color:var(--text-subtle); font-size:12px; cursor:pointer;
+    align-items:center; justify-content:center;
   }
   .search-icon-btn:hover{ background:var(--bg-strong); }
 
+  /* Figma Switch (4666:61588): track 32x18, 2px track padding, 14px thumb,
+     colour/theme/primary. Label is $font-size-body 16px regular in
+     text/default — NOT the 14px subtle text used elsewhere in the bar. */
   .editmode{ display:flex; align-items:center; gap:var(--sp-xs); }
-  .editmode .label{ font-size:14px; color:var(--text-subtle); white-space:nowrap; }
+  .editmode .label{ font-size:16px; color:var(--text-default); white-space:nowrap; }
   .switch{
-    width:32px; height:16px; border-radius:var(--r-pill); background:var(--primary);
+    width:32px; height:18px; border-radius:var(--r-pill); background:var(--primary);
     position:relative; border:none; cursor:pointer; flex:0 0 auto;
   }
   .switch::after{
-    content:""; position:absolute; top:2px; left:18px; width:12px; height:12px;
+    content:""; position:absolute; top:2px; left:16px; width:14px; height:14px;
     border-radius:50%; background:#fff; transition:left .15s ease;
   }
   .switch[aria-pressed="false"]{ background:var(--border-ring); }
@@ -172,25 +186,36 @@
     color:#fff; font-size:12px; font-weight:600;
   }
   .profile .pname{ font-size:14px; font-weight:500; color:var(--text-default); }
-  .profile .fa-chevron-down{ font-size:8px; color:var(--text-subtle); }
+  /* Figma Atoms/Chevron: 16px box, 8px glyph (icons/xxs) centred inside it */
+  .profile .fa-chevron-down{
+    font-size:8px; color:var(--text-subtle);
+    width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center;
+  }
 
   /* =====================  PAGE LAYOUT  =====================
-     The page row spans the SAME bound as the nav (--shell-max) but with NO
-     inner padding, so the course index and blocks drawer sit flush to that
-     bound — i.e. the furniture is exactly as wide as the top navigation.
-     (Nesting the drawers inside the nav's 48px text padding would steal 96px
-     from the row and squeeze the reading column below core's width.) */
+     The page row shares the nav's shell AND its 20px inset, so the outer
+     edges of the course index and blocks drawer line up exactly with the
+     nav's leftmost/rightmost contents — the standing decision that "the
+     blocks drawer and course index should be as wide as the top navigation".
+     Previously the row sat flush to the raw 1440 bound; that was correct
+     when the nav was inset 48px, but Figma 105:189 insets the nav by only
+     20px, so matching the nav now means matching its 20px.
+
+     OPEN WITH DESIGN: the Figma page frames inset the page furniture by 48px
+     while the header insets by 20px — i.e. the design has the nav WIDER than
+     the furniture. This prototype deliberately keeps them aligned instead.
+     Flip --shell-pad on .layout to 48px to model the Figma page frames. */
   .layout{
     display:flex; align-items:flex-start;
     max-width:var(--shell-max); margin:0 auto;
-    padding-top:var(--sp-lg); padding-bottom:64px;
+    padding:var(--sp-lg) var(--shell-pad) 64px;
     min-height:calc(100vh - var(--nav-h));
     position:relative;
   }
 
   /* open-toggle column. Boost-faithful: core's toggles are position:fixed in
      the #page gutters and cost the content column NOTHING — so here the
-     column is absolutely positioned in the shell's 48px gutter (out of flow)
+     column is absolutely positioned in the row's left gutter (out of flow)
      and hidden entirely when its drawer is open (core's display:none
      behaviour). top..bottom stretch preserves the sticky button's range. */
   .toggle-col{
@@ -911,15 +936,34 @@
   body:not(.annos-off).edit-on .anno-more-row .ci-row-actions{ opacity:1; pointer-events:auto; }
 
   /* =====================  RESPONSIVE  =====================
-     Two independent breakpoints:
-       - nav burger + hidden logo/pills at <=1024px
-       - sidebars (index + blocks) switch push -> overlay at <=768px
-     So tablet (769-1024) keeps inline/push sidebars with a burger nav. */
+     Header breakpoints are the four Figma variants of component 105:189.
+     The switch points come from design (the component only supplies sample
+     widths, not thresholds):
+       Desktop      >=1025  logo + main nav, 20px inset, 256px search
+                            (>=1440 the inner row caps at 1440 and centres)
+       Tablet       <=1024  BURGER replaces logo + nav, 20px inset, 256 search
+       Small tablet  <=991  search narrows to 184  [ASSUMED at Boost's lg —
+                            design gave the 768 sample, not the threshold]
+       Mobile        <=767  16px inset, search collapses to a 28px icon,
+                            "Edit mode" label drops, profile keeps avatar +
+                            chevron but drops the name, right group gap 12
+
+     NOTE FOR ENG: 1024 is NOT a Bootstrap/Boost breakpoint (576/768/992/
+     1200/1400), so it needs a bespoke media query rather than a
+     media-breakpoint-down() mixin. Flagged in the ticket for confirmation.
+
+     Independent of the header, the sidebars (index + blocks) switch from
+     push to overlay at <=768px — so 769-1024 is burger nav WITH push
+     sidebars. */
   @media (max-width:1024px){
-    :root{ --shell-pad:24px; }
     .burger{ display:flex; }
     .nav-left .brand, .nav-left .nav-pills{ display:none; }
     .content-col{ padding:0 23px; } /* core keeps 8+15px gutters at md+ */
+  }
+
+  /* Figma "Small tablet": the only change from Tablet is the search width. */
+  @media (max-width:991px){
+    .search{ width:184px; }
   }
 
   /* sidebars overlay from 768px or less. The WHOLE drawer (position:fixed)
@@ -956,11 +1000,13 @@
   }
 
   @media (max-width:767px){
-    :root{ --shell-pad:16px; }
+    :root{ --shell-pad:16px; }              /* spacing/md, mobile only */
     .search{ display:none; }
     .search-icon-btn{ display:flex; }
     .editmode .label{ display:none; }
-    .profile .pname, .profile .fa-chevron-down{ display:none; }
+    /* Figma mobile profile (w=60): avatar + chevron, no name, 4px gap/pad */
+    .profile .pname{ display:none; }
+    .profile{ gap:var(--sp-xxs); padding:0 var(--sp-xxs); }
     .nav-right-group{ gap:var(--sp-sm); }
     .content-col{ min-width:0; padding:0 16px; }
     .title-row h1{ font-size:24px; }
@@ -1862,8 +1908,11 @@
     var nav   = contentBox(document.querySelector(".topbar-inner"));
     var col   = contentBox(document.querySelector(".content-col"));
     var ext   = pageExtent();
-    var layout= document.querySelector(".layout").getBoundingClientRect(); // the cap bound
-    var shell = { left:layout.left, right:layout.right };
+    /* The shell bound is the page row's CONTENT box — i.e. the 1440 cap less
+       its 20px inset — so it coincides exactly with the nav's content bound.
+       "Flush" therefore means the drawers line up with the nav's outermost
+       contents, which is the alignment we're actually designing for. */
+    var shell = contentBox(document.querySelector(".layout"));
 
     place(G.navL, nav.left);       place(G.navR, nav.right);
     place(G.shellL, shell.left);   place(G.shellR, shell.right);
