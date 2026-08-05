@@ -1,9 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="pw-locked">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>PROTOTYPE — Public roadmap with community voting (throwaway, not for merge)</title>
+
+<!-- ===== SHARED PASSWORD GATE =========================================
+     Deliberately simple: these prototypes are rsynced to the VPS as flat
+     files, so there is no server-side session to hang real auth off. This
+     is a courtesy gate that keeps the page out of casual reach and out of
+     search results — NOT security. The markup below is still in the page
+     source, so anyone who opens devtools can read it. Do not put anything
+     here that would actually hurt if it leaked.
+
+     The password is not written in this file; only its SHA-256 digest is,
+     so the gate cannot be passed by reading the source alone.
+
+     To protect another prototype: copy the .pw-locked style rule, this
+     <div id="pw-gate">, and the <script> at the end of <body>, and put
+     class="pw-locked" on that file's <html> element. Change PW_HASH to
+     `echo -n "yourpassword" | shasum -a 256`.
+     ==================================================================== -->
+<style>
+  /* Locked by default in the markup, so content never flashes before the
+     script runs — and stays hidden if JavaScript is off entirely. */
+  html.pw-locked{ overflow:hidden; }
+  html.pw-locked body > *:not(#pw-gate){ display:none !important; }
+  html:not(.pw-locked) #pw-gate{ display:none; }
+
+  #pw-gate{
+    position:fixed; inset:0; z-index:9999;
+    display:flex; align-items:center; justify-content:center;
+    padding:1.5rem;
+    background:#f8f9fa;
+    font-family:'Noto Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    color:#1d2125; line-height:1.5;
+  }
+  #pw-gate .pw-card{
+    width:100%; max-width:26rem;
+    background:#fff; border:1px solid #dee2e6; border-radius:.75rem;
+    padding:2rem; box-shadow:0 .5rem 1rem rgba(0,0,0,.08);
+  }
+  #pw-gate .pw-lock{
+    display:flex; align-items:center; justify-content:center;
+    width:2.75rem; height:2.75rem; margin-bottom:1rem;
+    border-radius:50%; background:#e7f0f9; color:#0f6cbf; font-size:1.1rem;
+  }
+  #pw-gate h1{ margin:0 0 .5rem; font-size:1.25rem; font-weight:700; }
+  #pw-gate .pw-sub{ margin:0 0 1.5rem; font-size:.92rem; color:#495057; }
+  #pw-gate label{ display:block; font-size:.85rem; font-weight:600; margin-bottom:.35rem; }
+  #pw-gate input{
+    width:100%; padding:.6rem .75rem; font:inherit; font-size:.95rem;
+    border:1px solid #8f959e; border-radius:.5rem; background:#fff; color:inherit;
+  }
+  #pw-gate input:focus-visible{ outline:2px solid #0f6cbf; outline-offset:2px; border-color:#0f6cbf; }
+  #pw-gate button{
+    width:100%; margin-top:1rem; padding:.6rem 1rem;
+    font:inherit; font-size:.95rem; font-weight:600;
+    color:#fff; background:#0f6cbf; border:0; border-radius:.5rem; cursor:pointer;
+  }
+  #pw-gate button:hover{ background:#0c5699; }
+  #pw-gate button:focus-visible{ outline:2px solid #094173; outline-offset:2px; }
+  #pw-gate .pw-error{
+    margin:.75rem 0 0; font-size:.88rem; font-weight:600; color:#ca3120;
+    min-height:1.3em;
+  }
+  #pw-gate .pw-foot{
+    margin:1.5rem 0 0; padding-top:1rem; border-top:1px solid #dee2e6;
+    font-size:.8rem; color:#8f959e;
+  }
+  #pw-gate .pw-noscript{
+    margin:1rem 0 0; padding:.75rem; border-radius:.5rem;
+    background:#fdf5e4; border:1px solid #f6dda9; color:#6b4d00; font-size:.85rem;
+  }
+</style>
 
 <!-- Icons via CDN for parity with the other prototypes (needs network on first
      open; degrades to missing-glyph boxes offline). Noto Sans is NOT loaded from
@@ -912,6 +983,33 @@
 </head>
 <body class="annotations-on">
 
+<!-- ===== PASSWORD GATE (see the note in <head>) ===== -->
+<div id="pw-gate" role="dialog" aria-modal="true" aria-labelledby="pw-title">
+  <div class="pw-card">
+    <div class="pw-lock" aria-hidden="true"><i class="fa-solid fa-lock"></i></div>
+    <h1 id="pw-title">This prototype is password protected</h1>
+    <p class="pw-sub">Public roadmap with community voting — a throwaway design concept
+    shared for review. Enter the password you were given to continue.</p>
+
+    <form id="pw-form" autocomplete="off">
+      <label for="pw-input">Password</label>
+      <input id="pw-input" type="password" name="prototype-password"
+             autocomplete="current-password" autocapitalize="off" spellcheck="false"
+             aria-describedby="pw-error" required>
+      <button type="submit">Unlock prototype</button>
+      <p class="pw-error" id="pw-error" role="alert"></p>
+    </form>
+
+    <noscript>
+      <p class="pw-noscript">This gate needs JavaScript. Enable it for this page, or ask
+      for a copy of the prototype directly.</p>
+    </noscript>
+
+    <p class="pw-foot">Access is remembered for this browser tab only. Closing the tab
+    locks it again.</p>
+  </div>
+</div>
+
 <div class="proto-bar">
   <b>Prototype</b>
   <span>Design concept for stakeholder review — not a live Moodle service. Ideas and roadmap
@@ -1757,6 +1855,83 @@
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(updateAnnotations);
   }
+})();
+</script>
+
+<!-- ===== PASSWORD GATE behaviour (see the note in <head>) ===== -->
+<script>
+(function () {
+  "use strict";
+
+  /* SHA-256 of the password. The plaintext is never written to this file, so
+     the gate survives someone reading the source — it does not survive someone
+     stepping through the DOM, which is the point: courtesy, not security. */
+  var PW_HASH = "f0fcad67b7661cdae773c5a8617a5ce2101737ef49cc706e589fdb226ee705da";
+  var KEY = "moodle-proto-roadmap-unlocked";
+
+  var gate  = document.getElementById("pw-gate");
+  var form  = document.getElementById("pw-form");
+  var input = document.getElementById("pw-input");
+  var error = document.getElementById("pw-error");
+
+  function unlock() {
+    document.documentElement.classList.remove("pw-locked");
+    /* The page laid out at zero size while hidden, so anything that measured
+       the DOM on load (the annotation callouts) needs a nudge to recompute. */
+    window.dispatchEvent(new Event("resize"));
+  }
+
+  function fail(message) {
+    error.textContent = message;
+    input.value = "";
+    input.focus();
+  }
+
+  function sha256Hex(text) {
+    var subtle = window.crypto && window.crypto.subtle;
+    if (!subtle) return Promise.reject(new Error("no-subtle-crypto"));
+    return subtle.digest("SHA-256", new TextEncoder().encode(text)).then(function (buf) {
+      return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+        return b.toString(16).padStart(2, "0");
+      }).join("");
+    });
+  }
+
+  /* Session storage, not local storage: access lasts for the tab, not forever
+     on a shared machine. */
+  try {
+    if (window.sessionStorage.getItem(KEY) === PW_HASH) unlock();
+  } catch (e) { /* storage blocked — just ask again */ }
+
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+    error.textContent = "";
+    sha256Hex(input.value).then(function (hash) {
+      if (hash !== PW_HASH) {
+        fail("That password is not right. Try again.");
+        return;
+      }
+      try { window.sessionStorage.setItem(KEY, PW_HASH); } catch (e) { /* fine */ }
+      unlock();
+    }).catch(function () {
+      fail("This browser cannot check the password here. Open the page over https.");
+    });
+  });
+
+  if (document.documentElement.classList.contains("pw-locked")) input.focus();
+
+  /* Keep focus inside the gate while it is up, so tabbing cannot reach the
+     hidden page behind it. */
+  gate.addEventListener("keydown", function (event) {
+    if (event.key !== "Tab") return;
+    var focusable = gate.querySelectorAll("input, button");
+    var first = focusable[0], last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault(); last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault(); first.focus();
+    }
+  });
 })();
 </script>
 
