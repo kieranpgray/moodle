@@ -136,6 +136,18 @@
     background: var(--blue-700);
   }
 
+  /* Flags a prototype that sits behind the password gate, so reviewers know to
+     have the password ready before they click through. */
+  .card .locked {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin: 0 0 0.9rem;
+  }
+
   footer {
     text-align: center;
     color: var(--gray-500);
@@ -200,6 +212,7 @@
       <span class="badge">Community</span>
       <h2>Public roadmap with voting</h2>
       <p>Now/Next/Later roadmap merging the MDLJPD and MCJPD boards, with community voting that requires a written reason. Ideas and horizons are real; votes and voters are invented.</p>
+      <p class="locked">🔒 Password required</p>
       <a class="btn" href="PROTOTYPE-roadmap-voting.html">View prototype</a>
     </div>
 
