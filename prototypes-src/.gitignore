@@ -1,0 +1,6 @@
+# Plaintext prototype sources are deliberately NOT committed. This repo is a
+# public fork — anything committed here is readable by anyone who finds it,
+# which would make encrypting the deployed page pointless.
+#
+# Keep your own backup of anything in source/ that you care about.
+source/

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="generator" content="encrypt-prototype">
+<title>__PAGE_TITLE__</title>
+
+<!--
+  Carrier page for an encrypted prototype. Generated — do not hand-edit; edit
+  the plaintext source in prototypes-src/source/ and re-run:
+
+      node prototypes-src/encrypt-prototype.mjs <source> [--out <path>]
+
+  Everything below the lock screen is one AES-256-GCM blob. The prototype's
+  markup, styles, data and notes are not present in this file in any readable
+  form, and the password is not present in any form at all — not even as a
+  hash. Guessing it means an offline attack against PBKDF2-SHA256 at 600,000
+  iterations, which is the whole security story here: a weak password is a
+  weak page.
+
+  On a correct password the browser derives the key, decrypts and ungzips in
+  memory, then rewrites the document with the plaintext, so the prototype runs
+  exactly as it would have unencrypted.
+-->
+
+<style>
+  :root {
+    --blue-50:#e7f0f9; --blue-500:#0f6cbf; --blue-600:#0c5699; --blue-700:#094173;
+    --gray-100:#f8f9fa; --gray-300:#dee2e6; --gray-500:#8f959e;
+    --gray-700:#495057; --gray-900:#1d2125; --red-600:#ca3120;
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0; min-height:100vh;
+    display:flex; align-items:center; justify-content:center; padding:1.5rem;
+    background:var(--gray-100); color:var(--gray-900); line-height:1.5;
+    font-family:'Noto Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  }
+
+  .card{
+    width:100%; max-width:26rem;
+    background:#fff; border:1px solid var(--gray-300); border-radius:.75rem;
+    padding:2rem; box-shadow:0 .5rem 1rem rgba(0,0,0,.08);
+  }
+
+  .lock{
+    display:flex; align-items:center; justify-content:center;
+    width:2.75rem; height:2.75rem; margin-bottom:1rem;
+    border-radius:50%; background:var(--blue-50); font-size:1.15rem;
+  }
+
+  h1{ margin:0 0 .5rem; font-size:1.25rem; font-weight:700; }
+  .sub{ margin:0 0 1.5rem; font-size:.92rem; color:var(--gray-700); }
+  label{ display:block; font-size:.85rem; font-weight:600; margin-bottom:.35rem; }
+
+  input{
+    width:100%; padding:.6rem .75rem; font:inherit; font-size:.95rem;
+    border:1px solid var(--gray-500); border-radius:.5rem; background:#fff; color:inherit;
+  }
+  input:focus-visible{ outline:2px solid var(--blue-500); outline-offset:2px; border-color:var(--blue-500); }
+
+  button{
+    width:100%; margin-top:1rem; padding:.6rem 1rem;
+    font:inherit; font-size:.95rem; font-weight:600;
+    color:#fff; background:var(--blue-500); border:0; border-radius:.5rem; cursor:pointer;
+  }
+  button:hover:not(:disabled){ background:var(--blue-600); }
+  button:focus-visible{ outline:2px solid var(--blue-700); outline-offset:2px; }
+  button:disabled{ opacity:.65; cursor:progress; }
+
+  .msg{ margin:.75rem 0 0; font-size:.88rem; font-weight:600; min-height:1.3em; }
+  .msg.error{ color:var(--red-600); }
+  .msg.working{ color:var(--gray-700); font-weight:400; }
+
+  .foot{
+    margin:1.5rem 0 0; padding-top:1rem; border-top:1px solid var(--gray-300);
+    font-size:.8rem; color:var(--gray-500);
+  }
+
+  .noscript{
+    margin:1rem 0 0; padding:.75rem; border-radius:.5rem;
+    background:#fdf5e4; border:1px solid #f6dda9; color:#6b4d00; font-size:.85rem;
+  }
+</style>
+</head>
+<body>
+
+<main class="card">
+  <div class="lock" aria-hidden="true">🔒</div>
+  <h1>This prototype is password protected</h1>
+__PAGE_LABEL__
+  <p class="sub">Enter the password you were given to continue.</p>
+
+  <form id="form" autocomplete="off">
+    <label for="password">Password</label>
+    <input id="password" type="password" name="prototype-password"
+           autocomplete="current-password" autocapitalize="off" spellcheck="false"
+           aria-describedby="msg" required autofocus>
+    <button type="submit" id="submit">Unlock prototype</button>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+  </form>
+
+  <noscript>
+    <p class="noscript">This page needs JavaScript — the prototype is encrypted and
+    is decrypted in your browser.</p>
+  </noscript>
+
+  <p class="foot">Access is remembered for this browser tab only. Closing the tab
+  locks it again.</p>
+</main>
+
+<script id="payload" type="application/json">"__PROTOTYPE_PAYLOAD__"</script>
+
+<script>
+(function () {
+  "use strict";
+
+  var payload = JSON.parse(document.getElementById("payload").textContent);
+  var form   = document.getElementById("form");
+  var input  = document.getElementById("password");
+  var submit = document.getElementById("submit");
+  var msg    = document.getElementById("msg");
+
+  /* Keyed on the ciphertext, so two prototypes on the same origin do not share
+     an unlock, and re-publishing one invalidates the old session. */
+  var KEY = "moodle-proto-key:" + payload.data.slice(0, 32);
+
+  function say(text, kind) {
+    msg.textContent = text;
+    msg.className = "msg" + (kind ? " " + kind : "");
+  }
+
+  function bytes(base64) {
+    var binary = atob(base64);
+    var out = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+    return out;
+  }
+
+  function base64(buffer) {
+    var view = new Uint8Array(buffer), binary = "";
+    for (var i = 0; i < view.length; i++) binary += String.fromCharCode(view[i]);
+    return btoa(binary);
+  }
+
+  function deriveKey(password) {
+    return crypto.subtle.importKey(
+      "raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]
+    ).then(function (baseKey) {
+      return crypto.subtle.deriveKey(
+        {
+          name: "PBKDF2",
+          salt: bytes(payload.salt),
+          iterations: payload.iterations,
+          hash: "SHA-256"
+        },
+        baseKey,
+        { name: "AES-GCM", length: 256 },
+        true,
+        ["decrypt"]
+      );
+    });
+  }
+
+  function importKey(raw) {
+    return crypto.subtle.importKey(
+      "raw", bytes(raw), { name: "AES-GCM", length: 256 }, true, ["decrypt"]
+    );
+  }
+
+  function ungzip(buffer) {
+    if (payload.compression !== "gzip") {
+      return Promise.resolve(new TextDecoder().decode(buffer));
+    }
+    if (typeof DecompressionStream === "undefined") {
+      return Promise.reject(new Error("unsupported-browser"));
+    }
+    var stream = new Response(buffer).body.pipeThrough(new DecompressionStream("gzip"));
+    return new Response(stream).text();
+  }
+
+  /* Replacing the whole document rather than injecting into this one: the
+     prototype is a complete page with its own head, styles and scripts, and
+     they only run properly if the parser sees them from the top. */
+  function render(html) {
+    document.open();
+    document.write(html);
+    document.close();
+  }
+
+  function decryptWith(key) {
+    return crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: bytes(payload.iv) }, key, bytes(payload.data)
+    ).then(ungzip);
+  }
+
+  /* Session storage holds the derived key, not the password — the password may
+     well be reused somewhere it matters, and the key is useless off this page.
+     Tab-scoped, so a shared machine does not stay unlocked. */
+  function remember(key) {
+    return crypto.subtle.exportKey("raw", key).then(function (raw) {
+      try { sessionStorage.setItem(KEY, base64(raw)); } catch (e) { /* fine */ }
+    }).catch(function () { /* fine */ });
+  }
+
+  function explain(error) {
+    if (error && error.message === "unsupported-browser") {
+      return "This browser is too old to open the prototype. Try current Chrome, Firefox, Safari or Edge.";
+    }
+    if (!window.crypto || !window.crypto.subtle) {
+      return "This browser cannot decrypt the page here. Open it over https.";
+    }
+    return "That password is not right. Try again.";
+  }
+
+  var stored = null;
+  try { stored = sessionStorage.getItem(KEY); } catch (e) { /* fine */ }
+
+  if (stored) {
+    importKey(stored).then(decryptWith).then(render).catch(function () {
+      try { sessionStorage.removeItem(KEY); } catch (e) { /* fine */ }
+    });
+  }
+
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    var password = input.value;
+    submit.disabled = true;
+    say("Decrypting…", "working");
+
+    /* Yield first: PBKDF2 at 600k iterations blocks for about a second, and
+       without a tick in between the "Decrypting…" line never paints. setTimeout
+       rather than requestAnimationFrame — rAF does not fire in a hidden tab, so
+       submitting and switching away would stall the unlock indefinitely. */
+    setTimeout(function () {
+      deriveKey(password).then(function (key) {
+        return decryptWith(key).then(function (html) {
+          return remember(key).then(function () { render(html); });
+        });
+      }).catch(function (error) {
+        submit.disabled = false;
+        say(explain(error), "error");
+        input.value = "";
+        input.focus();
+      });
+    }, 16);
+  });
+})();
+</script>
+
+</body>
+</html>
