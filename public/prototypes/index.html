@@ -220,14 +220,21 @@
       <h2>Public roadmap with voting</h2>
       <p>Now/Next/Later roadmap merging the MDLJPD and MCJPD boards, with community voting that requires a written reason. Ideas and horizons are real; votes and voters are invented.</p>
       <p class="locked">🔒 Password required</p>
-      <a class="btn" href="PROTOTYPE-roadmap-voting.html">View prototype</a>
+      <!-- ?v= is load-bearing, not decoration. nginx sends no Cache-Control on
+           these files, so a browser that fetched this prototype while it was
+           still published in the clear will happily keep serving that copy from
+           its own cache — lock screen never seen. Bumping the version makes the
+           link a URL no one has cached. Bump it again on any republish that
+           must not be served stale. -->
+      <a class="btn" href="PROTOTYPE-roadmap-voting.html?v=enc1">View prototype</a>
     </div>
 
   </div>
 </main>
 
 <footer>
-  moodlelms.com — prototypes are static, unauthenticated pages for review purposes.
+  moodlelms.com — prototypes are static pages for review purposes. Most are open;
+  those marked with a lock are encrypted and need the password you were given.
 </footer>
 
 </body>
