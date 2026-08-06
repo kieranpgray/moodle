@@ -3368,6 +3368,22 @@ SECTIONS.push({
                 desc:"Students are divided into groups, but can see the work of other groups" }
   };
 
+  /* In a hidden section the "show" VALUE is presented with the stealth
+     STRINGS — same choice, different words, because that is what it actually
+     does there. The value stays "show" so the state model still matches core's.
+     Shared by activityHTML (which renders the trigger) and selectIdd (which
+     repaints it after a choice); when only the former knew about it, picking
+     "show" inside a hidden section painted the plain eye, and the next
+     re-render silently swapped it for the stealth glyph. */
+  function visMapFor(sectionHidden){
+    if(!sectionHidden) return VIS;
+    var m = { hide: VIS.hide, stealth: VIS.stealth };
+    m.show = Object.assign({}, VIS.stealth, {
+      desc: "This section is hidden, so the activity is not on the course page. Students can still reach it with a direct link."
+    });
+    return m;
+  }
+
   /* site-level switches that change what the controls offer.
      allowstealth is $CFG->allowstealth — flipped by the dev switcher's
      "Site configuration" row so the two-option and three-option menus can
@@ -3481,6 +3497,19 @@ SECTIONS.push({
   /* stands in for the real cmid — only needs to be unique and stable enough
      to tie a checkbox to its label */
   var cmSeq = 0;
+  /* Stable per-item key. It is assigned once and stored on the data object
+     itself, so it survives every renderCourse() rebuild — cmSeq cannot do this
+     job because it counts renders, not items, and hands the same card a new
+     number each time. The icon dropdowns write their choice back to the data
+     (see selectIdd), and this is how a card finds the item it came from.
+     data-activity is no use for it either: it is a slug of the name, and there
+     are three books on this page. */
+  var uidSeq = 0;
+  var ITEM_BY_UID = {};
+  function uidOf(it){
+    if(!it.__uid){ it.__uid = "cm" + (++uidSeq); ITEM_BY_UID[it.__uid] = it; }
+    return it.__uid;
+  }
   function activityHTML(it, ctx){
     if(it.block) return '<div class="ablock">' + it.block + '</div>';
     if(it.sub)   return subsectionHTML(it.sub);
@@ -3553,17 +3582,7 @@ SECTIONS.push({
          show_visibility() is !$mod->visible || $mod->is_stealth(), so an
          activity on its default "show on course page" renders nothing at
          all, and hidden or stealth renders the disabled indicator. */
-      /* In a hidden section the "show" VALUE is presented with the stealth
-         STRINGS — same choice, different words, because that is what it
-         actually does there. The value stays "show" so the state model still
-         matches core's. */
-      var visMap = VIS;
-      if(sectionHidden){
-        visMap = { hide: VIS.hide, stealth: VIS.stealth };
-        visMap.show = Object.assign({}, VIS.stealth, {
-          desc: "This section is hidden, so the activity is not on the course page. Students can still reach it with a direct link."
-        });
-      }
+      var visMap = visMapFor(sectionHidden);
       /* show_visibility() is !$mod->visible || $mod->is_stealth(), and in a
          hidden section a "shown" activity IS stealth — so unlike anywhere
          else on the page, it gets an indicator in view mode too. */
@@ -3602,6 +3621,11 @@ SECTIONS.push({
                  .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     var html = '<article class="' + cls + '" data-purpose="' + m.purpose + '"'
       + (it.mod ? ' data-mod="' + esc(it.mod) + '"' : '')
+      /* data-uid ties the card back to its data object; data-sectionhidden
+         carries the one piece of parent context selectIdd cannot work out from
+         the card alone. Both exist for the write-back path. */
+      + ' data-uid="' + uidOf(it) + '"'
+      + (sectionHidden ? ' data-sectionhidden="1"' : '')
       + (slug ? ' data-activity="' + slug + '"' : '') + '>'
       + '<div class="acard-body">'
         + '<div class="acard-main">'
@@ -3828,7 +3852,9 @@ SECTIONS.push({
   }
 
   function selectIdd(dd, item){
-    var map  = dd.dataset.map === "vis" ? VIS : GRP;
+    var card = dd.closest(".acard");
+    var isVis = dd.dataset.map === "vis";
+    var map  = isVis ? visMapFor(card && card.dataset.sectionhidden === "1") : GRP;
     var feat = dd.dataset.feature;
     var key  = item.dataset.value;
     var o    = map[key];
@@ -3847,13 +3873,35 @@ SECTIONS.push({
        inside it changes. This path only ever runs on an interactive trigger. */
     btn.classList.add("has-label");
 
-    /* card-level treatment follows the visibility state */
-    if(dd.dataset.map === "vis"){
-      var card = dd.closest(".acard");
-      if(card){
-        card.classList.toggle("is-hidden", key !== "show");
-        card.classList.toggle("teacheronly", key !== "show");
+    /* WRITE THE CHOICE BACK TO THE DATA, not just to the DOM.
+       Leaving or entering edit mode calls renderCourse(), which throws every
+       card away and rebuilds it from SECTIONS — so a change that only ever
+       reached the DOM is discarded the moment the mode changes, and view mode
+       shows the demo value again. That is what made the non-default indicators
+       impossible to demo: the whole point of the view-mode rules below is that
+       a changed value keeps its icon, and the value never survived the trip.
+       The same applies to the dev switcher's role and site-config rows, which
+       re-render too.
+       Memory only, deliberately: a page reload starts from the demo data
+       again, which is the right behaviour for a prototype. */
+    var data = card && ITEM_BY_UID[card.dataset.uid];
+    if(data){
+      if(isVis){
+        data.vis = key;
+        /* the legacy "hidden from students" flag is kept in step with vis:
+           activityHTML ORs the two together for the card class, and the course
+           index reads it on its own, so letting them drift would show a card
+           as available and its index row as dimmed. */
+        data.teacheronly = (key !== "show");
+      } else {
+        data.group = key;
       }
+    }
+
+    /* card-level treatment follows the visibility state */
+    if(isVis && card){
+      card.classList.toggle("is-hidden", key !== "show");
+      card.classList.toggle("teacheronly", key !== "show");
     }
     live.textContent = feat + " changed to " + o.state;
     closeIdd(true);
