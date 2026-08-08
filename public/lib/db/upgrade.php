@@ -2164,5 +2164,19 @@ function xmldb_main_upgrade($oldversion) {
         upgrade_main_savepoint(true, 2026080300.00);
     }
 
+    if ($oldversion < 2026080700.01) {
+        // The enablelinearnav course format option has been removed, so remove the rows it left behind.
+        [$informatsql, $params] = $DB->get_in_or_equal(['weeks', 'topics'], SQL_PARAMS_NAMED);
+        $params['name'] = \core_courseformat\local\linearnavigationsettings::SETTING_ENABLE_LINEAR_NAV;
+        $DB->delete_records_select(
+            'course_format_options',
+            "name = :name AND format $informatsql",
+            $params,
+        );
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2026080700.01);
+    }
+
     return true;
 }
