@@ -1,0 +1,15 @@
+issueNumber: MDL-89406
+notes:
+  core_courseformat:
+    - message: >-
+        Linear navigation is now controlled solely by the per-format site
+        setting. The `enablelinearnav` course format option and its course
+        settings field have been removed, and any per-course value stored during
+        5.3dev is deleted on upgrade. The
+        `linearnavigationsettings::get_course_format_options_default()`,
+        `::get_course_format_options_edit_form()` and
+        `::after_form_definition_after_data()` methods have been removed; a
+        course format opts in to linear navigation by overriding
+        `uses_linear_navigation()`. As a consequence, `core_course_get_courses`
+        no longer returns `enablelinearnav` in `courseformatoptions`.
+      type: changed

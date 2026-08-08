@@ -1,0 +1,9 @@
+issueNumber: MDL-89406
+notes:
+  core_course:
+    - message: >-
+        The `core_course_get_courses` and `core_course_get_courses_by_field` web
+        services no longer return `enablelinearnav` in `courseformatoptions`.
+        The course format option has been removed and linear navigation is now
+        controlled by the per-format site setting.
+      type: changed
