@@ -15,7 +15,6 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 use core_external\external_api;
-use core_courseformat\local\linearnavigationsettings;
 
 /**
  * External course functions unit tests
@@ -810,10 +809,6 @@ final class externallib_test extends \core_external\tests\externallib_testcase {
             $this->assertEquals($course['enablecompletion'], $dbcourse->enablecompletion);
             if ($dbcourse->format === 'topics') {
                 $this->assertEquals($course['courseformatoptions'], [
-                    [
-                        'name' => linearnavigationsettings::SETTING_ENABLE_LINEAR_NAV,
-                        'value' => $dbcourse->{linearnavigationsettings::SETTING_ENABLE_LINEAR_NAV},
-                    ],
                     ['name' => 'hiddensections', 'value' => $dbcourse->hiddensections],
                     ['name' => 'coursedisplay', 'value' => $dbcourse->coursedisplay],
                 ]);
@@ -2938,7 +2933,6 @@ final class externallib_test extends \core_external\tests\externallib_testcase {
         $this->resetAfterTest(true);
 
         $this->setAdminUser();
-        set_config(linearnavigationsettings::SETTING_ENABLE_LINEAR_NAV, 1, 'format_topics');
 
         $category1 = self::getDataGenerator()->create_category(array('name' => 'Cat 1'));
         $category2 = self::getDataGenerator()->create_category(array('parent' => $category1->id));
@@ -2948,7 +2942,6 @@ final class externallib_test extends \core_external\tests\externallib_testcase {
             'shortname' => 'c1',
             'format' => 'topics',
             'numsections' => $numsections,
-            linearnavigationsettings::SETTING_ENABLE_LINEAR_NAV => 0,
         ]);
 
         $fieldcategory = self::getDataGenerator()->create_custom_field_category(['name' => 'Other fields']);
@@ -2999,7 +2992,7 @@ final class externallib_test extends \core_external\tests\externallib_testcase {
         // Expect to receive all the fields.
         $this->assertCount(42, $result['courses'][0]);
         // Check default values for course format topics.
-        $this->assertCount(4, $result['courses'][0]['courseformatoptions']);
+        $this->assertCount(3, $result['courses'][0]['courseformatoptions']);
         foreach ($result['courses'][0]['courseformatoptions'] as $option) {
             switch ($option['name']) {
                 case 'hiddensections':
@@ -3010,9 +3003,6 @@ final class externallib_test extends \core_external\tests\externallib_testcase {
                     break;
                 case 'indentation':
                     $this->assertEquals(1, $option['value']);
-                    break;
-                case linearnavigationsettings::SETTING_ENABLE_LINEAR_NAV:
-                    $this->assertEquals(0, $option['value']);
                     break;
                 default:
             }
