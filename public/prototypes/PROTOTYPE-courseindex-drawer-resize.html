@@ -2145,8 +2145,12 @@
     updateToggleLabel();
   });
 
+  /* Annotations start HIDDEN. They explain the prototype's affordances, but
+     they cover the course index and get in the way of actually trying the
+     resize — which is the thing most people open this to do. The toggle in the
+     bottom-right brings them back, with all four still alive. */
+  body.classList.add("annos-off");
   updateToggleLabel();
-  startAnnos();
 })();
 </script>
 
