@@ -1230,6 +1230,20 @@
   .shead:hover .schev{ background:var(--border-default); }
   .scard.collapsed .schev{ transform:rotate(-90deg); }
   .shead .stitle{ margin:0; font-size:20px; font-weight:600; letter-spacing:-.1px; min-width:0; }
+  /* Section names are body-coloured, not link-coloured. Straight from core —
+     theme/boost/scss/moodle/course.scss:
+         .course-section .sectionname > a { color: $gray-900; }
+     $gray-900 is #1d2125, which is --mds-color-gray-900 here, so
+     --mds-text-default reaches the same value by a named route.
+     These were the last blue text on the page: the activity names alongside
+     them are already --mds-text-default (see .atitle a below), and edit mode
+     already renders black because .titlebtn is color:inherit. So the blue was
+     the odd one out in all three directions — against core, against the
+     activity names, and against the same title in the other mode — and it
+     implied the name navigates somewhere when it only expands in place.
+     Covers subsections too: core treats those as sections, and
+     .subhead .stitle is the same element. */
+  .stitle a{ color:var(--mds-text-default); }
   .shead .slock{ font-size:12px; color:var(--text-muted); flex:0 0 auto; }
   .shead .sstatus{
     margin-left:auto; flex:0 0 auto; display:flex; align-items:center; gap:6px;
