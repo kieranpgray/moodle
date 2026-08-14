@@ -27,10 +27,6 @@
     }
 }}
 <div id="filemanager-{{{client_id}}}" class="filemanager w-100 fm-loading">
-    <div class="fp-restrictions mb-1">
-        {{{restrictions}}}
-        <span class="dnduploadnotsupported-message"> - {{#str}}dndnotsupported_insentence{{/str}}{{{helpicon}}}</span>
-    </div>
     <div class="fp-navbar bg-faded card mb-0">
         <div class="filemanager-toolbar icon-no-spacing">
             <div class="fp-toolbar">
@@ -95,5 +91,14 @@
             <div class="dndupload-uploadinprogress">{{#pix}}i/loading_small{{/pix}}<span class="visually-hidden">{{#str}}loadinghelp{{/str}}</span></div>
         </div>
         <div class="filemanager-updating">{{#pix}}i/loading_small{{/pix}}<span class="visually-hidden">{{#str}}loadinghelp{{/str}}</span></div>
+    </div>
+    {{!
+        Size and count limits sit below the upload area and immediately above the
+        accepted file types that follow this element, so the constraints on a file
+        read together rather than being split either side of the picker.
+    }}
+    <div class="fp-restrictions mt-1">
+        {{{restrictions}}}
+        <span class="dnduploadnotsupported-message"> - {{#str}}dndnotsupported_insentence{{/str}}{{{helpicon}}}</span>
     </div>
 </div>
