@@ -1,0 +1,69 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template core_form/settings_layout
+
+    Two column layout for a long settings form: a navigation rail listing the form's
+    sections, beside the form itself.
+
+    The section list is generated from the headers the form actually rendered, so
+    conditional sections and any added by course formats, custom fields or plugin
+    hooks are all included automatically.
+
+    Classes required for JS:
+    * active - core_form/settingsnav puts this on the link for the section in view
+
+    Data attributes required for JS:
+    * data-region="form-settings-nav" - the rail core_form/settingsnav observes
+    * data-settingsnav-target - on each link, the id of the section fieldset it scrolls to
+
+    Context variables required for this template:
+    * sections - array of sections, each with id (anchor target), name and label
+    * formhtml - the rendered form markup
+
+    Example context (json):
+    {
+        "sections": [
+            {"id": "id_general", "name": "general", "label": "General"},
+            {"id": "id_groups", "name": "groups", "label": "Groups"}
+        ],
+        "formhtml": "<form></form>"
+    }
+}}
+<div class="form-settings-layout">
+    {{#sections.0}}
+        <nav class="form-settings-nav" aria-label="{{#str}} settingssections, core_form {{/str}}" data-region="form-settings-nav">
+            <ul class="list-unstyled mb-0">
+                {{#sections}}
+                    <li>
+                        {{! Header labels are already rendered markup, exactly as
+                            core_form/element-header treats them. }}
+                        <a href="#{{id}}" data-settingsnav-target="{{id}}">{{{label}}}</a>
+                    </li>
+                {{/sections}}
+            </ul>
+        </nav>
+    {{/sections.0}}
+    <div class="form-settings-form">
+        {{{formhtml}}}
+    </div>
+</div>
+{{#js}}
+    require(['core_form/settingsnav'], function(SettingsNav) {
+        SettingsNav.init();
+    });
+{{/js}}

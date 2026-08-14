@@ -64,6 +64,45 @@ class HTML_QuickForm_element extends HTML_Common
     var $_flagFrozen = false;
 
     /**
+     * Language string identifier the help button refers to, if any.
+     *
+     * Declared here rather than created on demand, because PHP deprecates dynamic
+     * properties. Set by MoodleQuickForm::addHelpButton().
+     * @var string|null
+     */
+    var $_helpidentifier = null;
+
+    /**
+     * Component owning the help string identified by $_helpidentifier.
+     * @var string|null
+     */
+    var $_helpcomponent = null;
+
+    /**
+     * Optional argument substituted into the help string's placeholders.
+     * @var mixed
+     */
+    var $_helpargs = null;
+
+    /**
+     * Help text rendered beneath the element, when the form displays help inline.
+     * @var string
+     */
+    var $_helptext = '';
+
+    /**
+     * Short badge labels shown beside the element's label.
+     * @var array
+     */
+    var $_badges = [];
+
+    /**
+     * Explanation of why the element cannot be edited.
+     * @var string
+     */
+    var $_lockedreason = '';
+
+    /**
      * Does the element support persistant data when frozen
      * @var       boolean
      * @since     1.3

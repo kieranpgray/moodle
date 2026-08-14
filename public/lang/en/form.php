@@ -79,6 +79,7 @@ $string['security'] = 'Security';
 $string['selectallornone'] = 'Select all/none';
 $string['selected'] = 'Selected';
 $string['selecteditems'] = 'Selected items:';
+$string['settingssections'] = 'Settings sections';
 $string['showadvanced'] = 'Show advanced';
 $string['showless'] = 'Show less...';
 $string['showmore'] = 'Show more...';

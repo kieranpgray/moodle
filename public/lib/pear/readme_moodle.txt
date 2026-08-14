@@ -51,3 +51,7 @@ It was decided that we will not upgrade this library from upstream any more, see
 
 Changed constructors in classes PEAR and PEAR_ERROR to be __construct().
 MDL-60281 - replaced deprecated function each() with foreach loop for PHP7.2 compatibility
+MDL-89469 - added six class properties to HTML_QuickForm_element (_helpidentifier,
+_helpcomponent, _helpargs, _helptext, _badges, _lockedreason) so form elements can
+carry help, badge and locked-reason data without creating dynamic properties, which
+PHP 8.4 deprecates. Same rationale as MDL-78145.

@@ -25,7 +25,8 @@
         "header": "General",
         "collapsed": 0,
         "collapseable": 1,
-        "helpbutton": "Help"
+        "helpbutton": "Help",
+        "headinglevel": 3
     }
 }}
 <legend class="visually-hidden">{{{header}}}</legend>
@@ -49,9 +50,9 @@
                 <span class="visually-hidden">{{{header}}}</span>
             </a>
         {{/collapseable}}
-        <h3 class="d-flex align-self-stretch align-items-center mb-0" aria-hidden="true">
+        <h{{headinglevel}} class="d-flex align-self-stretch align-items-center mb-0" aria-hidden="true">
             {{{header}}}
-        </h3>
+        </h{{headinglevel}}>
     </div>
     {{{helpbutton}}}
 </div>

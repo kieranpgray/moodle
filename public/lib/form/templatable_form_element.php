@@ -56,6 +56,15 @@ trait templatable_form_element {
         $extraclasses = $this->getAttribute('class');
         $parentonlyclasses = $this->getAttribute('parentclass');
 
+        // Optional annotations set via MoodleQuickForm::set_field_badges() and
+        // set_locked_reason(). Absent on most elements, in which case the template
+        // sections they drive render nothing.
+        $context['badges'] = !empty($this->_badges) ? array_values($this->_badges) : [];
+        $context['lockedreason'] = !empty($this->_lockedreason) ? $this->_lockedreason : '';
+
+        // Populated only on forms that called moodleform::set_help_display_inline().
+        $context['helptext'] = !empty($this->_helptext) ? $this->_helptext : '';
+
         // Special wierd named property.
         $context['frozen'] = !empty($this->_flagFrozen);
         $context['hardfrozen'] = !empty($this->_flagFrozen) && empty($this->_persistantFreeze);

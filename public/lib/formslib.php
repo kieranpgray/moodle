@@ -145,6 +145,9 @@ abstract class moodleform {
     /** @var object definition_after_data executed flag */
     protected $_definition_finalized = false;
 
+    /** @var bool whether help text is shown inline rather than behind a help icon */
+    protected $_helpdisplayinline = false;
+
     /** @var bool|null stores the validation result of this form or null if not yet validated */
     protected $_validated = null;
 
@@ -1037,7 +1040,68 @@ abstract class moodleform {
             $this->definition_after_data();
         }
 
+        $this->prepare_inline_help();
+
         $this->_form->display();
+    }
+
+    /**
+     * Show each field's help text beneath it instead of behind a help icon.
+     *
+     * Applies to the whole form. The text comes from the same '_help' language strings the
+     * popup uses, so no additional strings are needed, but note they are written for a
+     * popup and some are several paragraphs long.
+     *
+     * @since Moodle 5.3
+     */
+    public function set_help_display_inline(): void {
+        $this->_helpdisplayinline = true;
+    }
+
+    /**
+     * Return this form's section headers, in the order they are rendered.
+     *
+     * Only meaningful after display() or render(), since course formats, custom fields
+     * and plugin hooks all add headers during definition_after_data().
+     *
+     * @return array list of ['id' => anchor id, 'name' => element name, 'label' => heading text]
+     * @since Moodle 5.3
+     */
+    public function get_section_headers(): array {
+        return $this->_form->get_section_headers();
+    }
+
+    /**
+     * Resolve help text for inline display, if this form asked for it.
+     *
+     * Runs after definition_after_data() so that elements added late - by course formats,
+     * custom fields or plugin hooks - are covered too. Does nothing unless the form opted
+     * in, so the cost of formatting help strings is only paid where they are shown.
+     */
+    protected function prepare_inline_help(): void {
+        if (empty($this->_helpdisplayinline)) {
+            return;
+        }
+
+        foreach ($this->_form->_elements as $element) {
+            if (empty($element->_helpidentifier)) {
+                continue;
+            }
+            $help = get_formatted_help_string(
+                $element->_helpidentifier,
+                $element->_helpcomponent,
+                true,
+                $element->_helpargs ?? null
+            );
+            if (empty($help->text)) {
+                continue;
+            }
+            $element->_helptext = $help->text;
+            // The help button is deliberately left in place. Only templates that render
+            // helptext suppress it (see core_form/element-template); element types with
+            // their own standalone template keep the popup, so no element ends up with
+            // its help removed and nothing put in its place.
+        }
     }
 
     /**
@@ -1647,6 +1711,9 @@ class MoodleQuickForm extends HTML_QuickForm_DHTMLRulesTableless {
      */
     protected $_stickyfooterelement = null;
 
+    /** @var int heading level used for section headers; see set_heading_level() */
+    protected $_headinglevel = 3;
+
     /**
      * Array whose keys are element names and values are the desired collapsible state.
      * True for collapsed, False for expanded. If not present, set to default in
@@ -1735,7 +1802,7 @@ class MoodleQuickForm extends HTML_QuickForm_DHTMLRulesTableless {
      * @param array $ajaxformdata Forms submitted via ajax, must pass their data here, instead of relying on _GET and _POST.
      */
     public function __construct($formName, $method, $action, $target = '', $attributes = null, $ajaxformdata = null) {
-        global $CFG, $OUTPUT;
+        global $CFG;
 
         static $formcounter = 1;
 
@@ -1766,16 +1833,25 @@ class MoodleQuickForm extends HTML_QuickForm_DHTMLRulesTableless {
         }else {
             $this->updateAttributes(array('class'=>'mform'));
         }
-        $this->_reqHTML = '<span class="req">' . $OUTPUT->pix_icon('req', get_string('requiredelement', 'form')) . '</span>';
+        // The marker itself is drawn with generated content, so this contributes no text
+        // to whatever it sits inside - the icon it replaced behaved the same way, and the
+        // behat "form_row" selector matches a label column's exact text.
+        $this->_reqHTML = html_writer::span(
+            html_writer::span('', 'form-required-marker text-danger', [
+                'role' => 'img',
+                'aria-label' => get_string('requiredelement', 'form'),
+            ]),
+            'req'
+        );
         $this->_advancedHTML = '<span class="adv"></span>';
         $this->setRequiredNote(
             get_string(
                 identifier: 'somefieldsrequired',
                 component: 'form',
-                a: $OUTPUT->pix_icon(
-                    pix: 'req',
-                    alt: get_string('requiredelement', 'form'),
-                    attributes: ['aria-hidden' => 'true'],
+                a: html_writer::span(
+                    '',
+                    'form-required-marker text-danger',
+                    ['aria-hidden' => 'true'],
                 ),
             ),
         );
@@ -1809,6 +1885,61 @@ class MoodleQuickForm extends HTML_QuickForm_DHTMLRulesTableless {
      */
     public function set_sticky_footer(?string $elementname): void {
         $this->_stickyfooterelement = $elementname;
+    }
+
+    /**
+     * Set the heading level used for this form's section headers.
+     *
+     * Section headers render as h3 by default, which suits a page that already has an
+     * h1 and an h2 above the form. Pages where the form sits directly under the page
+     * h1 should set this to 2 so the visual heading order has no gap.
+     *
+     * Note this affects the visual document outline only. Each section is a fieldset
+     * whose accessible name comes from its visually hidden legend, and the heading
+     * itself carries aria-hidden, so assistive technology is unaffected by this
+     * setting. Visual size is a CSS concern and is also not affected.
+     *
+     * @param int $level heading level, 1 to 6
+     * @throws coding_exception if the level is outside 1 to 6
+     * @since Moodle 5.3
+     */
+    public function set_heading_level(int $level): void {
+        if ($level < 1 || $level > 6) {
+            throw new coding_exception('Heading level must be between 1 and 6, got ' . $level);
+        }
+        $this->_headinglevel = $level;
+    }
+
+    /**
+     * Return this form's section headers, in the order they are rendered.
+     *
+     * Only meaningful once the definition has been finalised - that is, after the form
+     * has been displayed or rendered - because elements added during definition_after_data()
+     * are not present before then. Useful for building navigation over a long form.
+     *
+     * @return array list of ['id' => anchor id, 'name' => element name, 'label' => heading text]
+     * @since Moodle 5.3
+     */
+    public function get_section_headers(): array {
+        $sections = [];
+        foreach ($this->_elements as $element) {
+            if ($element->getType() !== 'header') {
+                continue;
+            }
+            // Sections filtered out by "shown only" are rendered hidden, so listing them
+            // would produce navigation pointing at nothing.
+            if (!$this->is_shown($element->getName())) {
+                continue;
+            }
+            // Generate the same id the renderer puts on the section's fieldset.
+            $element->_generateId();
+            $sections[] = [
+                'id' => $element->getAttribute('id'),
+                'name' => $element->getName(),
+                'label' => $element->toHtml(),
+            ];
+        }
+        return $sections;
     }
 
     /**
@@ -2119,6 +2250,10 @@ class MoodleQuickForm extends HTML_QuickForm_DHTMLRulesTableless {
         if (method_exists($renderer, 'set_sticky_footer') && !empty($this->_stickyfooterelement)) {
             $renderer->set_sticky_footer($this->_stickyfooterelement);
         }
+
+        if (method_exists($renderer, 'set_heading_level') && !empty($this->_headinglevel)) {
+            $renderer->set_heading_level($this->_headinglevel);
+        }
         parent::accept($renderer);
     }
 
@@ -2375,11 +2510,67 @@ class MoodleQuickForm extends HTML_QuickForm_DHTMLRulesTableless {
         $a = null
     ) {
         global $OUTPUT;
-        if (array_key_exists($elementname, $this->_elementIndex)) {
-            $element = $this->_elements[$this->_elementIndex[$elementname]];
+        if ($element = $this->find_element($elementname, $suppresscheck)) {
             $element->_helpbutton = $OUTPUT->help_icon($identifier, $component, $linktext, $a);
-        } else if (!$suppresscheck) {
+            // Keep what the help refers to, not just the rendered popup trigger, so forms
+            // opting into inline help can render the text itself. See
+            // moodleform::set_help_display_inline().
+            $element->_helpidentifier = $identifier;
+            $element->_helpcomponent = $component;
+            $element->_helpargs = $a;
+        }
+    }
+
+    /**
+     * Find an element by name, reporting through debugging() when it does not exist.
+     *
+     * @param string $elementname name of the element to look up
+     * @param bool $suppresscheck set to true to stay silent when the element is missing
+     * @return HTML_QuickForm_element|null the element, or null when it does not exist
+     * @since Moodle 5.3
+     */
+    protected function find_element(string $elementname, bool $suppresscheck = false): ?HTML_QuickForm_element {
+        if (array_key_exists($elementname, $this->_elementIndex)) {
+            return $this->_elements[$this->_elementIndex[$elementname]];
+        }
+        if (!$suppresscheck) {
             debugging(get_string('nonexistentformelements', 'form', $elementname));
+        }
+        return null;
+    }
+
+    /**
+     * Attach short badges to a form element, displayed beside its label.
+     *
+     * Use these to explain why a field is present or constrained - for example that its
+     * options come from a site setting. Keep the text to one or two words; anything
+     * longer belongs in the help text or a locked reason.
+     *
+     * @param string $elementname name of the element to badge
+     * @param string[] $badges list of already translated badge labels
+     * @param bool $suppresscheck set to true to skip the existence check
+     * @since Moodle 5.3
+     */
+    public function set_field_badges(string $elementname, array $badges, bool $suppresscheck = false): void {
+        if ($element = $this->find_element($elementname, $suppresscheck)) {
+            $element->_badges = $badges;
+        }
+    }
+
+    /**
+     * Explain why a form element cannot be edited.
+     *
+     * The reason is shown below the element. It does not itself lock anything - freeze
+     * the element as usual - it only tells the user why the field is not editable.
+     *
+     * @param string $elementname name of the element the reason applies to
+     * @param string $reason already translated explanation
+     * @param bool $suppresscheck set to true to skip the existence check
+     * @since Moodle 5.3
+     */
+    public function set_locked_reason(string $elementname, string $reason, bool $suppresscheck = false): void {
+        if ($element = $this->find_element($elementname, $suppresscheck)) {
+            $element->_lockedreason = $reason;
         }
     }
 
@@ -3212,6 +3403,9 @@ class MoodleQuickForm_Renderer extends HTML_QuickForm_Renderer_Tableless{
      */
     protected $_stickyfooterelement = null;
 
+    /** @var int heading level used for section headers; see set_heading_level() */
+    protected $_headinglevel = 3;
+
     /**
      * Array whose keys are element names and the the boolean values reflect the current state. If the key exists this is a collapsible element.
      *
@@ -3276,6 +3470,22 @@ class MoodleQuickForm_Renderer extends HTML_QuickForm_Renderer_Tableless{
      */
     public function set_sticky_footer(?string $elementname): void {
         $this->_stickyfooterelement = $elementname;
+    }
+
+    /**
+     * Set the heading level used for section headers.
+     *
+     * Defaults to 3. Set this when a page's own heading structure means form sections
+     * belong at a different level - for example a page whose only other heading is the
+     * h1, where sections should be h2. Affects the visual outline only: the heading is
+     * aria-hidden and the accessible name comes from the fieldset's legend. Visual size
+     * is controlled by CSS, not by this.
+     *
+     * @param int $level heading level, 1 to 6
+     * @since Moodle 5.3
+     */
+    public function set_heading_level(int $level): void {
+        $this->_headinglevel = $level;
     }
 
     /**
@@ -3543,6 +3753,7 @@ class MoodleQuickForm_Renderer extends HTML_QuickForm_Renderer_Tableless{
                     'collapseable' => $collapseable,
                     'collapsed' => $collapsed,
                     'helpbutton' => $header->getHelpButton(),
+                    'headinglevel' => $this->_headinglevel,
                 ]);
         }
 
