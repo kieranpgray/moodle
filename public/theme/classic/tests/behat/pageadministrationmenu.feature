@@ -25,7 +25,7 @@ Feature: Page administration menu
     And I should see the page administration menu
     And "Settings" "link" should exist in current page administration
     And I navigate to "Settings" in current page administration
-    And I should see "Edit settings"
+    And I should see "Common module settings"
     And I am on the "Course 1" "enrolled users" page
     And I should see the page administration menu
     And I am on the "Course 1" "Enrolment methods" page

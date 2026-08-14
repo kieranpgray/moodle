@@ -53,8 +53,7 @@ Feature: Setting grades to pass via workshop editing form
     When I am on the "Another awesome workshop" "workshop activity editing" page logged in as teacher1
     And I set the field "Assessment grade to pass" to "You shall not pass!"
     And I press "Save and return to course"
-    Then I should see "Edit settings"
-    And I should see "You must enter a number here"
+    Then I should see "You must enter a number here"
 
   Scenario: Adding a new workshop with invalid value of a grade to pass
     Given the following "activities" exist:
@@ -63,8 +62,7 @@ Feature: Setting grades to pass via workshop editing form
     When I am on the "Almost awesome workshop" "workshop activity editing" page logged in as teacher1
     And I set the field "Assessment grade to pass" to "10000000"
     And I press "Save and return to course"
-    Then I should see "Edit settings"
-    And I should see "The grade to pass can not be greater than the maximum possible grade"
+    Then I should see "The grade to pass can not be greater than the maximum possible grade"
 
   Scenario: Emptying grades to pass fields sets them to zero
     Given the following "activities" exist:

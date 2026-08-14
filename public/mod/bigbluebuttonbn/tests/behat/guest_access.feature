@@ -30,7 +30,6 @@ Feature: Guest access allows external users to connect to a meeting
       | bigbluebuttonbn_guestaccess_enabled | 1 |
     When I am on the "RoomRecordings" "bigbluebuttonbn activity editing" page logged in as "admin"
     And I should see "Guest access"
-    And I click on "Expand all" "link" in the "region-main" "region"
     And I should see "Allow guest access"
     And I set the field "Allow guest access" to <guestaccess>
     Then I <result> "Guests joining must be admitted by a moderator"
