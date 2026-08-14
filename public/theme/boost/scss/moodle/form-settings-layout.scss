@@ -1,0 +1,206 @@
+/**
+ * Settings form layout, shared by any page rendering a form through the
+ * core_form/settings_layout template (course settings, activity settings).
+ *
+ * Scoped on the .form-settings-layout class the template emits rather than on a page
+ * id: course/modedit.php sets a per module page type (page-mod-assign-mod,
+ * page-mod-forum-mod and so on), so there is no single id to hook, and a new consumer
+ * of the layout should not have to edit this file.
+ */
+// Required marker. Drawn with generated content rather than an icon or a literal text
+// node: an icon carried a fixed 1.25em box that read as oversized, but a real "*" in the
+// markup would add text to the label column, and the behat "form_row" selector matches
+// on that column's exact text (normalize-space(.) = the label). Generated content keeps
+// the marker out of the DOM's text while still being visible.
+.form-required-marker {
+    font-size: var(--mds-font-size-paragraph-small);
+    line-height: 1;
+    color: var(--mds-text-danger);
+
+    &::after {
+        content: "*";
+    }
+}
+
+// Field annotations, set via MoodleQuickForm::set_field_badges() and
+// set_locked_reason(). Generic rather than page scoped, since any form can use them.
+.form-field-badge {
+    // No design token exists below paragraph-small (0.875rem); the design calls for
+    // something smaller still, so this stays a literal.
+    font-size: 0.72rem;
+    font-weight: var(--mds-font-weight-semibold);
+    letter-spacing: 0.03em;
+    // The design uses a soft orange for "this comes from elsewhere" annotations,
+    // and a squared-off radius rather than a pill.
+    background-color: var(--mds-color-orange-100);
+    color: var(--mds-color-orange-600);
+    border-radius: var(--mds-border-radius-xs);
+    padding: 0.1rem 0.4rem;
+}
+
+.form-locked-reason {
+    font-size: var(--mds-font-size-paragraph-small);
+}
+
+// Inline help, shown when a form calls moodleform::set_help_display_inline().
+// The strings are markdown, so they arrive wrapped in <p> or list markup whose
+// trailing margin would otherwise detach the text from its field.
+.form-help-text {
+    font-size: var(--mds-font-size-paragraph-small);
+
+    > :last-child {
+        margin-bottom: 0;
+    }
+
+    ul,
+    ol {
+        padding-left: 1.25rem;
+    }
+}
+
+// Two column shell: section rail beside the form.
+//
+// Deliberately a plain flex container with no transform, filter, contain or
+// will-change. Any of those would make it a containing block for position:fixed,
+// which would break the sticky footer holding the save buttons.
+.form-settings-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.form-settings-form {
+    min-width: 0; // Let the form column shrink rather than overflow its flex parent.
+    flex: 1 1 auto;
+
+    // Each section fieldset is an anchor target for the rail. Without this the
+    // navbar is fixed over the top of the page, so scrolling a section to the top
+    // of the viewport hides its heading underneath. Mirrors the offset core already
+    // applies to course index anchors in drawer.scss. Also covers native hash jumps,
+    // such as the reload the format chooser triggers.
+    fieldset.fitem {
+        scroll-margin-top: calc(#{$navbar-height} + 1rem);
+    }
+}
+
+.form-settings-nav {
+    display: none; // Rail is desktop only; on smaller screens the form reads top to bottom.
+
+    a {
+        display: block;
+        padding: 0.375rem 0.75rem;
+        border-left: 2px solid transparent;
+        color: var(--bs-body-color, inherit);
+        text-decoration: none;
+
+        &:hover {
+            background-color: var(--bs-secondary-bg, rgba(0, 0, 0, 0.04));
+        }
+
+        // The links drop their underline, so keyboard focus needs a visible ring of its
+        // own - hover styling alone never fires for keyboard users.
+        &:focus-visible {
+            outline: 2px solid var(--mds-bg-interactive-primary-default);
+            outline-offset: -2px;
+        }
+
+        // The border carries the state as well as the colour, so the current section is
+        // not signalled by colour alone.
+        &.active {
+            border-left-color: var(--mds-bg-interactive-primary-default);
+            color: var(--mds-bg-interactive-primary-default);
+            font-weight: 700;
+        }
+    }
+}
+
+@include media-breakpoint-up(lg) {
+    .form-settings-nav {
+        display: block;
+        position: sticky;
+        // Clear the fixed navbar, otherwise the rail sticks underneath it.
+        top: calc(#{$navbar-height} + 1rem);
+        flex: 0 0 14rem;
+        width: 14rem;
+    }
+}
+
+.form-settings-layout {
+    // The form opts into vertical layout via moodleform::set_display_vertical(), which
+    // stacks labels above their controls. That alone leaves every control stretched to
+    // the full column, so the rules below restore sensible measures.
+    //
+    // Widths are driven by the `size` attribute each text field already declares in its
+    // own definition() rather than by hardcoded element ids, so adding or reordering
+    // fields needs no CSS change.
+    .mform.full-width-labels {
+        // Short text fields: honour the character width the form asks for.
+        .fitem.row .form-control[size="20"] {
+            max-width: 20rem;
+        }
+
+        .fitem.row .form-control[size="10"] {
+            max-width: 14rem;
+        }
+
+        // Dropdowns read better at a fixed measure than stretched across the column.
+        .fitem.row .form-select {
+            max-width: 20rem;
+        }
+
+        // Date selectors are a row of narrow selects, so they need a tighter cap.
+        .fitem.row [data-fieldtype="date_time_selector"] .form-select,
+        .fitem.row [data-fieldtype="date_selector"] .form-select {
+            max-width: 9rem;
+        }
+
+        // Autocompletes are upgraded in the browser and are expected to fill the column,
+        // so they opt back out of the dropdown cap.
+        .fitem.row [data-fieldtype="autocomplete"] .form-autocomplete-selection,
+        .fitem.row [data-fieldtype="autocomplete"] .form-select {
+            max-width: none;
+        }
+
+        // Labels sit closer to their field and carry slightly more weight than body text.
+        .fitem.row > .col-form-label {
+            font-size: var(--mds-font-size-paragraph-small);
+            font-weight: var(--mds-font-weight-semibold);
+            margin-bottom: var(--mds-spacing-xxs);
+        }
+    }
+
+    .form-settings-form fieldset.fitem {
+        margin-bottom: var(--mds-spacing-xl);
+
+        > .d-flex {
+            padding-bottom: var(--mds-spacing-xs);
+            border-bottom: 1px solid var(--mds-border-subtle);
+        }
+
+        // The design sizes section headings well below a default heading, with a rule
+        // beneath, so they read as dividers rather than page-level titles. Matched by
+        // position rather than by tag, because the level is set per page via
+        // MoodleQuickForm::set_heading_level() - h2 where the form sits directly under
+        // the page h1, h3 where a heading sits between them.
+        > .d-flex h1,
+        > .d-flex h2,
+        > .d-flex h3,
+        > .d-flex h4,
+        > .d-flex h5,
+        > .d-flex h6 {
+            font-size: var(--mds-font-size-headings-6);
+            font-weight: var(--mds-font-weight-bold);
+        }
+    }
+
+    // The sticky footer already sets justify-content: flex-end, but the button group's
+    // wrapper is a full-width block, so there is no free space for that to distribute
+    // and the buttons end up hard against the left edge. Align them inside the wrapper
+    // instead, which puts the primary action at the right as the design has it.
+    //
+    // The footer is emitted inline by the form renderer, so it sits inside this wrapper
+    // and the rule stays scoped to forms that opted into the layout.
+    .stickyfooter [data-groupname="buttonar"] .d-flex {
+        justify-content: flex-end;
+    }
+}

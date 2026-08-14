@@ -1,0 +1,28 @@
+/**
+ * Course settings page (course/edit.php).
+ *
+ * The shared settings form treatment lives in form-settings-layout.scss. Only rules
+ * that are specific to this page's own fields belong here.
+ */
+#page-course-edit {
+    // Accepted file types reads as one sentence: the label and the extensions share a
+    // line rather than stacking as a label above a list.
+    .filetypes-descriptions-intro,
+    .form-filetypes-descriptions,
+    .form-filetypes-descriptions ul,
+    .form-filetypes-descriptions li {
+        display: inline;
+    }
+
+    .filetypes-descriptions-intro {
+        margin-right: 0.25rem;
+    }
+
+    // Only one file type group applies to the course image, so its name adds nothing
+    // over the extensions themselves. Hidden here rather than removed from the template,
+    // because on forms accepting several groups the name is the only thing telling them
+    // apart.
+    .filetype-description {
+        display: none;
+    }
+}

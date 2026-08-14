@@ -588,7 +588,10 @@ a.ygtvspacer:hover {
 // File Manager layout
 .filemanager {
     .fp-restrictions {
-        text-align: right;
+        // Right alignment suited the old position above the picker. The restrictions now
+        // sit below it, reading with the accepted file types, so they align with the rest
+        // of the field. Inherited rather than set to left, to stay correct in RTL.
+        text-align: inherit;
     }
 }
 
