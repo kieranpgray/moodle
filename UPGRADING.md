@@ -318,6 +318,20 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
 
   For more information see [MDL-88604](https://tracker.moodle.org/browse/MDL-88604)
 
+#### Changed
+
+- `moodleform_mod` now overrides `after_definition()` to opt every activity settings form into the `core_form` settings layout: labels above their fields, help shown inline, and all sections expanded (`setDisableShortforms(true)`). As a result the "Expand all" / "Collapse all" control no longer appears on `course/modedit.php`. The Behat step `I expand all fieldsets` degrades to a no-op, but steps that click the link by name (`I click on "Expand all" "link"`) will fail and should be removed, since every section is already expanded.
+
+  Modules that override `after_definition()` must call the parent.
+
+  For more information see [MDL-89469](https://tracker.moodle.org/browse/MDL-89469)
+- `moodleform_mod::add_action_buttons()` now marks "Save and return to course" as a secondary button, so only "Save and display" renders as primary, and adds `order-1`/`order-2`/`order-3` classes so the visual order is Cancel, Save and return, Save and display. The DOM order is unchanged, so pressing Enter still saves and returns to the course. Contributed modules that override `add_action_buttons()` keep their existing buttons and are unaffected.
+
+  For more information see [MDL-89469](https://tracker.moodle.org/browse/MDL-89469)
+- `course/modedit.php` no longer prints the "Edit settings" heading when editing an existing activity: the page `h1` already names the activity and its "Settings" tab is highlighted. The heading is still printed when adding an activity, where nothing else names what is being created.
+
+  For more information see [MDL-89469](https://tracker.moodle.org/browse/MDL-89469)
+
 ### core_courseformat
 
 #### Added
@@ -379,6 +393,32 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
 - Rendered TeX/Algebra images are now stored using the File Storage API instead of the `$CFG->dataroot/filter/{tex,algebra}/` directory. A new `rendered_images` cache definition has been added to both `filter_tex` and `filter_algebra`. The upgrade step automatically migrates existing images from the legacy dataroot location to file storage and removes the old directory.
 
   For more information see [MDL-87554](https://tracker.moodle.org/browse/MDL-87554)
+
+### core_form
+
+#### Added
+
+- A set of opt-in presentation methods has been added so a long settings form can be rendered as a single scrollable page with a section rail, instead of a stack of collapsible fieldsets. All are opt-in: forms that do not call them are unchanged.
+
+  ```php
+  // On moodleform:
+  $this->set_help_display_inline();          // Render each field's help beneath it instead of behind an icon.
+  $this->get_section_headers();              // The form's section headers, in render order. Call after display()/render().
+
+  // On MoodleQuickForm:
+  $mform->set_heading_level(2);              // Heading level for section headers (1-6). Defaults to 3.
+  $mform->get_section_headers();
+  $mform->set_field_badges('maxbytes', ['Site setting']);
+  $mform->set_locked_reason('shortname', 'Locked by an administrator');
+  ```
+
+  For more information see [MDL-89469](https://tracker.moodle.org/browse/MDL-89469)
+- New template `core_form/settings_layout` and AMD module `core_form/settingsnav`, which together render a form beside a navigation rail listing its sections.
+
+  For more information see [MDL-89469](https://tracker.moodle.org/browse/MDL-89469)
+- The required field marker is now an empty `<span class="form-required-marker">` carrying `role="img"` and an `aria-label`, rather than an icon. The visible marker is drawn with CSS generated content so it adds no text to the label column, on which the Behat `form_row` selector matches.
+
+  For more information see [MDL-89469](https://tracker.moodle.org/browse/MDL-89469)
 
 ### core_grades
 
