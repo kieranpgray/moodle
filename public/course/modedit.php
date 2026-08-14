@@ -232,9 +232,27 @@ if ($mform->is_cancelled()) {
     $PAGE->activityheader->disable();
 
     echo $OUTPUT->header();
-    echo $OUTPUT->heading_with_help($pageheading, '', $module->name);
 
-    $mform->display();
+    // When editing, no heading is printed: the page h1 is already the activity name, the
+    // activity's "Settings" tab is highlighted, and the form's own section headings are
+    // the second level, so an intermediate "Edit settings" heading only repeats them.
+    // When adding, the h1 is the course and no activity tab exists yet, so the heading is
+    // the only thing naming what is being created.
+    // Note heading_with_help() is not used: modedit has always passed an empty help
+    // identifier, and core_renderer only renders help when one is given, so it never
+    // showed any.
+    if (!empty($add)) {
+        echo $OUTPUT->heading($pageheading);
+    }
+
+    // Render the form first: that finalises the definition, so the section list below
+    // includes headers added by the module, subplugins and plugin hooks.
+    $formhtml = $mform->render();
+
+    echo $OUTPUT->render_from_template('core_form/settings_layout', [
+        'sections' => $mform->get_section_headers(),
+        'formhtml' => $formhtml,
+    ]);
 
     echo $OUTPUT->footer();
 }

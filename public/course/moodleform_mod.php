@@ -128,6 +128,39 @@ abstract class moodleform_mod extends moodleform {
     }
 
     /**
+     * Opt every activity settings form into the shared settings layout.
+     *
+     * Done here rather than in definition_after_data() because after_definition() is
+     * called unconditionally by the parent constructor and is not overridden by any
+     * module, whereas definition_after_data() can be short circuited: mod_resource
+     * returns from it early when a resource is pending migration, and third party
+     * modules may override it without calling parent.
+     *
+     * @return void
+     */
+    protected function after_definition() {
+        parent::after_definition();
+
+        $mform = $this->_form;
+
+        // Render labels above their fields at all breakpoints rather than in a side column.
+        $this->set_display_vertical();
+
+        // Show each field's help beneath it rather than behind an icon.
+        $this->set_help_display_inline();
+
+        // Sections are navigated via the settings rail rather than expanded and collapsed
+        // in place, so the collapsible behaviour is turned off and every section stays open.
+        $mform->setDisableShortforms(true);
+
+        // When editing, the form sits directly beneath the page's h1 (the activity name)
+        // with no intermediate heading, so its sections are the second level. The add page
+        // still prints a "New Assignment" heading above the form - its h1 is the course -
+        // so there the sections sit a level below that.
+        $mform->set_heading_level(empty($this->_cm) ? 3 : 2);
+    }
+
+    /**
      * Get the current data for the form.
      * @return stdClass|null
      */
@@ -1082,20 +1115,32 @@ abstract class moodleform_mod extends moodleform {
         $mform->addHelpButton('coursecontentnotification', 'coursecontentnotification', 'course');
         $mform->closeHeaderBefore('coursecontentnotification');
 
-        // elements in a row need a group
+        // Elements in a row need a group.
+        //
+        // Note the DOM order is deliberately save-first: MoodleQuickForm_cancel extends
+        // submit, so a cancel button earlier in the markup would become the form's default
+        // action on Enter. The visual order (cancel, save and return, save and display) is
+        // set with the flex order utility classes passed below, which the inline element
+        // template puts on each button's wrapper.
         $buttonarray = array();
 
         // Label for the submit button to return to the course.
         if ($submit2label !== false) {
-            $buttonarray[] = &$mform->createElement('submit', 'submitbutton2', $submit2label);
+            $buttonarray[] = &$mform->createElement(
+                'submit',
+                'submitbutton2',
+                $submit2label,
+                ['class' => 'order-2'],
+                false, // Secondary: only "save and display" reads as the primary action.
+            );
         }
 
         if ($submitlabel !== false) {
-            $buttonarray[] = &$mform->createElement('submit', 'submitbutton', $submitlabel);
+            $buttonarray[] = &$mform->createElement('submit', 'submitbutton', $submitlabel, ['class' => 'order-3']);
         }
 
         if ($cancel) {
-            $buttonarray[] = &$mform->createElement('cancel');
+            $buttonarray[] = &$mform->createElement('cancel', 'cancel', null, ['class' => 'order-1']);
         }
 
         $mform->addGroup($buttonarray, 'buttonar', '', array(' '), false);

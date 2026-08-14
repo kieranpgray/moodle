@@ -65,6 +65,7 @@ class course_edit_form extends moodleform {
         if (!empty($course->id) and !has_capability('moodle/course:changefullname', $coursecontext)) {
             $mform->hardFreeze('fullname');
             $mform->setConstant('fullname', $course->fullname);
+            $mform->set_locked_reason('fullname', get_string('lockednopermission', 'course'));
         }
 
         $mform->addElement('text', 'shortname', get_string('shortnamecourse'),
@@ -75,6 +76,7 @@ class course_edit_form extends moodleform {
         if (!empty($course->id) and !has_capability('moodle/course:changeshortname', $coursecontext)) {
             $mform->hardFreeze('shortname');
             $mform->setConstant('shortname', $course->shortname);
+            $mform->set_locked_reason('shortname', get_string('lockednopermission', 'course'));
         }
 
         // Verify permissions to change course category or keep current.
@@ -198,6 +200,7 @@ class course_edit_form extends moodleform {
         if (!empty($course->id) and !has_capability('moodle/course:changeidnumber', $coursecontext)) {
             $mform->hardFreeze('idnumber');
             $mform->setConstants('idnumber', $course->idnumber);
+            $mform->set_locked_reason('idnumber', get_string('lockednopermission', 'course'));
         }
 
         // Description.
@@ -351,6 +354,8 @@ class course_edit_form extends moodleform {
         $mform->addElement('select', 'maxbytes', get_string('maximumupload'), $choices);
         $mform->addHelpButton('maxbytes', 'maximumupload');
         $mform->setDefault('maxbytes', $courseconfig->maxbytes);
+        // The available sizes are capped by the site's maximum upload size, so say so.
+        $mform->set_field_badges('maxbytes', [get_string('sitesettingbadge', 'course')]);
 
         // PDF font.
         if (!empty($CFG->enablepdfexportfont)) {
@@ -435,14 +440,45 @@ class course_edit_form extends moodleform {
         $hook = new \core_course\hook\after_form_definition($this, $mform);
         di::get(hook\manager::class)->dispatch($hook);
 
+        // Render labels above their fields at all breakpoints rather than in a side column.
+        $this->set_display_vertical();
+
+        // Show each field's help beneath it rather than behind an icon.
+        $this->set_help_display_inline();
+
+        // Sections are navigated via the settings rail rather than expanded and collapsed
+        // in place, so the collapsible behaviour is turned off and every section stays open.
+        $mform->setDisableShortforms(true);
+
+        // When editing, the form sits directly beneath the page's h1 (the course name)
+        // with no intermediate heading, so its sections are the second level. The create
+        // page still prints an "Add a new course" heading above the form - its h1 is the
+        // category - so there the sections sit a level below that.
+        $mform->set_heading_level(empty($course->id) ? 3 : 2);
+
         // When two elements we need a group.
+        // Note the DOM order is deliberately save-first: MoodleQuickForm_cancel extends
+        // submit, so a cancel button earlier in the markup would become the form's default
+        // action on Enter. The visual order (cancel, save and return, save and display) is
+        // set with the flex order utility classes passed below, which the inline element
+        // template puts on each button's wrapper.
         $buttonarray = array();
-        $classarray = array('class' => 'form-submit');
         if (!empty($returnto)) {
-            $buttonarray[] = &$mform->createElement('submit', 'saveandreturn', get_string('savechangesandreturn'), $classarray);
+            $buttonarray[] = &$mform->createElement(
+                'submit',
+                'saveandreturn',
+                get_string('savechangesandreturn'),
+                ['class' => 'form-submit order-2'],
+                false, // Secondary: only "save and display" reads as the primary action.
+            );
         }
-        $buttonarray[] = &$mform->createElement('submit', 'saveanddisplay', get_string('savechangesanddisplay'), $classarray);
-        $buttonarray[] = &$mform->createElement('cancel');
+        $buttonarray[] = &$mform->createElement(
+            'submit',
+            'saveanddisplay',
+            get_string('savechangesanddisplay'),
+            ['class' => 'form-submit order-3'],
+        );
+        $buttonarray[] = &$mform->createElement('cancel', 'cancel', null, ['class' => 'order-1']);
         $mform->addGroup($buttonarray, 'buttonar', '', array(' '), false);
         $mform->closeHeaderBefore('buttonar');
         $mform->set_sticky_footer('buttonar');

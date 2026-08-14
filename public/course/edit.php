@@ -239,8 +239,22 @@ $PAGE->add_body_class('limitedwidth');
 $PAGE->set_heading($fullname);
 
 echo $OUTPUT->header();
-echo $OUTPUT->heading($pagedesc);
+// When editing, no heading is printed: the page h1 is already the course name, the
+// document title says which page this is, and the form's own section headings are the
+// second level, so an intermediate "Edit course settings" heading only repeats the title.
+// When creating, the h1 is the category rather than a course, so the heading still says
+// what is being done.
+if (empty($course->id)) {
+    echo $OUTPUT->heading($pagedesc);
+}
 
-$editform->display();
+// Render the form first: that finalises the definition, so the section list below
+// includes headers added by course formats, custom fields and plugin hooks.
+$formhtml = $editform->render();
+
+echo $OUTPUT->render_from_template('core_form/settings_layout', [
+    'sections' => $editform->get_section_headers(),
+    'formhtml' => $formhtml,
+]);
 
 echo $OUTPUT->footer();
