@@ -65,7 +65,7 @@ class course_edit_form extends moodleform {
         if (!empty($course->id) and !has_capability('moodle/course:changefullname', $coursecontext)) {
             $mform->hardFreeze('fullname');
             $mform->setConstant('fullname', $course->fullname);
-            $mform->set_locked_reason('fullname', get_string('lockednopermission', 'course'));
+            $mform->set_locked_reason('fullname', get_string('lockednopermission', 'form'));
         }
 
         $mform->addElement('text', 'shortname', get_string('shortnamecourse'),
@@ -76,7 +76,7 @@ class course_edit_form extends moodleform {
         if (!empty($course->id) and !has_capability('moodle/course:changeshortname', $coursecontext)) {
             $mform->hardFreeze('shortname');
             $mform->setConstant('shortname', $course->shortname);
-            $mform->set_locked_reason('shortname', get_string('lockednopermission', 'course'));
+            $mform->set_locked_reason('shortname', get_string('lockednopermission', 'form'));
         }
 
         // Verify permissions to change course category or keep current.
@@ -200,7 +200,7 @@ class course_edit_form extends moodleform {
         if (!empty($course->id) and !has_capability('moodle/course:changeidnumber', $coursecontext)) {
             $mform->hardFreeze('idnumber');
             $mform->setConstants('idnumber', $course->idnumber);
-            $mform->set_locked_reason('idnumber', get_string('lockednopermission', 'course'));
+            $mform->set_locked_reason('idnumber', get_string('lockednopermission', 'form'));
         }
 
         // Description.
@@ -355,7 +355,7 @@ class course_edit_form extends moodleform {
         $mform->addHelpButton('maxbytes', 'maximumupload');
         $mform->setDefault('maxbytes', $courseconfig->maxbytes);
         // The available sizes are capped by the site's maximum upload size, so say so.
-        $mform->set_field_badges('maxbytes', [get_string('sitesettingbadge', 'course')]);
+        $mform->set_field_badges('maxbytes', [get_string('sitesettingbadge', 'form')]);
 
         // PDF font.
         if (!empty($CFG->enablepdfexportfont)) {
