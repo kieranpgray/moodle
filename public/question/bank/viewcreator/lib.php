@@ -30,12 +30,17 @@
  * @return string
  */
 function qbank_viewcreator_edit_form_display($question): string {
-    global $DB, $PAGE, $OUTPUT;
+    global $DB, $PAGE;
     $question = question_bank::load_question($question->id);
 
     $versiondata = [];
     $versioninfo = new \core_question\output\question_version_info($question, true);
-    $versiondata['versionnumber'] = $versioninfo->export_for_template($OUTPUT)['versioninfo'];
+    // Ask the page for a renderer rather than using the global $OUTPUT. This callback runs
+    // while the question edit form is being defined, which can be before any output has
+    // started, and until then $OUTPUT is still the bootstrap_renderer stub - passing that
+    // to a renderer_base parameter is a TypeError.
+    $renderer = $PAGE->get_renderer('core');
+    $versiondata['versionnumber'] = $versioninfo->export_for_template($renderer)['versioninfo'];
 
     // Currently the history only display the question versions for just only default category.
     // To display question in the other category.
