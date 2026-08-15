@@ -160,8 +160,8 @@
 
     // Add some padding for the drawer toggle buttons
     #page.drawers {
-        padding-left: 3rem;
-        padding-right: 3rem;
+        padding-left: $page-drawers-padding-x;
+        padding-right: $page-drawers-padding-x;
         .main-inner {
             padding: 1.5rem 0.5rem;
         }

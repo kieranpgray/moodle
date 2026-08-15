@@ -7,17 +7,66 @@ body {
     height: 100%;
 }
 
+// The .stickyfooter element itself is only a positioning layer. It spans the full viewport
+// width so the visible panel inside it can be aligned with the main content area, but it is
+// transparent and does not capture pointer events: the drawers sit underneath it (they have a
+// lower z-index on anchored layouts) and must remain fully visible and clickable.
 .stickyfooter {
     position: fixed;
     right: 0;
     left: 0;
     bottom: 0;
     transform: translateY(100%);
-    transition: transform .5s;
+    transition: transform .5s, padding .2s ease;
     will-change: transform;
     // Sticky footer overlays the main content, but not the page layout.
     z-index: map-get($zindex-levels, 3);
     font-size: calc(#{$font-size-base} * 1.10);
+    pointer-events: none;
+
+    // Restore interaction for whatever the footer contains. Themes that override
+    // core/sticky_footer without the standard wrappers still get a usable footer.
+    > * {
+        pointer-events: auto;
+    }
+
+    // Mirror the horizontal insets of #page.drawers so the visible panel lines up with
+    // .main-inner and is never drawn over the course index or block drawers. Only the
+    // drawers layout has those insets, so layouts without it must keep the full width.
+    @include media-breakpoint-up(md) {
+        .uses-drawers & {
+            padding-left: $page-drawers-padding-x;
+            padding-right: $page-drawers-padding-x;
+        }
+    }
+    // .show-drawer-* only ever appear on #page.drawers, so these are already scoped.
+    @include media-breakpoint-up(lg) {
+        .show-drawer-left & {
+            padding-left: calc(#{$drawer-left-width} + #{$page-drawers-padding-x});
+        }
+        .show-drawer-right & {
+            padding-right: calc(#{$drawer-right-width} + #{$page-drawers-padding-x});
+        }
+    }
+
+    // The wrappers are the visible surface of the sticky footer. They are constrained to the
+    // same box as .main-inner, so the footer stays contained to the page content.
+    .sticky-footer-content-wrapper,
+    .sticky-footer-supplementary-wrapper {
+        pointer-events: auto;
+        width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+        background-color: $white;
+        border-top: $border-width solid $border-color;
+
+        @include media-breakpoint-up(md) {
+            .pagelayout-standard &,
+            body.limitedwidth.uses-drawers & {
+                max-width: $course-content-maxwidth;
+            }
+        }
+    }
 
     .sticky-footer-content-wrapper {
         height: $stickyfooter-height;
@@ -28,38 +77,10 @@ body {
         font-size: $font-size-base;
     }
 
-    // Adjust sticky footer width to the main content area.
     .sticky-footer-content {
         overflow: hidden;
-        @include media-breakpoint-up(md) {
-            .pagelayout-standard &,
-            body.limitedwidth.uses-drawers & {
-                max-width: $course-content-maxwidth;
-            }
-        }
     }
 
-    // Adjust sticky footer width when drawers are open.
-    .sticky-footer-content-wrapper,
-    .sticky-footer-supplementary-wrapper {
-        @include transition(0.2s);
-        @include media-breakpoint-up(lg) {
-            .drawers {
-                padding: 0 3rem;
-            }
-            .show-drawer-left & {
-                margin-left: $drawer-left-width;
-                padding: 0 3rem 0 1rem;
-            }
-            .show-drawer-right & {
-                margin-right: $drawer-right-width;
-                padding: 0 1rem 0 3rem;
-            }
-            .show-drawer-right.show-drawer-left & {
-                padding: 0 1rem;
-            }
-        }
-    }
     fieldset div {
         justify-content: flex-end;
     }
@@ -69,12 +90,6 @@ body {
 
     .hasstickyfooter & {
         transform: translateY(0);
-    }
-}
-
-.sticky-footer-supplementary-wrapper:has(.sticky-footer-supplementary) {
-    + .sticky-footer-content-wrapper {
-        border-top: 1px solid $border-color;
     }
 }
 

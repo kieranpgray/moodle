@@ -23,6 +23,8 @@ $primary-nav-padding-y: ($spacer * 0.25) !default;
 $primary-nav-padding-x: ($spacer * 0.5) !default;
 
 $navbar-height: 60px !default;
+// Horizontal padding of #page.drawers. The sticky footer mirrors it to stay aligned with .main-inner.
+$page-drawers-padding-x: 3rem !default;
 $stickyfooter-height: 4rem !default;
 $stickyfooter-supplementary-height: 2.5rem !default;
 $course-content-maxwidth: 830px !default;
