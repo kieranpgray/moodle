@@ -82,12 +82,18 @@
         scroll-margin-top: calc(#{$navbar-height} + 1rem);
     }
 
-    // The last section keeps clear of the sticky footer, which covers the page rather
-    // than sitting after it. Not sized to give the final sections a full screen of
-    // travel: no document can scroll past its own end, so the rail marks them current
-    // when they are as far up as they will go - see core_form/settingsnav.
+    // A rail link can only anchor its section to the top if the document can still
+    // scroll that far. The last sections - Groups, Tags - are short and sit against the
+    // end of the page, so without this they stop partway up the screen and their links
+    // appear to do nothing.
+    //
+    // Giving the final section a screen's height is what buys that travel: every
+    // earlier section can then reach the top too. min-height rather than padding, so a
+    // section already taller than this is left alone and nothing is added that was not
+    // needed. The sticky footer covers the page rather than sitting after it, so its
+    // height comes off - core publishes it on .hasstickyfooter.
     > .mform > fieldset.fitem:last-of-type {
-        margin-bottom: var(--sticky-footer-total-height, 0px);
+        min-height: calc(100vh - #{$navbar-height} - var(--sticky-footer-total-height, 0px));
     }
 }
 
