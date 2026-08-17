@@ -81,6 +81,14 @@
     fieldset.fitem {
         scroll-margin-top: calc(#{$navbar-height} + 1rem);
     }
+
+    // The last section keeps clear of the sticky footer, which covers the page rather
+    // than sitting after it. Not sized to give the final sections a full screen of
+    // travel: no document can scroll past its own end, so the rail marks them current
+    // when they are as far up as they will go - see core_form/settingsnav.
+    > .mform > fieldset.fitem:last-of-type {
+        margin-bottom: var(--sticky-footer-total-height, 0px);
+    }
 }
 
 .form-settings-nav {

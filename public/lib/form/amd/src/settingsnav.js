@@ -64,28 +64,39 @@ export const init = () => {
         });
     };
 
-    // Track which sections are in view. The observer only reports elements whose
-    // state changed, so the running set is kept here rather than recomputed.
-    const visible = new Set();
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-                visible.add(entry.target.id);
-            } else {
-                visible.delete(entry.target.id);
+    // The current section is the last one whose heading has passed a line near the top
+    // of the viewport. Deliberately not an IntersectionObserver watching a narrow band:
+    // a band can only mark a section that can be scrolled into it, and the final
+    // sections of a form sit against the end of the document, so they would never
+    // qualify however far the page is scrolled.
+    const ACTIVE_LINE = 160;
+
+    const syncActive = () => {
+        let current = sections[0];
+        sections.forEach((section) => {
+            if (section.getBoundingClientRect().top <= ACTIVE_LINE) {
+                current = section;
             }
         });
+        setActive(current.id);
+    };
 
-        const current = sections.find((section) => visible.has(section.id));
-        if (current) {
-            setActive(current.id);
+    // Scroll fires far more often than the rail needs updating, so the work is deferred
+    // to the next frame and coalesced.
+    let pending = false;
+    const onScroll = () => {
+        if (pending) {
+            return;
         }
-    }, {
-        // Bias towards the section occupying the upper part of the viewport.
-        rootMargin: '-15% 0px -75% 0px',
-    });
+        pending = true;
+        window.requestAnimationFrame(() => {
+            pending = false;
+            syncActive();
+        });
+    };
 
-    sections.forEach((section) => observer.observe(section));
+    window.addEventListener('scroll', onScroll, {passive: true});
+    window.addEventListener('resize', onScroll, {passive: true});
 
     nav.addEventListener('click', (event) => {
         const link = event.target.closest(SELECTORS.link);
@@ -110,5 +121,7 @@ export const init = () => {
         window.history.replaceState(null, '', `#${target.id}`);
     });
 
-    setActive(sections[0].id);
+    // Not simply the first section: the page may open part way down, either from a link
+    // carrying a fragment or from the browser restoring a previous scroll position.
+    syncActive();
 };
