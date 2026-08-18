@@ -3,7 +3,7 @@
         height: $navbar-height;
         .nav-link {
             height: $navbar-height;
-            color: $gray-900;
+            color: var(--#{$prefix}gray-900);
             border-top: 3px solid transparent;
         }
     }
@@ -18,6 +18,34 @@
     }
 }
 
+.editmode-switch-form {
+    .form-check.form-switch .form-check-input {
+        background-image: escape-svg(url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='3' fill='#{$gray-600}'/></svg>"));
+        background-color: var(--#{$prefix}gray-400);
+        border: none;
+
+        // The knob is the same grey the track takes in dark mode, which leaves the switch looking like a plain pill.
+        &:not(:checked) {
+            @include dark-mode {
+                background-image: escape-svg(url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='3' fill='#{$gray-100}'/></svg>"));
+            }
+        }
+
+        &:checked {
+            background-image: escape-svg(url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='3' fill='#{$white}'/></svg>"));
+            background-color: var(--#{$prefix}primary);
+            border: none;
+        }
+
+        &:focus {
+            border-color: transparent;
+            box-shadow: none;
+            outline: 2px solid var(--#{$prefix}primary);
+            outline-offset: 1px;
+        }
+    }
+}
+
 .drawer-primary .drawercontent {
     padding: 0;
 
@@ -28,5 +56,24 @@
             border-left: 0;
             border-right: 0;
         }
+    }
+}
+
+.drawer-primary .drawerheader {
+    .drawerheading {
+        min-width: 0;
+    }
+
+    [data-region="site-home-link"] {
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .logo {
+        max-width: 100%;
+        max-height: $navbar-height;
+        width: auto;
+        height: $navbar-height;
+        object-fit: contain;
     }
 }

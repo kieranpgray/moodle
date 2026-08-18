@@ -96,6 +96,7 @@ $card-group-margin: .25rem;
 $focus-ring-opacity: .75 !default;
 $input-border-color: var(--#{$prefix}gray-500) !default;
 $form-check-input-border: var(--#{$prefix}border-width) solid var(--#{$prefix}gray-500) !default;
+$form-switch-color: rgba($black, .45) !default;
 
 // Dropdowns
 $dropdown-link-hover-color: $white;
@@ -103,6 +104,14 @@ $dropdown-link-hover-bg: $primary;
 
 // Popovers
 $popover-max-width: 300px !default;
+
+// Body
+$body-bg: $gray-100 !default;
+
+// Cards
+// These are CSS custom properties so that cards follow the current colour mode, see scss/moodle/dark.scss.
+$card-bg: var(--#{$prefix}white) !default;
+$card-border-color: var(--#{$prefix}gray-200) !default;
 
 // Spacers
 $spacer: 1rem !default;
@@ -140,10 +149,6 @@ $enable-smooth-scroll: not $behatsite !default;
 body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-}
-
-.navbar {
-    box-shadow: 0 2px 4px rgba(0, 0, 0, .08);
 }
 
 // Rounded user pictures

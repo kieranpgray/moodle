@@ -7,10 +7,14 @@
     "update-packages": "node scripts/update-packages.mjs",
     "upgradenote": "node .grunt/upgradenotes.mjs create",
     "pretest": "grunt jsconfig",
-    "test": "jest"
+    "test": "jest",
+    "swizzle": "node scripts/swizzle.mjs"
   },
   "dependencies": {
     "@moodlehq/design-system": "^5.0.0",
+    "@fortawesome/fontawesome-free": "^6.7.2",
+    "@popperjs/core": "^2.11.8",
+    "bootstrap": "^5.3.8",
     "react": "^19.1",
     "react-dom": "^19.1"
   },
@@ -21,6 +25,7 @@
     "@babel/preset-env": "7.16.11",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "@types/bootstrap": "^5.2.10",
     "@types/jest": "^30.0.0",
     "@types/jquery": "^4.0.0",
     "@types/node": "^25.9.1",
@@ -39,6 +44,7 @@
     "cross-env": "^7.0.3",
     "current-git-branch": "^2.0.2",
     "docdash": "^2.0.2",
+    "enquirer": "^2.4.1",
     "esbuild": "^0.25.0",
     "eslint": "^8.56.0",
     "eslint-plugin-jsdoc": "^48.0.4",

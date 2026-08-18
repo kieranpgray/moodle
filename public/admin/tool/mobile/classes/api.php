@@ -211,6 +211,10 @@ class api {
             'tool_mobile_androidappid' => get_config('tool_mobile', 'androidappid'),
             'tool_mobile_setuplink' => clean_param(get_config('tool_mobile', 'setuplink'), PARAM_URL),
             'tool_mobile_qrcodetype' => clean_param(get_config('tool_mobile', 'qrcodetype'), PARAM_INT),
+            'tool_mobile_enabledeeplinkautologin' => clean_param(
+                get_config('tool_mobile', 'enabledeeplinkautologin'),
+                PARAM_BOOL
+            ),
             'supportpage' => $sitesupportavailable ? clean_param($CFG->supportpage, PARAM_URL) : '',
             'supportavailability' => clean_param($CFG->supportavailability, PARAM_INT),
             'showloginform' => (int) get_config('core', 'showloginform'),
@@ -311,17 +315,14 @@ class api {
 
         if (empty($section) or $section == 'gradessettings') {
             require_once($CFG->dirroot . '/user/lib.php');
-            $settings->mygradesurl = user_mygrades_url();
-            // The previous function may return moodle_url instances or plain string URLs.
-            if ($settings->mygradesurl instanceof moodle_url) {
-                $settings->mygradesurl = $settings->mygradesurl->out(false);
-            }
+            $settings->mygradesurl = \core\user::mygrades_url()->out(false);
         }
 
         if (empty($section) or $section == 'mobileapp') {
             $settings->tool_mobile_forcelogout = get_config('tool_mobile', 'forcelogout');
             $settings->tool_mobile_customlangstrings = get_config('tool_mobile', 'customlangstrings');
             $settings->tool_mobile_disabledfeatures = get_config('tool_mobile', 'disabledfeatures');
+            $settings->tool_mobile_showlogoinappheader = clean_param(get_config('tool_mobile', 'showlogoinappheader'), PARAM_BOOL);
             $settings->tool_mobile_filetypeexclusionlist = get_config('tool_mobile', 'filetypeexclusionlist');
             $custommenuitems = get_config('tool_mobile', 'custommenuitems');
             $customusermenuitems = get_config('tool_mobile', 'customusermenuitems');
@@ -593,6 +594,7 @@ class api {
                 'CoreReportBuilderDelegate' => new lang_string('reportbuilder', 'core_reportbuilder'),
                 'NoDelegate_CoreUserSupport' => new lang_string('contactsitesupport', 'admin'),
                 'NoDelegate_GlobalSearch' => new lang_string('globalsearch', 'search'),
+                'NoDelegate_CoreFormatTextShortenText' => new lang_string('shortentext', 'tool_mobile'),
             ],
             "$mainmenu" => [
                 'CoreMainMenuDelegate_CoreSiteHome' => new lang_string('sitehome'),
@@ -627,6 +629,8 @@ class api {
                 'NoDelegate_CoreCourseDownload' => new lang_string('downloadcourse', 'tool_mobile'),
                 'NoDelegate_CoreCoursesDownload' => new lang_string('downloadcourses', 'tool_mobile'),
                 'CoreCourseOptionsDelegate_CoreCourseOverview' => new lang_string('activitiesoverview', 'tool_mobile'),
+                'NoDelegate_CoreCourseModuleNavigation' => new lang_string('modulenavigation', 'tool_mobile'),
+                'NoDelegate_CoreCourseSectionNavigation' => new lang_string('sectionnavigation', 'tool_mobile'),
             ],
             "$participants" => [
                 'CoreUserDelegate_CoreGrades:viewGrades' => new lang_string('grades', 'grades'),

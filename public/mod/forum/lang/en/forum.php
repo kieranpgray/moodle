@@ -460,6 +460,7 @@ $string['namenews'] = 'Announcements';
 $string['namenews_help'] = 'The course announcements forum is a special forum for announcements and is automatically created when a course is created. A course can have only one announcements forum. Only teachers and administrators can post announcements. The "Latest announcements" block will display recent announcements.';
 $string['namesocial'] = 'Social forum';
 $string['nameteacher'] = 'Teacher forum';
+$string['nextdiscussion'] = 'Next discussion';
 $string['nextdiscussiona'] = 'Next discussion: {$a}';
 $string['nextuser'] = 'Save changes and proceed to the next user';
 $string['newforumposts'] = 'New forum posts';
@@ -515,6 +516,7 @@ $string['pindiscussion'] = 'Pin this discussion';
 $string['pinupdated'] = 'The pin option has been updated.';
 $string['posttomygroups'] = 'Post a copy to all groups';
 $string['posttomygroups_help'] = 'Posts a copy of this message to all groups you have access to. Participants in groups you do not have access to will not see this post';
+$string['prevdiscussion'] = 'Previous discussion';
 $string['prevdiscussiona'] = 'Previous discussion: {$a}';
 $string['pluginadministration'] = 'Forum administration';
 $string['pluginname'] = 'Forum';
@@ -800,3 +802,7 @@ $string['tagsdeleted'] = 'Forum tags have been deleted';
 
 // Deprecated since Moodle 5.0.
 $string['re'] = 'Re:';
+
+// Deprecated since Moodle 5.3.
+$string['nonextdiscussion'] = 'No next discussion available';
+$string['noprevdiscussion'] = 'No previous discussion available';

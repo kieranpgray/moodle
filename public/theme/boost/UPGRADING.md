@@ -7,6 +7,53 @@
 - The default UI typeface for Boost has changed from the system-ui font stack to Noto Sans. Noto Sans is now self-hosted under `theme/boost/fonts/` and declared via `@font-face` in `theme/boost/scss/moodle/fonts.scss`. The latin and latin-ext subsets are included (normal and italic, weight 100-900). The `$font-family-sans-serif` Bootstrap variable is now set from the `$mds-font-family-base` MDS token. Child themes that override `$font-family-sans-serif` are unaffected. Child themes that rely on the system-ui fallback behaviour will now render Noto Sans instead.
 
   For more information see [MDL-88412](https://tracker.moodle.org/browse/MDL-88412)
+- The course index drawer now shows a single collapse/expand all toggle button instead of a dropdown menu. The `drawerheadercontent` block in `theme_boost/drawer` has been removed and replaced with a new `drawercontrols` block.
+
+  For more information see [MDL-89050](https://tracker.moodle.org/browse/MDL-89050)
+
+### Deprecated
+
+- AMD modules **must not** depend upon core Bootstrap modules from
+  `theme_boost/bootstrap/*`. Direct loading of Bootstrap submodules
+  is not supported by the Bootstrap project.
+
+  Instead of:
+  ```js
+  import Tooltip from 'theme_boost/bootstrap/tooltip';
+  ```
+
+  You can use either of the following approaches:
+
+  ### For Moodle 5.2 and earlier
+
+  ```js
+  // For Moodle 5.2 and earlier:
+  // This option will be supported until Moodle 7.0 when it will be removed.
+  // You are encouraged to switch to the new approach as soon as possible to
+  // avoid last-minute issues when upgrading to Moodle 7.0.
+  import {Tooltip} from 'theme_boost/index';
+
+  // For Moodle 5.3 and later
+  import {Tooltip} from 'bootstrap';
+  ```
+
+  ### Important note
+
+  The `util` and `dom` helper directories **must** still directly load modules.
+  These modules are _not_ a part of the public Bootstrap API.
+  Use of these modules is at your own risk.
+
+  To use these modules you can use:
+
+  ```js
+  // Moodle 5.2 and earlier:
+  import EventHandler from 'theme_boost/bootstrap/dom/event-handler';
+
+  // Moodle 5.3 and later:
+  import EventHandler from 'bootstrap/dom/event-handler';
+  ```
+
+  For more information see [MDL-88766](https://tracker.moodle.org/browse/MDL-88766)
 
 ## 5.2
 
