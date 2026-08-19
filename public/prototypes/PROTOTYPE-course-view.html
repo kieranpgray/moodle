@@ -100,9 +100,19 @@
     --mds-stroke-weight-sm:1px;
 
     /* ---- local layout (not visual tokens) ---- */
-    --shell-max:1440px; --shell-pad:2.5rem;
+    /* Sized so the section column is exactly 782px with both drawers open at
+       their default widths. The chain, left to right:
+           1542  shell max-width
+           - 80  shell padding      (--shell-pad 2.5rem each side)
+           - 285 course index       (--ci-width)
+           - 315 blocks drawer      (--cb-width)
+           - 80  content padding    (--shell-pad each side of .content-col)
+           = 782 .content
+       Change any of those and the 782 moves with it. */
+    --shell-max:1542px; --shell-pad:2.5rem;
     --nav-h:64px; --footer-h:64px;
-    --ci-width:300px; --ci-min:285px; --ci-max:560px; --cb-width:315px; --btn:40px;
+    /* default open width is the minimum: 285 is where the index starts */
+    --ci-width:285px; --ci-min:285px; --ci-max:560px; --cb-width:315px; --btn:40px;
     --content-max:873px;
   }
 
@@ -2091,8 +2101,8 @@
         <button class="ci-collapseall" id="collapseAll"><i class="fa-solid fa-down-left-and-up-right-to-center"></i> <span id="collapseAllLabel">Collapse all</span></button>
         <div id="sections"></div>
       </div>
-      <div class="resize-handle" id="resizeHandle" tabindex="0" role="separator" aria-orientation="vertical" aria-label="Resize course index (arrow keys)" aria-valuemin="285" aria-valuemax="560" aria-valuenow="300"></div>
-      <div class="width-readout" id="widthReadout">300px</div>
+      <div class="resize-handle" id="resizeHandle" tabindex="0" role="separator" aria-orientation="vertical" aria-label="Resize course index (arrow keys)" aria-valuemin="285" aria-valuemax="560" aria-valuenow="285"></div>
+      <div class="width-readout" id="widthReadout">285px</div>
     </div>
 
     <main class="content-col">
@@ -3493,9 +3503,9 @@ SECTIONS.push({
   (function(){
     var handle = document.getElementById("resizeHandle");
     var readout = document.getElementById("widthReadout");
-    var MIN = 285, MAX = 560, DEFAULT_W = 300;
+    var MIN = 285, MAX = 560, DEFAULT_W = 285;
     var dragging = false, startX = 0, startW = 0, moved = false, lastTap = 0;
-    function ciW(){ return parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ci-width")) || 300; }
+    function ciW(){ return parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ci-width")) || 285; }
     function setW(px){
       px = Math.max(MIN, Math.min(MAX, px));
       document.documentElement.style.setProperty("--ci-width", px + "px");
