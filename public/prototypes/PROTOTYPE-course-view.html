@@ -1533,7 +1533,19 @@
     width:100%; margin:var(--mds-spacing-xs) 2px; border:0;
     border-top:1px solid var(--mds-border-subtle,#dee2e6); opacity:1;
   }
-  .divider-content{ position:absolute; padding:0 var(--mds-spacing-md); background:var(--mds-bg-surface-default); }
+  /* Masks the rule only, not a box behind the button. course.scss:
+         background: linear-gradient(transparent 40%, $divider-stripe-color 40%,
+                                     $divider-stripe-color 60%, transparent 60%);
+     i.e. a stripe across the middle fifth in the surrounding surface colour,
+     transparent above and below, so the <hr> stops short of the pill and
+     nothing paints over the section body. This was a solid white fill, which
+     is what put the white block around the button — white is also the wrong
+     colour here: the divider sits in .sbody, which is --mds-bg-surface-subtle. */
+  .divider-content{
+    position:absolute; padding:0 var(--mds-spacing-md);
+    background:linear-gradient(transparent 40%,
+      var(--mds-bg-surface-subtle) 40%, var(--mds-bg-surface-subtle) 60%, transparent 60%);
+  }
   .btn.add-content{
     position:relative; z-index:1; display:inline-flex; align-items:center; gap:8px;
     border:0; cursor:pointer; font-family:inherit;
