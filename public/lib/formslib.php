@@ -146,6 +146,7 @@ abstract class moodleform {
     protected $_definition_finalized = false;
 
     /** @var bool whether help text is shown inline rather than behind a help icon */
+    protected $_helpdisplayinline = false;
 
     /** @var bool|null stores the validation result of this form or null if not yet validated */
     protected $_validated = null;
@@ -1039,9 +1040,23 @@ abstract class moodleform {
             $this->definition_after_data();
         }
 
+        $this->prepare_inline_help();
+
         $this->_form->display();
     }
 
+    /**
+     * Show each field's help text beneath it instead of behind a help icon.
+     *
+     * Applies to the whole form. The text comes from the same '_help' language strings the
+     * popup uses, so no additional strings are needed, but note they are written for a
+     * popup and some are several paragraphs long.
+     *
+     * @since Moodle 5.3
+     */
+    public function set_help_display_inline(): void {
+        $this->_helpdisplayinline = true;
+    }
 
     /**
      * Return this form's section headers, in the order they are rendered.
@@ -1056,6 +1071,38 @@ abstract class moodleform {
         return $this->_form->get_section_headers();
     }
 
+    /**
+     * Resolve help text for inline display, if this form asked for it.
+     *
+     * Runs after definition_after_data() so that elements added late - by course formats,
+     * custom fields or plugin hooks - are covered too. Does nothing unless the form opted
+     * in, so the cost of formatting help strings is only paid where they are shown.
+     */
+    protected function prepare_inline_help(): void {
+        if (empty($this->_helpdisplayinline)) {
+            return;
+        }
+
+        foreach ($this->_form->_elements as $element) {
+            if (empty($element->_helpidentifier)) {
+                continue;
+            }
+            $help = get_formatted_help_string(
+                $element->_helpidentifier,
+                $element->_helpcomponent,
+                true,
+                $element->_helpargs ?? null
+            );
+            if (empty($help->text)) {
+                continue;
+            }
+            $element->_helptext = $help->text;
+            // The help button is deliberately left in place. Only templates that render
+            // helptext suppress it (see core_form/element-template); element types with
+            // their own standalone template keep the popup, so no element ends up with
+            // its help removed and nothing put in its place.
+        }
+    }
 
     /**
      * Renders the html form (same as display, but returns the result).
@@ -2465,8 +2512,9 @@ class MoodleQuickForm extends HTML_QuickForm_DHTMLRulesTableless {
         global $OUTPUT;
         if ($element = $this->find_element($elementname, $suppresscheck)) {
             $element->_helpbutton = $OUTPUT->help_icon($identifier, $component, $linktext, $a);
-            // Keep what the help refers to, not just the rendered popup trigger, so a
-            // form can reach the underlying help string as well as the popup.
+            // Keep what the help refers to, not just the rendered popup trigger, so forms
+            // opting into inline help can render the text itself. See
+            // moodleform::set_help_display_inline().
             $element->_helpidentifier = $identifier;
             $element->_helpcomponent = $component;
             $element->_helpargs = $a;

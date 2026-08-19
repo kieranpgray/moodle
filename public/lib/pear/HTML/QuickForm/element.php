@@ -88,6 +88,7 @@ class HTML_QuickForm_element extends HTML_Common
      * Help text rendered beneath the element, when the form displays help inline.
      * @var string
      */
+    var $_helptext = '';
 
     /**
      * Short badge labels shown beside the element's label.

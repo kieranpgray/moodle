@@ -443,6 +443,9 @@ class course_edit_form extends moodleform {
         // Render labels above their fields at all breakpoints rather than in a side column.
         $this->set_display_vertical();
 
+        // Show each field's help beneath it rather than behind an icon.
+        $this->set_help_display_inline();
+
         // Sections are navigated via the settings rail rather than expanded and collapsed
         // in place, so the collapsible behaviour is turned off and every section stays open.
         $mform->setDisableShortforms(true);

@@ -62,6 +62,8 @@ trait templatable_form_element {
         $context['badges'] = !empty($this->_badges) ? array_values($this->_badges) : [];
         $context['lockedreason'] = !empty($this->_lockedreason) ? $this->_lockedreason : '';
 
+        // Populated only on forms that called moodleform::set_help_display_inline().
+        $context['helptext'] = !empty($this->_helptext) ? $this->_helptext : '';
 
         // Special wierd named property.
         $context['frozen'] = !empty($this->_flagFrozen);
