@@ -1303,38 +1303,27 @@
        padding 16px
        "Show more" is text/link/primary/default #0f6cbf.
      Was: 13px text, 8px radius, #e9ecef border, 10/12px padding. */
+  /* the wrapper owns the box; this row is just the lock line inside it */
   .arestrict{
-    display:flex; align-items:flex-start; gap:var(--mds-spacing-xs);
-    margin-top:var(--mds-spacing-sm); padding:var(--mds-spacing-md);
-    background:var(--mds-bg-surface-subtle); border:1px solid var(--mds-border-default);
-    border-radius:var(--mds-border-radius-xl);
+    display:flex; align-items:flex-start; gap:var(--mds-spacing-sm);
+    background:none; border:0; padding:0; margin:0;
     font-size:var(--mds-font-size-body); line-height:24px; color:var(--mds-text-subtle);
   }
   .arestrict > i{ font-size:18px; flex:0 0 auto; color:var(--mds-text-subtle); line-height:24px; }
-  .arestrict .txt{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .arestrict .txt{ flex:1 1 auto; min-width:0; }
   /* core emits <strong> in its condition strings; <b> is here for the older
      demo data that used it */
   .arestrict .txt b, .arestrict .txt strong{ font-weight:var(--mds-font-weight-semibold,600); color:var(--mds-text-default); }
-  /* a real button: this expands and collapses content, so it has to be
-     reachable and it has to say which state it is in. It was a <span>,
-     which no keyboard could get to at all. */
-  .arestrict .showmore{
-    flex:0 0 auto; border:0; background:none; padding:0 0 0 var(--mds-spacing-xs);
-    color:var(--mds-text-link-default,#0f6cbf); cursor:pointer; white-space:nowrap;
-    font-family:inherit; font-size:inherit; line-height:24px;
-    display:inline-flex; align-items:center; gap:6px;
-  }
-  .arestrict .showmore:hover{ text-decoration:underline; }
-  .arestrict .showmore:focus-visible{ outline:2px solid var(--mds-focus-default,#0f6cbf); outline-offset:2px; border-radius:4px; }
   /* Edit affordance, from the card states 4501:46419/46446 where the
      Restrictions instance shows an "Edit restrictions" row. Hidden in the
      standalone 46378, which is the view-mode variant — so it follows edit
      mode, like every other editing affordance on the card. */
   .arestrict-edit{
-    display:none; margin-top:var(--mds-spacing-sm); padding-top:var(--mds-spacing-sm);
+    display:block; margin-top:var(--mds-spacing-sm); padding-top:var(--mds-spacing-sm);
     border-top:1px solid var(--mds-border-subtle);
   }
   body.edit-on .acard .arestrict-wrap .arestrict-edit{ display:block; }
+  .arestrict-edit button{ font-weight:var(--mds-font-weight-medium); color:var(--mds-text-default); }
   .arestrict-edit button{
     border:0; background:none; padding:2px 4px; cursor:pointer; font-family:inherit;
     font-size:var(--mds-font-size-body); color:var(--mds-text-subtle);
@@ -1471,7 +1460,10 @@
      centred in it (17 + 3.5 + 3.5 = 24). The slot width is what keeps the
      label at x=56 per 4501:46473, so it has to stay 24 even though the
      artwork is 17. Colour comes from .atype's --p-<purpose>, unchanged. */
-  .atype .modicon{ flex:0 0 17px; width:17px; height:17px; margin:0 3.5px; }
+  /* 32px, filling its container, as core's .activityiconcontainer.smaller
+     (52px - 20px) does. The 17px here was the settings prototype's size, set
+     when the icon sat on its own row above the title. */
+  .atype .modicon{ flex:0 0 32px; width:32px; height:32px; margin:0; }
   /* .act-icon is already a centring flex box, so the glyph needs no offset */
   .act-icon .modicon{ display:block; }
   .atitle{
@@ -1526,9 +1518,52 @@
     font-weight:var(--mds-font-weight-medium); white-space:nowrap;
   }
   .groupmode-information .groupicon{ width:18px; height:15px; flex:0 0 auto; }
-  /* core drops group mode onto its own full-width row below sm rather than
-     shrink it; this card has no such row, so the label is what yields */
-  @media (max-width:640px){ .groupmode-information .groupmode-icon-info{ display:none; } }
+  /* course.scss hides the label at desktop and brings it back only below sm:
+         .groupmode-icon-info { display: none; }
+         @include media-breakpoint-down(sm) { .groupmode-icon-info { display: inline } }
+     so this is an icon on a normal screen and icon + words on a phone. */
+  .groupmode-information .groupmode-icon-info{ display:none; }
+  @media (max-width:575.98px){ .groupmode-information .groupmode-icon-info{ display:inline; } }
+
+  /* core.scss: hidden until the parent is hovered or focused. Carried by the
+     "no groups" trigger only, via autohide in groupmode.php. */
+  .v-parent-focus{ opacity:0; visibility:hidden; }
+  .acard:hover .v-parent-focus, .acard:focus-within .v-parent-focus{ opacity:1; visibility:visible; }
+  @media (max-width:575.98px){ .v-parent-focus{ opacity:1; visibility:visible; } }
+
+  button.groupmode-information{
+    border:0; background:none; padding:4px; border-radius:var(--mds-border-radius-sm);
+    cursor:pointer; font:inherit;
+  }
+  button.groupmode-information:hover{ background:var(--mds-bg-surface-strong); color:var(--mds-text-default); }
+  button.groupmode-information:focus-visible{ outline:2px solid var(--mds-focus-default,#0f6cbf); outline-offset:1px; }
+
+  /* ICON + NAME ROW. Core sizes the container 32px (.activityiconcontainer
+     .smaller = 52 - 20) and sets align-self-start, so a long name wraps beside
+     the icon rather than under it. */
+  .acard-top{ display:flex; align-items:flex-start; gap:var(--mds-spacing-sm); }
+  .acard-namearea{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; }
+  .acard-actions{ margin-left:auto; }
+  .atype.activity-icon{
+    flex:0 0 auto; width:32px; height:32px; display:flex; align-items:center;
+    justify-content:center; align-self:flex-start;
+  }
+
+
+  /* the action menu, last in the cluster */
+  .acard-menu{
+    flex:0 0 auto; width:32px; height:32px; border:0; background:none; cursor:pointer;
+    border-radius:var(--mds-border-radius-sm); color:var(--mds-text-subtle);
+    display:flex; align-items:center; justify-content:center; font-size:15px;
+  }
+  .acard-menu:hover{ background:var(--mds-bg-surface-strong); color:var(--mds-text-default); }
+  .acard-menu:focus-visible{ outline:2px solid var(--mds-focus-default,#0f6cbf); outline-offset:1px; }
+
+  /* editing turns the visibility pill into the dropdown trigger; same pill */
+  button.badge.dropdown-toggle{ border:0; cursor:pointer; font:inherit; font-size:var(--mds-font-size-paragraph-small); }
+  button.badge.dropdown-toggle:hover{ background:var(--mds-bg-surface-strong); color:var(--mds-text-default); }
+  button.badge.dropdown-toggle:focus-visible{ outline:2px solid var(--mds-focus-default,#0f6cbf); outline-offset:1px; }
+  .activity-badges .bchev{ font-size:9px; margin-left:2px; }
 
   .titlebtn{
     display:inline-flex; align-items:center; gap:8px;
@@ -1987,6 +2022,7 @@
         <div class="nav-right-group">
           <div class="search"><i class="fa-solid fa-magnifying-glass"></i><span>Search&hellip;</span></div>
           <button class="search-icon-btn" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+          <div class="editmode"><span class="label">Edit mode</span><button class="switch" id="editSwitch" aria-pressed="false" aria-label="Edit mode"></button></div>
           <div class="nav-icons"><button class="icon-btn" aria-label="Notifications"><i class="fa-regular fa-bell"></i></button><button class="icon-btn" aria-label="Messages"><i class="fa-regular fa-comment"></i></button></div>
         </div>
         <div class="nav-divider"></div>
@@ -2321,203 +2357,6 @@ SECTIONS.push({
   ]
 });
 
-SECTIONS.push({
-  title:"Cell Structure &amp; Function",
-  summary:"Prokaryotic vs eukaryotic cells, organelles, and the endomembrane system. The cell as the basic unit of life.",
-  items:[
-    /* FORMAT 4 — a pair with MIXED tense: open in the past, closing in the
-       future. This is the live-right-now state and the most common one on
-       a real course page, and it is the case that makes clear the tense is
-       chosen per date rather than per activity. */
-    { mod:"lesson", name:"Interactive: A Tour of the Cell",
-      desc:"A self-paced lesson. Move through the pages using the navigation buttons.",
-      dates:["Opened: Monday, 20 July 2026, 9:00 AM","Closes: Friday, 31 July 2026, 5:00 PM"], done:true },
-    /* h5pactivity has no dates class */
-    { mod:"h5pactivity", name:"Interactive: Identify the organelle", desc:"A short interactive multiple-choice activity.",
-      foot:{icon:"fa-solid fa-circle-check", cls:"done", text:"Done. Best attempt 8/10."}, grade:"80%", done:true },
-    { mod:"folder", name:"Lab resources: Microscopy",
-      desc:"Slides, worksheets and a microscopy checklist for this week's lab." }
-  ]
-});
-
-SECTIONS.push({
-  title:"Membranes &amp; Transport",
-  summary:"The fluid-mosaic membrane, diffusion, osmosis, and active vs passive transport.",
-  items:[
-    { mod:"page", name:"Reading: The Fluid Mosaic Model", desc:"Core reading for Topic 4.", done:true },
-    { sub:{ title:"Transport mechanisms (nested)", items:[
-        { mod:"page", name:"Passive transport (diffusion &amp; osmosis)", desc:"Nested reading." },
-        { mod:"page", name:"Active transport &amp; bulk transport", desc:"Nested reading." }
-      ]}}
-  ]
-});
-
-SECTIONS.push({
-  title:"Enzymes &amp; Metabolism",
-  summary:"Energy, ATP, activation energy and how enzymes catalyse the reactions of life.",
-  items:[
-    { mod:"page", name:"Reading: How enzymes work", desc:"Core reading for Topic 5." },
-    /* FORMAT 5 — assign's own pair. The second label is "Due:", not
-       "Closes:", because mod_assign supplies its own strings; a submission
-       deadline is not the same idea as an activity closing, and core is
-       careful about that. Shown in the past form. */
-    { mod:"assign", name:"Assignment 1: Enzyme lab report",
-      desc:"Submit your write-up of the catalase enzyme practical. Include a hypothesis, method, results table and discussion. Online text and a file attachment are both accepted.",
-      dates:["Opened: Monday, 13 July 2026, 9:00 AM","Due: Thursday, 23 July 2026, 5:00 PM"],
-      foot:{icon:"fa-solid fa-circle-check", cls:"done", text:"Done. Submitted 22 July 2026 — graded."}, grade:"78 / 100", done:true }
-  ]
-});
-
-SECTIONS.push({
-  title:"Cellular Respiration",
-  summary:"Glycolysis, the Krebs cycle and oxidative phosphorylation — how cells harvest energy from glucose.",
-  items:[
-    { mod:"page", name:"Reading: From glucose to ATP", desc:"Core reading for Topic 6." },
-    /* FORMAT 7 — four dates in two named groups. Only mod_workshop gets
-       here, and it is the case that motivates the grouping in 4501:47700:
-       flat, core's own strings would give four badges reading "Submissions
-       opened:", "Submissions close:", "Assessments open:", "Assessments
-       close:" — the phase repeated in every one. Hoisting it into a group
-       label lets the badges use the short forms.
-       Note the tense still varies inside a group: submissions opened, and
-       close on Friday. */
-    { mod:"workshop", name:"Peer review: Respiration pathway diagrams",
-      desc:"Submit your annotated diagram of glycolysis and the Krebs cycle, then assess two classmates' diagrams against the rubric.",
-      dategroups:[
-        { label:"Submissions:", dates:[
-            "Opened: Monday, 20 July 2026, 9:00 AM",
-            "Closes: Friday, 31 July 2026, 5:00 PM"] },
-        { label:"Assessments:", dates:[
-            "Opens: Saturday, 1 August 2026, 9:00 AM",
-            "Closes: Friday, 7 August 2026, 5:00 PM"] }
-      ] },
-    { sub:{ title:"Respiration pathways (nested)", items:[
-        { mod:"page", name:"Glycolysis explained", desc:"Test page 1" },
-        { mod:"page", name:"The Krebs cycle", desc:"Description shown on the course page, to show the altcontent surface." },
-        { mod:"forum", name:"Respiration Q&amp;A", desc:"Test forum 1" },
-        { block:'<p>Inline label inside a subsection — renders without its own card in non-editing view.</p>' }
-      ]}},
-    { sub:{ title:"Empty subsection (no activities)", items:[] }}
-  ]
-});
-
-/* ---------------------------------------------------------------------------
-   SECTIONS 7-12 — THE CHIP HALF. Counts and properties only: chapters,
-   replies, entries, pages, files, duration, attempts, weighting. No dates.
-
-   Chips are NOT a core feature. Core renders the activity dates and, for a
-   few modules, an "activitybadge" (mod_book's chapter count, mod_resource's
-   file type and size); everything else here is proposed. Keeping them apart
-   from the dates is what makes that distinction legible — the date badges
-   are grounded in \core\activity_dates, these are an idea to react to.
-
-   Three date-shaped chips were removed from these sections ("Due 23 Jul
-   2026", "Due in 3 days · 30 Jul 2026", "10 Jul – 15 Jul 2026"). They used
-   a different vocabulary from core's ("Due in 3 days", a date RANGE in one
-   badge), so a reviewer comparing halves would have been comparing the real
-   date model against an invented one.
-   ------------------------------------------------------------------------ */
-
-SECTIONS.push({
-  title:"Photosynthesis",
-  summary:"Light-dependent reactions and the Calvin cycle — how producers capture light energy.",
-  items:[
-    { mod:"wiki", name:"Class Wiki: Photosynthesis notes", desc:"Build a shared set of notes on photosynthesis. Everyone can edit.",
-      chips:[{cls:"meta", icon:"fa-solid fa-file-lines", text:"9 pages"}] },
-    { mod:"forum", name:"Discussion: C3, C4 and CAM plants",
-      desc:"Why did different photosynthetic strategies evolve? Share an example plant.",
-      chips:[{cls:"meta", icon:"fa-solid fa-reply", text:"7 replies"}], manual:true },
-    /* IMPLICIT STEALTH lives here. Both activities below are set to "show" —
-       neither has a stealth setting on it — but the section is hidden, so
-       cm_info::is_stealth() is true for both and core offers them the stealth
-       wording rather than "Show on course page". This is the half of the
-       feature with no switch behind it, and the half people trip over. */
-    { sub:{ title:"Hidden subsection (teacher only)", hidden:true, items:[
-        { mod:"page", name:"Draft notes (inside hidden subsection)", desc:"Test page 3" },
-        { mod:"url", name:"Marking rubric (linked from the assignment brief)",
-          desc:"Set to “show”, but the section is hidden — so it is off the course page and reachable only by the link in the brief. This is stealth without anyone setting stealth." }
-      ]}},
-    { sub:{ title:"Restricted contents (nested)", items:[
-        { mod:"page", name:"Unlocks in 30 days (greyed out with info)", desc:"Test page 4",
-          dimmed:true, restrict:"Not available unless: It is on or after <strong>26 August 2026</strong>" },
-        { mod:"page", name:"Completely hidden until unlocked", desc:"Test page 5",
-          teacheronly:true, restrict:"Not available (hidden) unless: It is on or after <strong>26 August 2026</strong>" }
-      ]}}
-  ]
-});
-
-SECTIONS.push({
-  title:"Cell Division: Mitosis &amp; Meiosis",
-  summary:"The cell cycle, mitosis, meiosis, and the origin of genetic variation.",
-  items:[
-    { mod:"data", name:"Database: Cell-cycle stage catalogue",
-      desc:"Add a card for each stage of the cell cycle with a description and what happens to the DNA.",
-      chips:[{cls:"meta", icon:"fa-solid fa-table-cells", text:"23 entries"}] },
-    { mod:"assign", name:"Assignment 2: Mitosis vs Meiosis diagram",
-      desc:"Upload a labelled diagram (image or PDF) comparing mitosis and meiosis.",
-      chips:[{cls:"meta", icon:"fa-regular fa-image", text:"Image or PDF"},{cls:"meta", icon:"fa-solid fa-percent", text:"Worth 15%"}],
-      foot:{icon:"fa-solid fa-circle-exclamation", cls:"todo", text:"No submission yet."} }
-  ]
-});
-
-SECTIONS.push({
-  title:"Genetics &amp; Mendelian Inheritance",
-  summary:"Mendel's laws, Punnett squares, dominance, and patterns of inheritance.",
-  items:[
-    { mod:"url", name:"Simulation: Natural selection &amp; genetics (PhET)",
-      desc:"Interactive simulation — experiment with alleles and selection pressures." },
-    { mod:"lesson", name:"Interactive: Monohybrid crosses", desc:"Work through a monohybrid cross step by step.",
-      chips:[{cls:"meta", icon:"fa-solid fa-layer-group", text:"9 pages"}] },
-    { mod:"quiz", name:"Quiz 2: Mendelian genetics", desc:"Apply Punnett squares and Mendel's laws.",
-      restrict:"Not available unless: The activity <strong>Interactive: Monohybrid crosses</strong> is marked complete",
-      chips:[{cls:"meta", icon:"fa-regular fa-clock", text:"20 min"},{cls:"meta", icon:"fa-solid fa-rotate-right", text:"1 attempt"}],
-      foot:{icon:"fa-solid fa-circle-xmark", cls:"missed", text:"Closed 15 July 2026 — no attempt submitted."} }
-  ]
-});
-
-SECTIONS.push({
-  title:"DNA &amp; Protein Synthesis",
-  summary:"DNA structure, replication, transcription and translation — the central dogma.",
-  items:[
-    { mod:"book", name:"Textbook: DNA &amp; Protein Synthesis", desc:"The central dogma, chapter by chapter.",
-      chips:[{cls:"meta", icon:"fa-solid fa-list-ol", text:"6 chapters"}] },
-    { mod:"page", name:"Reference: The genetic code", desc:"Codon reference." }
-  ]
-});
-
-SECTIONS.push({
-  title:"Evolution &amp; Natural Selection",
-  summary:"Descent with modification, evidence for evolution, and the mechanisms of change.",
-  items:[
-    { mod:"workshop", name:"Peer review: Evolution essay",
-      desc:"Write a 500-word essay: “Describe two lines of evidence for evolution by natural selection.” You will then peer-assess two classmates' essays against a rubric.",
-      /* several conditions — this is the card that exercises the truncation
-         and the Show more control in 4501:46378 */
-      restrict:"Not available unless: The <strong>previous activity with completion</strong> is marked complete, You achieve a score within a certain range in <strong>Quiz 2: Mendelian genetics</strong>, and You belong to <strong>Lab Group A</strong>",
-      chips:[{cls:"meta", icon:"fa-solid fa-diagram-predecessor", text:"Submission phase"}],
-      foot:{icon:"fa-solid fa-circle-exclamation", cls:"todo", text:"Submission phase open — you have not submitted."} },
-    { mod:"forum", name:"Debate: Is the peppered moth the best example of natural selection?",
-      desc:"Take a side and back it with evidence.",
-      chips:[{cls:"meta", icon:"fa-solid fa-reply", text:"18 replies"}] }
-  ]
-});
-
-SECTIONS.push({
-  title:"Ecology &amp; Ecosystems",
-  summary:"Populations, communities, energy flow, biogeochemical cycles and biodiversity.",
-  items:[
-    { mod:"data", name:"Database: Local species catalogue",
-      desc:"Contribute a species you have observed locally: common name, trophic level and a note.",
-      chips:[{cls:"meta", icon:"fa-solid fa-table-cells", text:"41 entries"}] },
-    { mod:"choice", name:"Vote: Field-trip destination", desc:"Where should our ecology field trip go?" },
-    { mod:"assign", name:"Capstone: Ecosystem case study",
-      desc:"Choose a local ecosystem and analyse its energy flow, key species interactions and one human impact. 1000 words plus a food-web diagram.",
-      restrict:"Not available unless: You achieve higher than a certain score in <strong>Assignment 2: Mitosis vs Meiosis diagram</strong>",
-      chips:[{cls:"meta", icon:"fa-solid fa-percent", text:"Worth 30%"},{cls:"meta", icon:"fa-solid fa-file-word", text:"1000 words"}] },
-    { mod:"feedback", name:"End-of-course feedback", desc:"Your anonymous feedback helps improve Biology 101.",
-      chips:[{cls:"meta", icon:"fa-solid fa-user-secret", text:"Anonymous"}] }
-  ]
-});
 </script>
 
 <script>
@@ -2888,26 +2727,54 @@ SECTIONS.push({
      prototype substitutes Font Awesome for these two and says so; there is
      no reason to inherit the substitution here.
      ============================================================ */
-  function visBadgeHTML(kind){
+  function visBadgeHTML(kind, editing){
     var o = kind === "stealth"
       ? { icon:"fa-solid fa-eye-low-vision", text:"Available but not shown on course page" }
       : { icon:"fa-solid fa-eye-slash",      text:"Hidden from students" };
+    /* Same container and same pill in both modes — the only difference core
+       makes is that the editing branch turns the pill into the dropdown's
+       trigger:
+           {{^isInteractive}} <span class="badge rounded-pill">
+           {{#isInteractive}} badge rounded-pill bg-secondary text-dark
+                              dropdown-toggle border-0
+       so it keeps its place in the layout and simply gains a chevron. */
+    var inner = '<i class="' + o.icon + '" aria-hidden="true"></i>' + esc(o.text);
     return '<div class="activity-badges" data-region="visibility">'
-      + '<span class="badge rounded-pill">'
-        + '<i class="' + o.icon + '" aria-hidden="true"></i>' + esc(o.text)
-      + '</span></div>';
+      + (editing
+          ? '<button type="button" class="badge rounded-pill dropdown-toggle"'
+            + ' aria-haspopup="menu" aria-expanded="false">' + inner
+            + '<i class="fa-solid fa-chevron-down bchev" aria-hidden="true"></i></button>'
+          : '<span class="badge rounded-pill">' + inner + '</span>')
+      + '</div>';
   }
   var GRP_INFO = {
     separate: { label:"Separate groups", svg:'<svg class="groupicon" width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M3.99937 3.99875C5.1036 3.99875 5.99875 3.1036 5.99875 1.99937C5.99875 0.89515 5.1036 0 3.99937 0C2.89515 0 2 0.89515 2 1.99937C2 3.1036 2.89515 3.99875 3.99937 3.99875Z" fill="currentColor"/><path d="M11.9997 9.99937C11.9997 11.1036 11.1046 11.9987 10.0003 11.9987C8.89613 11.9987 8.00098 11.1036 8.00098 9.99937C8.00098 8.89515 8.89613 8 10.0003 8C11.1046 8 11.9997 8.89515 11.9997 9.99937Z" fill="currentColor"/><path d="M6 15.4456C6 13.7887 7.34315 12.4456 9 12.4456H11C12.6569 12.4456 14 13.7887 14 15.4456V15.5C14 15.7761 13.7761 16 13.5 16H6.5C6.22386 16 6 15.7761 6 15.5V15.4456Z" fill="currentColor"/><path d="M0 7.44556C0 5.7887 1.34315 4.44556 3 4.44556H5C6.65685 4.44556 8 5.7887 8 7.44556V7.5C8 7.77614 7.77614 8 7.5 8L0.5 8C0.223858 8 0 7.77614 0 7.5V7.44556Z" fill="currentColor"/><path d="M15.9994 3.99875C17.1036 3.99875 17.9987 3.1036 17.9987 1.99937C17.9987 0.89515 17.1036 0 15.9994 0C14.8951 0 14 0.89515 14 1.99937C14 3.1036 14.8951 3.99875 15.9994 3.99875Z" fill="currentColor"/><path d="M12 7.44556C12 5.7887 13.3431 4.44556 15 4.44556H16.9993C18.6561 4.44556 19.9993 5.7887 19.9993 7.44556V7.5C19.9993 7.77614 19.7754 8 19.4993 8H12.5C12.2239 8 12 7.77614 12 7.5V7.44556Z" fill="currentColor"/></svg>' },
-    visible:  { label:"Visible groups",  svg:'<svg class="groupicon" width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M4.5 0C5.375 0 6.1875 0.5 6.65625 1.25C7.09375 2.03125 7.09375 3 6.65625 3.75C6.1875 4.53125 5.375 5 4.5 5C3.59375 5 2.78125 4.53125 2.3125 3.75C1.875 3 1.875 2.03125 2.3125 1.25C2.78125 0.5 3.59375 0 4.5 0ZM16 0C16.875 0 17.6875 0.5 18.1562 1.25C18.5938 2.03125 18.5938 3 18.1562 3.75C17.6875 4.53125 16.875 5 16 5C15.0938 5 14.2812 4.53125 13.8125 3.75C13.375 3 13.375 2.03125 13.8125 1.25C14.2812 0.5 15.0938 0 16 0ZM0 9.34375C0 7.5 1.46875 6 3.3125 6H4.65625C5.15625 6 5.625 6.125 6.0625 6.3125C6 6.53125 6 6.78125 6 7C6 8.21875 6.5 9.28125 7.34375 10C7.34375 10 7.34375 10 7.3125 10H0.65625C0.28125 10 0 9.71875 0 9.34375ZM12.6562 10H12.625C13.4688 9.28125 13.9688 8.21875 13.9688 7C13.9688 6.78125 13.9688 6.53125 13.9375 6.3125C14.3438 6.125 14.8125 6 15.3125 6H16.6562C18.5 6 20 7.5 20 9.34375C20 9.71875 19.6875 10 19.3125 10H12.6562ZM7 7C7 5.9375 7.5625 4.96875 8.5 4.40625C9.40625 3.875 10.5625 3.875 11.5 4.40625C12.4062 4.96875 13 5.9375 13 7C13 8.09375 12.4062 9.0625 11.5 9.625C10.5625 10.1562 9.40625 10.1562 8.5 9.625C7.5625 9.0625 7 8.09375 7 7ZM4 15.1875C4 12.875 5.84375 11 8.15625 11H11.8125C14.125 11 16 12.875 16 15.1875C16 15.625 15.625 16 15.1562 16H4.8125C4.375 16 4 15.6562 4 15.1875Z" fill="currentColor"/></svg>' }
+    visible:  { label:"Visible groups",  svg:'<svg class="groupicon" width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M4.5 0C5.375 0 6.1875 0.5 6.65625 1.25C7.09375 2.03125 7.09375 3 6.65625 3.75C6.1875 4.53125 5.375 5 4.5 5C3.59375 5 2.78125 4.53125 2.3125 3.75C1.875 3 1.875 2.03125 2.3125 1.25C2.78125 0.5 3.59375 0 4.5 0ZM16 0C16.875 0 17.6875 0.5 18.1562 1.25C18.5938 2.03125 18.5938 3 18.1562 3.75C17.6875 4.53125 16.875 5 16 5C15.0938 5 14.2812 4.53125 13.8125 3.75C13.375 3 13.375 2.03125 13.8125 1.25C14.2812 0.5 15.0938 0 16 0ZM0 9.34375C0 7.5 1.46875 6 3.3125 6H4.65625C5.15625 6 5.625 6.125 6.0625 6.3125C6 6.53125 6 6.78125 6 7C6 8.21875 6.5 9.28125 7.34375 10C7.34375 10 7.34375 10 7.3125 10H0.65625C0.28125 10 0 9.71875 0 9.34375ZM12.6562 10H12.625C13.4688 9.28125 13.9688 8.21875 13.9688 7C13.9688 6.78125 13.9688 6.53125 13.9375 6.3125C14.3438 6.125 14.8125 6 15.3125 6H16.6562C18.5 6 20 7.5 20 9.34375C20 9.71875 19.6875 10 19.3125 10H12.6562ZM7 7C7 5.9375 7.5625 4.96875 8.5 4.40625C9.40625 3.875 10.5625 3.875 11.5 4.40625C12.4062 4.96875 13 5.9375 13 7C13 8.09375 12.4062 9.0625 11.5 9.625C10.5625 10.1562 9.40625 10.1562 8.5 9.625C7.5625 9.0625 7 8.09375 7 7ZM4 15.1875C4 12.875 5.84375 11 8.15625 11H11.8125C14.125 11 16 12.875 16 15.1875C16 15.625 15.625 16 15.1562 16H4.8125C4.375 16 4 15.6562 4 15.1875Z" fill="currentColor"/></svg>' },
+    none:     { label:"No groups",      svg:'<svg class="groupicon" width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M 1.2410829,0.19189453 2.4527494,1.1271248 C 2.8877066,0.47246361 3.6644158,0.00484849 4.5343302,0.00484849 c 1.3670084,0 2.4854697,1.12227631 2.4854697,2.49394731 0,0.6546611 -0.2485469,1.2469736 -0.6524357,1.6834144 L 7.610099,5.1797891 C 8.16928,4.4627793 9.0081756,3.9951642 10.002364,3.9951642 c 1.646573,0 2.982563,1.3404966 2.982563,2.9927367 0,0.7170598 -0.248546,1.371671 -0.683503,1.9015849 l 0.807777,0.5923624 c 0.528113,-0.6858354 0.869914,-1.5274929 0.869914,-2.4939473 0,-0.2182703 -0.03102,-0.4676651 -0.06213,-0.6858355 0.403938,-0.187046 0.869914,-0.3117435 1.367008,-0.3117435 h 1.335891 c 1.833082,0 3.324365,1.4963685 3.324365,3.3357045 0,0.3740921 -0.310684,0.6546107 -0.683504,0.6546107 h -5.530171 l 5.902991,4.6761509 c 0.341703,0.249395 0.403939,0.71696 0.124273,1.028803 -0.248547,0.342868 -0.714522,0.405217 -1.025305,0.124697 L 0.34010009,1.3453451 C -0.001652,1.0959504 -0.06378873,0.62833531 0.2158266,0.3165919 0.46437358,-0.02632585 0.93039917,-0.08867453 1.2410829,0.19189453 Z M 3.3537321,5.9903219 h 0.4660257 l 2.267991,1.8081118 C 6.2741591,8.6713153 6.7091163,9.4194995 7.3615521,9.9806371 H 7.3304836 0.71292056 c -0.37282047,0 -0.65243581,-0.2805186 -0.65243581,-0.6546107 0,-1.839336 1.46021355,-3.3357045 3.29324735,-3.3357045 z M 8.16928,10.978216 h 1.957356 l 5.7476,4.551454 c -0.155292,0.249395 -0.434857,0.43644 -0.745641,0.43644 H 4.845014 c -0.4660255,0 -0.8077776,-0.374092 -0.8077776,-0.810532 0,-2.306902 1.8330338,-4.177362 4.1320436,-4.177362 z m 7.798211,-5.9854729 c -0.900934,0 -1.70881,-0.4676151 -2.174786,-1.2469737 -0.434957,-0.7481842 -0.434957,-1.7145887 0,-2.4939473 0.465976,-0.74818415 1.273852,-1.24697361 2.174786,-1.24697361 0.869914,0 1.677692,0.49878946 2.143668,1.24697361 0.435056,0.7793586 0.435056,1.7457631 0,2.4939473 -0.465976,0.7793586 -1.273754,1.2469737 -2.143668,1.2469737 z" fill="currentColor"/></svg>' }
   };
-  function groupInfoHTML(mode){
+  function groupInfoHTML(mode, editing){
     var o = GRP_INFO[mode];
     if(!o) return "";
+    /* The label is markup in both branches, and course.scss hides it at
+       desktop — .groupmode-icon-info{display:none}, going back to
+       display:inline only below sm. So this reads as an icon on a normal
+       screen and gains its words on a phone.
+
+       autohide in groupmode.php is
+           $result->autohide = ($mod->effectivegroupmode === NOGROUPS);
+       and the template turns that into class v-parent-focus, which core.scss
+       renders opacity:0/visibility:hidden until the parent .focus-control is
+       hovered or focused. So an activity on "no groups" shows nothing until
+       you point at it, and a real group mode is always visible. */
+    var body = o.svg + '<span class="groupmode-icon-info">' + esc(o.label) + '</span>';
+    var autohide = editing && mode === "none" ? " v-parent-focus" : "";
     return '<div class="activity-groupmode-info" data-region="groupmode">'
-      + '<div class="groupmode-information">' + o.svg
-      + '<span class="groupmode-icon-info">' + esc(o.label) + '</span>'
-      + '</div></div>';
+      + (editing
+          ? '<button type="button" class="groupmode-information btn-icon' + autohide + '"'
+            + ' aria-haspopup="menu" aria-expanded="false"'
+            + ' aria-label="Group mode: ' + esc(o.label) + '">' + body + '</button>'
+          : '<div class="groupmode-information">' + body + '</div>')
+      + '</div>';
   }
 
   function activityHTML(it, ctx){
@@ -2957,12 +2824,25 @@ SECTIONS.push({
       /* format::show_groupmode() is plugin_supports(FEATURE_GROUPS) AND
          moodle/course:manageactivities — the capability is why a student
          never sees this, and why it sits inside if(teacher). */
-      if(m.groups !== false && it.groupable !== false && grp !== "none"){
-        actions += groupInfoHTML(grp);
+      if(m.groups !== false && it.groupable !== false){
+        /* editing: the control exists for every group-capable activity, with
+           "no groups" hidden until hover. Not editing: groupmode.php returns
+           null for NOGROUPS, so nothing renders at all. */
+        if(editing)            actions += groupInfoHTML(grp, true);
+        else if(grp !== "none") actions += groupInfoHTML(grp, false);
       }
     }
     if(it.manual || it.done || it.foot){
       actions += completionHTML(it, teacher);
+    }
+    /* Action menu last in the cluster. activity.mustache orders the grid
+       "... groupmode  completion  actions", and controlmenu is only exported
+       while the format is editing, so it appears with edit mode and not
+       before. */
+    if(teacher && editing){
+      actions += '<button type="button" class="acard-menu" aria-haspopup="menu" aria-expanded="false"'
+        + ' aria-label="Actions for ' + esc(it.name) + '">'
+        + '<i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i></button>';
     }
 
     /* show_visibility() is !$mod->visible || $mod->is_stealth(), so a plain
@@ -2971,15 +2851,11 @@ SECTIONS.push({
        hidden section, which core calls implicit stealth. */
     var visRow = "";
     if(teacher){
-      if(vis === "hide")         visRow = visBadgeHTML("hidden");
-      else if(vis === "stealth") visRow = visBadgeHTML("stealth");
-      else if(sectionHidden)     visRow = visBadgeHTML("stealth");
+      if(vis === "hide")         visRow = visBadgeHTML("hidden", editing);
+      else if(vis === "stealth") visRow = visBadgeHTML("stealth", editing);
+      else if(sectionHidden)     visRow = visBadgeHTML("stealth", editing);
     }
 
-    if(teacher && editing){
-      actions += '<button type="button" class="idd-btn" aria-label="Activity menu for ' + esc(it.name) + '">'
-        + '<i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i></button>';
-    }
 
     /* Dates and chips are mutually exclusive, and the guard is here rather
        than left to the demo data so it cannot drift. The top half of the
@@ -3011,68 +2887,52 @@ SECTIONS.push({
       + (slug ? ' data-activity="' + slug + '"' : '') + '>'
       + '<div class="acard-body">'
         + '<div class="acard-main">'
+          /* ICON + NAME ON ONE ROW.
+
+             Core's .activity-grid row 1 is
+                 "icon  name  groupmode  completion  actions"
+             so the icon is a grid cell BESIDE the name, not a strip above it,
+             and cmicon.mustache sizes it
+                 .activityiconcontainer.smaller  = 52px - 20px = 32px
+                 align-self-start me-2
+             The settings prototype put a 17px icon on its own row with a
+             visible type label under it; both of those go. The type name is
+             kept as visually hidden text because core's icon carries
+             title="{{pluginname}}" and an alt, so the type is announced —
+             dropping it outright would lose that. */
           + '<div class="acard-top">'
-            + '<div class="acard-identity">'
-              /* Bulk select checkbox, from core's cm/bulkselect.mustache: it is
-                 rendered alongside the handle and hidden until bulk mode, and
-                 its label is visually hidden and names the activity, so it does
-                 not announce as a bare "checkbox". Core's string is
-                 selectcm = "Select {$a}". */
-              + (teacher && editing
-                  ? '<span class="bulkselect" data-for="cmBulkSelect">'
-                    + '<input type="checkbox" id="cmCheckbox' + cid + '" data-action="toggleSelectionCm" data-bulkcheckbox="1">'
-                    + '<label class="sr-only" for="cmCheckbox' + cid + '">Select ' + esc(it.name) + '</label>'
-                    + '</span>'
-                  : '')
-              /* aria-pressed carries the grabbed state — NOT aria-grabbed,
-                 which ARIA deprecated. aria-describedby points at one shared
-                 instruction node so the name stays short. */
-              + (teacher && editing
-                  ? '<button type="button" class="acard-drag" aria-label="Move ' + esc(it.name) + '"'
-                    + ' aria-pressed="false" aria-describedby="dragHelp">'
-                    + '<i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>'
-                  : '')
-              /* Activity type label: edit mode only (decision D27). In view
-                 mode the icon carries the type visually — but the label is
-                 kept as visually hidden text rather than dropped, because
-                 outside edit mode core's icon has an empty alt and the type
-                 is currently announced to nobody. Removing it outright
-                 would leave screen reader users worse off than today (D18). */
-              + '<span class="atype" style="color:var(--p-' + m.purpose + ')">'
-                + modIcon(it, 17)
-                + (editing ? '<span class="tlabel">' + m.label + '</span>'
-                           : '<span class="sr-only">' + m.label + '</span>')
-              + '</span>'
-            + '</div>'
-            + (actions ? '<div class="acard-actions">' + actions + '</div>' : '')
-          + '</div>'
-          /* edit mode: the title is the edit trigger, not a link. Out of
-             edit mode it is a link to the activity, as today. */
-          + '<h4 class="atitle">' + titleHTML(it.name, teacher && editing) + '</h4>';
+            + '<span class="atype activity-icon" style="color:var(--p-' + m.purpose + ')">'
+              + modIcon(it, 32)
+              + '<span class="sr-only">' + m.label + '</span>'
+            + '</span>'
+            + '<div class="acard-namearea">'
+              + '<h4 class="atitle">' + titleHTML(it.name, false) + '</h4>'
     if(it.desc) html += '<p class="adesc">' + esc(it.desc) + '</p>';
-    /* the visibility row sits below the name/description and above the dates,
-       which is the order .activity-grid lays out in core */
+    html += '</div>';                                  /* /.acard-namearea */
+    html += (actions ? '<div class="acard-actions">' + actions + '</div>' : '');
+    html += '</div>';                                  /* /.acard-top */
+    /* Visibility spans the full card, starting at the icon column, because in
+       core it is its own grid row across all five columns:
+           "visibility  visibility  visibility  visibility  visibility"
+       The description above it is indented to the name column instead —
+       core's altcontent row is "icon altcontent altcontent ...". */
     html += visRow;
-    html += '</div>';
+    html += '</div>';                                  /* /.acard-main */
     if(dates || chips){
       html += '<div class="acard-badges' + (it.dategroups ? ' is-grouped' : '') + '">'
         + dates + chips + '</div>';
     }
     if(it.restrict){
-      /* The wrapper owns the box so the "Edit restrictions" row sits inside
-         the same border, as it does in the card state nodes. */
+      /* One container, matching the screenshot: the lock line, a hairline, then
+         the edit row. No "Show more" — the condition text wraps instead of
+         being truncated, so there is nothing to expand. */
       html += '<div class="arestrict-wrap">'
         + '<div class="arestrict"><i class="fa-solid fa-lock" aria-hidden="true"></i>'
-          + '<span class="txt" id="restr' + cid + '">' + it.restrict + '</span>'
-          + '<button type="button" class="showmore" data-showmore aria-expanded="false"'
-            + ' aria-controls="restr' + cid + '">'
-            + '<span class="sm-label">Show more</span>'
-            + '<i class="fa-solid fa-chevron-down" aria-hidden="true" style="font-size:9px"></i>'
-          + '</button>'
+          + '<span class="txt">' + it.restrict + '</span>'
         + '</div>'
         + '<div class="arestrict-edit">'
           + '<button type="button" data-editrestrict>'
-            + 'Edit restrictions <i class="fa-solid fa-pencil" aria-hidden="true"></i>'
+            + '<i class="fa-solid fa-pencil" aria-hidden="true"></i> Edit restrictions'
           + '</button>'
         + '</div>'
         + '</div>';
@@ -3099,10 +2959,6 @@ SECTIONS.push({
             + '<input type="checkbox" id="subCheckbox' + sid + '" data-bulkcheckbox="1">'
             + '<label class="sr-only" for="subCheckbox' + sid + '">Select subsection ' + esc(sub.title) + '</label>'
             + '</span>' : '')
-        + (subEdit ? '<button type="button" class="acard-drag shead-drag"'
-            + ' data-drag-item=".subcard" aria-label="Move ' + esc(sub.title) + '"'
-            + ' aria-pressed="false" aria-describedby="dragHelp">'
-            + '<i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>' : '')
         + '<button class="schev" tabindex="-1"><i class="fa-solid fa-chevron-down"></i></button>'
         + '<h3 class="stitle">' + titleHTML(sub.title, canEditTitles()) + '</h3>'
         + (sub.hidden ? '<span class="chip meta" style="margin-left:8px"><i class="fa-regular fa-eye-slash"></i>Hidden from students</span>' : '')
@@ -3127,10 +2983,10 @@ SECTIONS.push({
     var c = countSection(sec);
     var secEdit = document.body.classList.contains("edit-on")
       && !document.body.classList.contains("role-student");
-    var status = c.total === 0 ? '' :
-      (c.done === c.total ? 'All done <i class="fa-solid fa-check"></i>'
-        : c.done === 0 ? 'Not started'
-        : c.done + ' of ' + c.total + ' activities done');
+    /* No completion count in the header. Core's section/header.mustache is a
+       collapse chevron and the section name, nothing else — "1 of 7 activities
+       done" / "All done" was an addition of the settings prototype. */
+    var status = '';
     /* .stop is the white header region, .sbody the grey body. The summary
        sits in the header, above the divider, per 4205:43741 — the divider
        falls between the description and the first activity, not above it. */
@@ -3149,10 +3005,6 @@ SECTIONS.push({
               + '<input type="checkbox" id="secCheckbox' + i + '" data-bulkcheckbox="1">'
               + '<label class="sr-only" for="secCheckbox' + i + '">Select section ' + esc(sec.title) + '</label>'
               + '</span>' : '')
-          + (secEdit && i > 0 ? '<button type="button" class="acard-drag shead-drag"'
-              + ' data-drag-item=".scard" aria-label="Move ' + esc(sec.title) + '"'
-              + ' aria-pressed="false" aria-describedby="dragHelp">'
-              + '<i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>' : '')
           + '<button class="schev" tabindex="-1"><i class="fa-solid fa-chevron-down"></i></button>'
           + '<h2 class="stitle">' + titleHTML(sec.title, canEditTitles()) + '</h2>'
           + (status ? '<span class="sstatus">' + status + '</span>' : '')
@@ -3374,18 +3226,6 @@ SECTIONS.push({
     var subHead = inSlot ? null : e.target.closest('[data-toggle="sub"]');
     if(subHead){ subHead.closest(".subcard").classList.toggle("collapsed"); return; }
 
-    var more = e.target.closest("[data-showmore]");
-    if(more){
-      var box = more.closest(".arestrict");
-      var open = !box.classList.contains("open");
-      box.classList.toggle("open", open);
-      /* aria-expanded carries the state; only the label and the chevron are
-         rewritten, so the button element and its focus survive the toggle */
-      more.setAttribute("aria-expanded", open ? "true" : "false");
-      more.querySelector(".sm-label").textContent = open ? "Show less" : "Show more";
-      more.querySelector("i").className = "fa-solid fa-chevron-" + (open ? "up" : "down");
-      return;
-    }
     var editRestrict = e.target.closest("[data-editrestrict]");
     if(editRestrict){
       toast("“Edit restrictions” — opens the restrict access dialog, not built here");
@@ -3669,6 +3509,17 @@ SECTIONS.push({
     c.addEventListener("click", function(){ toast('“' + c.querySelector("h3").textContent + '” — opens the real page, not built here'); });
   });
 
+
+  /* Edit mode. The activity cluster differs by mode — core swaps the static
+     badge for a dropdown and adds the action menu — so the cards are rebuilt
+     rather than toggled with CSS. */
+  var editSwitch = document.getElementById("editSwitch");
+  editSwitch.addEventListener("click", function(){
+    var on = editSwitch.getAttribute("aria-pressed") === "true";
+    editSwitch.setAttribute("aria-pressed", on ? "false" : "true");
+    document.body.classList.toggle("edit-on", !on);
+    if(window.renderCourse) window.renderCourse();
+  });
 
   document.querySelector(".hint").addEventListener("click", function(){ this.style.display = "none"; });
 
