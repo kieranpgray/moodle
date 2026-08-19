@@ -129,10 +129,12 @@
   a{ color:var(--mds-bg-interactive-primary-default); text-decoration:none; }
   button{ font-family:inherit; }
 
-  /* Full-bleed: the top nav and the drawer rail span the whole tab, as core's
-     navbar and drawers do. The reading column is still capped separately by
-     .content{max-width:var(--content-max)}, so line length is unaffected. */
-  .shell{ max-width:none; margin:0; padding:0 var(--shell-pad); }
+  /* The page body sits inside the shell, so the course index and the blocks
+     drawer are next to the content rather than out at the viewport edges. */
+  .shell{ max-width:var(--shell-max); margin:0 auto; padding:0 var(--shell-pad); }
+  /* Only the top nav is full-bleed — its bar spans the whole tab, as core's
+     navbar does, while the drawers and content below stay in the shell. */
+  .topbar-inner.shell{ max-width:none; margin:0; }
 
   /* =====================  TOP NAV  ===================== */
   /* fixed, not sticky. Sticky only holds while the element's containing
@@ -203,7 +205,9 @@
   .ci-toggle.sticky{ position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); }
   .ci-toggle.contained{ background:transparent; }
   .ci-toggle.contained:hover{ background:rgba(0,0,0,.06); }
-  .sidebar-icon{ width:20px; height:16px; display:block; }
+  /* core's e/sidebar_left / e/sidebar_right: stroked, not filled, so the
+     colour comes from the button via currentColor */
+  .sidebar-icon{ width:20px; height:16px; display:block; color:var(--mds-text-subtle); }
 
   /* course index drawer (grey card) */
   .drawer{ flex:0 0 auto; width:0; overflow:hidden; position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg));
@@ -1488,6 +1492,42 @@
      is the change being prototyped here.
      ============================================================ */
   /* ============================================================
+     ADD CONTENT DIVIDER
+     course.scss:
+       .course-content .divider          position:relative
+       .divider hr                       width:100%; margin:.5rem .25rem;
+                                         border-top:1px solid $divider-color (gray-200)
+       .divider-content                  absolute, sat over the rule
+       .divider .btn.add-content         radius lg, colour gray-700 on gray-300,
+                                         padding .5rem .75rem, line-height 1
+       :hover/:focus                     white on $primary
+       .divider:has(.add-content:hover) hr { border-color: $primary }
+     so the button turns blue and takes the rule with it.
+     ============================================================ */
+  .divider{ position:relative; display:flex; justify-content:center; align-items:center; }
+  .divider hr{
+    width:100%; margin:var(--mds-spacing-xs) 2px; border:0;
+    border-top:1px solid var(--mds-border-subtle,#dee2e6); opacity:1;
+  }
+  .divider-content{ position:absolute; padding:0 var(--mds-spacing-md); background:var(--mds-bg-surface-default); }
+  .btn.add-content{
+    position:relative; z-index:1; display:inline-flex; align-items:center; gap:8px;
+    border:0; cursor:pointer; font-family:inherit;
+    border-radius:var(--mds-border-radius-lg);
+    color:var(--mds-text-subtle); background:var(--mds-bg-surface-strong,#dee2e6);
+    padding:var(--mds-spacing-xs) 12px; line-height:1;
+    font-size:var(--mds-font-size-body); font-weight:var(--mds-font-weight-medium);
+    transition:background .12s ease, color .12s ease;
+  }
+  .btn.add-content i{ font-size:12px; }
+  .btn.add-content:hover, .btn.add-content:focus-visible{
+    color:#fff; background:var(--mds-bg-interactive-primary-default,#0f6cbf);
+  }
+  .btn.add-content:focus-visible{ outline:2px solid var(--mds-focus-default,#0f6cbf); outline-offset:2px; }
+  /* the rule follows the button into blue */
+  .divider:has(.btn.add-content:hover) hr{ border-color:var(--mds-bg-interactive-primary-default,#0f6cbf); }
+
+  /* ============================================================
      STATIC STATUS INDICATORS (view mode)
        .activity-badges        a pill carrying the visibility state, on its
                                own full-width row under the name — grid area
@@ -2035,7 +2075,7 @@
   <div class="layout shell">
     <div class="toggle-col">
       <button class="ci-toggle sticky" id="openBtn" title="Open course index" aria-label="Open course index">
-        <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+        <svg class="sidebar-icon" width="20" height="16" viewBox="-2 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M12.6667 2L3.33333 2C2.59696 2 2 2.59695 2 3.33333L2 12.6667C2 13.403 2.59695 14 3.33333 14L12.6667 14C13.403 14 14 13.403 14 12.6667L14 3.33333C14 2.59695 13.403 2 12.6667 2Z" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 2L6 14" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.6667 10L8.66667 8L10.6667 6" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
 
@@ -2044,7 +2084,7 @@
         <div class="ci-header">
           <span class="ci-title">Course Index</span>
           <button class="ci-toggle contained" id="closeBtn" title="Close course index" aria-label="Close course index">
-            <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+            <svg class="sidebar-icon" width="20" height="16" viewBox="-2 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M12.6667 2L3.33333 2C2.59696 2 2 2.59695 2 3.33333L2 12.6667C2 13.403 2.59695 14 3.33333 14L12.6667 14C13.403 14 14 13.403 14 12.6667L14 3.33333C14 2.59695 13.403 2 12.6667 2Z" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 2L6 14" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.6667 10L8.66667 8L10.6667 6" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </div>
         <div class="ci-divider"></div>
@@ -2129,7 +2169,7 @@
       <div class="cb-card">
         <div class="cb-header">
           <button class="cb-close" id="cbClose" aria-label="Close course blocks">
-            <svg width="20" height="16" viewBox="0 0 20 16" style="transform:scaleX(-1)"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+            <svg class="sidebar-icon" width="20" height="16" viewBox="-2 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M3.33333 2L12.6667 2C13.403 2 14 2.59695 14 3.33333L14 12.6667C14 13.403 13.403 14 12.6667 14L3.33333 14C2.59695 14 2 13.403 2 12.6667L2 3.33333C2 2.59695 2.59695 2 3.33333 2Z" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 2L10 14" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.3335 10L7.3335 8L5.3335 6" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <span class="cb-title">Course Blocks</span>
         </div>
@@ -2156,7 +2196,7 @@
     </div>
     <div class="toggle-col-right">
       <button class="blocks-btn" id="cbOpen" aria-label="Open course blocks">
-        <svg width="20" height="16" viewBox="0 0 20 16" style="transform:scaleX(-1)"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+        <svg class="sidebar-icon" width="20" height="16" viewBox="-2 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M3.33333 2L12.6667 2C13.403 2 14 2.59695 14 3.33333L14 12.6667C14 13.403 13.403 14 12.6667 14L3.33333 14C2.59695 14 2 13.403 2 12.6667L2 3.33333C2 2.59695 2.59695 2 3.33333 2Z" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 2L10 14" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.3335 10L7.3335 8L5.3335 6" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
   </div>
@@ -2966,6 +3006,35 @@ SECTIONS.push({
       + '</div>' + bodyhtml + '</section>';
   }
 
+  /* ============================================================
+     ADD CONTENT — the activity chooser trigger.
+
+     core_courseformat/local/content/divider.mustache:
+         <div class="divider d-flex justify-content-center align-items-center">
+           <hr>
+           <div class="divider-content px-3"> ... </div>
+         </div>
+     and activitychooserbutton.mustache puts this inside it:
+         <button class="btn add-content ...">
+           <span class="me-2">{{#pix}}t/add{{/pix}}</span>{{#str}}addcontent{{/str}}
+         </button>
+     "Add content" is $string['addcontent'] in lang/en/moodle.php.
+
+     always-visible because this is the section-level trigger; core hides the
+     between-activity dividers until the row is hovered, and only this one
+     stands on its own at the foot of the section. Editing only — the chooser
+     does not exist outside edit mode.
+     ============================================================ */
+  function addContentHTML(){
+    return '<div class="divider always-visible">'
+      + '<hr>'
+      + '<div class="divider-content">'
+        + '<button type="button" class="btn add-content" data-addcontent>'
+          + '<i class="fa-solid fa-plus" aria-hidden="true"></i>Add content'
+        + '</button>'
+      + '</div></div>';
+  }
+
   /* ---------- section card ---------- */
   function countSection(sec){
     var total = 0, done = 0;
@@ -3013,6 +3082,7 @@ SECTIONS.push({
       + '</div>'
       + '<div class="sbody">'
         + '<div class="acards">' + (sec.items || []).map(activityHTML).join('') + '</div>'
+        + (secEdit ? addContentHTML() : '')
       + '</div></section>';
   }
   function renderCourse(){
@@ -3226,6 +3296,11 @@ SECTIONS.push({
     var subHead = inSlot ? null : e.target.closest('[data-toggle="sub"]');
     if(subHead){ subHead.closest(".subcard").classList.toggle("collapsed"); return; }
 
+    var addContent = e.target.closest("[data-addcontent]");
+    if(addContent){
+      toast("“Add content” — opens the activity chooser, not built here");
+      return;
+    }
     var editRestrict = e.target.closest("[data-editrestrict]");
     if(editRestrict){
       toast("“Edit restrictions” — opens the restrict access dialog, not built here");
