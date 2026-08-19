@@ -42,21 +42,6 @@
     font-size: var(--mds-font-size-paragraph-small);
 }
 
-// Inline help, shown when a form calls moodleform::set_help_display_inline().
-// The strings are markdown, so they arrive wrapped in <p> or list markup whose
-// trailing margin would otherwise detach the text from its field.
-.form-help-text {
-    font-size: var(--mds-font-size-paragraph-small);
-
-    > :last-child {
-        margin-bottom: 0;
-    }
-
-    ul,
-    ol {
-        padding-left: 1.25rem;
-    }
-}
 
 // Two column shell: section rail beside the form.
 //
@@ -173,6 +158,14 @@
         .fitem.row [data-fieldtype="autocomplete"] .form-autocomplete-selection,
         .fitem.row [data-fieldtype="autocomplete"] .form-select {
             max-width: none;
+        }
+
+        // The help tooltip sits at the far end of the label row, away from the label and
+        // its required marker, so every row has the affordance in the same place.
+        // Core already does this when labels are in a side column; the vertical layout
+        // needs it asked for.
+        .fitem.row > .col-form-label .form-label-help {
+            margin-left: auto;
         }
 
         // Labels sit closer to their field and carry slightly more weight than body text.

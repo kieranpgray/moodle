@@ -402,7 +402,6 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
 
   ```php
   // On moodleform:
-  $this->set_help_display_inline();          // Render each field's help beneath it instead of behind an icon.
   $this->get_section_headers();              // The form's section headers, in render order. Call after display()/render().
 
   // On MoodleQuickForm:

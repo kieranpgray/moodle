@@ -30,8 +30,6 @@
         * name
         * badges - optional list of short labels shown beside the label, set via
           MoodleQuickForm::set_field_badges()
-        * helptext - optional help text rendered beneath the element, populated only on
-          forms that called moodleform::set_help_display_inline()
         * lockedreason - optional explanation of why the element cannot be edited, set via
           MoodleQuickForm::set_locked_reason()
 
@@ -46,7 +44,6 @@
             "id": "id_fullname",
             "name": "fullname",
             "badges": ["Site setting"],
-            "helptext": "<p>The name displayed in My courses.</p>",
             "lockedreason": "You do not have permission to change this setting."
         }
     }
@@ -74,17 +71,13 @@
             {{#element.badges}}
                 <span class="badge ms-2 text-uppercase form-field-badge">{{.}}</span>
             {{/element.badges}}
-            {{! The popup would only repeat text this template already renders inline. }}
-            {{^element.helptext}}{{{helpbutton}}}{{/element.helptext}}
         </div>
+        <div class="form-label-help">{{{helpbutton}}}</div>
     </div>
     <div class="col-md-9 d-flex flex-wrap align-items-start felement" data-fieldtype="{{element.type}}">
         {{$ element }}
             <!-- Element goes here -->
         {{/ element }}
-        {{#element.helptext}}
-            <div class="form-help-text w-100 mt-1 text-muted">{{{.}}}</div>
-        {{/element.helptext}}
         {{#element.lockedreason}}
             <div class="form-locked-reason d-flex align-items-start w-100 mt-1 text-muted">
                 <span class="me-1" aria-hidden="true">{{#pix}}t/locked, core{{/pix}}</span>
