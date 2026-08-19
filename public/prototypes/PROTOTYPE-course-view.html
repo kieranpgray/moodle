@@ -1332,11 +1332,25 @@
      Restrictions instance shows an "Edit restrictions" row. Hidden in the
      standalone 46378, which is the view-mode variant — so it follows edit
      mode, like every other editing affordance on the card. */
+  /* "Edit restrictions" is EDIT MODE ONLY.
+
+     core_courseformat/local/content/availability.mustache closes the whole row
+     inside an editing guard:
+         {{#editing}}{{#editurl}}
+           <div class="editavailability border-top mt-2 py-2">
+             <a ...>{{#pix}}i/edit{{/pix}}{{#str}}editsettings, availability{{/str}}</a>
+           </div>
+         {{/editurl}}{{/editing}}
+     (editsettings in lang/en/availability.php is "Edit restrictions".)
+
+     So with editing off the box is the condition line and nothing else — no
+     border-top, no link. This was display:block, which leaked the edit-mode
+     state into view mode. */
   .arestrict-edit{
-    display:block; margin-top:var(--mds-spacing-sm); padding-top:var(--mds-spacing-sm);
+    display:none; margin-top:var(--mds-spacing-sm); padding-top:var(--mds-spacing-sm);
     border-top:1px solid var(--mds-border-subtle);
   }
-  body.edit-on .acard .arestrict-wrap .arestrict-edit{ display:block; }
+  body.edit-on .arestrict-wrap .arestrict-edit{ display:block; }
   .arestrict-edit button{ font-weight:var(--mds-font-weight-medium); color:var(--mds-text-default); }
   .arestrict-edit button{
     border:0; background:none; padding:2px 4px; cursor:pointer; font-family:inherit;
