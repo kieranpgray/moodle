@@ -22,7 +22,7 @@
     <location>bundles/design-system</location>
     <name>@moodlehq/design-system</name>
     <description>The Moodle HQ design system based on React</description>
-    <version>5.1.2</version>
+    <version>5.2.0</version>
     <license>GNU</license>
     <repository>https://github.com/moodlehq/design-system</repository>
     <copyrights>
@@ -51,6 +51,72 @@
     <repository>https://github.com/FortAwesome/Font-Awesome</repository>
     <copyrights>
       <copyright>2023 Fonticons, Inc</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>bundles/@floating-ui/core.js</location>
+    <name>@floating-ui/core</name>
+    <description>Low level, but extremely powerful, positioning primitives</description>
+    <version>1.8.0</version>
+    <license>MIT</license>
+    <repository>https://github.com/floating-ui/floating-ui</repository>
+    <copyrights>
+      <copyright>2021-present Floating UI contributors</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>bundles/@floating-ui/dom.js</location>
+    <name>@floating-ui/dom</name>
+    <description>Floating UI for the web</description>
+    <version>1.8.0</version>
+    <license>MIT</license>
+    <repository>https://github.com/floating-ui/floating-ui</repository>
+    <copyrights>
+      <copyright>2021-present Floating UI contributors</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>bundles/@floating-ui/utils.js</location>
+    <name>@floating-ui/utils</name>
+    <description>Utilities for Floating UI</description>
+    <version>0.2.12</version>
+    <license>MIT</license>
+    <repository>https://github.com/floating-ui/floating-ui</repository>
+    <copyrights>
+      <copyright>2021-present Floating UI contributors</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>bundles/@floating-ui/react-dom.js</location>
+    <name>@floating-ui/react-dom</name>
+    <description>Floating UI for React DOM</description>
+    <version>2.1.9</version>
+    <license>MIT</license>
+    <repository>https://github.com/floating-ui/floating-ui</repository>
+    <copyrights>
+      <copyright>2021-present Floating UI contributors</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>bundles/@floating-ui/react.js</location>
+    <name>@floating-ui/react</name>
+    <description>Floating UI for React</description>
+    <version>0.27.20</version>
+    <license>MIT</license>
+    <repository>https://github.com/floating-ui/floating-ui</repository>
+    <copyrights>
+      <copyright>2021-present Floating UI contributors</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>bundles/tabbable</location>
+    <name>tabbable</name>
+    <description>Determines if a DOM node is tabbable or focusable</description>
+    <version>6.5.0</version>
+    <license>MIT</license>
+    <repository>https://github.com/focus-trap/tabbable</repository>
+    <copyrights>
+      <copyright>David Clark</copyright>
     </copyrights>
   </library>
   <library>
