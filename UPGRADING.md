@@ -15,6 +15,9 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
 - `email_to_user()` now emits a hook `before_email_to_user`. This hook allows any subscriber to modify the email contents, add additional headers, or add reasons to block the email. If any block reasons are added, the email is stopped from being sent and the reasons are output.
 
   For more information see [MDL-69724](https://tracker.moodle.org/browse/MDL-69724)
+- Token endpoint security improvements: earlier service validation, GET parameter sanitization. The 'appsitecheck' parameter has been removed from the token endpoint.
+
+  For more information see [MDL-87010](https://tracker.moodle.org/browse/MDL-87010)
 - New methods have been added to `\core\session\manager` to replace the `NO_MOODLE_COOKIES` constant.
 
   The constant is still respected if defined before the inclusion of `config.php`,
@@ -60,6 +63,15 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
 - Two new AMD modules are now available. `core/import` lets AMD code do a native ESM dynamic import without Babel rewriting it. `core/component` provides `appendToDom` and `prependToDom` to mount React components into the DOM, which are then picked up automatically by `react_autoinit`.
 
   For more information see [MDL-88505](https://tracker.moodle.org/browse/MDL-88505)
+- A new `swizzle` command has been added to launch an interactive CLI wizard for ejecting or wrapping a React component into your theme:
+
+  ```bash
+  ./scripts/swizzle.mjs
+  ```
+
+  Plugin developers can run `./scripts/swizzle.mjs manifest generate` to generate an initial component manifest, and `./scripts/swizzle.mjs manifest set` to set the safety level for each component.
+
+  For more information see [MDL-88509](https://tracker.moodle.org/browse/MDL-88509)
 - The `moodle_exception` class now accepts a `$previous` Throwable.
 
   For more information see [MDL-88579](https://tracker.moodle.org/browse/MDL-88579)
@@ -84,6 +96,12 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
 - The `moodle_page` class now includes `set_supplementary_content()` and `get_supplementary_content()` methods to inject and retrieve secondary content within the sticky footer.
 
   For more information see [MDL-88601](https://tracker.moodle.org/browse/MDL-88601)
+- A new `\core\oauth2\server\client_manager` class manages the lifecycle of OAuth2 server clients, their secrets and their redirect URIs.
+
+  For more information see [MDL-89181](https://tracker.moodle.org/browse/MDL-89181)
+- New `flexible_table::set_columnheadersattributes(...)` method for tables to define additional attributes ('class', 'data-X', etc.) for column headers
+
+  For more information see [MDL-89384](https://tracker.moodle.org/browse/MDL-89384)
 
 #### Changed
 
@@ -93,6 +111,37 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
 
 #### Deprecated
 
+- The following functions from `user/lib.php` have been deprecated and moved to the `\core\user` class as static methods. Existing calls continue to work but will emit a `DEBUG_DEVELOPER` notice. Update your code to use the new class methods:
+
+   | Old function name                            | New method name                                          |
+   | ---                                          | ---                                                       |
+   | `user_create_user()`                         | `\core\user::create_user()`                               |
+   | `user_update_user()`                         | `\core\user::update_user()`                               |
+   | `user_delete_user()`                         | `\core\user::delete_user()`                               |
+   | `user_get_users_by_id()`                     | `\core\user::get_users_by_id()`                            |
+   | `user_get_default_fields()`                  | `\core\user::get_default_fields()`                         |
+   | `user_get_user_details()`                    | `\core\user::get_user_details()`                           |
+   | `user_get_user_details_courses()`            | `\core\user::get_user_details_courses()`                   |
+   | `can_view_user_details_cap()`                | `\core\user::can_view_user_details_cap()`                  |
+   | `user_count_login_failures()`                | `\core\user::count_login_failures()`                       |
+   | `user_convert_text_to_menu_items()`          | `\core\user::convert_text_to_menu_items()`                 |
+   | `user_get_default_homepage_options()`        | `\core\user::get_default_homepage_options()`               |
+   | `user_get_user_navigation_info()`             | `\core\user::get_user_navigation_info()`                   |
+   | `user_add_password_history()`                | `\core\user::add_password_history()`                       |
+   | `user_is_previously_used_password()`         | `\core\user::is_previously_used_password()`                |
+   | `user_remove_user_device()`                  | `\core\user::remove_user_device()`                         |
+   | `user_list_view()`                           | `\core\user::list_view()`                                  |
+   | `user_mygrades_url()`                        | `\core\user::mygrades_url()`                               |
+   | `user_can_view_profile()`                    | `\core\user::can_view_profile()`                           |
+   | `user_process_profile_callbacks()`           | `\core\user::process_profile_callbacks()`                  |
+   | `user_get_tagged_users()`                    | `\core\user::get_tagged_users()`                           |
+   | `user_get_course_lastaccess_sql()`           | `\core\user::get_course_lastaccess_sql()`                  |
+   | `user_get_user_lastaccess_sql()`             | `\core\user::get_user_lastaccess_sql()`                    |
+   | `user_get_lastaccess_sql()`                  | `\core\user::get_lastaccess_sql()`                         |
+   | `user_edit_map_field_purpose()`              | `\core\user::edit_map_field_purpose()`                     |
+   | `user_update_device_public_key()`            | `\core_user\devicekey::update_device_public_key()`         |
+
+  For more information see [MDL-82650](https://tracker.moodle.org/browse/MDL-82650)
 - The `FEATURE_GROUPMEMBERSONLY` constant has been deprecated and is no longer supported. It should be removed from any plugin code.
 
   For more information see [MDL-83231](https://tracker.moodle.org/browse/MDL-83231)
@@ -101,6 +150,130 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
   For more information see [MDL-88805](https://tracker.moodle.org/browse/MDL-88805)
 
 ### core_admin
+
+#### Added
+
+- The following classes have been renamed and now support autoloading.
+  Existing classes are currently unaffected.
+
+  | Old class name                                        | New class name                                                     |
+  | ----------------------------------------------------- | ------------------------------------------------------------------ |
+  | `\admin_category`                                     | `\core_admin\setting\tree\category`                                |
+  | `\admin_externalpage`                                 | `\core_admin\setting\tree\externalpage`                            |
+  | `\admin_page_manageblocks`                            | `\core_admin\setting\page\manageblocks`                            |
+  | `\admin_page_managefilters`                           | `\core_admin\setting\page\managefilters`                           |
+  | `\admin_page_managemessageoutputs`                    | `\core_admin\setting\page\managemessageoutputs`                    |
+  | `\admin_page_managemods`                              | `\core_admin\setting\page\managemods`                              |
+  | `\admin_page_manageportfolios`                        | `\core_admin\setting\page\manageportfolios`                        |
+  | `\admin_page_manageqbehaviours`                       | `\core_admin\setting\page\manageqbehaviours`                       |
+  | `\admin_page_manageqtypes`                            | `\core_admin\setting\page\manageqtypes`                            |
+  | `\admin_page_managerepositories`                      | `\core_admin\setting\page\managerepositories`                      |
+  | `\admin_page_pluginsoverview`                         | `\core_admin\setting\page\pluginsoverview`                         |
+  | `\admin_root`                                         | `\core_admin\setting\tree\root`                                    |
+  | `\admin_setting`                                      | `\core_admin\setting`                                              |
+  | `\admin_setting_agedigitalconsentmap`                 | `\core_admin\setting\setting\agedigitalconsentmap`                 |
+  | `\admin_setting_bloglevel`                            | `\core_admin\setting\setting\bloglevel`                            |
+  | `\admin_setting_check`                                | `\core_admin\setting\setting\check`                                |
+  | `\admin_setting_configbackupfilenamemustachetemplate` | `\core_admin\setting\setting\configbackupfilenamemustachetemplate` |
+  | `\admin_setting_configcheckbox`                       | `\core_admin\setting\setting\configcheckbox`                       |
+  | `\admin_setting_configcheckbox_with_advanced`         | `\core_admin\setting\setting\configcheckbox_with_advanced`         |
+  | `\admin_setting_configcheckbox_with_lock`             | `\core_admin\setting\setting\configcheckbox_with_lock`             |
+  | `\admin_setting_configcolourpicker`                   | `\core_admin\setting\setting\configcolourpicker`                   |
+  | `\admin_setting_configdirectory`                      | `\core_admin\setting\setting\configdirectory`                      |
+  | `\admin_setting_configduration`                       | `\core_admin\setting\setting\configduration`                       |
+  | `\admin_setting_configduration_with_advanced`         | `\core_admin\setting\setting\configduration_with_advanced`         |
+  | `\admin_setting_configempty`                          | `\core_admin\setting\setting\configempty`                          |
+  | `\admin_setting_configexecutable`                     | `\core_admin\setting\setting\configexecutable`                     |
+  | `\admin_setting_configfile`                           | `\core_admin\setting\setting\configfile`                           |
+  | `\admin_setting_confightmleditor`                     | `\core_admin\setting\setting\confightmleditor`                     |
+  | `\admin_setting_configiplist`                         | `\core_admin\setting\setting\configiplist`                         |
+  | `\admin_setting_configmixedhostiplist`                | `\core_admin\setting\setting\configmixedhostiplist`                |
+  | `\admin_setting_configmulticheckbox`                  | `\core_admin\setting\setting\configmulticheckbox`                  |
+  | `\admin_setting_configmulticheckbox2`                 | `\core_admin\setting\setting\configmulticheckbox2`                 |
+  | `\admin_setting_configmultiselect`                    | `\core_admin\setting\setting\configmultiselect`                    |
+  | `\admin_setting_configmultiselect_modules`            | `\core_admin\setting\setting\configmultiselect_modules`            |
+  | `\admin_setting_configpasswordunmask`                 | `\core_admin\setting\setting\configpasswordunmask`                 |
+  | `\admin_setting_configpasswordunmask_with_advanced`   | `\core_admin\setting\setting\configpasswordunmask_with_advanced`   |
+  | `\admin_setting_configportlist`                       | `\core_admin\setting\setting\configportlist`                       |
+  | `\admin_setting_configselect`                         | `\core_admin\setting\setting\configselect`                         |
+  | `\admin_setting_configselect_autocomplete`            | `\core_admin\setting\setting\configselect_autocomplete`            |
+  | `\admin_setting_configselect_with_advanced`           | `\core_admin\setting\setting\configselect_with_advanced`           |
+  | `\admin_setting_configselect_with_lock`               | `\core_admin\setting\setting\configselect_with_lock`               |
+  | `\admin_setting_configstoredfile`                     | `\core_admin\setting\setting\configstoredfile`                     |
+  | `\admin_setting_configtext`                           | `\core_admin\setting\setting\configtext`                           |
+  | `\admin_setting_configtext_with_advanced`             | `\core_admin\setting\setting\configtext_with_advanced`             |
+  | `\admin_setting_configtext_with_maxlength`            | `\core_admin\setting\setting\configtext_with_maxlength`            |
+  | `\admin_setting_configtextarea`                       | `\core_admin\setting\setting\configtextarea`                       |
+  | `\admin_setting_configthemepreset`                    | `\core_admin\setting\setting\configthemepreset`                    |
+  | `\admin_setting_configtime`                           | `\core_admin\setting\setting\configtime`                           |
+  | `\admin_setting_countrycodes`                         | `\core_admin\setting\setting\countrycodes`                         |
+  | `\admin_setting_courselist_frontpage`                 | `\core_admin\setting\setting\courselist_frontpage`                 |
+  | `\admin_setting_description`                          | `\core_admin\setting\setting\description`                          |
+  | `\admin_setting_emoticons`                            | `\core_admin\setting\setting\emoticons`                            |
+  | `\admin_setting_enablemobileservice`                  | `\core_admin\setting\setting\enablemobileservice`                  |
+  | `\admin_setting_encryptedpassword`                    | `\core_admin\setting\setting\encryptedpassword`                    |
+  | `\admin_setting_filetypes`                            | `\core_admin\setting\setting\filetypes`                            |
+  | `\admin_setting_flag`                                 | `\core_admin\setting\setting\flag`                                 |
+  | `\admin_setting_forcetimezone`                        | `\core_admin\setting\setting\forcetimezone`                        |
+  | `\admin_setting_grade_profilereport`                  | `\core_admin\setting\setting\grade_profilereport`                  |
+  | `\admin_setting_gradecat_combo`                       | `\core_admin\setting\setting\gradecat_combo`                       |
+  | `\admin_setting_heading`                              | `\core_admin\setting\setting\heading`                              |
+  | `\admin_setting_langlist`                             | `\core_admin\setting\setting\langlist`                             |
+  | `\admin_setting_manage_fileconverter_plugins`         | `\core_admin\setting\setting\manage_fileconverter_plugins`         |
+  | `\admin_setting_manage_plugins`                       | `\core_admin\setting\setting\manage_plugins`                       |
+  | `\admin_setting_manageantiviruses`                    | `\core_admin\setting\setting\manageantiviruses`                    |
+  | `\admin_setting_manageauths`                          | `\core_admin\setting\setting\manageauths`                          |
+  | `\admin_setting_managecontentbankcontenttypes`        | `\core_admin\setting\setting\managecontentbankcontenttypes`        |
+  | `\admin_setting_managecustomfields`                   | `\core_admin\setting\setting\managecustomfields`                   |
+  | `\admin_setting_managedataformats`                    | `\core_admin\setting\setting\managedataformats`                    |
+  | `\admin_setting_manageenrols`                         | `\core_admin\setting\setting\manageenrols`                         |
+  | `\admin_setting_manageexternalservices`               | `\core_admin\setting\setting\manageexternalservices`               |
+  | `\admin_setting_manageformats`                        | `\core_admin\setting\setting\manageformats`                        |
+  | `\admin_setting_managemediaplayers`                   | `\core_admin\setting\setting\managemediaplayers`                   |
+  | `\admin_setting_managerepository`                     | `\core_admin\setting\setting\managerepository`                     |
+  | `\admin_setting_managewebserviceprotocols`            | `\core_admin\setting\setting\managewebserviceprotocols`            |
+  | `\admin_setting_my_grades_report`                     | `\core_admin\setting\setting\my_grades_report`                     |
+  | `\admin_setting_php_extension_enabled`                | `\core_admin\setting\setting\php_extension_enabled`                |
+  | `\admin_setting_pickfilters`                          | `\core_admin\setting\setting\pickfilters`                          |
+  | `\admin_setting_pickroles`                            | `\core_admin\setting\setting\pickroles`                            |
+  | `\admin_setting_question_behaviour`                   | `\core_admin\setting\setting\question_behaviour`                   |
+  | `\admin_setting_regradingcheckbox`                    | `\core_admin\setting\setting\regradingcheckbox`                    |
+  | `\admin_setting_requiredpasswordunmask`               | `\core_admin\setting\setting\requiredpasswordunmask`               |
+  | `\admin_setting_requiredtext`                         | `\core_admin\setting\setting\requiredtext`                         |
+  | `\admin_setting_savebutton`                           | `\core_admin\setting\setting\savebutton`                           |
+  | `\admin_setting_scsscode`                             | `\core_admin\setting\setting\scsscode`                             |
+  | `\admin_setting_searchsetupinfo`                      | `\core_admin\setting\setting\searchsetupinfo`                      |
+  | `\admin_setting_servertimezone`                       | `\core_admin\setting\setting\servertimezone`                       |
+  | `\admin_setting_sitesetcheckbox`                      | `\core_admin\setting\setting\sitesetcheckbox`                      |
+  | `\admin_setting_sitesetselect`                        | `\core_admin\setting\setting\sitesetselect`                        |
+  | `\admin_setting_sitesettext`                          | `\core_admin\setting\setting\sitesettext`                          |
+  | `\admin_setting_special_adminseesall`                 | `\core_admin\setting\setting\special_adminseesall`                 |
+  | `\admin_setting_special_backup_auto_destination`      | `\core_admin\setting\setting\special_backup_auto_destination`      |
+  | `\admin_setting_special_backupdays`                   | `\core_admin\setting\setting\special_backupdays`                   |
+  | `\admin_setting_special_calendar_weekend`             | `\core_admin\setting\setting\special_calendar_weekend`             |
+  | `\admin_setting_special_coursecontact`                | `\core_admin\setting\setting\special_coursecontact`                |
+  | `\admin_setting_special_debug`                        | `\core_admin\setting\setting\special_debug`                        |
+  | `\admin_setting_special_frontpagedesc`                | `\core_admin\setting\setting\special_frontpagedesc`                |
+  | `\admin_setting_special_gradebookroles`               | `\core_admin\setting\setting\special_gradebookroles`               |
+  | `\admin_setting_special_gradeexport`                  | `\core_admin\setting\setting\special_gradeexport`                  |
+  | `\admin_setting_special_gradeexportdefault`           | `\core_admin\setting\setting\special_gradeexportdefault`           |
+  | `\admin_setting_special_gradelimiting`                | `\core_admin\setting\setting\special_gradelimiting`                |
+  | `\admin_setting_special_grademinmaxtouse`             | `\core_admin\setting\setting\special_grademinmaxtouse`             |
+  | `\admin_setting_special_gradepointdefault`            | `\core_admin\setting\setting\special_gradepointdefault`            |
+  | `\admin_setting_special_gradepointmax`                | `\core_admin\setting\setting\special_gradepointmax`                |
+  | `\admin_setting_special_registerauth`                 | `\core_admin\setting\setting\special_registerauth`                 |
+  | `\admin_setting_special_selectsetup`                  | `\core_admin\setting\setting\special_selectsetup`                  |
+  | `\admin_setting_users_with_capability`                | `\core_admin\setting\setting\users_with_capability`                |
+  | `\admin_setting_webservicesoverview`                  | `\core_admin\setting\setting\webservicesoverview`                  |
+  | `\admin_settingdependency`                            | `\core_admin\setting\settingpage\dependency`                       |
+  | `\admin_settingpage`                                  | `\core_admin\setting\settingpage\settingpage`                      |
+  | `\admin_settings_country_select`                      | `\core_admin\setting\setting\country_select`                       |
+  | `\admin_settings_coursecat_select`                    | `\core_admin\setting\setting\coursecat_select`                     |
+  | `\admin_settings_h5plib_handler_select`               | `\core_admin\setting\setting\h5plib_handler_select`                |
+  | `\admin_settings_num_course_sections`                 | `\core_admin\setting\setting\num_course_sections`                  |
+  | `\admin_settings_sitepolicy_handler_select`           | `\core_admin\setting\setting\sitepolicy_handler_select`            |
+
+  For more information see [MDL-81935](https://tracker.moodle.org/browse/MDL-81935)
 
 #### Deprecated
 
@@ -131,6 +304,46 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
 
   For more information see [MDL-88580](https://tracker.moodle.org/browse/MDL-88580)
 
+### core_badges
+
+#### Changed
+
+- The `badge_message_from_template()` method accepts an additional `$user` argument, if specified then additional user name placeholders will also be interpolated in the returned message content
+
+  For more information see [MDL-87859](https://tracker.moodle.org/browse/MDL-87859)
+
+### core_course
+
+#### Added
+
+- Activity chooser items can now be disabled by adding the `disabled` and `disabledreason` parameters to the `content_item` class.
+
+  For more information see [MDL-87373](https://tracker.moodle.org/browse/MDL-87373)
+- New get_all_section_cms function has been added to course_navigation class to get all course modules of the given section in order, including also activities inside subsections
+
+  For more information see [MDL-88604](https://tracker.moodle.org/browse/MDL-88604)
+- New get_adjacent_section() function has been added to course_navigation class to get an adjacent section of a course in the given direction.
+
+  For more information see [MDL-88604](https://tracker.moodle.org/browse/MDL-88604)
+- New is_first_navigable() function has been added to course_navigation class to know whether a module is considered the first accessible element of a course.
+
+  For more information see [MDL-88604](https://tracker.moodle.org/browse/MDL-88604)
+- New is_last_navigable() function has been added to course_navigation class to know whether a module is considered the last accessible element of a course.
+
+  For more information see [MDL-88604](https://tracker.moodle.org/browse/MDL-88604)
+- New get_section() function has been added to get the main section (not delegated) of a course module in the course_navigation class.
+
+  For more information see [MDL-88604](https://tracker.moodle.org/browse/MDL-88604)
+
+#### Deprecated
+
+- The core_courseformat\base:get_view_url() $options sr is now deprecated.  Use pagesectionid instead.
+
+  For more information see [MDL-86284](https://tracker.moodle.org/browse/MDL-86284)
+- The core_courseformat\base::get_return_section() function is now deprecated.  Use get_page_section() instead.
+
+  For more information see [MDL-86284](https://tracker.moodle.org/browse/MDL-86284)
+
 ### core_courseformat
 
 #### Added
@@ -144,6 +357,12 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
 - Add a inline_help flag for course format setting elements.  When this flag is present in the setting definition, or set to true,  the help text is displayed as static text beneath the setting.
 
   For more information see [MDL-88669](https://tracker.moodle.org/browse/MDL-88669)
+
+#### Changed
+
+- The section collapse/expand-all toggle (collapsemenu) is no longer part of core_courseformat\output\local\content\section's exported data or the core_courseformat/local/content/section template. It has moved to core_courseformat\output\local\content and the core_courseformat/local/content template, and is now rendered once above the section list instead of as part of the first section. Course formats or themes that override these classes/templates to customise the toggle will need to update accordingly.
+
+  For more information see [MDL-88410](https://tracker.moodle.org/browse/MDL-88410)
 
 ### core_external
 
@@ -187,6 +406,14 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
 
   For more information see [MDL-87554](https://tracker.moodle.org/browse/MDL-87554)
 
+### core_grades
+
+#### Deprecated
+
+- The `grade_item::update_deducted_mark()` method has been deprecated and will be removed in a future release (See MDL-88663 for the final deprecation). Penalties are now applied directly in `penalty_manager` via `adjust_raw_grade()`. There is no replacement for this method.
+
+  For more information see [MDL-88407](https://tracker.moodle.org/browse/MDL-88407)
+
 ### core_reportbuilder
 
 #### Added
@@ -196,6 +423,9 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
   Entity implementations no longer have to manually add boilerplace to add the same joins to their own columns, filters and conditions
 
   For more information see [MDL-87405](https://tracker.moodle.org/browse/MDL-87405)
+- New `add_header_attributes(...)` method on column class instances for defining additional header attributes for the column when rendered in a report
+
+  For more information see [MDL-89384](https://tracker.moodle.org/browse/MDL-89384)
 
 #### Changed
 
@@ -204,6 +434,9 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
   The `$tablealias` parameter of the existing `set_main_table()` method in the same class is now mandatory
 
   For more information see [MDL-88397](https://tracker.moodle.org/browse/MDL-88397)
+- The `add_fields()` method of the report class now accepts union type parameter of string or array of strings to define the column fields
+
+  For more information see [MDL-89004](https://tracker.moodle.org/browse/MDL-89004)
 
 #### Deprecated
 
@@ -226,6 +459,30 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
   The previous `add_navitem` method of the hook class has been deprecated in favour of the above
 
   For more information see [MDL-88938](https://tracker.moodle.org/browse/MDL-88938)
+
+### core_webservice
+
+#### Added
+
+- New "allowcorsrequests" property in external functions definition for allowing specific AJAX Web Services to support CORS
+
+  For more information see [MDL-87150](https://tracker.moodle.org/browse/MDL-87150)
+
+### assignfeedback_editpdf
+
+#### Fixed
+
+- Fixed multi-page assignment feedback PDF conversion on Windows. Ghostscript's page number placeholder is no longer stripped by escapeshellarg().
+
+  For more information see [MDL-76966](https://tracker.moodle.org/browse/MDL-76966)
+
+### block_myoverview
+
+#### Changed
+
+- For the correct display of title and context menus, fields like fullname are returned with numeric HTML entities (&#60;) instead of named entities (&lt;) and unencoded quotes.
+
+  For more information see [MDL-79755](https://tracker.moodle.org/browse/MDL-79755)
 
 ### core\task\adhoc_task
 
@@ -259,6 +516,14 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
 
   For more information see [MDL-87302](https://tracker.moodle.org/browse/MDL-87302)
 
+### gradereport_user
+
+#### Changed
+
+- The external function `gradereport_user_get_grade_items` now includes the optional `parentcategoryid` field in its response for category grade items.
+
+  For more information see [MDL-64304](https://tracker.moodle.org/browse/MDL-64304)
+
 ### mod_assign
 
 #### Added
@@ -267,19 +532,137 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
 
   For more information see [MDL-86513](https://tracker.moodle.org/browse/MDL-86513)
 
+#### Changed
+
+- The `assign::calculate_penalised_grade()` method now applies grade-item scaling so the returned value now matches the `finalgrade` stored in the gradebook. It also accepts an optional `\grade_grade $usergraderecord` parameter to avoid redundant database lookups. Callers that previously applied their own grade-item scaling to the returned value should remove it to avoid double scaling.
+
+  For more information see [MDL-88407](https://tracker.moodle.org/browse/MDL-88407)
+- The feedback plugin `get_grading_batch_operation_details()` method can return a `'confirmationyes'` key to define the content of the confirmation save button
+
+  For more information see [MDL-88688](https://tracker.moodle.org/browse/MDL-88688)
+
 #### Deprecated
 
 - The delete_override, delete_all_overrides, move_group_override, reorder_group_overrides are now deprecated. Use the corresponding methods in the override_manager class instead: - override_manager::delete_override - override_manager::delete_all_overrides - override_manager::move_group_override - override_manager::reorder_group_overrides
 
   For more information see [MDL-86513](https://tracker.moodle.org/browse/MDL-86513)
 
+### mod_forum
+
+#### Added
+
+- Added the method `discussion::get_discussion_navigation_buttons()` that returns data for the discussion navigation template.
+
+  For more information see [MDL-88602](https://tracker.moodle.org/browse/MDL-88602)
+
+#### Changed
+
+- Add new mod_forum_set_read_state web service to allow clients to manually mark individual forum posts as read or unread (when manual read tracking is enabled), returning a simple status and warnings structure.
+
+  For more information see [MDL-87887](https://tracker.moodle.org/browse/MDL-87887)
+
+### mod_workshop
+
+#### Deprecated
+
+- Deprecated the Behat step `behat_mod_workshop::i_set_portfolio_instance_to`, please use `behat_portfolio::i_set_the_portfolio_instance_to` instead.
+
+  For more information see [MDL-89069](https://tracker.moodle.org/browse/MDL-89069)
+
+### theme
+
+#### Removed
+
+- Classic theme has been removed from core. During the upgrade, if the Classic theme files are not present, compatible Classic settings are migrated to the Boost theme and the Classic theme is uninstalled. The uninstallation removes all Classic theme settings, and any course, course category, cohort and user themes that referenced Classic are reset. To keep using the Classic theme with all its settings and theme selections intact, install it manually from the Moodle github repository BEFORE running the upgrade: the migration and uninstallation are then skipped entirely. Installing Classic after the upgrade results in a clean-slate theme, previous Classic settings and course/user theme selections are not restored and have to be configured again manually.
+  The upgrade cannot change values forced in config.php: sites with $CFG->theme set to 'classic' there must update or remove that line manually, otherwise the site keeps requesting the removed theme and falls back to the default theme with a warning on every page.
+  The migration copies the settings that were explicitly customised in Classic (unaddable blocks, brand colour, raw initial/pre SCSS, background and login background images) to Boost, keeping any existing Boost customisation where Classic held its default value. On sites where both themes had been customised, the resulting Boost configuration is therefore a mix of migrated Classic values and pre-existing Boost values, and should be reviewed after the upgrade. Theme presets and uploaded preset files are not migrated: presets are theme-specific SCSS entry points which Classic compiled wrapped in its own pre and post SCSS, so they would compile differently (or fail to compile) under Boost. Sites using a custom Classic preset should create an equivalent Boost preset after the upgrade. Migrated raw SCSS snippets that reference Classic variables or partials may also need to be reviewed. The Classic-only navbardark setting (dark navbar) has no Boost equivalent and is not migrated.
+  Block positions are not migrated. Classic provided two block columns (side-pre and side-post) while Boost provides one (side-pre): blocks placed in regions that do not exist in Boost are not lost, they are displayed at the end of the default block region of each page, but their previous column placement and ordering are not preserved. Sites and courses relying on specific block positioning should review their block layout after the upgrade.
+
+  For more information see [MDL-88351](https://tracker.moodle.org/browse/MDL-88351)
+
 ### theme_boost
+
+#### Added
+
+- The Noto Sans variable font's cyrillic and cyrillic-ext subsets (normal and italic styles, weights 100-900) are now included in `theme/boost/fonts/noto-sans/`. As a result, sites using cyrillic text will now render in Noto Sans.
+
+  For more information see [MDL-89024](https://tracker.moodle.org/browse/MDL-89024)
+- The Noto Sans JP variable font (weights 100-900) has been added to `theme/boost/fonts/noto-sans-jp/`. Noto Sans JP is scoped to `:lang(ja)` so that it is only served when the content language is Japanese, rather than being loaded as part of the global font stack. For sites using Japanese (`ja`, `ja_kids`, or `ja_wp`), the `<html>` element will have `lang="ja"` set. As a result, Japanese content on these sites will be rendered using Noto Sans JP. If the content language is not Japanese and Japanese text is not explicitly marked with `lang="ja"`, Noto Sans JP will not be served and the system font will be used instead.
+
+  For more information see [MDL-89024](https://tracker.moodle.org/browse/MDL-89024)
 
 #### Changed
 
 - The default UI typeface for Boost has changed from the system-ui font stack to Noto Sans. Noto Sans is now self-hosted under `theme/boost/fonts/` and declared via `@font-face` in `theme/boost/scss/moodle/fonts.scss`. The latin and latin-ext subsets are included (normal and italic, weight 100-900). The `$font-family-sans-serif` Bootstrap variable is now set from the `$mds-font-family-base` MDS token. Child themes that override `$font-family-sans-serif` are unaffected. Child themes that rely on the system-ui fallback behaviour will now render Noto Sans instead.
 
   For more information see [MDL-88412](https://tracker.moodle.org/browse/MDL-88412)
+- The course index drawer now shows a single collapse/expand all toggle button instead of a dropdown menu. The `drawerheadercontent` block in `theme_boost/drawer` has been removed and replaced with a new `drawercontrols` block.
+
+  For more information see [MDL-89050](https://tracker.moodle.org/browse/MDL-89050)
+
+#### Deprecated
+
+- AMD modules **must not** depend upon core Bootstrap modules from
+  `theme_boost/bootstrap/*`. Direct loading of Bootstrap submodules
+  is not supported by the Bootstrap project.
+
+  Instead of:
+  ```js
+  import Tooltip from 'theme_boost/bootstrap/tooltip';
+  ```
+
+  You can use either of the following approaches:
+
+  ### For Moodle 5.2 and earlier
+
+  ```js
+  // For Moodle 5.2 and earlier:
+  // This option will be supported until Moodle 7.0 when it will be removed.
+  // You are encouraged to switch to the new approach as soon as possible to
+  // avoid last-minute issues when upgrading to Moodle 7.0.
+  import {Tooltip} from 'theme_boost/index';
+
+  // For Moodle 5.3 and later
+  import {Tooltip} from 'bootstrap';
+  ```
+
+  ### Important note
+
+  The `util` and `dom` helper directories **must** still directly load modules.
+  These modules are _not_ a part of the public Bootstrap API.
+  Use of these modules is at your own risk.
+
+  To use these modules you can use:
+
+  ```js
+  // Moodle 5.2 and earlier:
+  import EventHandler from 'theme_boost/bootstrap/dom/event-handler';
+
+  // Moodle 5.3 and later:
+  import EventHandler from 'bootstrap/dom/event-handler';
+  ```
+
+  For more information see [MDL-88766](https://tracker.moodle.org/browse/MDL-88766)
+
+### tiny_recordrtc
+
+#### Added
+
+- You can now always download the recorded files.
+
+  For more information see [MDL-88603](https://tracker.moodle.org/browse/MDL-88603)
+
+#### Changed
+
+- When a recording file is too large to upload, users are presented with an option to download the file.
+
+  For more information see [MDL-88603](https://tracker.moodle.org/browse/MDL-88603)
+
+#### Fixed
+
+- Duration metadata is created when recording is stopped to accurately determine the recording duration.
+
+  For more information see [MDL-88603](https://tracker.moodle.org/browse/MDL-88603)
 
 ## 5.2
 

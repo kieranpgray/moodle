@@ -632,6 +632,17 @@
     background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md);
     box-shadow:0 8px 28px rgba(0,0,0,.16); padding:var(--mds-spacing-sm); }
   .devswitch h5{ margin:0 0 6px; font-size:.625rem; text-transform:uppercase; letter-spacing:.5px; color:var(--mds-text-muted); }
+  /* collapse/restore so the panel never blocks the screen it is describing */
+  .devswitch > h5:first-of-type{ padding-right:26px; }
+  .devmin{ position:absolute; top:6px; right:6px; width:22px; height:22px; border:1px solid var(--mds-border-default);
+    background:var(--mds-bg-surface-subtle); border-radius:var(--mds-border-radius-xs); cursor:pointer; font-family:inherit;
+    color:var(--mds-text-subtle); display:flex; align-items:center; justify-content:center; gap:6px; font-size:10px; }
+  .devmin:hover{ background:var(--mds-bg-surface-strong); color:var(--mds-text-default); }
+  .devswitch.min{ width:auto; padding:4px; }
+  .devswitch.min > *:not(.devmin){ display:none; }
+  .devswitch.min .devmin{ position:static; width:auto; height:26px; padding:0 var(--mds-spacing-xs); border-color:transparent;
+    background:var(--mds-bg-interactive-primary-default); color:#fff; font-size:.6875rem; font-weight:var(--mds-font-weight-medium); }
+  .devswitch.min .devmin:hover{ background:var(--mds-bg-interactive-primary-hover); color:#fff; }
   .devrow{ display:flex; flex-wrap:wrap; gap:4px; }
   .devbtn{ border:1px solid var(--mds-border-default); background:var(--mds-bg-surface-subtle); border-radius:var(--mds-border-radius-xs);
     padding:4px 8px; cursor:pointer; font-family:inherit; font-size:.6875rem; color:var(--mds-text-subtle); font-weight:var(--mds-font-weight-medium); }
@@ -1053,6 +1064,9 @@
 
   <!-- ===== dev state switcher (throwaway — jump between create/edit states) ===== -->
   <div class="devswitch" id="devSwitch">
+    <button class="devmin" id="devMin" aria-expanded="true" title="Minimise the state switcher">
+      <i class="fa-solid fa-minus" id="devMinIcon"></i><span id="devMinLabel"></span>
+    </button>
     <h5>State</h5>
     <div class="devrow" id="devStates">
       <button class="devbtn" data-state="read">View mode</button>
@@ -1872,6 +1886,23 @@
       if(e.key === "ArrowRight") setW(cur + step); else if(e.key === "ArrowLeft") setW(cur - step);
       else if(e.key === "Home") setW(MIN); else if(e.key === "End") setW(MAX); else h = false;
       if(h){ e.preventDefault(); readout.classList.add("show"); clearTimeout(handle._t); handle._t = setTimeout(function(){ readout.classList.remove("show"); }, 700); }
+    });
+  })();
+
+  /* ---------- minimise the state switcher ----------
+     Collapses the panel to a small "State" chip so it stops covering the screen
+     it is describing; click again to restore. Prototype-only, like the panel. */
+  (function(){
+    var panel = document.getElementById("devSwitch");
+    var btn = document.getElementById("devMin");
+    if(!panel || !btn) return;
+    btn.addEventListener("click", function(){
+      var min = panel.classList.toggle("min");
+      btn.setAttribute("aria-expanded", String(!min));
+      btn.title = min ? "Restore the state switcher" : "Minimise the state switcher";
+      document.getElementById("devMinIcon").className = min ? "fa-solid fa-flask" : "fa-solid fa-minus";
+      document.getElementById("devMinLabel").textContent = min ? "State" : "";
+      if(typeof updateAnnotations === "function") requestAnimationFrame(updateAnnotations);
     });
   })();
 

@@ -6,20 +6,8 @@
 // Must be imported before Bootstrap so that the design system tokens can be used to override Bootstrap variables.
 @import "design-system";
 
-// Typography
-$font-family-sans-serif: $mds-font-family-base,
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    "Liberation Sans",
-    Arial,
-    sans-serif,
-    "Apple Color Emoji",
-    "Segoe UI Emoji",
-    "Segoe UI Symbol",
-    "Noto Color Emoji" !default;
+// Import font stack.
+@import "moodle/font-stack";
 
 // Prefix for all CSS variables
 $prefix: bs- !default;
@@ -96,6 +84,7 @@ $card-group-margin: .25rem;
 $focus-ring-opacity: .75 !default;
 $input-border-color: var(--#{$prefix}gray-500) !default;
 $form-check-input-border: var(--#{$prefix}border-width) solid var(--#{$prefix}gray-500) !default;
+$form-switch-color: rgba($black, .45) !default;
 
 // Dropdowns
 $dropdown-link-hover-color: $white;
@@ -103,6 +92,14 @@ $dropdown-link-hover-bg: $primary;
 
 // Popovers
 $popover-max-width: 300px !default;
+
+// Body
+$body-bg: $gray-100 !default;
+
+// Cards
+// These are CSS custom properties so that cards follow the current colour mode, see scss/moodle/dark.scss.
+$card-bg: var(--#{$prefix}white) !default;
+$card-border-color: var(--#{$prefix}gray-200) !default;
 
 // Spacers
 $spacer: 1rem !default;
@@ -130,6 +127,9 @@ $enable-smooth-scroll: not $behatsite !default;
 // Import All of Bootstrap
 @import "bootstrap";
 
+// Import language-specific font stacks. Must be imported after Bootstrap.
+@import "moodle/font-stack-lang";
+
 // Import Core moodle CSS
 @import "moodle";
 
@@ -140,10 +140,6 @@ $enable-smooth-scroll: not $behatsite !default;
 body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-}
-
-.navbar {
-    box-shadow: 0 2px 4px rgba(0, 0, 0, .08);
 }
 
 // Rounded user pictures

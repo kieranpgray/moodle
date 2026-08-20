@@ -47,21 +47,33 @@ class footer_content implements named_templatable, renderable {
 
     #[\Override]
     public function export_for_template(renderer_base $output) {
-        // Get previous and next URLs for the current course module.
+        $data = ['completion' => $this->export_completion($output)];
+        $navigation = new course_navigation();
+        $modinfo = $this->cminfo->get_modinfo();
+        $section = $navigation->get_section($this->cminfo);
+        $allsectioncms = $navigation->get_all_section_cms($modinfo, $section);
+
+        $isfirst = $navigation->is_first_navigable($this->cminfo, $modinfo, $allsectioncms);
         $previousurl = util::get_path_for_callable(
             [course_navigation::class, 'cm_previous_element'],
             ['cm' => $this->cminfo->id],
         );
+        if (!$isfirst) {
+            $data['previousurl'] = $previousurl->out(false);
+        }
+
+        $islast = $navigation->is_last_navigable($this->cminfo, $modinfo, $allsectioncms);
         $nexturl = util::get_path_for_callable(
             [course_navigation::class, 'cm_next_element'],
             ['cm' => $this->cminfo->id],
         );
+        if ($islast) {
+            $data['backtocourseurl'] = $nexturl->out(false);
+        } else {
+            $data['nexturl'] = $nexturl->out(false);
+        }
 
-        return [
-            'previousurl' => $previousurl->out(false),
-            'nexturl' => $nexturl->out(false),
-            'completion' => $this->export_completion($output),
-        ];
+        return $data;
     }
 
     /**
@@ -75,7 +87,7 @@ class footer_content implements named_templatable, renderable {
 
         $userid = $this->userid ?? $USER->id;
         $details = \core_completion\cm_completion_details::get_instance($this->cminfo, $userid);
-        $data = (array) (new \core_course\output\activity_completion($this->cminfo, $details, smallbutton: false))
+        $data = (array) (new \core_course\output\activity_completion($this->cminfo, $details, smallbutton: true))
             ->export_for_template($output);
         if (empty($data['uservisible'])) {
             return '';
@@ -83,6 +95,9 @@ class footer_content implements named_templatable, renderable {
         if (!empty($data['showmanualcompletion'])) {
             return $output->render_from_template('core_course/completion_manual', $data);
         } else if (!empty($data['hascompletion']) && !empty($data['isautomatic'])) {
+            if (!$data['istrackeduser'] || !$data['overallcomplete']) {
+                return ''; // In this case the template would be an empty span.
+            }
             return $output->render_from_template('core_course/completion_status', $data);
         }
         return '';

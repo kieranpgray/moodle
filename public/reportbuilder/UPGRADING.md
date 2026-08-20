@@ -9,6 +9,9 @@
   Entity implementations no longer have to manually add boilerplace to add the same joins to their own columns, filters and conditions
 
   For more information see [MDL-87405](https://tracker.moodle.org/browse/MDL-87405)
+- New `add_header_attributes(...)` method on column class instances for defining additional header attributes for the column when rendered in a report
+
+  For more information see [MDL-89384](https://tracker.moodle.org/browse/MDL-89384)
 
 ### Changed
 
@@ -17,6 +20,9 @@
   The `$tablealias` parameter of the existing `set_main_table()` method in the same class is now mandatory
 
   For more information see [MDL-88397](https://tracker.moodle.org/browse/MDL-88397)
+- The `add_fields()` method of the report class now accepts union type parameter of string or array of strings to define the column fields
+
+  For more information see [MDL-89004](https://tracker.moodle.org/browse/MDL-89004)
 
 ### Deprecated
 

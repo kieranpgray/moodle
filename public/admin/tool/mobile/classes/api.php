@@ -73,6 +73,86 @@ class api {
     const AUTOLOGOUT_CUSTOM = 2;
 
     /**
+     * Return the current or provided subscription plan in a normalised format.
+     *
+     * If the provided data is missing or malformed and $loadfromapi is true, cached subscription information is requested.
+     *
+     * @param ?array $subscriptiondata Optional subscription information returned by the Apps Portal API.
+     * @param bool $loadfromapi Whether cached API data should be requested if the provided data is void or invalid.
+     * @return ?string The normalised plan, or null if it is missing or invalid.
+     */
+    public static function get_normalized_plan(?array $subscriptiondata = null, bool $loadfromapi = true): ?string {
+        if (
+            !is_array($subscriptiondata) ||
+            empty($subscriptiondata['subscription']) ||
+            !is_array($subscriptiondata['subscription']) ||
+            empty($subscriptiondata['subscription']['plan']) ||
+            !is_string($subscriptiondata['subscription']['plan'])
+        ) {
+            if (!$loadfromapi) {
+                return null;
+            }
+            $subscriptiondata = self::get_subscription_information(true);
+            return self::get_normalized_plan($subscriptiondata, false);
+        }
+
+        return \core_text::strtolower(trim($subscriptiondata['subscription']['plan']));
+    }
+
+    /**
+     * Check whether the current or provided subscription data belongs to a Premium or BMA plan.
+     *
+     * @param ?array $subscriptiondata Optional subscription information returned by the Apps Portal API.
+     * @param bool $loadfromapi Whether cached API data should be requested if the provided data is void or invalid.
+     * @return bool
+     */
+    public static function is_premium_or_bma_plan(?array $subscriptiondata = null, bool $loadfromapi = true): bool {
+        $plan = self::get_normalized_plan($subscriptiondata, $loadfromapi);
+
+        return $plan === 'premium' || $plan === 'bma';
+    }
+
+    /**
+     * Check whether the provided HTML content contains Matomo tracking code.
+     *
+     * @param ?string $content HTML content to inspect.
+     * @return bool
+     */
+    public static function contains_matomo_tracking(?string $content): bool {
+        if (empty($content)) {
+            return false;
+        }
+
+        $pattern = '/(_paq|matomo\.(?:js|php)|piwik\.(?:js|php))/i';
+
+        return preg_match($pattern, $content) === 1;
+    }
+
+    /**
+     * Check whether Matomo is configured in the Additional HTML settings.
+     *
+     * @return bool
+     */
+    public static function has_matomo_additional_html(): bool {
+        global $CFG;
+
+        $settings = [
+            'additionalhtmlhead',
+            'additionalhtmltopofbody',
+            'additionalhtmlfooter',
+        ];
+
+        foreach ($settings as $settingname) {
+            $content = $CFG->{$settingname} ?? null;
+            if (self::contains_matomo_tracking($content)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Returns a list of Moodle plugins supporting the mobile app.
      *
      * @return array an array of objects containing the plugin information
@@ -211,6 +291,10 @@ class api {
             'tool_mobile_androidappid' => get_config('tool_mobile', 'androidappid'),
             'tool_mobile_setuplink' => clean_param(get_config('tool_mobile', 'setuplink'), PARAM_URL),
             'tool_mobile_qrcodetype' => clean_param(get_config('tool_mobile', 'qrcodetype'), PARAM_INT),
+            'tool_mobile_enabledeeplinkautologin' => clean_param(
+                get_config('tool_mobile', 'enabledeeplinkautologin'),
+                PARAM_BOOL
+            ),
             'supportpage' => $sitesupportavailable ? clean_param($CFG->supportpage, PARAM_URL) : '',
             'supportavailability' => clean_param($CFG->supportavailability, PARAM_INT),
             'showloginform' => (int) get_config('core', 'showloginform'),
@@ -311,17 +395,14 @@ class api {
 
         if (empty($section) or $section == 'gradessettings') {
             require_once($CFG->dirroot . '/user/lib.php');
-            $settings->mygradesurl = user_mygrades_url();
-            // The previous function may return moodle_url instances or plain string URLs.
-            if ($settings->mygradesurl instanceof moodle_url) {
-                $settings->mygradesurl = $settings->mygradesurl->out(false);
-            }
+            $settings->mygradesurl = \core\user::mygrades_url()->out(false);
         }
 
         if (empty($section) or $section == 'mobileapp') {
             $settings->tool_mobile_forcelogout = get_config('tool_mobile', 'forcelogout');
             $settings->tool_mobile_customlangstrings = get_config('tool_mobile', 'customlangstrings');
             $settings->tool_mobile_disabledfeatures = get_config('tool_mobile', 'disabledfeatures');
+            $settings->tool_mobile_showlogoinappheader = clean_param(get_config('tool_mobile', 'showlogoinappheader'), PARAM_BOOL);
             $settings->tool_mobile_filetypeexclusionlist = get_config('tool_mobile', 'filetypeexclusionlist');
             $custommenuitems = get_config('tool_mobile', 'custommenuitems');
             $customusermenuitems = get_config('tool_mobile', 'customusermenuitems');
@@ -593,6 +674,7 @@ class api {
                 'CoreReportBuilderDelegate' => new lang_string('reportbuilder', 'core_reportbuilder'),
                 'NoDelegate_CoreUserSupport' => new lang_string('contactsitesupport', 'admin'),
                 'NoDelegate_GlobalSearch' => new lang_string('globalsearch', 'search'),
+                'NoDelegate_CoreFormatTextShortenText' => new lang_string('shortentext', 'tool_mobile'),
             ],
             "$mainmenu" => [
                 'CoreMainMenuDelegate_CoreSiteHome' => new lang_string('sitehome'),
@@ -627,6 +709,8 @@ class api {
                 'NoDelegate_CoreCourseDownload' => new lang_string('downloadcourse', 'tool_mobile'),
                 'NoDelegate_CoreCoursesDownload' => new lang_string('downloadcourses', 'tool_mobile'),
                 'CoreCourseOptionsDelegate_CoreCourseOverview' => new lang_string('activitiesoverview', 'tool_mobile'),
+                'NoDelegate_CoreCourseModuleNavigation' => new lang_string('modulenavigation', 'tool_mobile'),
+                'NoDelegate_CoreCourseSectionNavigation' => new lang_string('sectionnavigation', 'tool_mobile'),
             ],
             "$participants" => [
                 'CoreUserDelegate_CoreGrades:viewGrades' => new lang_string('grades', 'grades'),

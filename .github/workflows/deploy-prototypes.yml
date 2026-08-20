@@ -1,0 +1,92 @@
+name: Deploy prototypes
+
+# Source of truth: main → public/prototypes/**
+# Merge/push to main publishes prototypes to the Hostinger VPS over SSH,
+# and refreshes the slim deploy/prototypes branch.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/prototypes/**'
+      - '.github/workflows/deploy-prototypes.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-prototypes
+  cancel-in-progress: true
+
+jobs:
+  publish-deploy-branch:
+    name: Update deploy/prototypes branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Publish deploy/prototypes branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          WORK=$(mktemp -d)
+          cp -R public/prototypes/. "$WORK/"
+          cd "$WORK"
+          git init -b deploy/prototypes
+          git add .
+          git commit -m "Deploy prototypes from ${GITHUB_SHA}"
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push -f origin deploy/prototypes
+
+  ssh-to-vps:
+    name: SSH sync to Hostinger VPS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Check SSH secrets
+        id: check
+        env:
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          SSH_USERNAME: ${{ secrets.HOSTINGER_SSH_USERNAME }}
+          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          SSH_PATH: ${{ secrets.HOSTINGER_SSH_PATH }}
+        run: |
+          if [ -z "${SSH_HOST}" ] || [ -z "${SSH_USERNAME}" ] || [ -z "${SSH_PATH}" ] || [ -z "${SSH_KEY}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Need HOSTINGER_SSH_HOST, USERNAME, PATH, and KEY — skipping VPS sync."
+            exit 0
+          fi
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+
+      - name: Start ssh-agent
+        if: steps.check.outputs.configured == 'true'
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.HOSTINGER_SSH_KEY }}
+
+      - name: Rsync public/prototypes to VPS
+        if: steps.check.outputs.configured == 'true'
+        env:
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          SSH_USERNAME: ${{ secrets.HOSTINGER_SSH_USERNAME }}
+          SSH_PATH: ${{ secrets.HOSTINGER_SSH_PATH }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          rsync -az --delete \
+            -e "ssh -o StrictHostKeyChecking=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=4" \
+            public/prototypes/ \
+            "${SSH_USERNAME}@${SSH_HOST}:${SSH_PATH}/"
+          ssh -o StrictHostKeyChecking=yes \
+            "${SSH_USERNAME}@${SSH_HOST}" \
+            "ls -la '${SSH_PATH}' | head -20"

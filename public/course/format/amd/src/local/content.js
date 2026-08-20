@@ -23,7 +23,7 @@
  */
 
 import {BaseComponent} from 'core/reactive';
-import Collapse from 'theme_boost/bootstrap/collapse';
+import {Collapse} from 'bootstrap';
 import {throttle, debounce} from 'core/utils';
 import {getCurrentCourseEditor} from 'core_courseformat/courseeditor';
 import Config from 'core/config';
@@ -130,12 +130,6 @@ export default class Component extends BaseComponent {
             toogleAll.setAttribute('aria-controls', collapseElementIds.join(' '));
 
             this.addEventListener(toogleAll, 'click', this._allSectionToggler);
-            this.addEventListener(toogleAll, 'keydown', e => {
-                // Collapse/expand all sections when Space key is pressed on the toggle button.
-                if (e.key === ' ') {
-                    this._allSectionToggler(e);
-                }
-            });
             this._refreshAllSectionsToggler(state);
         }
 

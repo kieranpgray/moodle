@@ -3,1607 +3,255 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PROTOTYPE — Course page uplift (throwaway, not for merge)</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="generator" content="encrypt-prototype">
+<title>Moodle prototype — password required</title>
 
-<!-- Fonts + icons via CDN for Figma fidelity (see plan Risks: needs network on
-     first open; degrades to system font + missing-glyph boxes offline). -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<!--
+  Carrier page for an encrypted prototype. Generated — do not hand-edit; edit
+  the plaintext source in prototypes-src/source/ and re-run:
+
+      node prototypes-src/encrypt-prototype.mjs <source> [--out <path>]
+
+  Everything below the lock screen is one AES-256-GCM blob. The prototype's
+  markup, styles, data and notes are not present in this file in any readable
+  form, and the password is not present in any form at all — not even as a
+  hash. Guessing it means an offline attack against PBKDF2-SHA256 at 600,000
+  iterations, which is the whole security story here: a weak password is a
+  weak page.
+
+  On a correct password the browser derives the key, decrypts and ungzips in
+  memory, then rewrites the document with the plaintext, so the prototype runs
+  exactly as it would have unencrypted.
+-->
 
 <style>
-  /*
-    THROWAWAY PROTOTYPE — high-fidelity pass on the LMS-uplift course page
-    (MDL-87755). Three areas styled to Figma (file rlo17bSNmm9tChVnLgbJa6):
-    top nav (209-2264 / -2260 / 225-3750), course index (225-4000), course
-    page (209-2791). Retains the earlier drawer interaction (content-relative
-    toggle, left->right slide, drag-resize, no 1400px jump). Delete when the
-    design question is answered (NOTES at bottom).
-
-    Confirmed decisions: edit-mode static (Edit toggle cosmetic); course index
-    = overlay/off-canvas below 1024px; long activity names retained so
-    drag-to-widen keeps its payoff.
-  */
-
-  :root{
-    /* spacing */
-    --sp-xxs:4px; --sp-xs:8px; --sp-sm:12px; --sp-md:16px; --sp-lg:20px;
-    /* radius */
-    --r-sm:6px; --r-md:8px; --r-lg:12px; --r-pill:800px;
-    /* color (Figma tokens) */
-    --text-default:#1d2125; --text-subtle:#495057; --text-muted:#6a737b;
-    --bg-subtle:#f8f9fa; --bg-strong:#e9ecef;
-    --border-subtle:#e9ecef; --border-default:#dee2e6; --border-ring:#8f959e;
-    --primary:#0f6cbf; --primary-dark:#0b5aa0;
-    --surface:#ffffff; --page-bg:#ffffff;
-    --amber-bg:#fdf3e7; --amber-text:#8a5a00;
-    --activity-magenta:#c2185b; --activity-teal:#0f7b8a; --activity-teal-bg:#d7ecef;
-    --ci-row-hover:#e1e4e6; /* course-index row hover bg (for overlaid actions) */
-    /* layout */
-    --shell-max:1440px; --shell-pad:48px;
-    --nav-h:64px;
-    --ci-width:285px; --ci-min:285px; --ci-max:560px;
-    --cb-width:315px;      /* right "Course Blocks" drawer (no resize) */
-    --sitenav-width:300px; /* hamburger site-nav overlay */
-    --content-max:873px;
-    --btn:40px;
+  :root {
+    --blue-50:#e7f0f9; --blue-500:#0f6cbf; --blue-600:#0c5699; --blue-700:#094173;
+    --gray-100:#f8f9fa; --gray-300:#dee2e6; --gray-500:#8f959e;
+    --gray-700:#495057; --gray-900:#1d2125; --red-600:#ca3120;
   }
 
   *{ box-sizing:border-box; }
-  html,body{ height:100%; }
+
   body{
-    margin:0;
-    font-family:"Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    color:var(--text-default);
-    background:var(--page-bg);
-    -webkit-font-smoothing:antialiased;
-  }
-  a{ color:var(--primary); text-decoration:none; }
-  button{ font-family:inherit; }
-
-  /* shared centered container: both nav inner row and page row use it so
-     their horizontal bounds line up ("nav positioned like page content"). */
-  .shell{
-    max-width:var(--shell-max);
-    margin:0 auto;
-    padding:0 var(--shell-pad);
+    margin:0; min-height:100vh;
+    display:flex; align-items:center; justify-content:center; padding:1.5rem;
+    background:var(--gray-100); color:var(--gray-900); line-height:1.5;
+    font-family:'Noto Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   }
 
-  /* =====================  TOP NAV  ===================== */
-  .topbar{
-    position:sticky; top:0; z-index:40;
-    background:var(--bg-subtle);
-    border-bottom:1px solid var(--border-subtle);
+  .card{
+    width:100%; max-width:26rem;
+    background:#fff; border:1px solid var(--gray-300); border-radius:.75rem;
+    padding:2rem; box-shadow:0 .5rem 1rem rgba(0,0,0,.08);
   }
-  .topbar-inner{
-    height:var(--nav-h);
-    display:flex; align-items:center; justify-content:space-between; gap:var(--sp-md);
-  }
-  .nav-left{ display:flex; align-items:center; gap:32px; min-width:0; }
-  .brand{ display:flex; align-items:center; gap:8px; height:40px; }
-  .brand .mark{ font-size:26px; color:var(--text-default); }
-  .brand .word{ line-height:1; }
-  .brand .word b{ display:block; font-weight:800; font-size:17px; letter-spacing:.2px; }
-  .brand .word span{ display:block; font-size:11px; letter-spacing:2px; color:var(--text-subtle); }
 
-  .nav-pills{ display:flex; align-items:center; gap:var(--sp-xxs); }
-  .nav-pill{
-    display:flex; align-items:center; gap:var(--sp-xxs);
-    padding:var(--sp-xs) var(--sp-sm);
-    border-radius:var(--r-md); border:none; background:transparent;
-    font-size:14px; font-weight:500; color:var(--text-subtle); cursor:pointer;
-    white-space:nowrap;
-  }
-  .nav-pill .dot{ width:4px; height:4px; border-radius:50%; background:var(--primary); }
-  .nav-pill.selected{ background:var(--bg-strong); color:var(--text-default); }
-
-  .burger{
-    display:none;
-    width:var(--btn); height:var(--btn); border:none; background:transparent;
-    border-radius:var(--r-sm); cursor:pointer; color:var(--text-default); font-size:20px;
-    align-items:center; justify-content:center;
-  }
-  .burger:hover{ background:var(--bg-strong); }
-
-  .nav-right{ display:flex; align-items:center; gap:var(--sp-xs); }
-  .nav-right-group{ display:flex; align-items:center; gap:var(--sp-md); }
-
-  .search{
-    display:flex; align-items:center; gap:var(--sp-xs);
-    width:256px; height:36px; padding:0 var(--sp-sm);
-    background:var(--bg-strong); border-radius:var(--r-md);
-    color:var(--text-subtle); font-size:14px;
-  }
-  .search i{ font-size:12px; }
-  .search-icon-btn{
-    display:none;
-    width:36px; height:36px; border:none; background:transparent; border-radius:var(--r-md);
-    color:var(--text-subtle); cursor:pointer; align-items:center; justify-content:center;
-  }
-  .search-icon-btn:hover{ background:var(--bg-strong); }
-
-  .editmode{ display:flex; align-items:center; gap:var(--sp-xs); }
-  .editmode .label{ font-size:14px; color:var(--text-subtle); white-space:nowrap; }
-  .switch{
-    width:32px; height:16px; border-radius:var(--r-pill); background:var(--primary);
-    position:relative; border:none; cursor:pointer; flex:0 0 auto;
-  }
-  .switch::after{
-    content:""; position:absolute; top:2px; left:18px; width:12px; height:12px;
-    border-radius:50%; background:#fff; transition:left .15s ease;
-  }
-  .switch[aria-pressed="false"]{ background:var(--border-ring); }
-  .switch[aria-pressed="false"]::after{ left:2px; }
-
-  .icon-btn{
-    width:28px; height:28px; border:none; background:transparent; border-radius:var(--r-sm);
-    color:var(--text-subtle); font-size:12px; cursor:pointer;
+  .lock{
     display:flex; align-items:center; justify-content:center;
-  }
-  .icon-btn:hover{ background:var(--bg-strong); }
-  .nav-icons{ display:flex; align-items:center; gap:var(--sp-xs); }
-
-  .nav-divider{ width:1px; height:24px; background:var(--bg-strong); }
-
-  .profile{
-    display:flex; align-items:center; gap:var(--sp-xs);
-    padding:0 var(--sp-xs); border-radius:var(--r-pill); cursor:pointer;
-  }
-  .profile:hover{ background:var(--bg-strong); }
-  .avatar{
-    width:32px; height:32px; border-radius:50%; flex:0 0 auto;
-    border:1px solid var(--border-default);
-    background:linear-gradient(135deg,#f0a878,#c9805a);
-    display:flex; align-items:center; justify-content:center;
-    color:#fff; font-size:12px; font-weight:600;
-  }
-  .profile .pname{ font-size:14px; font-weight:500; color:var(--text-default); }
-  .profile .fa-chevron-down{ font-size:8px; color:var(--text-subtle); }
-
-  /* =====================  PAGE LAYOUT  ===================== */
-  .layout{
-    display:flex; align-items:flex-start;
-    padding-top:var(--sp-lg); padding-bottom:64px;
-    min-height:calc(100vh - var(--nav-h));
-    position:relative;
+    width:2.75rem; height:2.75rem; margin-bottom:1rem;
+    border-radius:50%; background:var(--blue-50); font-size:1.15rem;
   }
 
-  /* floating open-toggle column (shown when index closed).
-     align-self:stretch gives the sticky button vertical range to stick. */
-  .toggle-col{
-    flex:0 0 auto; width:var(--btn); margin-right:12px; align-self:stretch;
-    display:flex; justify-content:center;
-  }
-  body.ci-open .toggle-col{ width:0; margin-right:0; overflow:hidden; }
+  h1{ margin:0 0 .5rem; font-size:1.25rem; font-weight:700; }
+  .sub{ margin:0 0 1.5rem; font-size:.92rem; color:var(--gray-700); }
+  label{ display:block; font-size:.85rem; font-weight:600; margin-bottom:.35rem; }
 
-  .ci-toggle{
-    width:var(--btn); height:var(--btn); border:none; cursor:pointer;
-    border-radius:var(--r-sm); background:var(--bg-strong);
-    display:flex; align-items:center; justify-content:center;
+  input{
+    width:100%; padding:.6rem .75rem; font:inherit; font-size:.95rem;
+    border:1px solid var(--gray-500); border-radius:.5rem; background:#fff; color:inherit;
   }
-  .ci-toggle:hover{ background:var(--border-default); }
-  .ci-toggle.sticky{ position:sticky; top:calc(var(--nav-h) + var(--sp-lg)); }
-  .ci-toggle.contained{ background:transparent; }
-  .ci-toggle.contained:hover{ background:rgba(0,0,0,.06); }
-  .sidebar-icon{ width:20px; height:16px; display:block; }
+  input:focus-visible{ outline:2px solid var(--blue-500); outline-offset:2px; border-color:var(--blue-500); }
 
-  /* course index drawer (grey rounded card) — sticky so it stays in view on scroll */
-  .drawer{
-    flex:0 0 auto; width:0; overflow:hidden;
-    position:sticky; top:calc(var(--nav-h) + var(--sp-lg)); align-self:flex-start;
-    transition:width .32s cubic-bezier(.4,0,.2,1);
+  button{
+    width:100%; margin-top:1rem; padding:.6rem 1rem;
+    font:inherit; font-size:.95rem; font-weight:600;
+    color:#fff; background:var(--blue-500); border:0; border-radius:.5rem; cursor:pointer;
   }
-  body.ci-open #drawer{ width:var(--ci-width); }
-  .ci-card{
-    width:var(--ci-width); background:var(--bg-strong); border-radius:var(--r-md);
-    padding:0 var(--sp-sm) var(--sp-md);
-    max-height:calc(100vh - var(--nav-h) - 2 * var(--sp-lg)); overflow-x:hidden; overflow-y:auto;
-    transform:translateX(-100%); transition:transform .32s cubic-bezier(.4,0,.2,1);
-  }
-  body.ci-open .ci-card{ transform:translateX(0); }
+  button:hover:not(:disabled){ background:var(--blue-600); }
+  button:focus-visible{ outline:2px solid var(--blue-700); outline-offset:2px; }
+  button:disabled{ opacity:.65; cursor:progress; }
 
-  .ci-header{
-    display:flex; align-items:center; justify-content:space-between;
-    height:53px; padding-left:var(--sp-md); padding-top:var(--sp-xs);
-  }
-  .ci-title{ font-size:16px; font-weight:600; color:var(--text-default); }
-  .ci-divider{ height:1px; background:var(--border-default); margin:0 -0; }
+  .msg{ margin:.75rem 0 0; font-size:.88rem; font-weight:600; min-height:1.3em; }
+  .msg.error{ color:var(--red-600); }
+  .msg.working{ color:var(--gray-700); font-weight:400; }
 
-  .ci-collapseall{
-    display:flex; align-items:center; gap:var(--sp-xs);
-    padding:var(--sp-xs) var(--sp-sm); margin-top:var(--sp-xs);
-    background:none; border:none; cursor:pointer;
-    color:var(--text-muted); font-size:14px;
-  }
-  .ci-collapseall i{ font-size:12px; }
-
-  .ci-section{ }
-  .ci-sec-head{
-    display:flex; align-items:center; gap:var(--sp-xs);
-    padding:var(--sp-sm) var(--sp-sm); border:none; background:none; width:100%;
-    cursor:pointer; text-align:left; border-radius:var(--r-sm);
-  }
-  .ci-sec-head:hover{ background:rgba(0,0,0,.04); }
-  .ci-sec-head .chev{ width:10px; font-size:8px; color:var(--text-muted); flex:0 0 auto; text-align:center; transition:transform .15s ease; }
-  .ci-sec-head .txt{ font-size:14px; font-weight:500; color:var(--text-default); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .ci-section.collapsed .chev{ transform:rotate(-90deg); }
-  .ci-section.collapsed .ci-activities{ display:none; }
-
-  .ci-activities{ padding-left:var(--sp-md); display:flex; flex-direction:column; gap:var(--sp-xxs); }
-  .ci-activity{
-    display:flex; align-items:center; gap:var(--sp-sm); padding:var(--sp-sm);
-    border-radius:var(--r-sm); cursor:pointer; min-width:0;
-  }
-  .ci-activity:hover{ background:rgba(0,0,0,.04); }
-  .ci-check{
-    width:16px; height:16px; border-radius:50%; flex:0 0 auto;
-    border:1px solid var(--border-ring);
-    display:flex; align-items:center; justify-content:center;
-  }
-  .ci-check.done{ background:var(--primary); border-color:var(--primary); color:#fff; font-size:9px; }
-  .ci-acticon{ font-size:14px; color:var(--activity-magenta); flex:0 0 auto; }
-  .ci-activity .txt{
-    font-size:14px; font-weight:500; color:var(--text-subtle);
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
-  }
-  .ci-subsection{ padding-left:var(--sp-md); }
-
-  /* ============ inline row edit controls (Confluence-style) ============
-     Revealed on hover/focus, EDIT MODE ONLY (body.edit-on). All course-index
-     rows (section / activity / book / chapter) get a trailing cluster:
-     drag grip · + add · … more. Reorder is by dragging the row.
-     (--ci-row-hover is defined in :root — card bg + row hover overlay, so the
-     overlaid actions cover the truncated name cleanly.) */
-  .ci-secrow{ position:relative; display:flex; align-items:center; }
-  .ci-secrow .ci-sec-head{ flex:1 1 auto; width:auto; min-width:0; }
-  .ci-activity, .ci-chapter{ position:relative; }
-
-  /* leading drag handle at the row's left edge (before icon/text).
-     Space is reserved in edit mode (so nothing jumps on hover); the grip
-     fades from dim to full when the row is hovered. */
-  .ci-grip{
-    flex:0 0 auto; width:0; overflow:hidden; opacity:0;
-    border:none; background:none; padding:0; cursor:grab;
-    color:var(--text-muted); font-size:12px; border-radius:3px;
-    display:flex; align-items:center; justify-content:center;
-    transition:opacity .1s ease;
-  }
-  /* reserve the handle column in edit mode so nothing shifts on hover, but keep
-     the grip HIDDEN until the row is hovered or a control in it is focused
-     (keyboard). */
-  body.edit-on .ci-grip{ width:16px; margin-right:2px; }
-  body.edit-on .ci-secrow:hover .ci-grip,
-  body.edit-on .ci-secrow:focus-within .ci-grip,
-  body.edit-on .ci-activity:hover .ci-grip,
-  body.edit-on .ci-activity:focus-within .ci-grip,
-  body.edit-on .ci-chapter:hover .ci-grip,
-  body.edit-on .ci-chapter:focus-within .ci-grip,
-  body.edit-on .ci-grip:focus-visible,
-  body.edit-on [data-row].dragging .ci-grip{ opacity:1; }
-  body.edit-on .ci-grip:focus-visible{ outline:2px solid var(--primary); outline-offset:1px; }
-
-  /* Each row exposes its own backdrop colour via --row-bg; the trailing
-     action cluster + its fade use THAT colour, so the overlay blends with
-     whatever the row is (grey by default, blue when it's the current page)
-     instead of a fixed grey gradient painted over a coloured row. */
-  .ci-secrow, .ci-activity, .ci-chapter{ --row-bg:var(--ci-row-hover); }
-  .ci-row-actions{
-    position:absolute; top:50%; right:4px; transform:translateY(-50%);
-    display:flex; align-items:center; gap:1px;
-    background:var(--row-bg);
-    opacity:0; pointer-events:none; transition:opacity .1s ease;
-  }
-  .ci-row-actions::before{ /* fade in the ROW'S own colour so there's no hard edge and no grey-over-colour clash */
-    content:""; position:absolute; left:-18px; top:0; bottom:0; width:18px;
-    background:linear-gradient(90deg, rgb(from var(--row-bg) r g b / 0), var(--row-bg));
-  }
-  /* reveal only in edit mode, on row hover or when a control has focus */
-  body.edit-on .ci-secrow:hover .ci-row-actions,
-  body.edit-on .ci-secrow:focus-within .ci-row-actions,
-  body.edit-on .ci-activity:hover .ci-row-actions,
-  body.edit-on .ci-activity:focus-within .ci-row-actions,
-  body.edit-on .ci-chapter:hover .ci-row-actions,
-  body.edit-on .ci-chapter:focus-within .ci-row-actions,
-  body.edit-on .ci-row-actions:focus-within,
-  body.edit-on .ci-row-actions.menu-open{ opacity:1; pointer-events:auto; }
-  /* keep student view clean: no grip cursor / draggable affordance off edit */
-  body:not(.edit-on) [data-row]{ cursor:pointer; }
-
-  .ci-actbtn{
-    width:22px; height:22px; border:none; background:transparent; border-radius:4px;
-    color:var(--text-muted); font-size:12px; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; flex:0 0 auto;
-  }
-  .ci-actbtn:hover{ background:rgba(0,0,0,.12); color:var(--text-default); }
-  .ci-actbtn:focus-visible{ outline:2px solid var(--primary); outline-offset:1px; }
-  body.edit-on [data-row].dragging{ opacity:.4; }
-  body.edit-on [data-row].dragging .ci-row-actions{ opacity:0; }
-
-  /* current page item (Moodle ".pageitem" = the activity / book chapter you're
-     viewing): full-width primary fill. The action overlay inherits --row-bg so
-     the +/… cluster blends into the blue, and icons/controls flip to white. */
-  .ci-activity.pageitem, .ci-chapter.pageitem{ background:var(--primary); --row-bg:var(--primary); border-radius:var(--r-sm); }
-  .ci-activity.pageitem:hover, .ci-chapter.pageitem:hover{ background:var(--primary-dark); --row-bg:var(--primary-dark); }
-  .pageitem .txt, .pageitem .num, .pageitem .ci-acticon, .pageitem .ci-book-chevron{ color:#fff; }
-  .pageitem .ci-check{ border-color:rgba(255,255,255,.75); }
-  .pageitem .ci-check.done{ background:#fff; border-color:#fff; color:var(--primary); }
-  .pageitem .ci-grip{ color:rgba(255,255,255,.85); }
-  .pageitem .ci-actbtn{ color:rgba(255,255,255,.92); }
-  .pageitem .ci-actbtn:hover{ background:rgba(255,255,255,.22); color:#fff; }
-
-  /* book row (expandable) + its chapters (the migrated TOC) */
-  .ci-bookwrap{ }
-  .ci-book-chevron{
-    width:12px; border:none; background:none; padding:0; cursor:pointer;
-    color:var(--text-muted); font-size:9px; flex:0 0 auto; text-align:center;
-    transition:transform .15s ease;
-  }
-  .ci-bookwrap.collapsed .ci-book-chevron{ transform:rotate(-90deg); }
-  .ci-bookwrap.collapsed .ci-chapters{ display:none; }
-  .ci-book .ci-acticon{ color:var(--activity-teal); }
-  .ci-chapters{ padding-left:26px; display:flex; flex-direction:column; gap:1px; }
-  .ci-chapter{
-    display:flex; align-items:center; gap:var(--sp-xs);
-    padding:7px var(--sp-sm); border-radius:var(--r-sm); cursor:pointer; min-width:0;
-  }
-  .ci-chapter:hover{ background:rgba(0,0,0,.04); }
-  .ci-chapter .num{ color:var(--text-muted); font-size:13px; flex:0 0 auto; min-width:14px; }
-  .ci-chapter .txt{
-    font-size:14px; color:var(--text-subtle);
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
-  }
-  .ci-chapter.hiddenrow .txt, .ci-activity.hiddenrow .txt{ color:var(--text-muted); font-style:italic; }
-
-  /* popup menu (shared by + add and … more) */
-  .ci-menu{
-    position:fixed; z-index:80; min-width:190px; max-width:260px;
-    background:var(--surface); border:1px solid var(--border-default);
-    border-radius:var(--r-md); box-shadow:0 8px 28px rgba(0,0,0,.16);
-    padding:6px; display:none;
-  }
-  .ci-menu.show{ display:block; }
-  .ci-menu-label{ font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-muted); padding:6px 10px 3px; }
-  .ci-menu-item{
-    display:flex; align-items:center; gap:10px; width:100%;
-    padding:8px 10px; border:none; background:none; cursor:pointer;
-    font-size:14px; color:var(--text-default); border-radius:var(--r-sm); text-align:left;
-  }
-  .ci-menu-item:hover{ background:var(--bg-subtle); }
-  .ci-menu-item i{ width:16px; text-align:center; color:var(--text-muted); font-size:13px; flex:0 0 auto; }
-  .ci-menu-item.danger{ color:#b02a37; }
-  .ci-menu-item.danger i{ color:#b02a37; }
-  .ci-menu-sep{ height:1px; background:var(--border-subtle); margin:5px 4px; }
-
-  /* resize handle */
-  .resize-handle{
-    position:absolute; top:0; right:0; width:8px; height:100%;
-    cursor:col-resize; z-index:5;
-  }
-  body:not(.ci-open) .resize-handle, body.ci-overlay .resize-handle{ display:none; }
-  .resize-handle::after{
-    content:""; position:absolute; top:0; bottom:0; left:3px; width:2px;
-    background:transparent; transition:background .12s ease;
-  }
-  .resize-handle:hover::after, .resize-handle.dragging::after,
-  .resize-handle:focus-visible::after{ background:var(--primary); }
-  .resize-handle:focus-visible{ outline:2px solid var(--primary); outline-offset:-1px; }
-  body.dragging{ cursor:col-resize !important; user-select:none; }
-  .width-readout{
-    position:absolute; bottom:12px; right:12px; font-size:11px;
-    background:var(--text-default); color:#fff; padding:2px 6px; border-radius:4px;
-    opacity:0; pointer-events:none; transition:opacity .15s ease;
-  }
-  .width-readout.show{ opacity:.92; }
-
-  /* =====================  COURSE CONTENT  =====================
-     content-col fills the space between the index and the blocks button;
-     its children are capped at --content-max and centred, so the page reads
-     centered in the available width (matches main-branch behaviour) instead
-     of pinned to the left. */
-  .content-col{
-    flex:1 1 auto; min-width:0;
-    display:flex; flex-direction:column; align-items:center;
-    padding:0 40px;
-  }
-  .content-col > *{ width:100%; max-width:var(--content-max); }
-
-  .course-header{ margin-bottom:var(--sp-md); }
-  .title-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
-  .title-row h1{ margin:0; font-size:30px; font-weight:800; letter-spacing:-.3px; }
-  .bulk-actions{ display:flex; align-items:center; gap:6px; color:var(--text-subtle); font-size:14px; font-weight:500; white-space:nowrap; margin-top:8px; cursor:pointer; }
-
-  /* course-content tabs = nav-pill style (Figma 2295-39652):
-     selected = grey pill + 4px blue dot; unselected = plain muted text. */
-  .course-nav{ display:flex; align-items:center; gap:8px; margin-top:20px; }
-  .course-tabs-scroll{ position:relative; flex:1 1 auto; min-width:0; }
-  .course-tabs{
-    display:flex; align-items:center; gap:4px;
-    overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none;
-  }
-  .course-tabs::-webkit-scrollbar{ display:none; }
-  .course-tabs .tab{
-    display:flex; align-items:center; gap:4px; flex:0 0 auto;
-    padding:8px 12px; border-radius:var(--r-md);
-    font-size:14px; font-weight:500; color:var(--text-subtle);
-    background:none; border:none; cursor:pointer; white-space:nowrap;
-  }
-  .course-tabs .tab:hover{ background:var(--bg-subtle); }
-  .course-tabs .tab.active{ background:var(--bg-strong); color:var(--text-default); }
-  .course-tabs .tab .dot{ width:4px; height:4px; border-radius:50%; background:var(--primary); flex:0 0 auto; }
-  .course-tabs .tab .fa-chevron-down{ font-size:9px; }
-  /* edge fades hint that tabs scroll horizontally (mobile) */
-  .course-tabs-scroll::before, .course-tabs-scroll::after{
-    content:""; position:absolute; top:0; bottom:0; width:32px; pointer-events:none;
-    opacity:0; transition:opacity .18s ease; z-index:1;
-  }
-  .course-tabs-scroll::before{ left:0; background:linear-gradient(to right, var(--page-bg), transparent); }
-  .course-tabs-scroll::after{ right:0; background:linear-gradient(to left, var(--page-bg), transparent); }
-  .course-tabs-scroll.more-left::before{ opacity:1; }
-  .course-tabs-scroll.more-right::after{ opacity:1; }
-  .course-nav .collapse-all{
-    flex:0 0 auto; display:flex; align-items:center; gap:6px;
-    color:var(--text-subtle); font-size:13px; background:none; border:none; cursor:pointer;
+  .foot{
+    margin:1.5rem 0 0; padding-top:1rem; border-top:1px solid var(--gray-300);
+    font-size:.8rem; color:var(--gray-500);
   }
 
-  .progress-wrap{ margin-top:16px; }
-  .progress-top{ display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px; }
-  .progress-top .lbl{ font-weight:600; }
-  .progress-top .val{ color:var(--text-subtle); }
-  .progress-track{ height:8px; border-radius:var(--r-pill); background:var(--bg-strong); overflow:hidden; }
-  .progress-fill{ height:100%; width:44%; background:var(--primary); border-radius:var(--r-pill); }
-
-  /* section cards */
-  .section-card{
-    background:var(--surface); border:1px solid var(--border-default);
-    border-radius:var(--r-lg); margin-top:16px; overflow:hidden;
-  }
-  .sec-collapsed{ display:flex; align-items:center; gap:12px; padding:18px 20px; cursor:pointer; }
-  .sec-collapsed .chev{ color:var(--text-subtle); font-size:12px; width:16px; text-align:center; }
-  .sec-collapsed .htitle{ font-size:18px; font-weight:700; }
-
-  .add-content-divider{
-    display:flex; align-items:center; gap:16px; margin:8px 0;
-  }
-  .add-content-divider .line{ flex:1; height:1px; background:var(--border-default); }
-  .pill-btn{
-    display:inline-flex; align-items:center; gap:6px; padding:6px 12px;
-    background:var(--bg-subtle); border:1px solid var(--border-default);
-    border-radius:var(--r-pill); font-size:13px; color:var(--text-subtle);
-    cursor:pointer; white-space:nowrap;
-  }
-
-  .sec-expanded{ padding:20px; }
-  .sec-exp-head{ display:flex; align-items:flex-start; gap:12px; }
-  .sec-exp-head .left-icons{ display:flex; align-items:center; gap:8px; flex:0 0 auto; padding-top:2px; }
-  .checkbox{ width:16px; height:16px; border:1.5px solid var(--border-ring); border-radius:4px; }
-  .sec-icon{ width:26px; height:26px; border-radius:6px; background:var(--bg-strong); display:flex; align-items:center; justify-content:center; color:var(--text-subtle); font-size:12px; }
-  .sec-exp-head .chev{ color:var(--text-subtle); font-size:12px; }
-  .sec-exp-head .body{ flex:1; min-width:0; }
-  .sec-exp-head .htitle{ font-size:18px; font-weight:700; margin:0; }
-  .sec-exp-head .desc{ margin:8px 0 0; color:var(--text-subtle); font-size:14px; line-height:1.55; }
-  .kebab{ background:none; border:none; color:var(--text-subtle); cursor:pointer; padding:6px; font-size:14px; }
-
-  .hero-img{
-    height:200px; border-radius:var(--r-md); margin:16px 0 4px;
-    background:
-      linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.25)),
-      linear-gradient(120deg,#3a6ea5,#4c8caf 40%,#2e5a7a);
-    display:flex; align-items:center; justify-content:center; color:#fff;
-    position:relative; overflow:hidden;
-  }
-  .hero-img .placard{
-    background:#e9dcc3; color:#1d2125; transform:rotate(-4deg);
-    padding:14px 22px; border-radius:4px; font-weight:800; letter-spacing:1px;
-    box-shadow:0 8px 24px rgba(0,0,0,.3); font-size:22px; text-align:center; line-height:1.1;
-  }
-  .hero-img .placard span{ display:block; color:#0f7b8a; }
-
-  /* activity item cards */
-  .activity-item{ border-top:1px solid var(--border-subtle); padding:20px 4px; }
-  .ai-main{ display:flex; align-items:flex-start; gap:12px; }
-  .ai-grip{ color:var(--text-muted); font-size:14px; padding-top:8px; cursor:grab; }
-  .ai-icon{
-    width:36px; height:36px; border-radius:var(--r-md); flex:0 0 auto;
-    background:var(--activity-teal-bg); color:var(--activity-teal);
-    display:flex; align-items:center; justify-content:center; font-size:15px;
-  }
-  .ai-body{ flex:1; min-width:0; }
-  .ai-titlerow{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .ai-title{ font-size:15px; font-weight:700; }
-  .ai-title.link{ color:var(--primary); }
-  .badge-type{ font-size:11px; font-weight:700; color:var(--text-muted); letter-spacing:.5px; }
-  .ai-desc{ margin:4px 0 0; color:var(--text-subtle); font-size:13px; }
-  .completion-pill{
-    margin-left:auto; display:inline-flex; align-items:center; gap:6px;
-    padding:5px 10px; border:1px solid var(--border-default); border-radius:var(--r-pill);
-    font-size:12px; color:var(--text-subtle); background:var(--surface); cursor:pointer; white-space:nowrap;
-  }
-  .completion-pill .fa-circle{ font-size:9px; }
-
-  .ai-meta{ margin-top:10px; padding-left:48px; display:flex; flex-direction:column; gap:8px; }
-  .chip{
-    display:inline-flex; align-items:center; gap:6px; padding:4px 8px;
-    border-radius:var(--r-sm); font-size:12px; white-space:nowrap;
-  }
-  .chip.grey{ background:var(--bg-strong); color:var(--text-subtle); }
-  .chip.date{ color:var(--text-subtle); }
-  .chip.date.close{ background:var(--amber-bg); color:var(--amber-text); }
-  .meta-row{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
-  .restriction{
-    display:flex; align-items:center; gap:8px; padding:10px 12px;
-    background:var(--bg-subtle); border:1px solid var(--border-subtle); border-radius:var(--r-md);
-    font-size:13px; color:var(--text-subtle);
-  }
-  .restriction .fa-lock{ font-size:11px; }
-  .restriction .txt{ flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .restriction .showmore{ color:var(--primary); font-size:13px; white-space:nowrap; cursor:pointer; }
-
-  /* subsection (Assessments) */
-  .subsection{ margin-top:16px; border-top:1px solid var(--border-subtle); padding-top:8px; }
-  .subsec-head{ display:flex; align-items:center; gap:12px; padding:12px 4px; }
-  .subsec-head .sec-icon{ width:26px; height:26px; }
-  .subsec-head .chev{ color:var(--text-subtle); font-size:12px; }
-  .subsec-head .stitle{ font-size:16px; font-weight:700; }
-  .subsec-head .kebab{ margin-left:auto; }
-  .subsec-activities{ padding-left:8px; }
-  .activity-item.small{ padding:14px 4px; }
-  .activity-item.small .ai-meta{ margin-top:8px; }
-
-  .add-new-section{
-    margin-top:20px; border:1.5px dashed var(--border-default); border-radius:var(--r-lg);
-    padding:28px; text-align:center; color:var(--text-subtle); cursor:pointer;
-  }
-  .add-new-section .circle{
-    width:28px; height:28px; border-radius:50%; background:var(--bg-strong);
-    display:inline-flex; align-items:center; justify-content:center; color:var(--text-subtle);
-    margin-bottom:8px; font-size:12px;
-  }
-  .add-new-section .lbl{ display:block; font-size:12px; }
-
-  /* ---- right "Course Blocks" drawer (push on desktop, no drag handle) ---- */
-  .toggle-col-right{ flex:0 0 auto; width:var(--btn); margin-left:12px; align-self:stretch; display:flex; justify-content:center; }
-  body.cb-open .toggle-col-right{ width:0; margin-left:0; overflow:hidden; }
-  .blocks-btn{
-    position:sticky; top:calc(var(--nav-h) + var(--sp-lg));
-    width:var(--btn); height:var(--btn); border:none; border-radius:var(--r-sm);
-    background:var(--bg-strong); color:var(--text-subtle);
-    display:flex; align-items:center; justify-content:center; cursor:pointer;
-  }
-  .blocks-btn:hover{ background:var(--border-default); }
-
-  .drawer-right{
-    flex:0 0 auto; width:0; overflow:hidden;
-    position:sticky; top:calc(var(--nav-h) + var(--sp-lg)); align-self:flex-start;
-    transition:width .32s cubic-bezier(.4,0,.2,1);
-  }
-  body.cb-open .drawer-right{ width:var(--cb-width); }
-  .cb-card{
-    width:var(--cb-width); padding:0 var(--sp-sm) var(--sp-md);
-    background:var(--bg-subtle); border-radius:var(--r-md);
-    max-height:calc(100vh - var(--nav-h) - 2 * var(--sp-lg)); overflow-x:hidden; overflow-y:auto;
-    transform:translateX(100%); transition:transform .32s cubic-bezier(.4,0,.2,1);
-  }
-  body.cb-open .cb-card{ transform:translateX(0); }
-  .cb-header{ display:flex; flex-direction:column; align-items:flex-start; gap:var(--sp-sm); padding:var(--sp-xs) 0 var(--sp-sm); }
-  .cb-header .cb-close{
-    width:45px; height:45px; border:none; cursor:pointer; border-radius:var(--r-md);
-    background:var(--bg-strong); display:flex; align-items:center; justify-content:center;
-  }
-  .cb-header .cb-close:hover{ background:var(--border-default); }
-  .cb-title{ font-size:16px; font-weight:600; color:var(--text-default); }
-  .cb-body{ display:flex; flex-direction:column; gap:var(--sp-xs); }
-  .cb-block{ background:var(--surface); border:1px solid var(--border-subtle); border-radius:var(--r-sm); padding:var(--sp-sm) 0; }
-  .cb-block-head{ display:flex; align-items:center; gap:var(--sp-xs); padding:0 var(--sp-md); }
-  .cb-block-head .grip{
-    width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-    color:var(--text-muted); font-size:12px;
-  }
-  .cb-block-title{ font-size:16px; font-weight:500; color:var(--text-subtle); }
-  .cb-block-divider{ height:1px; background:var(--border-subtle); margin:var(--sp-sm) 0; }
-  .cb-block-body{ padding:0 var(--sp-md); font-size:14px; }
-  .cb-block-body p{ margin:0 0 12px; color:var(--text-muted); line-height:1.5; }
-  .cb-block-body a{ color:var(--primary); }
-  .cb-teacher{ display:flex; align-items:center; gap:12px; padding:0 var(--sp-md); }
-  .cb-teacher .avatar-lg{
-    width:62px; height:62px; border-radius:50%; flex:0 0 auto;
-    background:linear-gradient(135deg,#8a9aa8,#5a6b7a); display:flex; align-items:center; justify-content:center;
-    color:#fff; font-size:20px; font-weight:600;
-  }
-  .cb-teacher .name{ font-size:16px; color:var(--text-default); }
-  .cb-teacher .role{ font-size:14px; color:var(--text-muted); margin-top:4px; }
-
-  /* ---- hamburger site-nav overlay ---- */
-  .sitenav{
-    position:fixed; left:0; top:var(--nav-h); height:calc(100vh - var(--nav-h));
-    width:var(--sitenav-width); max-width:85vw; background:var(--surface); z-index:47;
-    border-right:1px solid var(--border-default); box-shadow:8px 0 24px rgba(0,0,0,.10);
-    transform:translateX(-105%); transition:transform .3s cubic-bezier(.4,0,.2,1);
-    padding:var(--sp-sm); overflow-y:auto;
-  }
-  body.nav-open .sitenav{ transform:translateX(0); }
-  .sitenav-item{
-    display:flex; align-items:center; gap:12px; width:100%;
-    padding:12px 14px; border:none; background:none; cursor:pointer; text-align:left;
-    border-radius:var(--r-md); font-size:15px; font-weight:500; color:var(--text-subtle);
-  }
-  .sitenav-item i{ width:18px; text-align:center; color:var(--text-muted); }
-  .sitenav-item:hover{ background:var(--bg-subtle); }
-  .sitenav-item.active{ background:var(--bg-strong); color:var(--text-default); }
-
-  /* backdrop for any overlay */
-  .backdrop{
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:46;
-  }
-  body.nav-open .backdrop,
-  body.ci-overlay.ci-open .backdrop,
-  body.cb-overlay.cb-open .backdrop{ display:block; }
-
-  /* debug + hint */
-  /* dev aids — click to dismiss so they don't sit over the design in review */
-  .debug{
-    position:fixed; bottom:16px; right:14px; z-index:60; cursor:pointer;
-    background:rgba(29,33,37,.92); color:#fff; font-size:11px; line-height:1.6;
-    padding:8px 10px; border-radius:8px; font-variant-numeric:tabular-nums;
-  }
-  .debug b{ color:#8fd0ff; }
-  .hint{
-    position:fixed; bottom:16px; left:16px; z-index:60; cursor:pointer;
-    max-width:260px; background:rgba(255,255,255,.92); border:1px solid var(--border-default);
-    color:var(--text-muted); font-size:11px; padding:6px 9px; border-radius:6px; line-height:1.4;
-  }
-  body.hide-dev .debug, body.hide-dev .hint{ display:none; }
-
-  /* ---- annotations (dismissible walkthrough callouts) ---- */
-  .anno-layer{ position:fixed; inset:0; z-index:70; pointer-events:none; }
-  body.annos-off .anno-layer{ display:none; }
-  .anno-ring{
-    position:fixed; border:2px dashed var(--primary); border-radius:8px;
-    box-shadow:0 0 0 3px rgba(15,108,191,.16); pointer-events:none;
-    animation:annoPulse 1.9s ease-in-out infinite;
-  }
-  @keyframes annoPulse{
-    0%,100%{ box-shadow:0 0 0 3px rgba(15,108,191,.16); }
-    50%{ box-shadow:0 0 0 8px rgba(15,108,191,.06); }
-  }
-  .anno-callout{
-    position:fixed; width:214px; background:var(--primary); color:#fff;
-    border-radius:10px; padding:10px 12px 11px; font-size:12px; line-height:1.45;
-    box-shadow:0 10px 28px rgba(0,0,0,.28); pointer-events:auto;
-  }
-  .anno-callout .anno-num{
-    position:absolute; top:-11px; left:-11px; width:23px; height:23px; border-radius:50%;
-    background:#fff; color:var(--primary); font-weight:700; font-size:12px;
-    display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,.25);
-  }
-  .anno-callout .anno-title{ font-weight:700; display:flex; align-items:center; gap:6px; margin:0 14px 3px 0; }
-  .anno-callout .anno-title i{ font-size:12px; }
-  .anno-callout .anno-text{ color:rgba(255,255,255,.92); }
-  .anno-callout .anno-kbd{
-    margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,.22);
-    display:flex; align-items:center; gap:6px; font-size:11px; color:rgba(255,255,255,.82);
-  }
-  .anno-callout .anno-close{
-    position:absolute; top:5px; right:6px; background:none; border:none;
-    color:rgba(255,255,255,.85); cursor:pointer; font-size:12px; padding:3px; line-height:1;
-  }
-  .anno-callout .anno-close:hover{ color:#fff; }
-
-  .anno-toggle{
-    position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:71;
-    background:var(--primary); color:#fff; border:none; border-radius:999px;
-    padding:9px 16px; font-size:13px; font-weight:600; cursor:pointer;
-    box-shadow:0 6px 18px rgba(0,0,0,.25); display:flex; align-items:center; gap:8px;
-  }
-  .anno-toggle:hover{ background:var(--primary-dark); }
-  body.annos-off .anno-toggle{ background:var(--text-subtle); }
-  /* while annotations show, force-reveal the specific index controls they
-     point at (these are normally hover-only in edit mode) so each ring lands
-     on a visible target instead of a ghost. */
-  body:not(.annos-off).edit-on .anno-grip-row .ci-grip,
-  body:not(.annos-off).edit-on .anno-add-row .ci-row-actions,
-  body:not(.annos-off).edit-on .anno-more-row .ci-row-actions{ opacity:1; pointer-events:auto; }
-
-  /* =====================  RESPONSIVE  =====================
-     Two independent breakpoints:
-       - nav burger + hidden logo/pills at <=1024px
-       - sidebars (index + blocks) switch push -> overlay at <=768px
-     So tablet (769-1024) keeps inline/push sidebars with a burger nav. */
-  @media (max-width:1024px){
-    :root{ --shell-pad:24px; }
-    .burger{ display:flex; }
-    .nav-left .brand, .nav-left .nav-pills{ display:none; }
-    .content-col{ padding:0 24px; }
-  }
-
-  /* sidebars overlay from 768px or less. The WHOLE drawer (position:fixed)
-     slides off-screen when closed — not just the inner card — otherwise the
-     closed drawer's fixed box stays over the content and intercepts taps on
-     the toggle buttons (that was the "button does nothing on mobile" bug). */
-  @media (max-width:768px){
-    /* left course index overlay (scope to #drawer so the right drawer,
-       which also has class .drawer, isn't captured) */
-    body.ci-overlay #drawer{
-      position:fixed; left:0; top:var(--nav-h); height:calc(100vh - var(--nav-h));
-      width:auto !important; z-index:47; padding:16px; margin:0;
-      transform:translateX(-110%); transition:transform .3s cubic-bezier(.4,0,.2,1);
-    }
-    body.ci-overlay.ci-open #drawer{ transform:translateX(0); }
-    body.ci-overlay .ci-card{
-      width:300px; max-width:85vw; height:100%; max-height:none; overflow-y:auto;
-      transform:none;
-    }
-    body.ci-overlay .toggle-col{ width:var(--btn); margin-right:12px; overflow:visible; }
-
-    /* right course-blocks overlay (mirrors the left) */
-    body.cb-overlay .drawer-right{
-      position:fixed; right:0; top:var(--nav-h); height:calc(100vh - var(--nav-h));
-      width:auto !important; z-index:47; padding:16px; margin:0;
-      transform:translateX(110%); transition:transform .3s cubic-bezier(.4,0,.2,1);
-    }
-    body.cb-overlay.cb-open .drawer-right{ transform:translateX(0); }
-    body.cb-overlay .cb-card{
-      width:300px; max-width:85vw; height:100%; max-height:none; overflow-y:auto;
-      transform:none;
-    }
-    body.cb-overlay .toggle-col-right{ width:var(--btn); margin-left:12px; overflow:visible; }
-  }
-
-  @media (max-width:767px){
-    :root{ --shell-pad:16px; }
-    .search{ display:none; }
-    .search-icon-btn{ display:flex; }
-    .editmode .label{ display:none; }
-    .profile .pname, .profile .fa-chevron-down{ display:none; }
-    .nav-right-group{ gap:var(--sp-sm); }
-    .content-col{ min-width:0; padding:0 16px; }
-    .title-row h1{ font-size:24px; }
-    .course-nav .collapse-all .ca-label{ display:none; } /* icon-only on mobile */
-    .ai-meta{ padding-left:0; }
+  .noscript{
+    margin:1rem 0 0; padding:.75rem; border-radius:.5rem;
+    background:#fdf5e4; border:1px solid #f6dda9; color:#6b4d00; font-size:.85rem;
   }
 </style>
 </head>
-<body class="ci-open edit-on">
+<body>
 
-  <!-- ===== TOP NAV ===== -->
-  <header class="topbar">
-    <div class="topbar-inner shell">
-      <div class="nav-left">
-        <button class="burger" id="burger" aria-label="Open site navigation"><i class="fa-solid fa-bars"></i></button>
-        <div class="brand">
-          <span class="mark"><i class="fa-solid fa-leaf"></i></span>
-          <span class="word"><b>Fleetwood</b><span>UNIVERSITY</span></span>
-        </div>
-        <nav class="nav-pills">
-          <button class="nav-pill selected"><span class="dot"></span>Dashboard</button>
-          <button class="nav-pill">Site Administration</button>
-        </nav>
-      </div>
-      <div class="nav-right">
-        <div class="nav-right-group">
-          <div class="search"><i class="fa-solid fa-magnifying-glass"></i><span>Search…</span></div>
-          <button class="search-icon-btn" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
-          <div class="editmode">
-            <span class="label">Edit mode</span>
-            <button class="switch" id="editSwitch" aria-pressed="true" aria-label="Edit mode"></button>
-          </div>
-          <div class="nav-icons">
-            <button class="icon-btn" aria-label="Notifications"><i class="fa-regular fa-bell"></i></button>
-            <button class="icon-btn" aria-label="Messages"><i class="fa-regular fa-comment"></i></button>
-          </div>
-        </div>
-        <div class="nav-divider"></div>
-        <div class="profile">
-          <span class="avatar">S</span>
-          <span class="pname">Sarah</span>
-          <i class="fa-solid fa-chevron-down"></i>
-        </div>
-      </div>
-    </div>
-  </header>
+<main class="card">
+  <div class="lock" aria-hidden="true">🔒</div>
+  <h1>This prototype is password protected</h1>
+  <p class="sub">Course index drawer resize</p>
+  <p class="sub">Enter the password you were given to continue.</p>
 
-  <!-- ===== PAGE ===== -->
-  <div class="layout shell">
+  <form id="form" autocomplete="off">
+    <label for="password">Password</label>
+    <input id="password" type="password" name="prototype-password"
+           autocomplete="current-password" autocapitalize="off" spellcheck="false"
+           aria-describedby="msg" required autofocus>
+    <button type="submit" id="submit">Unlock prototype</button>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+  </form>
 
-    <!-- floating open-toggle (shown when index closed) -->
-    <div class="toggle-col">
-      <button class="ci-toggle sticky" id="openBtn"
-        data-toggler="drawers" data-action="toggle" data-target="theme_boost-drawers-courseindex"
-        title="Open course index" aria-label="Open course index">
-        <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg">
-          <path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/>
-        </svg>
-      </button>
-    </div>
+  <noscript>
+    <p class="noscript">This page needs JavaScript — the prototype is encrypted and
+    is decrypted in your browser.</p>
+  </noscript>
 
-    <!-- course index drawer -->
-    <div class="drawer" id="drawer">
-      <div class="ci-card">
-        <div class="ci-header">
-          <span class="ci-title">Course Index</span>
-          <button class="ci-toggle contained" id="closeBtn"
-            data-toggler="drawers" data-action="toggle" data-target="theme_boost-drawers-courseindex"
-            title="Close course index" aria-label="Close course index">
-            <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg">
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/>
-            </svg>
-          </button>
-        </div>
-        <div class="ci-divider"></div>
-        <button class="ci-collapseall"><i class="fa-solid fa-down-left-and-up-right-to-center"></i>Collapse all</button>
-        <div id="sections"></div>
-      </div>
-      <div class="resize-handle" id="resizeHandle" tabindex="0" role="separator" aria-orientation="vertical" aria-label="Resize course index (arrow keys)" aria-valuemin="285" aria-valuemax="560" aria-valuenow="285"></div>
-      <div class="width-readout" id="widthReadout">285px</div>
-    </div>
+  <p class="foot">Access is remembered for this browser tab only. Closing the tab
+  locks it again.</p>
+</main>
 
-    <!-- main course content -->
-    <main class="content-col">
-      <div class="course-header">
-        <div class="title-row">
-          <h1>Climate change</h1>
-          <span class="bulk-actions">Bulk actions <i class="fa-solid fa-pencil"></i></span>
-        </div>
-        <div class="course-nav">
-          <div class="course-tabs-scroll" id="tabsScroll">
-            <div class="course-tabs">
-              <button class="tab active"><span class="dot"></span>Course</button>
-              <button class="tab">Settings</button>
-              <button class="tab">Participants</button>
-              <button class="tab">Grades</button>
-              <button class="tab">Activities</button>
-              <button class="tab">More <i class="fa-solid fa-chevron-down"></i></button>
-            </div>
-          </div>
-          <button class="collapse-all"><i class="fa-solid fa-down-left-and-up-right-to-center"></i><span class="ca-label">Collapse all</span></button>
-        </div>
-        <div class="progress-wrap">
-          <div class="progress-top"><span class="lbl">Course Progress</span><span class="val">7/16</span></div>
-          <div class="progress-track"><div class="progress-fill"></div></div>
-        </div>
-      </div>
-
-      <!-- collapsed section -->
-      <div class="section-card">
-        <div class="sec-collapsed"><i class="fa-solid fa-chevron-right chev"></i><span class="htitle">Heading</span></div>
-      </div>
-
-      <div class="add-content-divider"><span class="line"></span><button class="pill-btn"><i class="fa-solid fa-plus"></i> Add content</button><span class="line"></span></div>
-
-      <!-- collapsed section -->
-      <div class="section-card">
-        <div class="sec-collapsed"><i class="fa-solid fa-chevron-right chev"></i><span class="htitle">Heading</span></div>
-      </div>
-
-      <!-- expanded section -->
-      <div class="section-card">
-        <div class="sec-expanded">
-          <div class="sec-exp-head">
-            <div class="left-icons">
-              <span class="checkbox"></span>
-              <span class="sec-icon"><i class="fa-regular fa-file-lines"></i></span>
-              <i class="fa-solid fa-chevron-down chev"></i>
-            </div>
-            <div class="body">
-              <h2 class="htitle">Heading</h2>
-              <p class="desc">In this module, we'll explore how climate change affects the ecosystems, species, and ultimately, the delicate balance of life on Earth. Through discussions, case studies, and real-world examples, you will understand the challenges and opportunities of preserving biodiversity in a rapidly changing climate.</p>
-            </div>
-            <button class="kebab"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-          </div>
-
-          <div class="hero-img"><div class="placard">CLIMATE<span>JUSTICE</span>NOW!</div></div>
-
-          <!-- large activity item -->
-          <div class="activity-item">
-            <div class="ai-main">
-              <i class="fa-solid fa-grip-vertical ai-grip"></i>
-              <span class="ai-icon"><i class="fa-solid fa-file-arrow-up"></i></span>
-              <div class="ai-body">
-                <div class="ai-titlerow">
-                  <span class="ai-title">Course Syllabus &amp; Reading List</span>
-                  <span class="badge-type">PDF</span>
-                </div>
-                <p class="ai-desc">Please submit a detailed reflection of approx 500 words</p>
-              </div>
-              <button class="completion-pill"><i class="fa-regular fa-circle"></i> Completion <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></button>
-            </div>
-            <div class="ai-meta">
-              <span class="chip grey"><i class="fa-solid fa-eye-slash"></i> Hidden from students <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></span>
-              <div class="meta-row">
-                <span class="chip date"><i class="fa-regular fa-calendar"></i> Opens: Monday, 14 January, 8.30 AM</span>
-                <span class="chip date close"><i class="fa-regular fa-clock"></i> Closes: Monday, 30 January, 8.30 AM</span>
-              </div>
-              <div class="restriction">
-                <i class="fa-solid fa-lock"></i>
-                <span class="txt"><b>Not available unless:</b> The previous activity with completion is marked complete, You achieve a score…</span>
-                <span class="showmore">Show more <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></span>
-              </div>
-            </div>
-          </div>
-
-          <!-- large activity item -->
-          <div class="activity-item">
-            <div class="ai-main">
-              <i class="fa-solid fa-grip-vertical ai-grip"></i>
-              <span class="ai-icon"><i class="fa-solid fa-file-arrow-up"></i></span>
-              <div class="ai-body">
-                <div class="ai-titlerow">
-                  <span class="ai-title">Course Syllabus &amp; Reading List</span>
-                  <span class="badge-type">PDF</span>
-                </div>
-                <p class="ai-desc">Please submit a detailed reflection of approx 500 words</p>
-              </div>
-              <button class="completion-pill"><i class="fa-regular fa-circle"></i> Completion <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></button>
-            </div>
-            <div class="ai-meta">
-              <span class="chip grey"><i class="fa-solid fa-eye-slash"></i> Hidden from students <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></span>
-              <div class="meta-row">
-                <span class="chip date"><i class="fa-regular fa-calendar"></i> Opens: Monday, 14 January, 8.30 AM</span>
-                <span class="chip date close"><i class="fa-regular fa-clock"></i> Closes: Monday, 30 January, 8.30 AM</span>
-              </div>
-              <div class="restriction">
-                <i class="fa-solid fa-lock"></i>
-                <span class="txt"><b>Not available unless:</b> The previous activity with completion is marked complete, You achieve a score…</span>
-                <span class="showmore">Show more <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></span>
-              </div>
-            </div>
-          </div>
-
-          <!-- subsection: Assessments -->
-          <div class="subsection">
-            <div class="subsec-head">
-              <span class="sec-icon"><i class="fa-solid fa-list-check"></i></span>
-              <i class="fa-solid fa-chevron-down chev"></i>
-              <span class="stitle">Assessments</span>
-              <button class="kebab"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-            </div>
-            <div class="subsec-activities">
-              <div class="activity-item small">
-                <div class="ai-main">
-                  <span class="ai-icon"><i class="fa-solid fa-file-arrow-up"></i></span>
-                  <div class="ai-body">
-                    <div class="ai-titlerow"><span class="ai-title link">Course Syllabus &amp; Reading List</span> <i class="fa-solid fa-pencil" style="font-size:11px;color:var(--text-muted)"></i></div>
-                    <p class="ai-desc">Submit your 500-word reflection on the readings</p>
-                  </div>
-                  <button class="completion-pill"><i class="fa-regular fa-circle"></i> Completion <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></button>
-                </div>
-                <div class="ai-meta">
-                  <div class="meta-row">
-                    <span class="chip date"><i class="fa-regular fa-calendar"></i> Opens: Monday, 14 January, 8.30 AM</span>
-                    <span class="chip date close"><i class="fa-regular fa-clock"></i> Closes: Monday, 30 January, 8.30 AM</span>
-                  </div>
-                </div>
-              </div>
-              <div class="activity-item small">
-                <div class="ai-main">
-                  <span class="ai-icon"><i class="fa-solid fa-file-arrow-up"></i></span>
-                  <div class="ai-body">
-                    <div class="ai-titlerow"><span class="ai-title link">Course Syllabus &amp; Reading List</span> <span class="badge-type">PDF</span></div>
-                    <p class="ai-desc">Submit your 500-word reflection on the readings</p>
-                  </div>
-                  <button class="completion-pill"><i class="fa-regular fa-circle"></i> Completion <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></button>
-                </div>
-                <div class="ai-meta">
-                  <div class="meta-row">
-                    <span class="chip date"><i class="fa-regular fa-calendar"></i> Opens: Monday, 14 January, 8.30 AM</span>
-                    <span class="chip date close"><i class="fa-regular fa-clock"></i> Closes: Monday, 30 January, 8.30 AM</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="add-content-divider"><span class="line"></span><button class="pill-btn"><i class="fa-solid fa-plus"></i> Add content</button><span class="line"></span></div>
-          </div>
-
-        </div>
-      </div>
-
-      <div class="add-content-divider"><span class="line"></span><button class="pill-btn"><i class="fa-solid fa-plus"></i> Add section</button><span class="line"></span></div>
-
-      <div class="add-new-section">
-        <span class="circle"><i class="fa-solid fa-pencil"></i></span>
-        <span class="lbl">Add new section</span>
-      </div>
-    </main>
-
-    <!-- right "Course Blocks" drawer (push on desktop, overlay <=768) -->
-    <div class="drawer drawer-right" id="drawerRight">
-      <div class="cb-card">
-        <div class="cb-header">
-          <button class="cb-close" id="closeRightBtn" title="Close course blocks" aria-label="Close course blocks">
-            <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg" style="transform:scaleX(-1)">
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/>
-            </svg>
-          </button>
-          <span class="cb-title">Course Blocks</span>
-        </div>
-        <div class="cb-body">
-          <div class="cb-block">
-            <div class="cb-block-head"><span class="grip"><i class="fa-solid fa-grip-vertical"></i></span><span class="cb-block-title">Licence</span></div>
-            <div class="cb-block-divider"></div>
-            <div class="cb-block-body">
-              <p>This Creative Commons course, created by Mary, is available on</p>
-              <a href="#">MoodleNet: Effective Memory Techniques</a>
-            </div>
-          </div>
-          <div class="cb-block">
-            <div class="cb-block-head"><span class="cb-block-title">Your teacher</span></div>
-            <div class="cb-block-divider"></div>
-            <div class="cb-teacher">
-              <span class="avatar-lg">MS</span>
-              <div>
-                <div class="name">Mr. Sanders</div>
-                <div class="role">Senior Lecturer, Mount Orange</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- right toggle column (blocks button, shown when right drawer closed) -->
-    <div class="toggle-col-right">
-      <button class="blocks-btn" id="openRightBtn" title="Open course blocks" aria-label="Open course blocks">
-        <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg" style="transform:scaleX(-1)">
-          <path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-
-  <!-- hamburger site-navigation overlay -->
-  <nav class="sitenav" id="sitenav" aria-label="Site navigation">
-    <button class="sitenav-item active"><i class="fa-solid fa-house"></i> Home</button>
-    <button class="sitenav-item"><i class="fa-solid fa-gauge"></i> Dashboard</button>
-    <button class="sitenav-item"><i class="fa-solid fa-graduation-cap"></i> My courses</button>
-    <button class="sitenav-item"><i class="fa-solid fa-gear"></i> Site administration</button>
-  </nav>
-
-  <div class="ci-menu" id="ciMenu" role="menu"></div>
-  <div class="backdrop" id="backdrop"></div>
-
-  <!-- annotations layer (callouts injected by JS) + toggle -->
-  <div class="anno-layer" id="annoLayer"></div>
-  <button class="anno-toggle" id="annoToggle"><i class="fa-solid fa-location-dot"></i><span id="annoToggleLabel">Hide annotations</span></button>
-
-  <div class="debug" id="debug" title="Click to hide dev overlays"></div>
-  <div class="hint" title="Click to hide dev overlays">Edit mode on → hover any course-index row for <b>+</b> (add) / <b>…</b> (more) and drag to reorder. The book expands to its chapters (TOC now inline). Toggle Edit mode to see the clean student view. <b>(click to hide)</b></div>
+<script id="payload" type="application/json">{"v":1,"kdf":"PBKDF2-SHA256","iterations":600000,"cipher":"AES-GCM","compression":"gzip","salt":"PQ3RPF7mOI4Z4AsLNmw/nQ==","iv":"gpHljdj54cOyu+tZ","data":"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"}</script>
 
 <script>
-(function(){
+(function () {
   "use strict";
 
-  /* ---- course index data. One book activity carries a `chapters` array —
-     its TOC now lives inline in the index instead of the right sidebar. ---- */
-  var SECTIONS = [
-    { title:"Introduction", items:[
-      { t:"Course Syllabus & Reading List — Week 1 Orientation Pack", done:true },
-      { t:"Course Syllabus & Study Guide", book:true, chapters:[
-        "Course Overview",
-        "Learning Outcomes & Objectives",
-        "Assessment & Grading Policy",
-        "Weekly Schedule & Required Readings",
-        "Academic Integrity Guidelines"
-      ]},
-      { t:"Introductions & Ice Breaker Discussion Forum Activity", done:true }
-    ]},
-    { title:"Ecosystem vulnerability", collapsed:true, items:[
-      { t:"Formative Assessment: Photosynthesis and Cellular Respiration Quiz (Attempt 2 of 3)" },
-      { t:"Lecture Recording: Introduction to Organelles and Their Functions" }
-    ]},
-    { title:"Impact on biodiversity", items:[
-      { t:"Fieldwork Report Template: Local Ecosystem Biodiversity Survey Submission" },
-      { t:"Sample Text: Membrane Transport Mechanisms and Osmoregulation Reading" },
-      { t:"Example Entry: Great Barrier Reef Conservation Case Study Interactive Map" }
-    ], sub:{ title:"Assessments", items:[
-      { t:"Placeholder: Punnett Square Practice Problems Set B (Due Friday Week 6)" },
-      { t:"Placeholder: Natural Selection Simulation Interactive Module v3" }
-    ]}}
-  ];
+  var payload = JSON.parse(document.getElementById("payload").textContent);
+  var form   = document.getElementById("form");
+  var input  = document.getElementById("password");
+  var submit = document.getElementById("submit");
+  var msg    = document.getElementById("msg");
 
-  // Leading drag handle (left edge, before the icon/text).
-  var GRIP = '<button class="ci-grip" aria-label="Drag to reorder" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i></button>';
+  /* Keyed on the ciphertext, so two prototypes on the same origin do not share
+     an unlock, and re-publishing one invalidates the old session. */
+  var KEY = "moodle-proto-key:" + payload.data.slice(0, 32);
 
-  // Trailing hover cluster: + add · … more.
-  // addtype: 'section' (activity/resource chooser) | 'chapter' (book chapters only).
-  function actionsHTML(rowtype, addtype){
-    return '<div class="ci-row-actions">'
-      + '<button class="ci-actbtn" data-menu="add" data-addtype="' + addtype + '" data-rowtype="' + rowtype + '" title="Add"><i class="fa-solid fa-plus"></i></button>'
-      + '<button class="ci-actbtn" data-menu="more" data-rowtype="' + rowtype + '" title="More"><i class="fa-solid fa-ellipsis"></i></button>'
-      + '</div>';
+  function say(text, kind) {
+    msg.textContent = text;
+    msg.className = "msg" + (kind ? " " + kind : "");
   }
 
-  function bookRow(it){
-    var chapters = it.chapters.map(function(ch, i){
-      return '<div class="ci-chapter" data-row data-rowtype="chapter">'
-        + GRIP
-        + '<span class="num">' + (i + 1) + '</span>'
-        + '<span class="txt">' + ch + '</span>'
-        + actionsHTML('chapter', 'chapter')
-        + '</div>';
-    }).join('');
-    return '<div class="ci-bookwrap" data-row data-rowtype="book">'
-      + '<div class="ci-activity ci-book">'
-        + GRIP
-        + '<button class="ci-book-chevron" title="Expand chapters"><i class="fa-solid fa-chevron-down"></i></button>'
-        + '<i class="fa-solid fa-book ci-acticon"></i>'
-        + '<span class="txt">' + it.t + '</span>'
-        + actionsHTML('book', 'chapter')
-      + '</div>'
-      + '<div class="ci-chapters">' + chapters + '</div>'
-      + '</div>';
+  function bytes(base64) {
+    var binary = atob(base64);
+    var out = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+    return out;
   }
 
-  function activityRow(it){
-    if(it.book) return bookRow(it);
-    var check = it.done
-      ? '<span class="ci-check done"><i class="fa-solid fa-check"></i></span>'
-      : '<span class="ci-check"></span>';
-    return '<div class="ci-activity" data-row data-rowtype="activity">' + GRIP + check
-      + '<i class="fa-regular fa-file-lines ci-acticon"></i>'
-      + '<span class="txt">' + it.t + '</span>'
-      + actionsHTML('activity', 'section')
-      + '</div>';
+  function base64(buffer) {
+    var view = new Uint8Array(buffer), binary = "";
+    for (var i = 0; i < view.length; i++) binary += String.fromCharCode(view[i]);
+    return btoa(binary);
   }
 
-  function sectionHead(title){
-    return '<div class="ci-secrow">'
-      + GRIP
-      + '<button class="ci-sec-head"><span class="chev"><i class="fa-solid fa-chevron-down"></i></span><span class="txt">' + title + '</span></button>'
-      + actionsHTML('section', 'section')
-      + '</div>';
-  }
-
-  function renderSections(){
-    var html = "";
-    SECTIONS.forEach(function(sec){
-      html += '<div class="ci-section' + (sec.collapsed ? ' collapsed' : '') + '" data-row data-rowtype="section">';
-      html += sectionHead(sec.title);
-      html += '<div class="ci-activities">';
-      sec.items.forEach(function(it){ html += activityRow(it); });
-      if(sec.sub){
-        html += '<div class="ci-section">'; // subsection: not top-level reorderable
-        html += sectionHead(sec.sub.title);
-        html += '<div class="ci-activities ci-subsection">';
-        sec.sub.items.forEach(function(it){ html += activityRow(it); });
-        html += '</div></div>';
-      }
-      html += '</div></div>';
+  function deriveKey(password) {
+    return crypto.subtle.importKey(
+      "raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]
+    ).then(function (baseKey) {
+      return crypto.subtle.deriveKey(
+        {
+          name: "PBKDF2",
+          salt: bytes(payload.salt),
+          iterations: payload.iterations,
+          hash: "SHA-256"
+        },
+        baseKey,
+        { name: "AES-GCM", length: 256 },
+        true,
+        ["decrypt"]
+      );
     });
-    document.getElementById("sections").innerHTML = html;
-
-    // section / book collapse toggles
-    document.querySelectorAll(".ci-sec-head").forEach(function(h){
-      h.addEventListener("click", function(){ h.closest(".ci-section").classList.toggle("collapsed"); });
-    });
-    document.querySelectorAll(".ci-book-chevron").forEach(function(c){
-      c.addEventListener("click", function(e){ e.stopPropagation(); c.closest(".ci-bookwrap").classList.toggle("collapsed"); });
-    });
-
-    // drag-to-reorder, scoped per list (sections, each activity list, each chapter list)
-    enableReorder(document.getElementById("sections"));
-    document.querySelectorAll(".ci-activities").forEach(enableReorder);
-    document.querySelectorAll(".ci-chapters").forEach(enableReorder);
   }
 
-  /* ---- lightweight drag-reorder within a single list ---- */
-  function enableReorder(container){
-    var dragEl = null;
-    function rows(){ return [].slice.call(container.children).filter(function(c){ return c.matches && c.matches('[data-row]'); }); }
-    rows().forEach(function(row){
-      row.setAttribute('draggable', 'true');
-      row.addEventListener('dragstart', function(e){
-        if(!document.body.classList.contains('edit-on')){ e.preventDefault(); return; }
-        e.stopPropagation();
-        dragEl = row; row.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-        try{ e.dataTransfer.setData('text/plain', ''); }catch(_){}
+  function importKey(raw) {
+    return crypto.subtle.importKey(
+      "raw", bytes(raw), { name: "AES-GCM", length: 256 }, true, ["decrypt"]
+    );
+  }
+
+  function ungzip(buffer) {
+    if (payload.compression !== "gzip") {
+      return Promise.resolve(new TextDecoder().decode(buffer));
+    }
+    if (typeof DecompressionStream === "undefined") {
+      return Promise.reject(new Error("unsupported-browser"));
+    }
+    var stream = new Response(buffer).body.pipeThrough(new DecompressionStream("gzip"));
+    return new Response(stream).text();
+  }
+
+  /* Replacing the whole document rather than injecting into this one: the
+     prototype is a complete page with its own head, styles and scripts, and
+     they only run properly if the parser sees them from the top. */
+  function render(html) {
+    document.open();
+    document.write(html);
+    document.close();
+  }
+
+  function decryptWith(key) {
+    return crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: bytes(payload.iv) }, key, bytes(payload.data)
+    ).then(ungzip);
+  }
+
+  /* Session storage holds the derived key, not the password — the password may
+     well be reused somewhere it matters, and the key is useless off this page.
+     Tab-scoped, so a shared machine does not stay unlocked. */
+  function remember(key) {
+    return crypto.subtle.exportKey("raw", key).then(function (raw) {
+      try { sessionStorage.setItem(KEY, base64(raw)); } catch (e) { /* fine */ }
+    }).catch(function () { /* fine */ });
+  }
+
+  function explain(error) {
+    if (error && error.message === "unsupported-browser") {
+      return "This browser is too old to open the prototype. Try current Chrome, Firefox, Safari or Edge.";
+    }
+    if (!window.crypto || !window.crypto.subtle) {
+      return "This browser cannot decrypt the page here. Open it over https.";
+    }
+    return "That password is not right. Try again.";
+  }
+
+  var stored = null;
+  try { stored = sessionStorage.getItem(KEY); } catch (e) { /* fine */ }
+
+  if (stored) {
+    importKey(stored).then(decryptWith).then(render).catch(function () {
+      try { sessionStorage.removeItem(KEY); } catch (e) { /* fine */ }
+    });
+  }
+
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    var password = input.value;
+    submit.disabled = true;
+    say("Decrypting…", "working");
+
+    /* Yield first: PBKDF2 at 600k iterations blocks for about a second, and
+       without a tick in between the "Decrypting…" line never paints. setTimeout
+       rather than requestAnimationFrame — rAF does not fire in a hidden tab, so
+       submitting and switching away would stall the unlock indefinitely. */
+    setTimeout(function () {
+      deriveKey(password).then(function (key) {
+        return decryptWith(key).then(function (html) {
+          return remember(key).then(function () { render(html); });
+        });
+      }).catch(function (error) {
+        submit.disabled = false;
+        say(explain(error), "error");
+        input.value = "";
+        input.focus();
       });
-      row.addEventListener('dragend', function(e){
-        e.stopPropagation(); row.classList.remove('dragging'); dragEl = null;
-        // keep book chapter numbers in sync with their new order
-        if(container.classList.contains('ci-chapters')){
-          container.querySelectorAll('.ci-chapter .num').forEach(function(n, i){ n.textContent = i + 1; });
-        }
-      });
-    });
-    container.addEventListener('dragover', function(e){
-      if(!dragEl) return;
-      e.preventDefault();
-      var after = afterElement(e.clientY);
-      if(after == null) container.appendChild(dragEl);
-      else container.insertBefore(dragEl, after);
-    });
-    function afterElement(y){
-      var els = rows().filter(function(el){ return el !== dragEl; });
-      var closest = { offset: -Infinity, el: null };
-      els.forEach(function(el){
-        var box = el.getBoundingClientRect();
-        var offset = y - box.top - box.height / 2;
-        if(offset < 0 && offset > closest.offset) closest = { offset: offset, el: el };
-      });
-      return closest.el;
-    }
-  }
-
-  renderSections();
-
-  /* ---- current page item (Moodle .pageitem): the row you're "viewing" ----
-     Mark the book activity current by default (the state to demo), and let a
-     click on any activity / chapter move the highlight. Clicks on the inline
-     controls (grip / +/… / chevron) are ignored. */
-  (function(){
-    var book = document.querySelector(".ci-book");
-    if(book) book.classList.add("pageitem");
-    document.getElementById("sections").addEventListener("click", function(e){
-      if(e.target.closest(".ci-actbtn, .ci-grip, .ci-book-chevron, .ci-sec-head")) return;
-      var row = e.target.closest(".ci-activity, .ci-chapter");
-      if(!row) return;
-      document.querySelectorAll("#sections .pageitem").forEach(function(el){ el.classList.remove("pageitem"); });
-      row.classList.add("pageitem");
-    });
-  })();
-
-  /* ---- + add / … more popup menu (shared) ---- */
-  var ciMenu = document.getElementById("ciMenu");
-  var menuOwner = null;
-  function renderItems(items){
-    return items.map(function(it){
-      if(it[0] === 'sep') return '<div class="ci-menu-sep"></div>';
-      var action = it[3] ? ' data-action="' + it[3] + '"' : '';
-      return '<button class="ci-menu-item' + (it[2] ? ' danger' : '') + '"' + action + '><i class="fa-solid ' + it[0] + '"></i>' + it[1] + '</button>';
-    }).join('');
-  }
-  function moreMenu(rowtype){
-    var items;
-    if(rowtype === 'section') items = [['fa-pen','Edit section name'],['fa-eye-slash','Hide section'],['fa-copy','Duplicate'],['sep'],['fa-trash','Delete section',1]];
-    else if(rowtype === 'book') items = [['fa-gear','Edit settings'],['fa-eye-slash','Hide from students'],['fa-copy','Duplicate'],['sep'],['fa-trash','Delete',1]];
-    else if(rowtype === 'chapter') items = [['fa-pen','Edit chapter'],['fa-eye-slash','Hide chapter'],['sep'],['fa-trash','Delete chapter',1]];
-    else items = [['fa-gear','Edit settings'],['fa-eye-slash','Hide from students'],['fa-copy','Duplicate'],['fa-indent','Move right'],['sep'],['fa-trash','Delete',1]];
-    return renderItems(items);
-  }
-  function addMenu(addtype, rowtype){
-    if(addtype === 'chapter'){
-      return '<div class="ci-menu-label">Add to book</div>' + renderItems([['fa-file-lines','Add chapter'],['fa-indent','Add subchapter']]);
-    }
-    var html = '<div class="ci-menu-label">Add activity or resource</div>' + renderItems([
-      ['fa-pen-to-square','Assignment'],['fa-book','Book'],['fa-comments','Forum'],
-      ['fa-file-lines','Page'],['fa-list-check','Quiz'],['fa-link','URL'],['sep'],['fa-ellipsis','More…']
-    ]);
-    // At the section level the + also offers creating a sibling section.
-    if(rowtype === 'section'){
-      html += '<div class="ci-menu-sep"></div><div class="ci-menu-label">Section</div>'
-        + renderItems([['fa-square-plus','Add section', 0, 'add-section']]);
-    }
-    return html;
-  }
-  function closeMenu(){ ciMenu.classList.remove('show'); if(menuOwner){ menuOwner.classList.remove('menu-open'); menuOwner = null; } }
-  /* create a new collapsible section at the end of the index */
-  function addNewSection(){
-    var sections = document.getElementById('sections');
-    var sec = document.createElement('div');
-    sec.className = 'ci-section';
-    sec.setAttribute('data-row', '');
-    sec.setAttribute('data-rowtype', 'section');
-    sec.innerHTML = sectionHead('New section') + '<div class="ci-activities"></div>';
-    sections.appendChild(sec);
-    sec.querySelector('.ci-sec-head').addEventListener('click', function(){ sec.classList.toggle('collapsed'); });
-    enableReorder(sec.querySelector('.ci-activities'));
-    sec.scrollIntoView({ block: 'nearest' });
-  }
-  document.addEventListener('click', function(e){
-    var trigger = e.target.closest('[data-menu]');
-    if(trigger){
-      e.preventDefault(); e.stopPropagation();
-      var kind = trigger.dataset.menu;
-      ciMenu.innerHTML = kind === 'add' ? addMenu(trigger.dataset.addtype, trigger.dataset.rowtype) : moreMenu(trigger.dataset.rowtype);
-      ciMenu.classList.add('show');
-      if(menuOwner) menuOwner.classList.remove('menu-open');
-      menuOwner = trigger.closest('.ci-row-actions'); if(menuOwner) menuOwner.classList.add('menu-open');
-      var r = trigger.getBoundingClientRect();
-      var mw = ciMenu.offsetWidth, mh = ciMenu.offsetHeight;
-      var left = Math.min(r.left, window.innerWidth - mw - 8);
-      var top = r.bottom + 4; if(top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
-      ciMenu.style.left = Math.max(8, left) + 'px';
-      ciMenu.style.top = top + 'px';
-      return;
-    }
-    var mItem = e.target.closest('.ci-menu-item');
-    if(mItem){ if(mItem.dataset.action === 'add-section') addNewSection(); closeMenu(); return; } // most items are demo-only
-    if(!ciMenu.contains(e.target)) closeMenu();
+    }, 16);
   });
-  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMenu(); });
-
-  /* ---- element refs ---- */
-  var body = document.body;
-  var backdrop = document.getElementById("backdrop");
-  var debugEl = document.getElementById("debug"); // assigned early: updateDebug() runs during applyMode() below
-  var openBtn = document.getElementById("openBtn");
-  var closeBtn = document.getElementById("closeBtn");
-
-  /* ---- left course index open/close ---- */
-  function setLeft(open){
-    body.classList.toggle("ci-open", open);
-    if(open && body.classList.contains("cb-overlay")) body.classList.remove("cb-open"); // one overlay at a time
-    updateDebug();
-  }
-  openBtn.addEventListener("click", function(){ setLeft(true); });
-  closeBtn.addEventListener("click", function(){ setLeft(false); });
-
-  /* ---- right course blocks open/close ---- */
-  function setRight(open){
-    body.classList.toggle("cb-open", open);
-    if(open && body.classList.contains("ci-overlay")) body.classList.remove("ci-open"); // one overlay at a time
-    updateDebug();
-  }
-  document.getElementById("openRightBtn").addEventListener("click", function(){ setRight(true); });
-  document.getElementById("closeRightBtn").addEventListener("click", function(){ setRight(false); });
-
-  /* ---- hamburger site-nav overlay ---- */
-  function setNav(open){ body.classList.toggle("nav-open", open); }
-  document.getElementById("burger").addEventListener("click", function(){ setNav(true); });
-
-  /* ---- backdrop + Esc close whatever is open ---- */
-  function closeOverlays(){
-    setNav(false);
-    if(body.classList.contains("ci-overlay")) body.classList.remove("ci-open");
-    if(body.classList.contains("cb-overlay")) body.classList.remove("cb-open");
-    updateDebug();
-  }
-  backdrop.addEventListener("click", closeOverlays);
-  document.addEventListener("keydown", function(e){ if(e.key === "Escape") closeOverlays(); });
-
-  /* ---- overlay vs push at 768px (sidebars); nav burger is separate at 1024 ---- */
-  var mq = window.matchMedia("(max-width:768px)");
-  function applyMode(){
-    var overlay = mq.matches;
-    body.classList.toggle("ci-overlay", overlay);
-    body.classList.toggle("cb-overlay", overlay);
-    if(overlay){
-      // both sidebars are overlays: start closed
-      body.classList.remove("ci-open");
-      body.classList.remove("cb-open");
-    } else {
-      // inline/push: left index open by default, right blocks closed
-      body.classList.add("ci-open");
-      body.classList.remove("nav-open");
-    }
-    updateDebug();
-  }
-  mq.addEventListener("change", applyMode);
-  applyMode();
-
-  /* ---- edit mode toggle (cosmetic) ---- */
-  var editSwitch = document.getElementById("editSwitch");
-  editSwitch.addEventListener("click", function(){
-    var on = editSwitch.getAttribute("aria-pressed") === "true";
-    editSwitch.setAttribute("aria-pressed", on ? "false" : "true");
-    document.body.classList.toggle("edit-on", !on); // reveal/hide course-index row controls
-  });
-
-  /* ---- drag to resize (desktop push mode only) ---- */
-  var handle = document.getElementById("resizeHandle");
-  var readout = document.getElementById("widthReadout");
-  var MIN = 285, MAX = 560;
-  var dragging = false, startX = 0, startWidth = 0;
-
-  function setWidth(px){
-    px = Math.max(MIN, Math.min(MAX, px));
-    document.documentElement.style.setProperty("--ci-width", px + "px");
-    readout.textContent = Math.round(px) + "px";
-    handle.setAttribute("aria-valuenow", Math.round(px));
-    updateDebug();
-  }
-  /* keyboard resize — makes the handle genuinely Tab-accessible */
-  handle.addEventListener("keydown", function(e){
-    if(body.classList.contains("ci-overlay")) return;
-    var cur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ci-width"));
-    var step = e.shiftKey ? 48 : 24, handled = true;
-    if(e.key === "ArrowRight") setWidth(cur + step);
-    else if(e.key === "ArrowLeft") setWidth(cur - step);
-    else if(e.key === "Home") setWidth(MIN);
-    else if(e.key === "End") setWidth(MAX);
-    else handled = false;
-    if(handled){ e.preventDefault(); readout.classList.add("show"); clearTimeout(handle._t); handle._t = setTimeout(function(){ readout.classList.remove("show"); }, 700); }
-  });
-  handle.addEventListener("mousedown", function(e){
-    if(body.classList.contains("ci-overlay")) return;
-    dragging = true; startX = e.clientX;
-    startWidth = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ci-width"));
-    handle.classList.add("dragging"); body.classList.add("dragging"); readout.classList.add("show");
-    e.preventDefault();
-  });
-  window.addEventListener("mousemove", function(e){ if(dragging) setWidth(startWidth + (e.clientX - startX)); });
-  window.addEventListener("mouseup", function(){
-    if(!dragging) return;
-    dragging = false; handle.classList.remove("dragging"); body.classList.remove("dragging");
-    setTimeout(function(){ readout.classList.remove("show"); }, 400);
-  });
-  handle.addEventListener("dblclick", function(){ setWidth(285); });
-
-  /* ---- course tabs: horizontal scroll fade affordance ---- */
-  var tabsScroll = document.getElementById("tabsScroll");
-  var tabsInner = tabsScroll.querySelector(".course-tabs");
-  function updateTabFades(){
-    var sl = tabsInner.scrollLeft;
-    var max = tabsInner.scrollWidth - tabsInner.clientWidth;
-    tabsScroll.classList.toggle("more-left", sl > 2);
-    tabsScroll.classList.toggle("more-right", sl < max - 2);
-  }
-  tabsInner.addEventListener("scroll", updateTabFades, { passive:true });
-  window.addEventListener("resize", updateTabFades);
-  updateTabFades();
-
-  /* ---- debug ---- */
-  function updateDebug(){
-    var vw = window.innerWidth;
-    var w = Math.round(parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ci-width")));
-    var mode = body.classList.contains("ci-overlay") ? "overlay" : "push";
-    var left = body.classList.contains("ci-open") ? "open" : "closed";
-    var right = body.classList.contains("cb-open") ? "open" : "closed";
-    debugEl.innerHTML =
-      "viewport: <b>" + vw + "px</b> · mode: <b>" + mode + "</b><br>" +
-      "index: <b>" + left + "</b> (" + w + "px) · blocks: <b>" + right + "</b>";
-  }
-  window.addEventListener("resize", updateDebug);
-  updateDebug();
-
-  /* click either dev overlay to hide both */
-  document.querySelector(".debug").addEventListener("click", function(){ body.classList.add("hide-dev"); });
-  document.querySelector(".hint").addEventListener("click", function(){ body.classList.add("hide-dev"); });
-
-  /* ---- annotations: dismissible callouts highlighting key affordances ---- */
-  // Mark three spaced-out, currently-visible course-index rows so each ring
-  // lands on one control (avoids stacking callouts on a single row).
-  var ciRows = Array.prototype.filter.call(
-    document.querySelectorAll("#sections .ci-activity"),
-    function(el){ return el.offsetParent !== null; });
-  if(ciRows.length){
-    ciRows[0].classList.add("anno-grip-row");
-    ciRows[Math.floor(ciRows.length / 2)].classList.add("anno-add-row");
-    ciRows[ciRows.length - 1].classList.add("anno-more-row");
-  }
-
-  var ANNOS = [
-    { sel:"#resizeHandle", side:"right", icon:"fa-arrows-left-right",
-      title:"Drag to expand",
-      text:"Pull this edge to widen the course index and reveal the full, truncated activity names.",
-      kbd:"Tab to focus, then ← → to resize" },
-    { sel:".anno-grip-row .ci-grip", side:"right", icon:"fa-up-down-left-right",
-      title:"Drag handle",
-      text:"In edit mode, grab a row by its handle to reorder activities and sections.",
-      kbd:"Reachable by Tab" },
-    { sel:".anno-add-row .ci-actbtn[data-menu='add']", side:"right", icon:"fa-plus",
-      title:"Add menu",
-      text:"The “+” on a row adds an activity, resource, or (in a book) a chapter.",
-      kbd:"Reachable by Tab" },
-    { sel:".anno-more-row .ci-actbtn[data-menu='more']", side:"right", icon:"fa-ellipsis",
-      title:"Actions menu",
-      text:"The “⋯” opens row actions — edit, hide, move, duplicate, delete.",
-      kbd:"Reachable by Tab" }
-  ];
-  var annoLayer = document.getElementById("annoLayer");
-  var annoToggle = document.getElementById("annoToggle");
-  var annoToggleLabel = document.getElementById("annoToggleLabel");
-
-  ANNOS.forEach(function(a, i){
-    a.ring = document.createElement("div");
-    a.ring.className = "anno-ring";
-    a.callout = document.createElement("div");
-    a.callout.className = "anno-callout";
-    a.callout.innerHTML =
-      '<span class="anno-num">' + (i+1) + '</span>' +
-      '<button class="anno-close" title="Dismiss this annotation" aria-label="Dismiss">✕</button>' +
-      '<div class="anno-title"><i class="fa-solid ' + a.icon + '"></i>' + a.title + '</div>' +
-      '<div class="anno-text">' + a.text + '</div>' +
-      (a.kbd ? '<div class="anno-kbd"><i class="fa-regular fa-keyboard"></i>' + a.kbd + '</div>' : '');
-    a.callout.querySelector(".anno-close").addEventListener("click", function(){ dismiss(a); });
-    annoLayer.appendChild(a.ring);
-    annoLayer.appendChild(a.callout);
-    a.alive = true;
-  });
-
-  function dismiss(a){
-    a.alive = false;
-    a.ring.style.display = "none";
-    a.callout.style.display = "none";
-    updateToggleLabel();
-    if(ANNOS.every(function(x){ return !x.alive; })) body.classList.add("annos-off");
-  }
-  function aliveCount(){ return ANNOS.filter(function(a){ return a.alive; }).length; }
-  function updateToggleLabel(){
-    var off = body.classList.contains("annos-off");
-    annoToggleLabel.textContent = off ? ("Show annotations (" + aliveCount() + ")") : "Hide annotations";
-  }
-
-  function positionAnno(a){
-    if(!a.alive){ return; }
-    var el = document.querySelector(a.sel);
-    var vw = window.innerWidth, vh = window.innerHeight;
-    var r = el && el.getBoundingClientRect();
-    var visible = r && r.width > 0 && r.height > 0 && r.bottom > 64 && r.top < vh - 8 && r.right > 0 && r.left < vw;
-    if(!visible){ a.ring.style.display = "none"; a.callout.style.display = "none"; return; }
-    a.ring.style.display = "block"; a.callout.style.display = "block";
-    a.ring.style.left = (r.left - 4) + "px"; a.ring.style.top = (r.top - 4) + "px";
-    a.ring.style.width = (r.width + 8) + "px"; a.ring.style.height = (r.height + 8) + "px";
-    var cw = a.callout.offsetWidth, ch = a.callout.offsetHeight, cl, ct;
-    if(a.side === "right"){ cl = r.right + 16; ct = r.top - 6; }
-    else if(a.side === "left"){ cl = r.left - cw - 16; ct = r.top - 6; }
-    else if(a.side === "top"){ cl = r.left; ct = r.top - ch - 16; }
-    else { cl = r.left; ct = r.bottom + 16; }
-    cl = Math.max(8, Math.min(cl, vw - cw - 8));
-    ct = Math.max(70, Math.min(ct, vh - ch - 8));
-    a.callout.style.left = cl + "px"; a.callout.style.top = ct + "px";
-  }
-
-  var annoRAF = null;
-  function annoTick(){ ANNOS.forEach(positionAnno); annoRAF = requestAnimationFrame(annoTick); }
-  function startAnnos(){ if(!annoRAF) annoTick(); }
-  function stopAnnos(){ if(annoRAF){ cancelAnimationFrame(annoRAF); annoRAF = null; } }
-
-  annoToggle.addEventListener("click", function(){
-    var off = body.classList.toggle("annos-off");
-    if(off){ stopAnnos(); } else {
-      if(aliveCount() === 0){ ANNOS.forEach(function(a){ a.alive = true; a.ring.style.display = ""; a.callout.style.display = ""; }); }
-      startAnnos();
-    }
-    updateToggleLabel();
-  });
-
-  updateToggleLabel();
-  startAnnos();
 })();
 </script>
 
-<!--
-NOTES (fill in once reviewed, then delete this file):
-
-Question answered by this pass: does the high-fidelity uplift (Figma top nav
-+ grey-card course index + edit-mode course page) read correctly, and does it
-hold up responsively (desktop / tablet burger + overlay index / mobile)?
-
-Confirmed decisions baked in: long activity names kept for the truncation story.
-
-Inline course-index editing (this pass — moving the book TOC into the index):
-The Edit toggle is now FUNCTIONAL (toggles body.edit-on). In edit mode, hovering
-any index row (section / activity / book / chapter) reveals a trailing cluster:
-drag grip · + (add) · … (more), Confluence-style. The + menu is CONTEXT-AWARE —
-a section/activity shows the activity/resource chooser; a book or chapter shows
-"Add chapter / Add subchapter" only. The … menu mirrors the current controls
-(section: hide/duplicate/delete; activity: +move; chapter: edit/hide/delete —
-same actions as book_get_toc's teacher TOC). Reorder = drag the row (no up/down
-arrows); chapter numbers re-sync after a drop. The book activity expands to show
-its chapters (the TOC) as nested rows — replacing the right-sidebar fake block.
-Edit off = clean student navigation (controls hidden).
-
-Real-implementation grounding (for the eventual MDL work):
-- Sections/activities can reuse the existing controlmenu + open-chooser (`+`) and
-  the same courseeditor mutations (cmHide/cmDelete/cmDuplicate/cmMove/addModule);
-  drag already exists in the index (cm extends DndCmItem). Main open question:
-  content/actions.js delegates within the content region only — the index needs
-  an index-scoped dispatcher or unified selectors.
-- Book chapters are the real lift: they're book-internal (book_chapters), edited
-  by legacy full-page endpoints (move/edit/delete/show.php) and shown via
-  book_add_fake_block (right sidebar). North-star path = model chapters as a
-  delegated section (sectiondelegatemodule, as mod_subsection does) so they
-  become first-class reactive index rows; then remove the fake block.
-
-Sidebars (this pass): left Course Index + right Course Blocks both PUSH content
-on desktop (content centred between them) and OVERLAY with a backdrop at
-<=768px. Right drawer has NO drag handle (fixed 315px); left keeps drag-resize.
-The nav hamburger (shown <=1024px) opens a separate site-navigation overlay.
-One overlay open at a time; backdrop / Esc close them.
-
-Note: scope left-drawer rules to #drawer — the right drawer also carries class
-.drawer, so `body.ci-open .drawer` / `body.ci-overlay .drawer` would otherwise
-capture it (this bit us: right overlay rendered on the left).
-
-Retained from earlier rounds: content-relative toggle (flush to shell's left
-edge, no 1400px jump), left->right slide, centred content column.
-
-Dependencies: Google Fonts (Noto Sans + Roboto) + Font Awesome 6 via CDN —
-needs network on first open; degrades to system font + glyph boxes offline.
-
-Answer: <fill in after review>
--->
 </body>
 </html>

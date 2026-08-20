@@ -206,7 +206,7 @@
 
   /* the 830px cap — layout.scss:58-63, md+ and ONLY on standard/limitedwidth */
   @media (min-width:768px){
-    body.w-limited .main-inner, body.w-standard .main-inner{ max-width:var(--content-max); }
+    body.w-narrow .main-inner{ max-width:var(--content-max); }
   }
   /* drawer margins on #page — layout.scss:188+, lg+, NOT scoped by width class
      (this is why the footer can mirror them with plain padding) */
@@ -217,14 +217,10 @@
 
   /* anchored drawer positions — drawer.scss:291-340, lg+, standard/limitedwidth only */
   @media (min-width:992px){
-    body.w-limited.dl-open:not(.dr-open) .drawer-left,
-    body.w-standard.dl-open:not(.dr-open) .drawer-left{ left:auto; right:var(--anchor-xxl-left-open); }
-    body.w-limited.dr-open:not(.dl-open) .drawer-right,
-    body.w-standard.dr-open:not(.dl-open) .drawer-right{ right:auto; left:var(--anchor-xxl-right-open); }
-    body.w-limited.dl-open.dr-open .drawer-left,
-    body.w-standard.dl-open.dr-open .drawer-left{ left:auto; right:var(--anchor-both-left); }
-    body.w-limited.dl-open.dr-open .drawer-right,
-    body.w-standard.dl-open.dr-open .drawer-right{ right:auto; left:var(--anchor-both-right); }
+    body.w-narrow.dl-open:not(.dr-open) .drawer-left{ left:auto; right:var(--anchor-xxl-left-open); }
+    body.w-narrow.dr-open:not(.dl-open) .drawer-right{ right:auto; left:var(--anchor-xxl-right-open); }
+    body.w-narrow.dl-open.dr-open .drawer-left{ left:auto; right:var(--anchor-both-left); }
+    body.w-narrow.dl-open.dr-open .drawer-right{ right:auto; left:var(--anchor-both-right); }
   }
   /* below lg the drawers are overlays at a high z-index — drawer.scss:181-184 */
   @media (max-width:991.98px){
@@ -244,7 +240,7 @@
      also cover this prototype's annotation layer (z-index 60) — any value above
      the footer reproduces the same behaviour. */
   .stickyfooter{ z-index:3; }
-  body.w-limited .drawer, body.w-standard .drawer{ z-index:2; }   /* BELOW the footer → clipped */
+  body.w-narrow .drawer{ z-index:2; }   /* BELOW the footer → clipped */
   body.w-full .drawer{ z-index:40; }                              /* ABOVE the footer → fine */
 
   /* =====================  CONTENT  ===================== */
@@ -282,7 +278,7 @@
   body.mode-current .sf-wrapper{ width:auto; }
   @media (min-width:768px){
     /* pre-patch the 830 cap sat on .sticky-footer-content, not the wrapper */
-    body.mode-current.w-limited .sf-content, body.mode-current.w-standard .sf-content{ max-width:var(--content-max); }
+    body.mode-current.w-narrow .sf-content{ max-width:var(--content-max); }
   }
   @media (min-width:992px){
     /* the old wrapper margin/padding block — note the asymmetric 1rem vs 3rem
@@ -317,7 +313,7 @@
     border-top:var(--mds-stroke-weight-sm) solid var(--mds-border-default);
   }
   @media (min-width:768px){
-    body.mode-proposed.w-limited .sf-wrapper, body.mode-proposed.w-standard .sf-wrapper{ max-width:var(--content-max); }
+    body.mode-proposed.w-narrow .sf-wrapper{ max-width:var(--content-max); }
   }
 
   /* ---- shared footer internals ----
@@ -561,7 +557,7 @@
   }
 </style>
 </head>
-<body class="mode-current w-limited dl-open dr-open content-form annotations-on">
+<body class="mode-current w-narrow dl-open dr-open content-form annotations-on">
 
   <!-- ===== TOP NAV ===== -->
   <header class="topbar">
@@ -691,11 +687,17 @@
       <button class="devbtn" data-mode="current">Current (shipped)</button>
       <button class="devbtn" data-mode="proposed">Proposed (contained)</button>
     </div>
-    <h5>Page width class</h5>
+    <!-- One option, not two: Boost styles body.limitedwidth and
+         .pagelayout-standard identically — every rule that names one names the
+         other (layout.scss:56-57, 218, 231-232, 250-251, 260-261;
+         drawer.scss:292-293, 399-400; sticky-footer.scss:35-36). Separate
+         buttons just looked broken, because switching them changed nothing. -->
+    <h5>Page type</h5>
     <div class="devrow" id="devWidth">
-      <button class="devbtn" data-width="limited">body.limitedwidth</button>
-      <button class="devbtn" data-width="standard">pagelayout-standard</button>
-      <button class="devbtn" data-width="full">Full width</button>
+      <button class="devbtn" data-width="narrow"
+        title="body.limitedwidth or .pagelayout-standard. Boost styles both identically, so they are one option here. These are the only page types where the bug can happen.">Narrow content column</button>
+      <button class="devbtn" data-width="full"
+        title="Any page with neither class — grader report, question bank, assign grading, and most activity pages. The drawers stay in front of the footer, so nothing is ever covered.">Full width</button>
     </div>
     <h5>Drawers</h5>
     <div class="devrow" id="devDrawers">
@@ -731,12 +733,12 @@
       <div class="anno-body">The white bar along the bottom is painted <strong>on top of</strong> the course index, so the last item is hidden behind it and clicks don't reach it. On a long course the final sections can't be opened at all. Try clicking this row.</div>
     </div>
 
-    <!-- side="over" + bias="top": sits on the right drawer so the left stays
-         clear for the clipped-row callout — the first thing to read on load. -->
-    <div class="anno-card" data-target="#drawerRight" data-side="over" data-bias="top" data-when="bug">
+    <!-- side="over" + bias="top": left drawer, same height as before. The
+         clipped-row callout (priority=high) stays in front beside #ciLast. -->
+    <div class="anno-card" data-target="#drawerLeft" data-side="over" data-bias="top" data-when="bug">
       <button class="anno-close" aria-label="Dismiss">&times;</button>
       <div class="anno-title"><i class="fa-solid fa-layer-group"></i> Why it happens</div>
-      <div class="anno-body">Both the course index and block drawer are cut off. A recent change moved both drawers <strong>behind</strong> the footer bar. The bar stretches the full width of the window, so wherever it overlaps a drawer, that part of the drawer disappears.<br><br>This only happens on these two page types. Set <em>Page width class</em> to <strong>Full width</strong> and the problem goes away, because there the drawers still sit in front.</div>
+      <div class="anno-body">Both the course index and block drawer are cut off. A recent change moved both drawers <strong>behind</strong> the footer bar. The bar stretches the full width of the window, so wherever it overlaps a drawer, that part of the drawer disappears.<br><br>This only happens on pages with a narrow content column. Set <em>Page type</em> to <strong>Full width</strong> and the problem goes away, because there the drawers still sit in front of the bar.</div>
     </div>
 
     <div class="anno-card" data-target="#stickyFooter" data-side="top" data-when="proposed">
@@ -799,7 +801,7 @@
   var body = document.body;
 
   /* ------------------------------------------------------------------ state */
-  var S = { mode:"current", width:"limited", drawers:"both", content:"form",
+  var S = { mode:"current", width:"narrow", drawers:"both", content:"form",
             bulkSource:"assign", devCollapsed:false };
 
   /* Footer content per state. The bulk state deliberately renders WITHOUT a
@@ -979,7 +981,7 @@
      z-index override lives inside media-breakpoint-up(lg). */
   function bugPossible(){
     var w = window.innerWidth;
-    return (S.width === "limited" || S.width === "standard") && w >= 992;
+    return S.width === "narrow" && w >= 992;
   }
 
   function apply(){
@@ -1072,17 +1074,23 @@
         });
       });
 
-    // Dim the width classes that cannot show the bug at this viewport, and
-    // label why — a silent no-op reads as "the fix did nothing".
-    var narrow = window.innerWidth < 992;
+    /* Dim the page type that cannot show the bug at this viewport, and say why —
+       a silent no-op reads as "the fix did nothing". `belowLg` is about the
+       WINDOW being under 992px; don't confuse it with the "narrow content column"
+       page type. The descriptive tooltip is stashed on first run so that
+       re-enabling a button restores it rather than blanking it. */
+    var belowLg = window.innerWidth < 992;
     Array.prototype.forEach.call(document.querySelectorAll("#devWidth .devbtn"), function(b){
-      b.disabled = narrow && b.dataset.width !== "full";
-      b.title = b.disabled ? "Below 992px the drawers are high-z-index overlays, so no clipping occurs" : "";
+      if(b.dataset.tip === undefined){ b.dataset.tip = b.title || ""; }
+      b.disabled = belowLg && b.dataset.width !== "full";
+      b.title = b.disabled
+        ? "Below 992px the drawers are overlays above the footer, so no clipping can occur"
+        : b.dataset.tip;
     });
-    document.querySelector('#devWidth').previousElementSibling.classList.toggle("dim", narrow);
+    document.querySelector('#devWidth').previousElementSibling.classList.toggle("dim", belowLg);
 
     var cap = document.getElementById("devCap");
-    if(narrow){
+    if(belowLg){
       cap.innerHTML = "Below <b>lg (992px)</b> the drawers are overlays at z-index 1035 &mdash; above the footer. No clipping is possible; widen the window.";
     } else if(S.content === "bulk" && S.bulkSource === "course"){
       cap.innerHTML = "Course bulk editing renders through <code>{{&lt; core/sticky_footer}}</code>, so it keeps the wrappers "
@@ -1429,7 +1437,11 @@
      card ends up clamped into one corner. Re-run explicitly instead.
      Always re-park the drawers too: early layout can leave the course index
      not scrolled to the clipped last row. */
-  var replace = function(){ parkDrawers(); measure(); updateAnnotations(); };
+  /* syncButtons() is in here because whether the "Narrow content column" option
+     is dimmed depends on the WINDOW width, not just on the chosen state. Relying
+     on the resize event alone leaves it stale whenever that event is missed —
+     which an embedded preview pane does do. */
+  var replace = function(){ syncButtons(); parkDrawers(); measure(); updateAnnotations(); };
   window.addEventListener("load", replace);
   if(document.fonts && document.fonts.ready && document.fonts.ready.then){
     document.fonts.ready.then(replace);
@@ -1489,10 +1501,25 @@ WHAT THE THREE STATES ARE FOR
 - Footer treatment: the before/after. Current = surface on .stickyfooter,
   full-bleed. Proposed = transparent click-through layer + surface on the
   wrappers, boxed to .main-inner.
-- Page width class: determines whether the bug exists at all. limitedwidth and
-  pagelayout-standard get anchored drawers at z-index 2 (affected); everything
-  else keeps 1015 (never affected). Below 992px nothing is affected, and the
-  panel dims and explains rather than silently doing nothing.
+- Page type: determines whether the bug exists at all. "Narrow content column"
+  covers body.limitedwidth AND .pagelayout-standard, which are ONE option because
+  Boost styles them identically — every rule naming one names the other
+  (layout.scss:56-57, 218, 231-232, 250-251, 260-261; drawer.scss:292-293,
+  399-400; sticky-footer.scss:35-36). They differ only in which pages get them:
+  pagelayout-standard comes free from set_pagelayout('standard') (~54 sites, e.g.
+  course/reset.php), limitedwidth only from an explicit
+  add_body_class('limitedwidth') (~34 sites outside mod/ plus 13 modules). That
+  distinction matters for counting affected pages, not for rendering — earlier
+  drafts exposed them as two buttons, which just looked broken because switching
+  changed nothing on screen.
+  These page types get anchored drawers at z-index 2 (affected); "Full width"
+  keeps 1015 (never affected). Below 992px nothing is affected, and the panel
+  dims the option and explains rather than silently doing nothing.
+
+  One latent asymmetry, NOT modelled: sticky-footer.scss:35-36 requires
+  .uses-drawers for limitedwidth but not for pagelayout-standard. It has no
+  effect in core, because Boost maps the standard pagelayout to drawers.php, so
+  .uses-drawers is always present anyway.
 - Footer content: form buttons (the common case), linear navigation (two rows,
   104px), and bulk actions — which is the state that exposes the defect in the
   patch, see below.

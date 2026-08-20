@@ -898,7 +898,38 @@ function course_module_bulk_update_calendar_events($modulename, $courseid = 0) {
 
     foreach ($instances as $instance) {
         if ($cm = get_coursemodule_from_instance($modulename, $instance->id, $instance->course)) {
-            course_module_calendar_event_update_process($instance, $cm);
+            // Optional check for modules mid-delete.
+            if (!empty($cm->deletioninprogress)) {
+                continue;
+            }
+            try {
+                // Validate the cm is present in course modinfo, not just in mdl_course_modules.
+                get_fast_modinfo($instance->course)->get_cm($cm->id);
+
+                course_module_calendar_event_update_process($instance, $cm);
+            } catch (Exception $e) {
+                $errorcode = $e->errorcode ?? '';
+                if ($errorcode === 'invalidrecord') {
+                    debugging(
+                        get_string('calendareventskipformissingcourse', 'error', $instance->course),
+                        DEBUG_DEVELOPER
+                    );
+                    continue;
+                }
+                if ($errorcode === 'invalidcoursemoduleid' || $errorcode === 'invalidmoduleid') {
+                    $a = new stdClass();
+                    $a->modulename = $modulename;
+                    $a->instance = $instance->id;
+                    $a->course = $instance->course;
+                    $a->cm = $cm->id;
+                    debugging(
+                        get_string('calendareventskipforbrokencoursemodule', 'error', $a),
+                        DEBUG_DEVELOPER
+                    );
+                    continue;
+                }
+                throw $e;
+            }
         }
     }
     return true;
@@ -1403,10 +1434,11 @@ function course_get_cm_edit_actions(cm_info $mod, $indent = -1, $sr = null) {
  * Returns the move action.
  *
  * @param cm_info $mod The module to produce a move button for
- * @param int $sr The section to link back to (used for creating the links)
+ * @param int[]|int|null $returnoptions Options for generating the return URL.
+ *      Alternatively the section page to link back to. Deprecated since Moodle 5.3 (MDL-86284).
  * @return string The markup for the move action, or an empty string if not available.
  */
-function course_get_cm_move(cm_info $mod, $sr = null) {
+function course_get_cm_move(cm_info $mod, $returnoptions = []) {
     global $OUTPUT;
 
     static $str;
@@ -1419,12 +1451,16 @@ function course_get_cm_move(cm_info $mod, $sr = null) {
         $str = get_strings(array('move'));
     }
 
-    if (!isset($baseurl)) {
-        $baseurl = new moodle_url('/course/mod.php', array('sesskey' => sesskey()));
+    if (is_numeric($returnoptions) || is_null($returnoptions)) {
+        debugging(
+            'Use of numbers or null in the 2nd argument has been deprecated. Please replace it in your method calls.',
+            DEBUG_DEVELOPER,
+        );
+        $returnoptions = ['sr' => $returnoptions];
+    }
 
-        if ($sr !== null) {
-            $baseurl->param('sr', $sr);
-        }
+    if (!isset($baseurl)) {
+        $baseurl = new moodle_url('/course/mod.php', ['sesskey' => sesskey(), 'returnoptions' => $returnoptions]);
     }
 
     if ($hasmanageactivities) {
@@ -1438,7 +1474,7 @@ function course_get_cm_move(cm_info $mod, $sr = null) {
         $attributes = [
             'class' => 'editing_move',
             'data-action' => 'move',
-            'data-sectionreturn' => $sr,
+            'data-sectionreturn' => $returnoptions['sr'] ?? null,
             'title' => $str->move,
             'aria-label' => $str->move,
         ];
@@ -2411,11 +2447,12 @@ function get_sorted_course_formats($enabledonly = false) {
  * @param int|stdClass $section Section object from database or just field course_sections.section
  *     if omitted the course view page is returned
  * @param array $options options for view URL. At the moment core uses:
+ *     'pagesectionid' (int) the section ID of the page to display (null or 0 for course main page)
+ *     'sr' (int) the section number of the page to display (deprecated since Moodle 5.3)
  *     'navigation' (bool) if true and section has no separate page, the function returns null
- *     'sr' (int) used by multipage formats to specify to which section to return
  * @return moodle_url|null The url of course
  */
-function course_get_url($courseorid, $section = null, $options = array()) {
+function course_get_url($courseorid, $section = null, $options = []) {
     return course_get_format($courseorid)->get_view_url($section, $options);
 }
 

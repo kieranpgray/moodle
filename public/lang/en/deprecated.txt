@@ -48,6 +48,8 @@ sitecommnews,core_hub
 sitecommnews_help,core_hub
 sitecommnewsyes,core_hub
 cc_import_req_php5,core_imscc
+csvdownload,core_completion
+excelcsvdownload,core_completion
 imageauthoremail,core_badges
 imageauthoremail_help,core_badges
 imageauthorname,core_badges
@@ -101,3 +103,5 @@ modhidden_help,core
 moodlenetprofile,core_user
 moodlenetprofile_help,core_user
 privacy:metadata:moodlenetprofile,core_user
+categorymove,core_question
+courseindexoptions,core_courseformat

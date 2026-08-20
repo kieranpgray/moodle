@@ -251,6 +251,30 @@ final class import_map_test extends \advanced_testcase {
     }
 
     /**
+     * The before_import_map_config hook allows listeners to add custom imports to the map.
+     */
+    public function test_before_import_map_config_hook_can_add_import(): void {
+        $this->resetAfterTest();
+
+        static::load_fixture('core', 'output/requirements/before_import_map_config_hooks.php');
+
+        \core\di::set(
+            \core\hook\manager::class,
+            \core\hook\manager::phpunit_get_instance([
+                'test_plugin1' => static::get_fixture_path('core', 'output/requirements/before_import_map_config_hooks.php'),
+            ]),
+        );
+
+        $map = \core\di::get(import_map::class);
+        $map->set_default_loader(new \core\url('https://example.com/'));
+
+        $data = $map->jsonSerialize();
+
+        $this->assertArrayHasKey('my-custom-specifier', $data['imports']);
+        $this->assertEquals('https://example.com/custom.js', $data['imports']['my-custom-specifier']);
+    }
+
+    /**
      * add_import() with urlsuffix appends it to the URL in the import map for correct relative resolution.
      */
     public function test_add_import_with_urlsuffix(): void {
@@ -267,9 +291,9 @@ final class import_map_test extends \advanced_testcase {
      * A non-themable import produces exactly one entry in the import map with no theme-variant keys.
      */
     public function test_non_themable_import_generates_single_entry(): void {
-        $map = new import_map();
+        $map = \core\di::get(import_map::class);
         $map->set_default_loader(new \core\url('https://example.com/'));
-        $map->set_available_themes(['boost', 'classic']);
+        $map->set_available_themes(['boost', 'mytheme']);
         $map->add_import('mylib', path: 'lib/mylib/index', themable: false);
 
         $data = $map->jsonSerialize();
@@ -277,7 +301,7 @@ final class import_map_test extends \advanced_testcase {
         $this->assertArrayHasKey('mylib', $data['imports']);
         $this->assertArrayNotHasKey('mylib/theme-original', $data['imports']);
         $this->assertArrayNotHasKey('mylib/theme-boost', $data['imports']);
-        $this->assertArrayNotHasKey('mylib/theme-classic', $data['imports']);
+        $this->assertArrayNotHasKey('mylib/theme-mytheme', $data['imports']);
     }
 
     /**
@@ -289,7 +313,7 @@ final class import_map_test extends \advanced_testcase {
         return [
             'no current theme uses plain specifier in URL' => [null, 'mymod/'],
             'current theme boost redirects default to theme-boost sub-path' => ['boost', 'mymod/theme-boost/'],
-            'current theme classic redirects default to theme-classic sub-path' => ['classic', 'mymod/theme-classic/'],
+            'current theme mytheme redirects default to theme-mytheme sub-path' => ['mytheme', 'mymod/theme-mytheme/'],
         ];
     }
 
@@ -305,7 +329,7 @@ final class import_map_test extends \advanced_testcase {
         ?string $currenttheme,
         string $expectedurlsuffix,
     ): void {
-        $map = new import_map();
+        $map = \core\di::get(import_map::class);
         $map->set_default_loader(new \core\url('https://example.com/'));
         $map->set_current_theme($currenttheme);
         $map->add_import('mymod/', path: 'mod/mymod/js/esm/build', themable: true);
@@ -330,11 +354,11 @@ final class import_map_test extends \advanced_testcase {
             'single available theme generates its own entry alongside original' => [
                 'availablethemes' => ['boost'],
                 'expectedkeys' => ['mymod/', 'mymod/theme-original/', 'mymod/theme-boost/'],
-                'absentkeys' => ['mymod/theme-classic/'],
+                'absentkeys' => ['mymod/theme-mytheme/'],
             ],
             'multiple available themes generate all entries' => [
-                'availablethemes' => ['boost', 'classic'],
-                'expectedkeys' => ['mymod/', 'mymod/theme-original/', 'mymod/theme-boost/', 'mymod/theme-classic/'],
+                'availablethemes' => ['boost', 'mytheme'],
+                'expectedkeys' => ['mymod/', 'mymod/theme-original/', 'mymod/theme-boost/', 'mymod/theme-mytheme/'],
                 'absentkeys' => [],
             ],
         ];
@@ -354,7 +378,7 @@ final class import_map_test extends \advanced_testcase {
         array $expectedkeys,
         array $absentkeys,
     ): void {
-        $map = new import_map();
+        $map = \core\di::get(import_map::class);
         $map->set_default_loader(new \core\url('https://example.com/'));
         $map->set_available_themes($availablethemes);
         $map->add_import('mymod/', path: 'mod/mymod/js/esm/build', themable: true);
@@ -373,7 +397,7 @@ final class import_map_test extends \advanced_testcase {
      * Each per-theme entry in the import map uses the theme-specific sub-path as its URL.
      */
     public function test_available_theme_entry_urls_contain_theme_subpath(): void {
-        $map = new import_map();
+        $map = \core\di::get(import_map::class);
         $map->set_default_loader(new \core\url('https://example.com/'));
         $map->set_available_themes(['boost']);
         $map->add_import('mymod/', path: 'mod/mymod/js/esm/build', themable: true);
@@ -389,7 +413,7 @@ final class import_map_test extends \advanced_testcase {
      * generated for a themable import registered with a trailing slash.
      */
     public function test_themable_import_with_trailing_slash_preserves_slash_in_all_entries(): void {
-        $map = new import_map();
+        $map = \core\di::get(import_map::class);
         $map->set_default_loader(new \core\url('https://example.com/'));
         $map->set_available_themes(['boost']);
         $map->add_import('mymod/', path: 'mod/mymod/js/esm/build', themable: true);
@@ -435,7 +459,7 @@ final class import_map_test extends \advanced_testcase {
         string $requestedpath,
         string $expectedpath,
     ): void {
-        $map = new import_map();
+        $map = \core\di::get(import_map::class);
         $map->set_default_loader(new \core\url('https://example.com/'));
 
         $this->assertEquals($expectedpath, $map->get_path_for_script(1, $requestedpath));
@@ -461,7 +485,7 @@ final class import_map_test extends \advanced_testcase {
      */
     #[\PHPUnit\Framework\Attributes\DataProvider('explicit_url_themable_provider')]
     public function test_explicit_url_loader_is_used_verbatim_regardless_of_themable(bool $themable): void {
-        $map = new import_map();
+        $map = \core\di::get(import_map::class);
         $map->set_default_loader(new \core\url('https://example.com/'));
         $map->add_import('mylib', loader: new \core\url('https://cdn.example.com/mylib.js'), themable: $themable);
 
@@ -475,7 +499,7 @@ final class import_map_test extends \advanced_testcase {
      * with an explicit \core\url loader (filesystem resolution is not possible in that case).
      */
     public function test_get_path_for_script_throws_for_explicit_loader_specifier(): void {
-        $map = new import_map();
+        $map = \core\di::get(import_map::class);
         $map->set_default_loader(new \core\url('https://example.com/'));
         $map->add_import('cdn-lib', loader: new \core\url('https://cdn.example.com/lib.js'));
 
@@ -510,7 +534,7 @@ final class import_map_test extends \advanced_testcase {
         $tempdir = make_request_directory();
         $CFG->root = $tempdir;
 
-        $map = new import_map();
+        $map = \core\di::get(import_map::class);
         $map->set_default_loader(new \core\url('https://example.com/'));
         $map->add_import('test/', path: 'testpath');
 
@@ -570,7 +594,7 @@ final class import_map_test extends \advanced_testcase {
             return $resolved;
         };
 
-        $map = new import_map();
+        $map = \core\di::get(import_map::class);
         $map->set_default_loader(new \core\url('https://example.com/'));
         $map->add_import($specifier, path: $path, loadfromcomponent: $loadfromcomponent, modifier: $modifier);
 
@@ -622,7 +646,7 @@ final class import_map_test extends \advanced_testcase {
 
         $CFG->root = $tempdir;
 
-        $map = new import_map();
+        $map = \core\di::get(import_map::class);
         $map->set_default_loader(new \core\url('https://example.com/'));
         $map->add_import('test/', path: 'testpath');
 
@@ -655,7 +679,7 @@ final class import_map_test extends \advanced_testcase {
      */
     #[\PHPUnit\Framework\Attributes\DataProvider('resolve_module_identifier_bad_subpath_provider')]
     public function test_component_resolve_throws_for_bad_subpath(string $requestedpath): void {
-        $map = new import_map();
+        $map = \core\di::get(import_map::class);
         $map->set_default_loader(new \core\url('https://example.com/'));
 
         $this->expectException(\core\exception\not_found_exception::class);
@@ -691,7 +715,7 @@ final class import_map_test extends \advanced_testcase {
         string $requestedpath,
         string $expectedpath,
     ): void {
-        $map = new import_map();
+        $map = \core\di::get(import_map::class);
         $map->set_default_loader(new \core\url('https://example.com/'));
 
         $this->assertEquals($expectedpath, $map->get_path_for_script(-1, $requestedpath));

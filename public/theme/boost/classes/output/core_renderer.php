@@ -21,6 +21,7 @@ use context_system;
 use moodle_url;
 use html_writer;
 use get_string;
+use theme_boost\colour_mode;
 
 defined('MOODLE_INTERNAL') || die;
 
@@ -33,10 +34,13 @@ defined('MOODLE_INTERNAL') || die;
  */
 class core_renderer extends \core_renderer {
     /**
-     * Returns an inline search box permanently visible in the top navigation.
+     * Returns the navbar search box using the inline field design.
      *
-     * @param string $id Passed to parent::search_box() for the mobile fallback.
-     * @return string HTML for the inline and mobile search forms, or empty string.
+     * The field is always visible on md+ viewports and collapses behind a
+     * toggle button on smaller screens.
+     *
+     * @param string $id Unused, kept for compatibility with the parent signature.
+     * @return string HTML for the navbar search form, or empty string.
      */
     public function search_box($id = false) {
         global $CFG;
@@ -53,13 +57,16 @@ class core_renderer extends \core_renderer {
             'grouplabel' => get_string('sitewidesearch', 'search'),
         ];
 
-        // Desktop (md+): new inline, always-visible form.
-        $desktop = $this->render_from_template('core/search_input_navbar_inline', $data);
+        return $this->render_from_template('core/search_input_navbar_inline', $data);
+    }
 
-        // Mobile (< md): keep the original toggle + collapse pattern.
-        $mobile = html_writer::div(parent::search_box($id), 'd-flex d-md-none');
-
-        return $desktop . $mobile;
+    /**
+     * Returns the navbar menu for switching between the light and dark colour modes.
+     *
+     * @return string HTML for the colour mode menu, or an empty string.
+     */
+    public function colour_mode_menu(): string {
+        return colour_mode::render_menu($this);
     }
 
     /**
@@ -132,12 +139,12 @@ class core_renderer extends \core_renderer {
             }
 
             // Only provide user information if the user is the current user, or a user which the current user can view.
-            // When checking user_can_view_profile(), either:
+            // When checking \core\user::can_view_profile(), either:
             // If the page context is course, check the course context (from the page object) or;
             // If page context is NOT course, then check across all courses.
             $course = ($this->page->context->contextlevel == CONTEXT_COURSE) ? $this->page->course : null;
 
-            if (user_can_view_profile($user, $course)) {
+            if (\core\user::can_view_profile($user, $course)) {
                 // Use the user's full name if the heading isn't set.
                 if (empty($heading)) {
                     $heading = fullname($user);
