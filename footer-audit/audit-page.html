@@ -1,0 +1,1282 @@
+<title>Moodle Footer Action Audit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+:root {
+  --ground: #f2f4f7;
+  --surface: #ffffff;
+  --surface-2: #f7f9fb;
+  --ink: #141821;
+  --ink-2: #3d4654;
+  --muted: #5a6474;
+  --line: #dce1e9;
+  --line-soft: #e8ecf2;
+  --accent: #c2500a;
+  --accent-soft: #fbeee4;
+
+  --pa: #1a6f55;
+  --pa-bg: #e4f2ed;
+  --pb: #27538f;
+  --pb-bg: #e5ecf7;
+  --pc: #a83318;
+  --pc-bg: #fbeae5;
+  --pd: #656e7d;
+  --pd-bg: #eceff3;
+
+  --shadow: 0 1px 2px rgba(20, 24, 33, .06), 0 8px 24px -12px rgba(20, 24, 33, .18);
+  --radius: 10px;
+  --maxw: 1180px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0f1319;
+    --surface: #171c24;
+    --surface-2: #1d232c;
+    --ink: #e4e8ef;
+    --ink-2: #c2c9d4;
+    --muted: #949dac;
+    --line: #29313d;
+    --line-soft: #222933;
+    --accent: #f0862f;
+    --accent-soft: #2c2016;
+
+    --pa: #59c9a4;
+    --pa-bg: #14312a;
+    --pb: #7fb0ee;
+    --pb-bg: #16263c;
+    --pc: #f0836a;
+    --pc-bg: #35201a;
+    --pd: #9aa3b1;
+    --pd-bg: #232a34;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 28px -14px rgba(0, 0, 0, .7);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground: #0f1319;
+  --surface: #171c24;
+  --surface-2: #1d232c;
+  --ink: #e4e8ef;
+  --ink-2: #c2c9d4;
+  --muted: #949dac;
+  --line: #29313d;
+  --line-soft: #222933;
+  --accent: #f0862f;
+  --accent-soft: #2c2016;
+
+  --pa: #59c9a4;
+  --pa-bg: #14312a;
+  --pb: #7fb0ee;
+  --pb-bg: #16263c;
+  --pc: #f0836a;
+  --pc-bg: #35201a;
+  --pd: #9aa3b1;
+  --pd-bg: #232a34;
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 28px -14px rgba(0, 0, 0, .7);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 24px 96px;
+}
+
+h1, h2, h3, .display {
+  font-family: Archivo, "IBM Plex Sans", system-ui, sans-serif;
+  text-wrap: balance;
+  margin: 0;
+}
+
+code, .mono { font-family: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace; }
+
+a { color: var(--accent); }
+
+/* ---------- masthead ---------- */
+
+.masthead {
+  padding: 64px 0 40px;
+  border-bottom: 1px solid var(--line);
+}
+
+.eyebrow {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 20px;
+}
+
+.masthead h1 {
+  font-size: clamp(34px, 5vw, 52px);
+  font-weight: 700;
+  letter-spacing: -.025em;
+  line-height: 1.05;
+  max-width: 20ch;
+}
+
+.masthead .lede {
+  margin: 22px 0 0;
+  max-width: 66ch;
+  font-size: 17px;
+  color: var(--ink-2);
+}
+
+.masthead .scope {
+  margin-top: 26px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+
+.scope span {
+  font-size: 12.5px;
+  font-family: "IBM Plex Mono", monospace;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 11px;
+  background: var(--surface);
+}
+
+/* ---------- stats ---------- */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 40px 0 0;
+}
+
+.stat {
+  background: var(--surface);
+  padding: 20px 22px;
+}
+
+.stat .n {
+  font-family: Archivo, sans-serif;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat .l {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* ---------- sections ---------- */
+
+section { margin-top: 64px; }
+
+.sec-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.sec-head h2 {
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+}
+
+.sec-head .count {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.sec-intro {
+  color: var(--ink-2);
+  max-width: 74ch;
+  margin: 0 0 26px;
+}
+
+/* ---------- taxonomy ---------- */
+
+.tax {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 14px;
+}
+
+.tax-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px 20px;
+  box-shadow: var(--shadow);
+  border-top: 3px solid var(--c);
+}
+
+.tax-card .tag {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--c);
+  font-weight: 500;
+}
+
+.tax-card h3 {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 7px 0 9px;
+  letter-spacing: -.01em;
+}
+
+.tax-card p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.tax-card .impl {
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid var(--line-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11.5px;
+  color: var(--ink-2);
+  word-break: break-word;
+}
+
+/* ---------- filter bar (sticky, deliberately) ---------- */
+
+.filterbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 12px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  margin-bottom: 22px;
+}
+
+.fgroup {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.fgroup > .flabel {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-right: 2px;
+}
+
+.chip {
+  font: inherit;
+  font-size: 13px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  border-radius: 999px;
+  padding: 4px 13px;
+  cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s;
+}
+
+.chip:hover { border-color: var(--muted); }
+
+.chip[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
+  font-weight: 500;
+}
+
+.chip:focus-visible,
+.search:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.search {
+  font: inherit;
+  font-size: 13.5px;
+  flex: 1 1 190px;
+  min-width: 150px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  border-radius: 7px;
+  padding: 6px 11px;
+}
+
+.search::placeholder { color: var(--muted); }
+
+.hitcount {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- resolver callout ---------- */
+
+.resolver {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 18px 22px 20px;
+  margin-bottom: 22px;
+  box-shadow: var(--shadow);
+}
+
+.resolver h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  letter-spacing: -.01em;
+}
+
+.resolver p {
+  margin: 0 0 12px;
+  color: var(--ink-2);
+  max-width: 78ch;
+  font-size: 14px;
+}
+
+.resolver .ex {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  padding: 11px 13px;
+  overflow-x: auto;
+  white-space: pre;
+  line-height: 1.7;
+}
+
+.resolve-row {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.jsonin {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  width: 100%;
+  min-height: 74px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  border-radius: 7px;
+  padding: 9px 11px;
+}
+
+.jsonin::placeholder { color: var(--muted); }
+
+.resolve-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-primary, .btn-quiet {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 7px;
+  padding: 6px 15px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background .12s, border-color .12s;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover { filter: brightness(1.08); }
+
+.btn-quiet {
+  background: var(--surface-2);
+  border-color: var(--line);
+  color: var(--ink-2);
+}
+
+.btn-quiet:hover { border-color: var(--muted); }
+
+.jsonin:focus-visible,
+.btn-primary:focus-visible,
+.btn-quiet:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.resolve-status {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.resolve-status.ok { color: var(--pa); }
+.resolve-status.err { color: var(--pc); }
+
+.row .url.unresolved { opacity: .72; }
+
+/* ---------- inventory ---------- */
+
+.grp { margin-bottom: 30px; }
+
+.grp > h3 {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  margin: 0 0 10px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.grp > h3 .gcount {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--line-soft);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.row {
+  background: var(--surface);
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 4px 26px;
+  padding: 13px 16px;
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .row { grid-template-columns: 1fr; }
+}
+
+.row .left { min-width: 0; }
+
+.row .url {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12.5px;
+  color: var(--ink);
+  word-break: break-all;
+  line-height: 1.45;
+  text-decoration: none;
+  display: inline-block;
+  border-bottom: 1px solid transparent;
+}
+
+a.url:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+a.url:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.row .url .host { color: var(--muted); }
+
+.row .url .ph { color: var(--accent); }
+
+.row .meta {
+  margin-top: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.row .screen {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.row .right { min-width: 0; }
+
+.row .zone {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.row .zone b {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.row .note {
+  margin-top: 5px;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.pill {
+  font-size: 11px;
+  font-family: "IBM Plex Mono", monospace;
+  letter-spacing: .04em;
+  border-radius: 4px;
+  padding: 1.5px 7px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.pill.p-A { background: var(--pa-bg); color: var(--pa); }
+.pill.p-B { background: var(--pb-bg); color: var(--pb); }
+.pill.p-C { background: var(--pc-bg); color: var(--pc); }
+.pill.p-D { background: var(--pd-bg); color: var(--pd); }
+
+.pill.role {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.pill.dup {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.empty {
+  padding: 34px 16px;
+  text-align: center;
+  color: var(--muted);
+  background: var(--surface);
+  font-size: 14px;
+}
+
+/* ---------- findings ---------- */
+
+.findings {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.finding {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  box-shadow: var(--shadow);
+}
+
+.finding h3 {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  margin: 0 0 9px;
+}
+
+.finding p {
+  margin: 0 0 10px;
+  color: var(--ink-2);
+  max-width: 78ch;
+}
+
+.finding p:last-child { margin-bottom: 0; }
+
+.finding .ex {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  padding: 9px 12px;
+  margin-top: 4px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ---------- rules ---------- */
+
+.rules {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 4px;
+  box-shadow: var(--shadow);
+}
+
+.rule {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 14px;
+  padding: 14px 18px;
+  align-items: start;
+}
+
+.rule + .rule { border-top: 1px solid var(--line-soft); }
+
+.rule .k {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--muted);
+  padding-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rule .t { font-size: 14px; color: var(--ink-2); }
+
+.rule .t b { color: var(--ink); font-weight: 600; }
+
+.rule .t code {
+  font-size: 12.5px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  padding: 1px 5px;
+  word-break: break-word;
+}
+
+.footnote {
+  margin-top: 56px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 78ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">UX Audit · Moodle 5.x · core, mod, grade, question</p>
+    <h1>Where Moodle puts a course action, and where it doesn't</h1>
+    <p class="lede">
+      Every screen an educator or a student can reach inside a course activity, classified by what
+      sits in the bottom action zone. Four separate mechanisms currently compete for that zone, and
+      115 call sites explicitly switch one of them off. This is the inventory behind that number.
+    </p>
+    <div class="scope">
+      <span>https://localhost:9443</span>
+      <span>course: Biology 101 (id 15)</span>
+      <span>accounts: educator · student_light</span>
+      <span>scope: course &amp; activity context</span>
+      <span>format: topics / weeks assumed</span>
+      <span>theme: boost (drawers)</span>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="n">4</div><div class="l">competing bottom-action mechanisms in the same codebase</div></div>
+    <div class="stat"><div class="n">115</div><div class="l">explicit <code>set_show_navigation_footer(false)</code> call sites</div></div>
+    <div class="stat"><div class="n">89</div><div class="l">of those sit inside <code>/mod/</code> — activity screens</div></div>
+    <div class="stat"><div class="n">2</div><div class="l">of 5 course formats support the linear nav footer at all</div></div>
+    <div class="stat"><div class="n">16</div><div class="l">screens that hand-roll their own sticky footer contents</div></div>
+  </div>
+
+  <section id="taxonomy">
+    <div class="sec-head"><h2>The four mechanisms</h2></div>
+    <p class="sec-intro">
+      Every row in the inventory below is one of these. They are not variants of a single pattern —
+      they are four independent implementations with different markup, different placement, and
+      different rules about when they appear.
+    </p>
+    <div class="tax">
+      <div class="tax-card" style="--c: var(--pa)">
+        <div class="tag">Pattern A</div>
+        <h3>Bespoke core sticky footer</h3>
+        <p>The page builds its own <code>sticky_footer</code> and fills it with whatever that screen needs — save buttons, paging, bulk tools, record navigation. No shared content contract.</p>
+        <div class="impl">core\output\sticky_footer · #sticky-footer</div>
+      </div>
+      <div class="tax-card" style="--c: var(--pb)">
+        <div class="tag">Pattern B</div>
+        <h3>Linear navigation footer</h3>
+        <p>Auto-injected on activity pages by a hook. Fixed contract: completion control, Previous, Next / Back to course. The only pattern nobody has to opt into.</p>
+        <div class="impl">supplementary_sticky_footer · .course-linear-navigation</div>
+      </div>
+      <div class="tax-card" style="--c: var(--pc)">
+        <div class="tag">Pattern C</div>
+        <h3>Opted out, in-page actions</h3>
+        <p>The page suppresses the footer and puts its save, submit or next control inline at the end of the form or content, where it scrolls away. The largest group by far.</p>
+        <div class="impl">set_show_navigation_footer(false) · .submitbtns · fitem_actionbuttons</div>
+      </div>
+      <div class="tax-card" style="--c: var(--pd)">
+        <div class="tag">Pattern D</div>
+        <h3>Legacy activity navigation</h3>
+        <p>The pre-4.0 in-page Previous / Jump to… / Next block. Self-suppresses wherever the course index is used, so it survives only in framed layouts and non-index formats.</p>
+        <div class="impl">output.activity_navigation · core_course/activity_navigation</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="inventory">
+    <div class="sec-head">
+      <h2>Screen inventory</h2>
+      <span class="count">links resolve against https://localhost:9443 · <span style="color:var(--accent)">{braces}</span> are IDs to substitute</span>
+    </div>
+    <p class="sec-intro">
+      Every URL points at <code>https://localhost:9443</code> and opens in a new tab. Course-level
+      screens are resolved against Biology 101 and work as they stand; activity screens still carry a
+      <span style="color:var(--accent)">{highlighted}</span> ID, because those are per-activity and
+      have to come out of your database. Filter by pattern and role, or search for a module.
+      <b>Doubled</b> marks a screen that shows two bottom-action mechanisms at once — the divergence
+      at its most visible.
+    </p>
+
+
+    <div class="resolver">
+      <h3>Resolving the activity IDs</h3>
+      <p>
+        The <span class="mono">{cmid}</span>, <span class="mono">{forumid}</span> and
+        <span class="mono">{attemptid}</span> values live in your database, not in the Moodle source,
+        so they have to come from the instance itself. Run this against Biology 101 and paste the
+        output below — every link on this page then rewrites itself with the real IDs and stays that
+        way on this device. Anything the course can't produce yet (a quiz with no attempts, a wiki
+        with no pages) stays dimmed here and is listed with the reason in the script's own output.
+      </p>
+      <div class="ex">php admin/cli/footer_audit_urls.php --courseid=15 \
+  --wwwroot=https://localhost:9443 --student=student_light --teacher=educator --json</div>
+      <div class="resolve-row">
+        <textarea id="jsonin" class="jsonin" spellcheck="false"
+          placeholder="Paste the --json output here to resolve every link on this page…"
+          aria-label="Paste resolver JSON"></textarea>
+        <div class="resolve-actions">
+          <button class="btn-primary" id="resolvebtn" type="button">Resolve links</button>
+          <button class="btn-quiet" id="clearbtn" type="button">Clear</button>
+          <span class="resolve-status" id="resolvestatus" role="status"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="filterbar">
+      <div class="fgroup">
+        <span class="flabel">Pattern</span>
+        <button class="chip" data-f="pattern" data-v="all" aria-pressed="true">All</button>
+        <button class="chip" data-f="pattern" data-v="A" aria-pressed="false">A</button>
+        <button class="chip" data-f="pattern" data-v="B" aria-pressed="false">B</button>
+        <button class="chip" data-f="pattern" data-v="C" aria-pressed="false">C</button>
+        <button class="chip" data-f="pattern" data-v="D" aria-pressed="false">D</button>
+      </div>
+      <div class="fgroup">
+        <span class="flabel">Role</span>
+        <button class="chip" data-f="role" data-v="all" aria-pressed="true">All</button>
+        <button class="chip" data-f="role" data-v="student" aria-pressed="false">Student</button>
+        <button class="chip" data-f="role" data-v="teacher" aria-pressed="false">Educator</button>
+      </div>
+      <div class="fgroup">
+        <span class="flabel">Flag</span>
+        <button class="chip" data-f="dup" data-v="all" aria-pressed="true">Any</button>
+        <button class="chip" data-f="dup" data-v="yes" aria-pressed="false">Doubled only</button>
+      </div>
+      <input class="search" type="search" placeholder="Search module or action…" aria-label="Search screens">
+      <span class="hitcount" id="hitcount"></span>
+    </div>
+
+    <div id="inv"></div>
+  </section>
+
+  <section id="findings">
+    <div class="sec-head"><h2>What the divergence actually is</h2></div>
+    <div class="findings">
+
+      <div class="finding">
+        <h3>Only navigation was ever standardised. Saving was not.</h3>
+        <p>
+          Pattern B has a fixed, shared content contract and appears automatically. It is the one
+          thing Moodle has genuinely converged on. But it carries navigation only — completion,
+          Previous, Next. The moment a screen's primary action is <em>Save</em>, <em>Submit</em> or
+          <em>Post</em>, there is no shared mechanism at all: the screen either builds its own
+          footer from scratch (A) or drops the button inline and switches the footer off (C).
+        </p>
+        <p>
+          The dividing line is a single method on the form base class. Six forms in the whole
+          codebase call it. Everything else gets an inline button.
+        </p>
+        <div class="ex">lib/formslib.php  →  add_sticky_action_buttons()   6 callers, all in /grade/import + /grade/export
+lib/formslib.php  →  add_action_buttons()          78 callers in /mod alone</div>
+      </div>
+
+      <div class="finding">
+        <h3>A student's core loop is almost entirely Pattern C.</h3>
+        <p>
+          Landing on an activity gives a student a sticky footer. Doing the activity takes it away.
+          Attempting a quiz, editing an assignment submission, answering a feedback form, writing a
+          wiki page, adding a database entry, assessing a workshop peer, posting to a forum — every
+          one of these suppresses the footer and puts the primary action inline at the bottom of a
+          long scroll.
+        </p>
+        <p>
+          So the sticky footer is present exactly where the stakes are lowest (reading a page) and
+          absent exactly where they are highest (submitting work under a time limit).
+        </p>
+      </div>
+
+      <div class="finding">
+        <h3>Eight screens show two bottom-action zones stacked on top of each other.</h3>
+        <p>
+          Because Pattern B injects itself unless a page opts out, any activity landing page that
+          already had its own in-page action ends up with both. A book chapter is the sharpest case:
+          the in-page control is chapter Previous/Next, the sticky footer directly beneath it is
+          activity Previous/Next. Two identical-looking pairs of arrows, ten pixels apart, doing
+          entirely different things.
+        </p>
+        <div class="ex">/mod/book/view.php    #mod_book-chaptersnavigation   →  previous / next CHAPTER
+                      .stickyfooter                  →  previous / next ACTIVITY</div>
+      </div>
+
+      <div class="finding">
+        <h3>One navigation concept, split across two zones.</h3>
+        <p>
+          Three screens use the <code>supplementary_content</code> slot to put a "go back to the
+          list" link in the sticky footer — but leave the prev/next controls for the <em>same</em>
+          list rendered inline in the page body. Feedback response review is the clearest: "Go to
+          all responses" is sticky, while "Previous response" and "Next response" are not.
+        </p>
+        <div class="ex">/mod/feedback/show_entries.php   sticky:  Go to all responses
+                                 in-page: ◀ Previous response   Next response ▶</div>
+      </div>
+
+      <div class="finding">
+        <h3>The assignment grader has its own private footer.</h3>
+        <p>
+          The grading app suppresses the navigation footer and builds a bespoke
+          <code>grade-actions-panel</code> holding Save changes, Save and next, and Reset — pinned
+          inside a resizable JS panel rather than in the page footer. The grading <em>table</em> one
+          click away uses a real core sticky footer for its Save. Same activity, same task, two
+          different mechanisms depending on which view the educator picked.
+        </p>
+      </div>
+
+      <div class="finding">
+        <h3>Two of five course formats can show the footer at all.</h3>
+        <p>
+          <code>uses_linear_navigation()</code> returns true only for Topics and Weeks. Social and
+          Single activity inherit the base <code>false</code>, and because they also return false
+          for <code>uses_course_index()</code>, they fall through to Pattern D — the legacy in-page
+          block with the "Jump to…" dropdown. A course's format silently decides which of three
+          navigation paradigms its activities get.
+        </p>
+        <p>
+          On top of that, Topics and Weeks courses expose <code>enablelinearnav</code> as a
+          per-course setting, so an educator can turn the only standardised pattern off without
+          realising what it governs.
+        </p>
+      </div>
+
+      <div class="finding">
+        <h3>The footer is a single-slot resource, and first writer wins.</h3>
+        <p>
+          The injection hook bails out if <code>has_sticky_footer()</code> is already true. Any page
+          that renders its own footer therefore silently loses linear navigation — not as a design
+          decision, but as a side effect of ordering. On the assignment grading table, an educator
+          gets quick-grade Save and paging, and loses Previous/Next activity, with nothing in the
+          UI explaining the trade.
+        </p>
+        <div class="ex">course/format/classes/local/linearnavigationsettings.php:134
+    if ($page->has_sticky_footer()) { return false; }   // no second footer, ever</div>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="rules">
+    <div class="sec-head"><h2>The rules that decide, in order</h2></div>
+    <p class="sec-intro">
+      Reproducing any row above means satisfying all five. Worth keeping to hand when testing on
+      localhost — most "the footer isn't showing" cases are rule 2 or rule 5.
+    </p>
+    <div class="rules">
+      <div class="rule">
+        <div class="k">1</div>
+        <div class="t"><b>Must be an activity page.</b> <code>$PAGE->cm !== null</code>. Course-level screens never get Pattern B, only Pattern A if they build one.</div>
+      </div>
+      <div class="rule">
+        <div class="k">2</div>
+        <div class="t"><b>Nothing else claimed the footer.</b> <code>has_sticky_footer()</code> must still be false when the footer hook runs.</div>
+      </div>
+      <div class="rule">
+        <div class="k">3</div>
+        <div class="t"><b>The page didn't opt out.</b> <code>should_show_navigation_footer()</code> — false on all 115 call sites listed as Pattern C.</div>
+      </div>
+      <div class="rule">
+        <div class="k">4</div>
+        <div class="t"><b>The format supports it and the course enabled it.</b> <code>uses_linear_navigation()</code> (Topics, Weeks only) <em>and</em> the <code>enablelinearnav</code> course format option.</div>
+      </div>
+      <div class="rule">
+        <div class="k">5</div>
+        <div class="t"><b>Not a stealth activity</b> unless the viewer holds <code>moodle/course:viewhiddenactivities</code>.</div>
+      </div>
+    </div>
+  </section>
+
+  <p class="footnote">
+    Derived by static analysis of the working tree — hook registrations in <code>lib/db/hooks.php</code>,
+    the <code>sticky_footer</code> / <code>supplementary_sticky_footer</code> renderables, all
+    <code>set_show_navigation_footer</code> and <code>set_sticky_footer</code> call sites, and the
+    form button helpers in <code>lib/formslib.php</code>. Test data excluded. URLs are built against
+    <span class="mono">https://localhost:9443</span> and carry <span class="mono">{cmid}</span>,
+    <span class="mono">15</span> and similar placeholders to substitute from your own instance. Pattern C teacher screens are a representative selection,
+    not the full 89 — the shared characteristic is the same in every case.
+  </p>
+
+</div>
+
+<script>
+const DATA = [
+  // ---------- Pattern B: linear navigation footer ----------
+  {p:"B", r:"both", g:"Activity landing pages — automatic linear navigation", u:"/mod/page/view.php?id={cmid}", s:"Page", z:"Completion · Previous · Next / Back to course"},
+  {p:"B", r:"both", g:"Activity landing pages — automatic linear navigation", u:"/mod/url/view.php?id={cmid}", s:"URL", z:"Completion · Previous · Next / Back to course", n:"Falls back to Pattern D when the URL is set to display in a frame."},
+  {p:"B", r:"both", g:"Activity landing pages — automatic linear navigation", u:"/mod/resource/view.php?id={cmid}", s:"File", z:"Completion · Previous · Next / Back to course", n:"Same frametop exception as URL."},
+  {p:"B", r:"both", g:"Activity landing pages — automatic linear navigation", u:"/mod/folder/view.php?id={cmid}", s:"Folder", z:"Completion · Previous · Next / Back to course"},
+  {p:"B", r:"both", g:"Activity landing pages — automatic linear navigation", u:"/mod/imscp/view.php?id={cmid}", s:"IMS content package", z:"Completion · Previous · Next / Back to course"},
+  {p:"B", r:"both", g:"Activity landing pages — automatic linear navigation", u:"/mod/lti/view.php?id={cmid}", s:"External tool", z:"Completion · Previous · Next / Back to course"},
+  {p:"B", r:"both", g:"Activity landing pages — automatic linear navigation", u:"/mod/subsection/view.php?id={cmid}", s:"Subsection", z:"Completion · Previous · Next / Back to course"},
+  {p:"B", r:"both", g:"Activity landing pages — automatic linear navigation", u:"/mod/bigbluebuttonbn/view.php?id={cmid}", s:"BigBlueButton", z:"Completion · Previous · Next / Back to course"},
+  {p:"B", r:"both", g:"Activity landing pages — automatic linear navigation", u:"/mod/glossary/view.php?id={cmid}", s:"Glossary browse", z:"Completion · Previous · Next / Back to course"},
+  {p:"B", r:"both", g:"Activity landing pages — automatic linear navigation", u:"/mod/workshop/view.php?id={cmid}", s:"Workshop phase overview", z:"Completion · Previous · Next / Back to course"},
+  {p:"B", r:"both", g:"Activity landing pages — automatic linear navigation", u:"/mod/wiki/view.php?id={cmid}", s:"Wiki page view", z:"Completion · Previous · Next / Back to course"},
+  {p:"B", r:"both", g:"Activity landing pages — automatic linear navigation", u:"/mod/scorm/view.php?id={cmid}", s:"SCORM entry", z:"Completion · Previous · Next / Back to course", n:"Suppressed entirely when the package is set to auto-launch — the learner never sees this screen."},
+  {p:"B", r:"both", g:"Activity landing pages — automatic linear navigation", u:"/mod/feedback/view.php?id={cmid}", s:"Feedback intro", z:"Completion · Previous · Next / Back to course"},
+
+  {p:"B", r:"both", dup:1, g:"Doubled — footer plus a second in-page action zone", u:"/mod/book/view.php?id={cmid}&chapterid={chapterid}", s:"Book chapter", z:"<b>Footer:</b> Previous / Next activity<br><b>In page:</b> Previous / Next chapter", n:"Two visually identical arrow pairs with different targets, stacked."},
+  {p:"B", r:"both", dup:1, g:"Doubled — footer plus a second in-page action zone", u:"/mod/lesson/view.php?id={cmid}", s:"Lesson page", z:"<b>Footer:</b> Previous / Next activity<br><b>In page:</b> Continue / answer submit", n:"The lesson's own linear progression competes with the course's."},
+  {p:"B", r:"student", dup:1, g:"Doubled — footer plus a second in-page action zone", u:"/mod/choice/view.php?id={cmid}", s:"Choice", z:"<b>Footer:</b> Previous / Next activity<br><b>In page:</b> Save my choice", n:"The primary commit action is the one that scrolls away."},
+  {p:"B", r:"both", dup:1, g:"Doubled — footer plus a second in-page action zone", u:"/mod/data/view.php?d={dataid}", s:"Database — browse entries", z:"<b>Footer:</b> Previous / Next activity<br><b>In page:</b> record paging bar"},
+  {p:"B", r:"both", dup:1, g:"Doubled — footer plus a second in-page action zone", u:"/mod/quiz/view.php?id={cmid}", s:"Quiz intro", z:"<b>Footer:</b> Previous / Next activity<br><b>In page:</b> Attempt quiz"},
+  {p:"B", r:"both", dup:1, g:"Doubled — footer plus a second in-page action zone", u:"/mod/assign/view.php?id={cmid}", s:"Assignment intro", z:"<b>Footer:</b> Previous / Next activity<br><b>In page:</b> Add submission / Edit submission"},
+  {p:"B", r:"both", dup:1, g:"Doubled — footer plus a second in-page action zone", u:"/mod/forum/view.php?id={cmid}", s:"Forum — discussion list", z:"<b>Footer:</b> Previous / Next activity<br><b>In page:</b> Add discussion topic"},
+  {p:"B", r:"both", dup:1, g:"Doubled — footer plus a second in-page action zone", u:"/mod/h5pactivity/view.php?id={cmid}", s:"H5P activity", z:"<b>Footer:</b> Previous / Next activity<br><b>In page:</b> H5P's own internal controls"},
+
+  {p:"B", r:"both", g:"Footer plus a supplementary “back to list” link", u:"/mod/forum/discuss.php?d={discussionid}", s:"Forum discussion", z:"Completion · Previous · Next<br><b>Supplementary:</b> Go to all discussions", n:"The only screen where the supplementary slot sits alongside a full nav footer."},
+  {p:"B", r:"student", g:"Footer plus a supplementary “back to list” link", u:"/mod/h5pactivity/report.php?a={h5pid}&attemptid={attemptid}", s:"H5P — my attempt detail", z:"Completion · Previous · Next<br><b>Supplementary:</b> Go to all attempts"},
+
+  {p:"B", r:"teacher", g:"Supplementary link only — nav suppressed", u:"/mod/feedback/show_entries.php?id={cmid}&showcompleted={responseid}", s:"Feedback — single response", z:"<b>Footer:</b> Go to all responses<br><b>In page:</b> ◀ Previous / Next ▶ response", n:"Same navigation concept split across two zones."},
+  {p:"B", r:"teacher", g:"Supplementary link only — nav suppressed", u:"/mod/h5pactivity/report.php?a={h5pid}&userid={userid}", s:"H5P — learner attempts", z:"<b>Footer:</b> Go to all attempts", n:"Nav footer suppressed for anyone without mod/h5pactivity:submit — i.e. educators."},
+
+  // ---------- Pattern A: bespoke core sticky footer ----------
+  {p:"A", r:"teacher", g:"Activity and course configuration", u:"/course/modedit.php?update={cmid}", s:"Activity settings — any of the 23 modules", z:"<b>Save and return to course · Save and display · Cancel</b>", n:"The single most consistent Pattern A screen: one call in moodleform_mod covers every module."},
+  {p:"A", r:"teacher", g:"Activity and course configuration", u:"/course/modedit.php?add=quiz&course=15&section=1", s:"Add an activity", z:"<b>Save and return to course · Save and display · Cancel</b>"},
+  {p:"A", r:"teacher", g:"Activity and course configuration", u:"/course/edit.php?id=15", s:"Course settings", z:"<b>Save and display · Cancel</b>"},
+  {p:"A", r:"teacher", g:"Activity and course configuration", u:"/course/reset.php?id=15", s:"Reset course", z:"<b>Reset course</b>", n:"Submit only — no Cancel in the footer, unlike every other Pattern A form."},
+  {p:"A", r:"teacher", g:"Activity and course configuration", u:"/course/view.php?id=15", s:"Course page — edit mode, bulk actions on", z:"Select all · move / duplicate / hide / delete icons · Cancel", n:"Footer contents swap in via JS and restore the previous contents on exit."},
+
+  {p:"A", r:"teacher", g:"Grading and gradebook", u:"/mod/assign/view.php?id={cmid}&action=grading", s:"Assignment — submissions table", z:"Per page · paging bar · Notify students · <b>Save</b>", n:"Claims the footer first, so this screen silently loses activity Previous/Next."},
+  {p:"A", r:"teacher", g:"Grading and gradebook", u:"/grade/report/grader/index.php?id=15", s:"Grader report", z:"Paging bar · <b>Save changes</b> when editing is on"},
+  {p:"A", r:"teacher", g:"Grading and gradebook", u:"/grade/report/singleview/index.php?id=15", s:"Single view", z:"◀ Previous / Next ▶ user · bulk insert · <b>Save</b>", n:"Mixes navigation and save in one footer — the only screen that does."},
+  {p:"A", r:"teacher", g:"Grading and gradebook", u:"/grade/report/user/index.php?id=15&userid={userid}", s:"User report (educator view)", z:"◀ Previous / Next ▶ user", n:"Navigation only. Students viewing their own report get no footer at all."},
+  {p:"A", r:"teacher", g:"Grading and gradebook", u:"/grade/edit/tree/index.php?id=15", s:"Gradebook setup", z:"Select all · bulk move / delete · <b>Save changes</b>"},
+  {p:"A", r:"teacher", g:"Grading and gradebook", u:"/grade/export/xls/index.php?id=15", s:"Export grades (xls · txt · ods · xml)", z:"<b>Download</b>", n:"One of only six forms in the codebase using add_sticky_action_buttons()."},
+  {p:"A", r:"teacher", g:"Grading and gradebook", u:"/grade/import/csv/index.php?id=15", s:"Import grades (csv · direct · xml)", z:"<b>Upload grades</b>", n:"Submit only, no Cancel."},
+
+  // ---------- Pattern C: student ----------
+  {p:"C", r:"student", g:"Student — doing the activity (footer suppressed)", u:"/mod/quiz/attempt.php?attempt={attemptid}&page=0", s:"Quiz attempt", z:"In page: <b>Previous page · Next page / Finish attempt</b>", n:"Highest-stakes screen in the product. Actions sit in a plain .submitbtns div below the last question."},
+  {p:"C", r:"student", g:"Student — doing the activity (footer suppressed)", u:"/mod/quiz/summary.php?attempt={attemptid}", s:"Quiz attempt summary", z:"In page: <b>Return to attempt · Submit all and finish</b>"},
+  {p:"C", r:"student", g:"Student — doing the activity (footer suppressed)", u:"/mod/quiz/review.php?attempt={attemptid}", s:"Quiz review", z:"In page: ◀ Previous · Next ▶ · <b>Finish review</b>", n:"A third prev/next visual language again — text arrows, not buttons."},
+  {p:"C", r:"student", g:"Student — doing the activity (footer suppressed)", u:"/mod/assign/view.php?id={cmid}&action=editsubmission", s:"Edit assignment submission", z:"In page: <b>Save changes · Cancel</b>"},
+  {p:"C", r:"student", g:"Student — doing the activity (footer suppressed)", u:"/mod/assign/view.php?id={cmid}&action=submit", s:"Confirm submit for grading", z:"In page: <b>Continue · Cancel</b>"},
+  {p:"C", r:"student", g:"Student — doing the activity (footer suppressed)", u:"/mod/assign/view.php?id={cmid}&action=removesubmissionconfirm", s:"Confirm remove submission", z:"In page: <b>Continue · Cancel</b>"},
+  {p:"C", r:"student", g:"Student — doing the activity (footer suppressed)", u:"/mod/feedback/complete.php?id={cmid}&gopage=0", s:"Complete a feedback", z:"In page: <b>Previous page · Next page · Submit your answers</b>", n:"A paginated flow with its own prev/next, and no sticky footer to hold it."},
+  {p:"C", r:"student", g:"Student — doing the activity (footer suppressed)", u:"/mod/forum/post.php?forum={forumid}", s:"Start a discussion", z:"In page: <b>Post to forum · Cancel</b>"},
+  {p:"C", r:"student", g:"Student — doing the activity (footer suppressed)", u:"/mod/forum/post.php?reply={postid}", s:"Reply to a post", z:"In page: <b>Post to forum · Cancel</b>"},
+  {p:"C", r:"student", g:"Student — doing the activity (footer suppressed)", u:"/mod/data/edit.php?d={dataid}", s:"Add a database entry", z:"In page: <b>Save and view · Save and add another · Cancel</b>", n:"Three save variants, none of them sticky."},
+  {p:"C", r:"student", g:"Student — doing the activity (footer suppressed)", u:"/mod/glossary/edit.php?cmid={cmid}", s:"Add a glossary entry", z:"In page: <b>Save changes · Cancel</b>"},
+  {p:"C", r:"student", g:"Student — doing the activity (footer suppressed)", u:"/mod/wiki/edit.php?pageid={pageid}", s:"Edit a wiki page", z:"In page: <b>Save · Preview · Cancel</b>", n:"Long editor surface, action at the very bottom."},
+  {p:"C", r:"student", g:"Student — doing the activity (footer suppressed)", u:"/mod/wiki/create.php?swid={subwikiid}", s:"Create a wiki page", z:"In page: <b>Create page</b>"},
+  {p:"C", r:"student", g:"Student — doing the activity (footer suppressed)", u:"/mod/wiki/editcomments.php?pageid={pageid}", s:"Edit a wiki comment", z:"In page: <b>Save changes · Cancel</b>"},
+  {p:"C", r:"student", g:"Student — doing the activity (footer suppressed)", u:"/mod/workshop/submission.php?cmid={cmid}&edit=on", s:"Workshop submission", z:"In page: <b>Save changes · Cancel</b>"},
+  {p:"C", r:"student", g:"Student — doing the activity (footer suppressed)", u:"/mod/workshop/assessment.php?asid={assessmentid}", s:"Assess a peer", z:"In page: <b>Save and close · Save and continue editing</b>", n:"Assessment forms are long; the save pair is below the fold on every rubric."},
+  {p:"C", r:"student", g:"Student — doing the activity (footer suppressed)", u:"/mod/scorm/player.php?a={scormid}", s:"SCORM player", z:"SCORM's own nav bar — <b>configurable</b>: disabled, under content, or floating", n:"The only place in Moodle where nav placement is a per-activity setting an educator picks."},
+
+  // ---------- Pattern C: teacher ----------
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/assign/view.php?id={cmid}&action=grader", s:"Assignment grading app", z:"Bespoke panel: <b>Save changes · Save and next · Reset</b>", n:"Not a sticky footer — a grade-actions-panel inside a resizable JS layout."},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/assign/view.php?id={cmid}&action=grade&userid={userid}", s:"Grade a single submission", z:"In page: <b>Save changes · Save and show next · Cancel</b>"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/assign/view.php?id={cmid}&action=grantextension&userid={userid}", s:"Grant extension", z:"In page: <b>Save changes · Cancel</b>"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/assign/overrides.php?cmid={cmid}&mode=user", s:"Assignment overrides", z:"In page: Add user override"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/quiz/edit.php?cmid={cmid}", s:"Edit quiz — question layout", z:"In page: repaginate, add question, <b>Save</b> on the maximum grade field", n:"Multiple independent save affordances scattered down the page."},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/quiz/editgrading.php?cmid={cmid}", s:"Quiz grades setup", z:"In page: <b>Save changes</b>"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/quiz/report.php?id={cmid}&mode=overview", s:"Quiz results", z:"In page: bulk actions, download, <b>Regrade</b>"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/quiz/comment.php?attempt={attemptid}&slot=1", s:"Manually grade a quiz response", z:"In page: <b>Save</b>"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/quiz/overrides.php?cmid={cmid}&mode=user", s:"Quiz overrides", z:"In page: Add user override"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/lesson/edit.php?id={cmid}", s:"Edit lesson pages", z:"In page: per-page action links"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/lesson/editpage.php?id={cmid}&pageid={pageid}&qtype=multichoice", s:"Edit a lesson page", z:"In page: <b>Save page · Cancel</b>"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/lesson/essay.php?id={cmid}&mode=grade", s:"Grade lesson essays", z:"In page: <b>Save changes</b>"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/lesson/report.php?id={cmid}&action=detail", s:"Lesson report", z:"In page: bulk delete attempts"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/feedback/edit.php?id={cmid}&do_show=edit", s:"Edit feedback questions", z:"In page: per-item controls"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/feedback/edit_item.php?cmid={cmid}&typ=multichoice", s:"Add a feedback question", z:"In page: <b>Save changes to item · Cancel</b>"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/feedback/analysis.php?id={cmid}", s:"Feedback analysis", z:"In page: Export to Excel"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/feedback/show_nonrespondents.php?id={cmid}", s:"Show non-respondents", z:"In page: bulk send message"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/data/templates.php?d={dataid}&mode=singletemplate", s:"Database templates", z:"In page: <b>Save template · Revert</b>"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/data/field.php?d={dataid}&mode=new&newtype=text", s:"Add a database field", z:"In page: <b>Save changes · Cancel</b>"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/data/preset.php?d={dataid}", s:"Database presets", z:"In page: Import / Export / Save as preset"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/book/edit.php?cmid={cmid}&pagenum=1", s:"Edit a book chapter", z:"In page: <b>Save changes · Cancel</b>"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/workshop/editform.php?cmid={cmid}", s:"Edit assessment form", z:"In page: <b>Save and close · Save and preview · Save and continue</b>", n:"Three-way save split; the longest form in the module."},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/workshop/allocation.php?cmid={cmid}&method=manual", s:"Allocate submissions", z:"In page: per-row allocation controls"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/workshop/switchphase.php?cmid={cmid}&phase=20", s:"Switch workshop phase", z:"In page: <b>Continue · Cancel</b>"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/forum/subscribers.php?id={forumid}", s:"Forum subscribers", z:"In page: add / remove selected"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/forum/report/summary/index.php?courseid=15&forumid={forumid}", s:"Forum summary report", z:"In page: bulk message · Download"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/glossary/editcategories.php?id={cmid}", s:"Glossary categories", z:"In page: <b>Add category</b>"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/choice/report.php?id={cmid}", s:"Choice responses", z:"In page: bulk action select · <b>Go</b>"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/scorm/report.php?id={cmid}&mode=basic", s:"SCORM report", z:"In page: bulk delete · Download"},
+  {p:"C", r:"teacher", g:"Educator — authoring and grading (footer suppressed)", u:"/mod/folder/edit.php?id={cmid}", s:"Edit folder contents", z:"In page: <b>Save changes · Cancel</b>"},
+
+  {p:"C", r:"teacher", g:"Educator — question bank, rubrics, roles, backup", u:"/question/banks.php?courseid=15", s:"Question banks in the course", z:"In page: bank list actions", n:"Course-level entry point. Since 5.0 question/edit.php?courseid= is deprecated and redirects here."},
+  {p:"C", r:"teacher", g:"Educator — question bank, rubrics, roles, backup", u:"/question/edit.php?cmid={qbank_cmid}", s:"Question bank — questions", z:"Bulk actions render into #sticky-footer via JS", n:"Uses the footer element, but opts out of nav — a hybrid that belongs to neither pattern cleanly."},
+  {p:"C", r:"teacher", g:"Educator — question bank, rubrics, roles, backup", u:"/question/bank/editquestion/question.php?cmid={qbank_cmid}&qtype=multichoice", s:"Add / edit a question", z:"In page: <b>Save changes · Save changes and continue editing · Cancel</b>", n:"One of the longest forms an educator meets; no sticky save."},
+  {p:"C", r:"teacher", g:"Educator — question bank, rubrics, roles, backup", u:"/question/bank/previewquestion/preview.php?id={questionid}&cmid={qbank_cmid}", s:"Preview a question", z:"In page: <b>Check · Fill correct · Start again</b>"},
+  {p:"C", r:"teacher", g:"Educator — question bank, rubrics, roles, backup", u:"/question/bank/importquestions/import.php?cmid={qbank_cmid}", s:"Import questions", z:"In page: <b>Import</b>"},
+  {p:"C", r:"teacher", g:"Educator — question bank, rubrics, roles, backup", u:"/question/bank/exportquestions/export.php?cmid={qbank_cmid}", s:"Export questions", z:"In page: <b>Export questions to file</b>", n:"The gradebook equivalent of this screen is Pattern A. Same task, different pattern."},
+  {p:"C", r:"teacher", g:"Educator — question bank, rubrics, roles, backup", u:"/question/bank/managecategories/category.php?cmid={qbank_cmid}", s:"Question categories", z:"In page: <b>Add category</b>"},
+  {p:"C", r:"teacher", g:"Educator — question bank, rubrics, roles, backup", u:"/grade/grading/manage.php?areaid={areaid}", s:"Advanced grading — method", z:"In page: method links"},
+  {p:"C", r:"teacher", g:"Educator — question bank, rubrics, roles, backup", u:"/grade/grading/form/rubric/edit.php?areaid={areaid}", s:"Define a rubric", z:"In page: <b>Save rubric and make it ready · Save as draft · Cancel</b>", n:"Wide, tall grid editor — the strongest sticky-footer candidate in the whole audit."},
+  {p:"C", r:"teacher", g:"Educator — question bank, rubrics, roles, backup", u:"/grade/grading/form/guide/edit.php?areaid={areaid}", s:"Define a marking guide", z:"In page: <b>Save guide and make it ready · Save as draft · Cancel</b>"},
+  {p:"C", r:"teacher", g:"Educator — question bank, rubrics, roles, backup", u:"/admin/roles/assign.php?contextid={contextid}", s:"Assign roles in the activity", z:"In page: Add ▶ / ◀ Remove"},
+  {p:"C", r:"teacher", g:"Educator — question bank, rubrics, roles, backup", u:"/admin/roles/override.php?contextid={contextid}&roleid={roleid}", s:"Override permissions", z:"In page: <b>Save changes · Cancel</b>", n:"Very long capability list; save is at the bottom of hundreds of rows."},
+  {p:"C", r:"teacher", g:"Educator — question bank, rubrics, roles, backup", u:"/admin/roles/permissions.php?contextid={contextid}", s:"Check / edit permissions", z:"In page: per-capability controls"},
+  {p:"C", r:"teacher", g:"Educator — question bank, rubrics, roles, backup", u:"/report/log/index.php?id=15", s:"Course logs", z:"In page: <b>Get these logs</b> · Download"},
+  {p:"C", r:"teacher", g:"Educator — question bank, rubrics, roles, backup", u:"/rating/index.php?contextid={contextid}&itemid={itemid}&scaleid={scaleid}", s:"Ratings detail", z:"In page: close / back links", n:"itemid and scaleid identify one rated post or entry, so this one only resolves after something has actually been rated."},
+  {p:"C", r:"teacher", g:"Educator — question bank, rubrics, roles, backup", u:"/backup/backup.php?id=15", s:"Course backup wizard", z:"In page: <b>Cancel · Next</b>", n:"A five-step wizard with in-page Next — the archetypal sticky-footer use case."},
+  {p:"C", r:"teacher", g:"Educator — question bank, rubrics, roles, backup", u:"/backup/restorefile.php?contextid={contextid}", s:"Restore a course", z:"In page: <b>Restore</b> per file"},
+
+  // ---------- Pattern D ----------
+  {p:"D", r:"both", g:"Legacy in-page navigation — still reachable", u:"/mod/url/view.php?id={cmid}", s:"URL displayed in a frame (frametop layout)", z:"In page: ◀ Previous · <b>Jump to…</b> · Next ▶", n:"Only surviving control with a jump-to-activity dropdown — a capability neither sticky pattern has."},
+  {p:"D", r:"both", g:"Legacy in-page navigation — still reachable", u:"/mod/resource/view.php?id={cmid}", s:"File displayed in a frame (frametop layout)", z:"In page: ◀ Previous · <b>Jump to…</b> · Next ▶"},
+  {p:"D", r:"both", nolink:1, g:"Legacy in-page navigation — still reachable", u:"/mod/<any>/view.php?id=<cmid>", s:"Any activity in a Social format course", z:"In page: ◀ Previous · <b>Jump to…</b> · Next ▶", n:"Not reachable in Biology 101 — needs a course whose format is Social. That format returns false for both uses_course_index() and uses_linear_navigation()."},
+  {p:"D", r:"both", nolink:1, g:"Legacy in-page navigation — still reachable", u:"/mod/<any>/view.php?id=<cmid>", s:"Any activity in a Single activity format course", z:"In page: ◀ Previous · <b>Jump to…</b> · Next ▶", n:"Not reachable in Biology 101 — needs a course whose format is Single activity. Same fall-through as Social."},
+];
+
+let BASE = "https://localhost:9443";
+
+// Values pasted back from admin/cli/footer_audit_urls.php --json. Until that
+// arrives the activity URLs keep their {placeholder} tokens.
+let PH = null;
+
+const STORE = "moodle-footer-audit-resolver";
+
+/**
+ * Swap {tokens} in a path for real IDs. {cmid} is module specific, so it is
+ * resolved from the /mod/<name>/ segment of the path itself.
+ */
+function resolvePath(path) {
+  if (!PH) return {path, resolved: false};
+  const mod = (path.match(/^\/mod\/([a-z0-9_]+)\//) || [])[1];
+  let missing = false;
+  const out = path.replace(/\{([a-z0-9_]+)\}/gi, (tok, key) => {
+    let val;
+    if (key === "cmid") {
+      val = mod ? (PH.cmid || {})[mod] : Object.values(PH.cmid || {})[0];
+    } else if (key === "qbank_cmid") {
+      val = PH.qbank_cmid ?? (PH.cmid || {}).qbank;
+    } else {
+      val = PH[key];
+    }
+    if (val === undefined || val === null || val === "") { missing = true; return tok; }
+    return val;
+  });
+  return {path: out, resolved: !missing};
+}
+
+function applyResolver(raw, quiet) {
+  const status = document.getElementById("resolvestatus");
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    status.textContent = "That is not valid JSON — paste the whole --json output.";
+    status.className = "resolve-status err";
+    return false;
+  }
+  if (!parsed || typeof parsed !== "object" || !parsed.placeholders) {
+    status.textContent = "No placeholders block found. Re-run the script with --json.";
+    status.className = "resolve-status err";
+    return false;
+  }
+  PH = parsed.placeholders;
+  if (parsed.wwwroot) BASE = String(parsed.wwwroot).replace(/\/+$/, "");
+  try { localStorage.setItem(STORE, raw); } catch (e) { /* private window, fine */ }
+  render();
+  const linkable = DATA.filter(d => !d.nolink);
+  const done = linkable.filter(d => resolvePath(d.u).resolved).length;
+  status.textContent = done + " of " + linkable.length + " links now resolve"
+    + (parsed.course && parsed.course.fullname ? " · " + parsed.course.fullname : "");
+  status.className = "resolve-status ok";
+  return true;
+}
+
+const state = {pattern: "all", role: "all", dup: "all", q: ""};
+const inv = document.getElementById("inv");
+const hit = document.getElementById("hitcount");
+
+const roleLabel = {student: "student", teacher: "educator", both: "student + educator"};
+
+function matches(d) {
+  if (state.pattern !== "all" && d.p !== state.pattern) return false;
+  if (state.role !== "all" && d.r !== state.role && d.r !== "both") return false;
+  if (state.dup === "yes" && !d.dup) return false;
+  if (state.q) {
+    const hay = (d.u + " " + d.s + " " + d.z + " " + (d.n || "") + " " + d.g).toLowerCase();
+    if (!hay.includes(state.q)) return false;
+  }
+  return true;
+}
+
+function render() {
+  const rows = DATA.filter(matches);
+  hit.textContent = rows.length + " of " + DATA.length + " screens";
+
+  if (!rows.length) {
+    inv.innerHTML = '<div class="rows"><div class="empty">No screens match this combination.</div></div>';
+    return;
+  }
+
+  const groups = [];
+  const index = new Map();
+  for (const d of rows) {
+    if (!index.has(d.g)) { index.set(d.g, []); groups.push(d.g); }
+    index.get(d.g).push(d);
+  }
+
+  inv.innerHTML = groups.map(g => {
+    const items = index.get(g);
+    return '<div class="grp">'
+      + '<h3>' + esc(g) + '<span class="gcount">' + items.length + '</span></h3>'
+      + '<div class="rows">'
+      + items.map(d =>
+          '<div class="row">'
+          + '<div class="left">'
+            + (() => {
+                if (d.nolink) {
+                  return '<div class="url unresolved"><span class="host">' + BASE + '</span>'
+                    + esc(d.u) + '</div>';
+                }
+                const r = resolvePath(d.u);
+                return '<a class="url' + (r.resolved ? '' : ' unresolved') + '" href="'
+                  + BASE + esc(r.path) + '" target="_blank" rel="noopener noreferrer">'
+                  + '<span class="host">' + BASE + '</span>' + ph(r.path) + '</a>';
+              })()
+            + '<div class="meta">'
+              + '<span class="pill p-' + d.p + '">' + d.p + '</span>'
+              + '<span class="pill role">' + roleLabel[d.r] + '</span>'
+              + (d.dup ? '<span class="pill dup">doubled</span>' : '')
+              + '<span class="screen">' + esc(d.s) + '</span>'
+            + '</div>'
+          + '</div>'
+          + '<div class="right">'
+            + '<div class="zone">' + d.z + '</div>'
+            + (d.n ? '<div class="note">' + esc(d.n) + '</div>' : '')
+          + '</div>'
+          + '</div>'
+        ).join("")
+      + '</div></div>';
+  }).join("");
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+}
+
+// Mark the {placeholder} segments so it stays obvious which IDs still need substituting.
+function ph(s) {
+  return esc(s).replace(/\{[^}]+\}/g, m => '<span class="ph">' + m + '</span>');
+}
+
+document.querySelectorAll(".chip").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const f = btn.dataset.f;
+    state[f] = btn.dataset.v;
+    document.querySelectorAll('.chip[data-f="' + f + '"]').forEach(b =>
+      b.setAttribute("aria-pressed", String(b === btn)));
+    render();
+  });
+});
+
+document.getElementById("resolvebtn").addEventListener("click", () => {
+  applyResolver(document.getElementById("jsonin").value.trim(), false);
+});
+
+document.getElementById("clearbtn").addEventListener("click", () => {
+  PH = null;
+  document.getElementById("jsonin").value = "";
+  const status = document.getElementById("resolvestatus");
+  status.textContent = "";
+  status.className = "resolve-status";
+  try { localStorage.removeItem(STORE); } catch (e) { /* nothing to clear */ }
+  render();
+});
+
+document.querySelector(".search").addEventListener("input", e => {
+  state.q = e.target.value.trim().toLowerCase();
+  render();
+});
+
+// Restore a previous paste so the links stay resolved across visits.
+try {
+  const saved = localStorage.getItem(STORE);
+  if (saved) {
+    document.getElementById("jsonin").value = saved;
+    applyResolver(saved, true);
+  }
+} catch (e) { /* storage unavailable, page still works unresolved */ }
+
+render();
+</script>
