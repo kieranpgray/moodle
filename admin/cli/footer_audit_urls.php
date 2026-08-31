@@ -52,6 +52,10 @@ Options:
     --wwwroot=<url>        Base URL to prefix. Defaults to \$CFG->wwwroot.
     --pattern=<A|B|C|D>    Only show screens using this pattern. Comma separated.
     --role=<student|teacher>  Only show screens visible to this role.
+    --student=<username>   Account to use for the screens that address one learner.
+                           Defaults to 'student', then any enrolled non editing user.
+    --teacher=<username>   Account to use for the screens that address one grader.
+                           Defaults to 'educator', then any enrolled user who can grade.
     --json                 Emit JSON instead of a readable list.
 ";
 
@@ -61,6 +65,8 @@ Options:
     'wwwroot' => null,
     'pattern' => null,
     'role' => null,
+    'student' => 'student',
+    'teacher' => 'educator',
     'json' => false,
 ], [
     'h' => 'help',
@@ -92,6 +98,10 @@ $linearnav = \core_courseformat\local\linearnavigationsettings::is_linear_naviga
 
 $rows = [];
 $skipped = [];
+
+// Resolved values for the {placeholder} tokens used by the audit page, so the
+// static inventory can be turned into working links by pasting the JSON back in.
+$placeholders = ['cmid' => []];
 
 /**
  * Record one resolved audit URL.
@@ -125,6 +135,19 @@ function skip(string $screen, string $why): void {
 }
 
 /**
+ * Record a resolved value for one {placeholder} token.
+ *
+ * @param string $key Token name, for example forumid.
+ * @param int|string|null $value Resolved value, ignored when empty.
+ */
+function set_ph(string $key, $value): void {
+    global $placeholders;
+    if (!empty($value)) {
+        $placeholders[$key] = $value;
+    }
+}
+
+/**
  * Find the first course module of a given type, or null when the course has none.
  *
  * @param string $modname Module name, for example quiz.
@@ -136,14 +159,46 @@ function first_cm(string $modname): ?cm_info {
     return $instances ? reset($instances) : null;
 }
 
-// Sample users, used by the screens that address a single participant.
-$studentid = null;
-$teacherid = null;
-foreach (get_enrolled_users($coursecontext, '', 0, 'u.id', null, 0, 50) as $user) {
-    if (is_null($teacherid) && has_capability('mod/assign:grade', $coursecontext, $user->id)) {
-        $teacherid = $user->id;
-    } else if (is_null($studentid) && !has_capability('moodle/course:manageactivities', $coursecontext, $user->id)) {
-        $studentid = $user->id;
+/**
+ * Resolve a username to a user id, warning when that account is not enrolled here.
+ *
+ * @param string|null $username Username to look up, or null to skip straight to the fallback.
+ * @param string $label Either student or teacher, used in the warning text.
+ * @return int|null
+ */
+function resolve_named_user(?string $username, string $label): ?int {
+    global $DB, $coursecontext;
+
+    if (empty($username)) {
+        return null;
+    }
+    $user = $DB->get_record('user', ['username' => $username, 'deleted' => 0], 'id, username');
+    if (!$user) {
+        skip("Named $label account '$username'", 'no such username on this site, falling back to enrolments');
+        return null;
+    }
+    if (!is_enrolled($coursecontext, $user->id)) {
+        skip(
+            "Named $label account '$username' (id {$user->id})",
+            'not enrolled in this course, so the gradebook and grading screens will reject it'
+        );
+        return null;
+    }
+    return (int) $user->id;
+}
+
+// Sample users, used by the screens that address a single participant. Prefer the
+// accounts named on the command line, then fall back to scanning the enrolments.
+$studentid = resolve_named_user($options['student'], 'student');
+$teacherid = resolve_named_user($options['teacher'], 'teacher');
+
+if (is_null($studentid) || is_null($teacherid)) {
+    foreach (get_enrolled_users($coursecontext, '', 0, 'u.id', null, 0, 50) as $user) {
+        if (is_null($teacherid) && has_capability('mod/assign:grade', $coursecontext, $user->id)) {
+            $teacherid = $user->id;
+        } else if (is_null($studentid) && !has_capability('moodle/course:manageactivities', $coursecontext, $user->id)) {
+            $studentid = $user->id;
+        }
     }
 }
 
@@ -183,14 +238,22 @@ add_row('C', 'teacher', 'Check permissions',
 if ($studentid) {
     add_row('A', 'teacher', 'User report for one participant',
         "/grade/report/user/index.php?id=$courseid&userid=$studentid", 'Previous / Next user');
+    add_row('A', 'teacher', 'Single view for one participant',
+        "/grade/report/singleview/index.php?id=$courseid&item=user&itemid=$studentid",
+        'Previous / Next user, bulk insert, Save');
 } else {
-    skip('User report for one participant', 'no enrolled non editing participant found');
+    skip('User report and single view for one participant', 'no enrolled non editing participant found');
 }
 
 // ---------------------------------------------------------------------------
 // Every activity landing page. Pattern B when linear navigation is on for this
 // course, otherwise D for formats without a course index, otherwise no footer.
 // ---------------------------------------------------------------------------
+
+set_ph('courseid', $courseid);
+set_ph('roleid', $DB->get_field('role', 'id', ['shortname' => 'student']));
+set_ph('contextid', $coursecontext->id);
+set_ph('userid', $studentid);
 
 $landingpattern = $linearnav ? 'B' : ($format->uses_course_index() ? 'C' : 'D');
 $landingactions = $linearnav
@@ -203,6 +266,7 @@ foreach ($modinfo->get_cms() as $cm) {
     if (!$cm->uservisible || empty($cm->url)) {
         continue;
     }
+    $placeholders['cmid'][$cm->modname] ??= $cm->id;
     add_row($landingpattern, 'both', "{$cm->modname}: {$cm->get_formatted_name()} — landing page",
         "/mod/{$cm->modname}/view.php?id={$cm->id}", $landingactions);
     add_row('A', 'teacher', "{$cm->modname}: {$cm->get_formatted_name()} — activity settings",
@@ -219,8 +283,17 @@ if ($cm = first_cm('assign')) {
         "/mod/assign/view.php?id=$id&action=grading",
         'Sticky footer: per page, paging bar, Notify students, Save');
     add_row('C', 'teacher', 'Assignment: grading app',
-        "/mod/assign/view.php?id=$id&action=grader",
+        "/mod/assign/view.php?id=$id&action=grader"
+            . ($studentid ? "&userid=$studentid" : ''),
         'Bespoke panel: Save changes, Save and next, Reset');
+    if ($studentid) {
+        add_row('C', 'teacher', 'Assignment: grade one submission',
+            "/mod/assign/view.php?id=$id&action=grade&userid=$studentid",
+            'In page: Save changes, Save and show next, Cancel');
+        add_row('C', 'teacher', 'Assignment: grant an extension',
+            "/mod/assign/view.php?id=$id&action=grantextension&userid=$studentid",
+            'In page: Save changes, Cancel');
+    }
     add_row('C', 'student', 'Assignment: edit submission',
         "/mod/assign/view.php?id=$id&action=editsubmission", 'In page: Save changes, Cancel');
     add_row('C', 'student', 'Assignment: confirm submit for grading',
@@ -233,6 +306,7 @@ if ($cm = first_cm('assign')) {
         'component' => 'mod_assign',
         'areaname' => 'submissions',
     ]);
+    set_ph('areaid', $areaid);
     if ($areaid) {
         add_row('C', 'teacher', 'Assignment: advanced grading method',
             "/grade/grading/manage.php?areaid=$areaid", 'In page: method links');
@@ -269,6 +343,7 @@ if ($cm = first_cm('quiz')) {
         IGNORE_MULTIPLE
     );
     if ($attempt) {
+        set_ph('attemptid', $attempt->id);
         add_row('C', 'student', 'Quiz: attempt in progress',
             "/mod/quiz/attempt.php?attempt={$attempt->id}&page=0",
             'In page: Previous page, Next page / Finish attempt');
@@ -292,6 +367,7 @@ if ($cm = first_cm('quiz')) {
 if ($cm = first_cm('forum')) {
     $id = $cm->id;
     $instance = $cm->instance;
+    set_ph('forumid', $instance);
     add_row('C', 'student', 'Forum: start a discussion',
         "/mod/forum/post.php?forum=$instance", 'In page: Post to forum, Cancel');
     add_row('C', 'teacher', 'Forum: subscribers',
@@ -305,6 +381,16 @@ if ($cm = first_cm('forum')) {
         ['forum' => $instance],
         IGNORE_MULTIPLE
     );
+    set_ph('discussionid', $discussionid);
+    set_ph('postid', $DB->get_field_sql(
+        "SELECT p.id
+           FROM {forum_posts} p
+           JOIN {forum_discussions} d ON d.id = p.discussion
+          WHERE d.forum = :forum
+       ORDER BY p.id DESC",
+        ['forum' => $instance],
+        IGNORE_MULTIPLE
+    ));
     if ($discussionid) {
         add_row('B', 'both', 'Forum: a discussion',
             "/mod/forum/discuss.php?d=$discussionid",
@@ -327,6 +413,7 @@ if ($cm = first_cm('glossary')) {
 
 if ($cm = first_cm('data')) {
     $d = $cm->instance;
+    set_ph('dataid', $d);
     add_row('C', 'student', 'Database: add an entry',
         "/mod/data/edit.php?d=$d", 'In page: Save and view, Save and add another, Cancel');
     add_row('C', 'teacher', 'Database: templates',
@@ -349,6 +436,11 @@ if ($cm = first_cm('feedback')) {
         "/mod/feedback/analysis.php?id=$id", 'In page: Export to Excel');
     add_row('C', 'teacher', 'Feedback: non respondents',
         "/mod/feedback/show_nonrespondents.php?id=$id", 'In page: bulk send message');
+    set_ph('responseid', $DB->get_field_sql(
+        "SELECT id FROM {feedback_completed} WHERE feedback = :fid ORDER BY id DESC",
+        ['fid' => $cm->instance],
+        IGNORE_MULTIPLE
+    ));
     add_row('B', 'teacher', 'Feedback: responses list',
         "/mod/feedback/show_entries.php?id=$id",
         'Sticky footer holds "Go to all responses" only, prev / next response stay in page');
@@ -366,6 +458,7 @@ if ($cm = first_cm('book')) {
         ['bookid' => $cm->instance],
         IGNORE_MULTIPLE
     );
+    set_ph('chapterid', $chapterid);
     if ($chapterid) {
         add_row('B', 'both', 'Book: a chapter (doubled navigation)',
             "/mod/book/view.php?id=$id&chapterid=$chapterid",
@@ -408,6 +501,7 @@ if ($cm = first_cm('workshop')) {
         ['wid' => $cm->instance],
         IGNORE_MULTIPLE
     );
+    set_ph('assessmentid', $assessmentid);
     if ($assessmentid) {
         add_row('C', 'student', 'Workshop: assess a peer',
             "/mod/workshop/assessment.php?asid=$assessmentid",
@@ -420,6 +514,11 @@ if ($cm = first_cm('workshop')) {
 }
 
 if ($cm = first_cm('wiki')) {
+    set_ph('subwikiid', $DB->get_field_sql(
+        "SELECT id FROM {wiki_subwikis} WHERE wikiid = :wikiid ORDER BY id",
+        ['wikiid' => $cm->instance],
+        IGNORE_MULTIPLE
+    ));
     $pageid = $DB->get_field_sql(
         "SELECT p.id
            FROM {wiki_pages} p
@@ -429,6 +528,7 @@ if ($cm = first_cm('wiki')) {
         ['wikiid' => $cm->instance],
         IGNORE_MULTIPLE
     );
+    set_ph('pageid', $pageid);
     if ($pageid) {
         add_row('C', 'student', 'Wiki: edit a page',
             "/mod/wiki/edit.php?pageid=$pageid", 'In page: Save, Preview, Cancel');
@@ -447,6 +547,7 @@ if ($cm = first_cm('choice')) {
 }
 
 if ($cm = first_cm('scorm')) {
+    set_ph('scormid', $cm->instance);
     add_row('C', 'student', 'SCORM: player',
         "/mod/scorm/player.php?a={$cm->instance}",
         'SCORM nav bar, position is a per activity setting: disabled, under content, or floating');
@@ -457,6 +558,7 @@ if ($cm = first_cm('scorm')) {
 }
 
 if ($cm = first_cm('h5pactivity')) {
+    set_ph('h5pid', $cm->instance);
     add_row('B', 'teacher', 'H5P: attempts report',
         "/mod/h5pactivity/report.php?a={$cm->instance}",
         'Sticky footer holds "Go to all attempts" only for users without submit capability');
@@ -472,6 +574,18 @@ if ($cm = first_cm('folder')) {
 }
 
 if ($cm = first_cm('qbank')) {
+    set_ph('qbank_cmid', $cm->id);
+    set_ph('questionid', $DB->get_field_sql(
+        "SELECT q.id
+           FROM {question} q
+           JOIN {question_versions} qv ON qv.questionid = q.id
+           JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
+           JOIN {question_categories} qc ON qc.id = qbe.questioncategoryid
+          WHERE qc.contextid = :ctx
+       ORDER BY q.id DESC",
+        ['ctx' => $cm->context->id],
+        IGNORE_MULTIPLE
+    ));
     add_row('C', 'teacher', 'Question bank: questions',
         "/question/edit.php?cmid={$cm->id}", 'Bulk actions render into #sticky-footer via JS');
     add_row('C', 'teacher', 'Question bank: categories',
@@ -515,6 +629,7 @@ if ($options['json']) {
         ],
         'wwwroot' => $base,
         'sampleusers' => ['student' => $studentid, 'teacher' => $teacherid],
+        'placeholders' => $placeholders,
         'screens' => $rows,
         'unresolved' => $skipped,
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
@@ -530,6 +645,8 @@ $patternnames = [
 
 cli_heading(format_string($course->fullname) . " (id $course->id, format $course->format)");
 cli_writeln('Linear navigation enabled: ' . ($linearnav ? 'yes' : 'no'));
+cli_writeln('Learner account: ' . ($studentid ? "id $studentid" : 'none found'));
+cli_writeln('Grader account: ' . ($teacherid ? "id $teacherid" : 'none found'));
 cli_writeln('Screens resolved: ' . count($rows));
 cli_writeln('');
 
