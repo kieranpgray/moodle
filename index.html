@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moodle LMS — Prototype Index</title>
+<style>
+  @font-face {
+    font-family: 'Noto Sans';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('/theme/boost/fonts/noto-sans/noto-sans-normal-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+      U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: 'Noto Sans';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('/theme/boost/fonts/noto-sans/noto-sans-normal-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+      U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+
+  :root {
+    --blue-50: #e7f0f9;
+    --blue-500: #0f6cbf;
+    --blue-600: #0c5699;
+    --blue-700: #094173;
+    --gray-100: #f8f9fa;
+    --gray-300: #dee2e6;
+    --gray-500: #8f959e;
+    --gray-700: #495057;
+    --gray-900: #1d2125;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--gray-900);
+    background: var(--gray-100);
+    line-height: 1.5;
+  }
+
+  header {
+    background: #fff;
+    border-bottom: 1px solid var(--gray-300);
+    padding: 2.5rem 1.5rem 2rem;
+    text-align: center;
+  }
+
+  header h1 {
+    margin: 0 0 0.5rem;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--gray-900);
+  }
+
+  header p {
+    margin: 0;
+    color: var(--gray-700);
+    font-size: 1rem;
+  }
+
+  main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid var(--gray-300);
+    border-radius: 0.6rem;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  .card:hover {
+    box-shadow: 0 4px 14px rgba(15, 108, 191, 0.12);
+    border-color: var(--blue-500);
+  }
+
+  .card .badge {
+    align-self: flex-start;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--blue-600);
+    background: var(--blue-50);
+    padding: 0.2rem 0.55rem;
+    border-radius: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .card h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+
+  .card p {
+    margin: 0 0 1.25rem;
+    color: var(--gray-700);
+    font-size: 0.92rem;
+    flex-grow: 1;
+  }
+
+  .card a.btn {
+    display: inline-block;
+    text-align: center;
+    background: var(--blue-500);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.55rem 1rem;
+    border-radius: 0.5rem;
+    transition: background 0.15s ease;
+  }
+
+  .card a.btn:hover {
+    background: var(--blue-700);
+  }
+
+  /* Flags a prototype that sits behind the password gate, so reviewers know to
+     have the password ready before they click through. */
+  .card .locked {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin: 0 0 0.9rem;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--gray-500);
+    font-size: 0.82rem;
+    padding: 0 1.5rem 2.5rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Prototype Index</h1>
+  <p>Throwaway design explorations — not for merge, for review purposes only.</p>
+</header>
+
+<main>
+  <div class="grid">
+
+    <div class="card">
+      <span class="badge">Activity</span>
+      <h2>Book</h2>
+      <p>Book activity combined with course-level linear (previous/next) navigation.</p>
+      <a class="btn" href="PROTOTYPE-book.html">View prototype</a>
+    </div>
+
+    <div class="card">
+      <span class="badge">Activity</span>
+      <h2>Quiz</h2>
+      <p>Exploration of the quiz activity experience.</p>
+      <a class="btn" href="PROTOTYPE-quiz.html">View prototype</a>
+    </div>
+
+    <div class="card">
+      <span class="badge">Activity</span>
+      <h2>Assignment</h2>
+      <p>Assessment activity — student submission and feedback, the marking table, the grader, and one tabbed workspace for settings and the management tabs.</p>
+      <a class="btn" href="PROTOTYPE-assign.html">View prototype</a>
+    </div>
+
+    <div class="card">
+      <span class="badge">Activity</span>
+      <h2>Forum</h2>
+      <p>Forum discussion mockup grounded in the Moodle Design System, using a sample "Biology 101 Debate" course.</p>
+      <a class="btn" href="PROTOTYPE-forum.html">View prototype</a>
+    </div>
+
+    <div class="card">
+      <span class="badge">Navigation</span>
+      <h2>Course index drawer resize</h2>
+      <p>Course page uplift exploring a resizable course index drawer.</p>
+      <a class="btn" href="PROTOTYPE-courseindex-drawer-resize.html">View prototype</a>
+    </div>
+
+    <div class="card">
+      <span class="badge">Navigation</span>
+      <h2>Top navigation max width</h2>
+      <p>MDL-89293: cap the top navigation at 1440px and centre it, rather than letting it span the whole window. The background and bottom border still reach both edges, so on a wide screen the bar spans the window while the logo and profile controls sit in a centred band.</p>
+      <a class="btn" href="PROTOTYPE-topnav-maxwidth.html">View prototype</a>
+    </div>
+
+    <div class="card">
+      <span class="badge">Authentication</span>
+      <h2>Login experience</h2>
+      <p>Modern login page grounded in the core login layout, panel and form templates. Today&rsquo;s design (now with the option to drop the background image) next to a centred single column, driven by the real config: OAuth2 providers, SSO-only, guest login, self registration, custom instructions &mdash; short in the box or long below it &mdash; reCAPTCHA, failed login and maintenance. Plus one net-new idea: a magic login link.</p>
+      <a class="btn" href="PROTOTYPE-login.html">View prototype</a>
+    </div>
+
+    <div class="card">
+      <span class="badge">Course page</span>
+      <h2>Course page, settings and edit controls</h2>
+      <p>The course page, the settings form, and every course-management tab. Focuses on the activity card&rsquo;s edit controls as icon-only dropdowns.</p>
+      <a class="btn" href="PROTOTYPE-course-settings.html">View prototype</a>
+    </div>
+
+    <div class="card">
+      <span class="badge">Course page</span>
+      <h2>Course page, view mode</h2>
+      <p>The same course page as a teacher sees it with editing off &mdash; no settings, no drag and drop, no edit dropdowns. Availability and group mode use core&rsquo;s static badges, and the course index is core&rsquo;s, resizable by its right edge.</p>
+      <a class="btn" href="PROTOTYPE-course-view.html">View prototype</a>
+    </div>
+
+    <div class="card">
+      <span class="badge">Workflow</span>
+      <h2>Create activity</h2>
+      <p>Adding an activity lands you on a course page with the Course tab selected and the whole settings form open. Compare that with a create screen that names the task and opens only General.</p>
+      <a class="btn" href="PROTOTYPE-create-activity.html">View prototype</a>
+    </div>
+
+    <div class="card">
+      <span class="badge">Course page</span>
+      <h2>Course page activity cards</h2>
+      <p>The MDL-87755 activity-card treatment applied to a real course rather than lorem ipsum &mdash; every section title, activity name, description and due date comes from the Biology 101 mock-data course, so this shows the density you actually get.</p>
+      <a class="btn" href="PROTOTYPE-course-activity-cards.html">View prototype</a>
+    </div>
+
+    <div class="card">
+      <span class="badge">Grades</span>
+      <h2>Teacher grading experience</h2>
+      <p>The grading screens for a course: the same information the gradebook holds today, presented differently. Paged columns, a column chooser, a width choice. Presentation layer only.</p>
+      <a class="btn" href="PROTOTYPE-grading.html">View prototype</a>
+    </div>
+
+    <div class="card">
+      <span class="badge">Layout</span>
+      <h2>Sticky footer containment</h2>
+      <p>Regression against MDL-88411: the sticky footer bar paints over the course index and block drawers. Compare current vs proposed containment.</p>
+      <a class="btn" href="PROTOTYPE-sticky-footer.html">View prototype</a>
+    </div>
+
+    <div class="card">
+      <span class="badge">User</span>
+      <h2>User profile</h2>
+      <p>/user/profile.php, which is currently a link farm: on a stock site the &ldquo;User details&rdquo; card holds an Edit link, an email address and a timezone, while a teacher gets seven near-empty cards stacked in an 830px column. Identity-first header, the bio given a home, staff tooling collected into one panel the student can&rsquo;t see, and a privacy strip so you can tell what others see. Switch viewer (own / peer / teacher / admin / no access) and flip between Today and New; the Today node lists are dumped from the running site, not invented.</p>
+      <a class="btn" href="PROTOTYPE-profile.html">View prototype</a>
+    </div>
+
+    <div class="card">
+      <span class="badge">Community</span>
+      <h2>Public roadmap with voting</h2>
+      <p>Now/Next/Later roadmap merging the MDLJPD and MCJPD boards, with community voting that requires a written reason. Ideas and horizons are real; votes and voters are invented.</p>
+      <p class="locked">🔒 Password required</p>
+      <!-- ?v= is load-bearing, not decoration. nginx sends no Cache-Control on
+           these files, so a browser that fetched this prototype while it was
+           still published in the clear will happily keep serving that copy from
+           its own cache — lock screen never seen. Bumping the version makes the
+           link a URL no one has cached. Bump it again on any republish that
+           must not be served stale. -->
+      <a class="btn" href="PROTOTYPE-roadmap-voting.html?v=enc1">View prototype</a>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  moodlelms.com — prototypes are static pages for review purposes. Most are open;
+  those marked with a lock are encrypted and need the password you were given.
+</footer>
+
+</body>
+</html>
