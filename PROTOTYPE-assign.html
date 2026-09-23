@@ -1,0 +1,2389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTOTYPE — Assignment activity (throwaway, not for merge)</title>
+
+<!-- Noto Sans (matches --mds-font-family-base) + Font Awesome, via CDN. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+  /*
+    THROWAWAY PROTOTYPE — Assignment (mod_assign). Reuses the shared prototype
+    container from PROTOTYPE-book / PROTOTYPE-quiz / PROTOTYPE-forum: MDS :root
+    tokens, top nav, left course-index drawer, right Course Blocks drawer, CLN
+    sticky footer, dev state switcher and the annotation walkthrough layer.
+
+    Grounded in mod/assign:
+      mod_form.php ................ every settings field + its hideIf/disabledIf
+      locallib.php ................ add_all_plugin_settings(), status constants,
+                                    ASSIGN_MARKING_WORKFLOW_STATE_*, ASSIGN_FILTER_*
+      gradingtable.php ............ the real submissions-table column set
+      classes/output/renderer.php . student submission-status + feedback rows
+      classes/output/grading_app.php + templates/grading_app.mustache
+                                    (review panel | grade panel | sticky actions)
+      override_form.php ........... the 5 override fields
+      submission/*, feedback/* .... plugin-contributed settings
+      grade/grading/form/{rubric,guide} ... advanced grading definitions
+    ALL component CSS uses --mds-* tokens (no eyeballed hex). Delete once reviewed.
+  */
+
+  :root{
+    /* ---- MDS primitives (dist/tokens/css/primitives.css, resolved) ---- */
+    --mds-color-blue-50:#e7f0f9; --mds-color-blue-500:#0f6cbf; --mds-color-blue-600:#0c5699; --mds-color-blue-700:#094173;
+    --mds-color-cyan-100:#cce6ea; --mds-color-cyan-500:#008196;
+    --mds-color-pink-100:#f8d1e3; --mds-color-pink-500:#db1a74;
+    --mds-color-orange-100:#ffe3d1; --mds-color-orange-500:#e8590c; --mds-color-orange-600:#cc5e13;
+    --mds-color-green-50:#ebf2ea; --mds-color-green-100:#d3e9d1; --mds-color-green-500:#357a32; --mds-color-green-700:#245021;
+    --mds-color-red-50:#faeae9; --mds-color-red-100:#f3c9c5; --mds-color-red-500:#ca3120; --mds-color-red-600:#a2271a; --mds-color-red-800:#791d13;
+    --mds-color-purple-100:#e4d9f7; --mds-color-purple-500:#6f42c1;
+    --mds-color-gray-100:#f8f9fa; --mds-color-gray-200:#e9ecef; --mds-color-gray-300:#dee2e6;
+    --mds-color-gray-400:#ced4da; --mds-color-gray-500:#8f959e; --mds-color-gray-600:#6a737b;
+    --mds-color-gray-700:#495057; --mds-color-gray-800:#343a40; --mds-color-gray-900:#1d2125; --mds-color-gray-white:#fff;
+
+    /* ---- MDS semantic (dist/tokens/css/colors.css) ---- */
+    --mds-text-default:var(--mds-color-gray-900);
+    --mds-text-subtle:var(--mds-color-gray-700);
+    --mds-text-muted:var(--mds-color-gray-600);
+    --mds-text-inverse:var(--mds-color-gray-white);
+    --mds-text-danger:var(--mds-color-red-500);
+    --mds-text-feedback-success:var(--mds-color-green-500);
+    --mds-text-feedback-warning:var(--mds-color-orange-600);
+    --mds-bg-surface-default:var(--mds-color-gray-white);
+    --mds-bg-surface-subtle:var(--mds-color-gray-100);
+    --mds-bg-surface-strong:var(--mds-color-gray-200);
+    --mds-border-default:var(--mds-color-gray-300);
+    --mds-border-subtle:var(--mds-color-gray-200);
+    --mds-border-interactive-secondary-default:var(--mds-color-gray-500);
+    --mds-bg-interactive-primary-default:var(--mds-color-blue-500);
+    --mds-bg-interactive-primary-hover:var(--mds-color-blue-600);
+    --mds-bg-interactive-primary-active:var(--mds-color-blue-700);
+    --mds-bg-interactive-primary-default-light:var(--mds-color-blue-50);
+    --mds-bg-nav-pill-selected:var(--mds-color-gray-200);
+    --mds-bg-feedback-success-light:var(--mds-color-green-50);
+    --mds-bg-feedback-warning-light:var(--mds-color-orange-100);
+    /* activity-icon categories (assign = assessment/pink) */
+    --mds-activity-icon-assessment-bg:var(--mds-color-pink-100);      --mds-activity-icon-assessment-icon:var(--mds-color-pink-500);
+    --mds-activity-icon-communication-bg:var(--mds-color-orange-100); --mds-activity-icon-communication-icon:var(--mds-color-orange-600);
+    --mds-activity-icon-file-bg:var(--mds-color-cyan-100);            --mds-activity-icon-file-icon:var(--mds-color-cyan-500);
+
+    /* ---- MDS spacing ---- */
+    --mds-spacing-xxs:.25rem; --mds-spacing-xs:.5rem; --mds-spacing-sm:.75rem;
+    --mds-spacing-md:1rem; --mds-spacing-lg:1.25rem; --mds-spacing-xl:2rem; --mds-spacing-xxl:3rem;
+
+    /* ---- MDS radius ---- */
+    --mds-border-radius-xs:.25rem; --mds-border-radius-sm:.375rem; --mds-border-radius-md:.5rem;
+    --mds-border-radius-lg:.75rem; --mds-border-radius-xl:1rem; --mds-border-radius-pill:50rem;
+
+    /* ---- MDS typography ---- */
+    --mds-font-family-base:"Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mds-font-size-headings-1:2.5rem;  --mds-line-height-headings-1:3rem;
+    --mds-font-size-headings-3:1.75rem; --mds-line-height-headings-3:2.25rem;
+    --mds-font-size-headings-4:1.5rem;  --mds-line-height-headings-4:2rem;
+    --mds-font-size-headings-5:1.25rem; --mds-line-height-headings-5:1.75rem;
+    --mds-font-size-headings-6:1rem;    --mds-line-height-headings-6:1.5rem;
+    --mds-font-size-paragraph-default:1rem;   --mds-line-height-paragraph-default:1.5rem;
+    --mds-font-size-paragraph-lead:1.25rem;   --mds-line-height-paragraph-lead:1.875rem;
+    --mds-font-size-paragraph-small:.875rem;  --mds-line-height-paragraph-small:1.25rem;
+    --mds-font-weight-regular:400; --mds-font-weight-medium:500; --mds-font-weight-semibold:600; --mds-font-weight-bold:700;
+
+    /* ---- aliases so the ported Course-Blocks CSS resolves ---- */
+    --mds-color-indigo-500:#6610f2;
+    --mds-font-size-heading-6:1rem; --mds-font-size-body:1rem; --mds-font-size-small:.875rem;
+    --mds-text-link-primary:var(--mds-color-blue-500);
+    --mds-typography-font-weight-regular:400; --mds-typography-font-weight-medium:500;
+    --mds-typography-font-weight-semibold:600; --mds-typography-font-weight-bold:700;
+    --mds-bg-interactive-secondary-hover:var(--mds-color-gray-400);
+    --mds-stroke-weight-sm:1px;
+
+    /* ---- local layout (not visual tokens) ---- */
+    --shell-max:1440px; --shell-pad:2.5rem;
+    --nav-h:64px; --footer-h:64px;
+    --ci-width:300px; --cb-width:315px; --btn:40px;
+    --content-max:873px;
+  }
+
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:var(--mds-font-family-base); color:var(--mds-text-default);
+    background:var(--mds-bg-surface-default); -webkit-font-smoothing:antialiased; }
+  a{ color:var(--mds-bg-interactive-primary-default); text-decoration:none; }
+  button{ font-family:inherit; }
+  .shell{ max-width:var(--shell-max); margin:0 auto; padding:0 var(--shell-pad); }
+
+  /* =====================  TOP NAV  ===================== */
+  .topbar{ position:sticky; top:0; z-index:50; background:var(--mds-bg-surface-subtle); border-bottom:1px solid var(--mds-border-subtle); }
+  .topbar-inner{ height:var(--nav-h); display:flex; align-items:center; justify-content:space-between; gap:var(--mds-spacing-md); }
+  .nav-left{ display:flex; align-items:center; gap:2rem; min-width:0; }
+  .brand{ display:flex; align-items:center; gap:.5rem; height:40px; }
+  .brand .mark{ font-size:26px; color:var(--mds-activity-icon-file-icon); }
+  .brand .word b{ display:block; font-weight:var(--mds-font-weight-bold); font-size:17px; letter-spacing:.2px; line-height:1; }
+  .brand .word span{ display:block; font-size:11px; letter-spacing:2px; color:var(--mds-text-subtle); }
+  .nav-pills{ display:flex; align-items:center; gap:var(--mds-spacing-xxs); }
+  .nav-pill{ display:flex; align-items:center; gap:var(--mds-spacing-xxs); padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
+    border-radius:var(--mds-border-radius-md); border:none; background:transparent;
+    font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); color:var(--mds-text-subtle); cursor:pointer; white-space:nowrap; }
+  .nav-pill .dot{ width:4px; height:4px; border-radius:50%; background:var(--mds-bg-interactive-primary-default); }
+  .nav-pill.selected{ background:var(--mds-bg-nav-pill-selected); color:var(--mds-text-default); }
+  .burger{ display:none; width:var(--btn); height:var(--btn); border:none; background:transparent; border-radius:var(--mds-border-radius-sm);
+    align-items:center; justify-content:center; cursor:pointer; color:var(--mds-text-subtle); font-size:17px; }
+  .nav-right{ display:flex; align-items:center; gap:var(--mds-spacing-md); }
+  .nav-right-group{ display:flex; align-items:center; gap:var(--mds-spacing-md); }
+  .search{ display:flex; align-items:center; gap:var(--mds-spacing-xs); background:var(--mds-bg-surface-default);
+    border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-pill);
+    padding:var(--mds-spacing-xs) var(--mds-spacing-md); color:var(--mds-text-muted); font-size:var(--mds-font-size-paragraph-small); min-width:180px; }
+  .search-icon-btn{ display:none; width:var(--btn); height:var(--btn); border:none; background:transparent; border-radius:var(--mds-border-radius-sm);
+    align-items:center; justify-content:center; cursor:pointer; color:var(--mds-text-subtle); }
+  .editmode{ display:flex; align-items:center; gap:var(--mds-spacing-xs); font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); }
+  .switch{ width:38px; height:21px; border-radius:var(--mds-border-radius-pill); border:none; background:var(--mds-color-gray-400);
+    position:relative; cursor:pointer; transition:background .15s ease; }
+  .switch::after{ content:""; position:absolute; top:2px; left:2px; width:17px; height:17px; border-radius:50%; background:#fff; transition:transform .15s ease; }
+  .switch[aria-pressed="true"]{ background:var(--mds-bg-interactive-primary-default); }
+  .switch[aria-pressed="true"]::after{ transform:translateX(17px); }
+  .nav-icons{ display:flex; gap:var(--mds-spacing-xxs); }
+  .icon-btn{ width:var(--btn); height:var(--btn); border:none; background:transparent; border-radius:var(--mds-border-radius-sm);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--mds-text-subtle); font-size:16px; }
+  .icon-btn:hover{ background:var(--mds-bg-surface-strong); }
+  .nav-divider{ width:1px; height:28px; background:var(--mds-border-default); }
+  .profile{ display:flex; align-items:center; gap:var(--mds-spacing-xs); cursor:pointer; font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); }
+  .profile .avatar{ width:32px; height:32px; border-radius:50%; background:var(--mds-color-indigo-500); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:var(--mds-font-weight-semibold); }
+
+  /* =====================  PAGE LAYOUT  ===================== */
+  .layout{ display:flex; align-items:flex-start; padding-top:var(--mds-spacing-lg);
+    padding-bottom:calc(var(--footer-h) + 2rem); min-height:calc(100vh - var(--nav-h)); position:relative; }
+  body.hide-footer .layout{ padding-bottom:2rem; }
+
+  .toggle-col{ flex:0 0 auto; width:var(--btn); margin-right:.75rem; align-self:stretch; display:flex; justify-content:center; }
+  body.ci-open .toggle-col{ width:0; margin-right:0; overflow:hidden; }
+  .ci-toggle{ width:var(--btn); height:var(--btn); border:none; cursor:pointer; border-radius:var(--mds-border-radius-sm);
+    background:var(--mds-bg-surface-strong); display:flex; align-items:center; justify-content:center; }
+  .ci-toggle:hover{ background:var(--mds-border-default); }
+  .ci-toggle.sticky{ position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); }
+  .ci-toggle.contained{ background:transparent; }
+  .ci-toggle.contained:hover{ background:rgba(0,0,0,.06); }
+  .sidebar-icon{ width:20px; height:16px; display:block; }
+
+  /* left drawer (grey card) — holds the Course Index, or the Students list in the grader */
+  .drawer{ flex:0 0 auto; width:0; overflow:hidden; position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg));
+    align-self:flex-start; transition:width .32s cubic-bezier(.4,0,.2,1); }
+  body.ci-open #drawer{ width:var(--ci-width); }
+  .ci-card{ width:var(--ci-width); background:var(--mds-bg-surface-strong); border-radius:var(--mds-border-radius-md);
+    padding:0 var(--mds-spacing-sm) var(--mds-spacing-md);
+    max-height:calc(100vh - var(--nav-h) - 2 * var(--mds-spacing-lg)); overflow-x:hidden; overflow-y:auto;
+    transform:translateX(-100%); transition:transform .32s cubic-bezier(.4,0,.2,1); }
+  body.ci-open .ci-card{ transform:translateX(0); }
+  .ci-header{ display:flex; align-items:center; justify-content:space-between; height:53px; padding-left:var(--mds-spacing-md); padding-top:var(--mds-spacing-xs); }
+  .ci-title{ font-size:var(--mds-font-size-headings-6); font-weight:var(--mds-font-weight-semibold); }
+  .ci-divider{ height:1px; background:var(--mds-border-default); }
+
+  .ci-section{ margin-top:var(--mds-spacing-xxs); }
+  .ci-sec-head{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:var(--mds-spacing-sm); border:none; background:none; width:100%;
+    cursor:pointer; text-align:left; border-radius:var(--mds-border-radius-sm); }
+  .ci-sec-head:hover{ background:rgba(0,0,0,.04); }
+  .ci-sec-head .chev{ width:10px; font-size:8px; color:var(--mds-text-muted); flex:0 0 auto; text-align:center; transition:transform .15s ease; }
+  .ci-sec-head .txt{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ci-section.collapsed .chev{ transform:rotate(-90deg); }
+  .ci-section.collapsed .ci-activities{ display:none; }
+
+  .ci-activities{ padding-left:var(--mds-spacing-md); display:flex; flex-direction:column; gap:var(--mds-spacing-xxs); }
+  .ci-row{ display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
+    border-radius:var(--mds-border-radius-sm); cursor:pointer; min-width:0; border:none; background:none; width:100%; text-align:left; }
+  .ci-row:hover{ background:rgba(0,0,0,.04); }
+  .ci-row.current{ background:var(--mds-bg-interactive-primary-default); }
+  .ci-row.current .txt, .ci-row.current .act-icon{ color:#fff; }
+  .ci-row.current .act-icon{ background:rgba(255,255,255,.22); }
+  .ci-row .txt{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); color:var(--mds-text-subtle);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  .act-icon{ flex:0 0 auto; width:22px; height:22px; border-radius:var(--mds-border-radius-lg);
+    display:flex; align-items:center; justify-content:center; font-size:11px; }
+  .act-icon.file{ background:var(--mds-activity-icon-file-bg); color:var(--mds-activity-icon-file-icon); }
+  .act-icon.communication{ background:var(--mds-activity-icon-communication-bg); color:var(--mds-activity-icon-communication-icon); }
+  .act-icon.assessment{ background:var(--mds-activity-icon-assessment-bg); color:var(--mds-activity-icon-assessment-icon); }
+
+  /* ---- STUDENTS LIST: the same left drawer, re-purposed while grading.
+     Today this is mod/assign/templates/grading_navigation_user_selector.mustache
+     (an autocomplete dropdown in the page header) + prev/next arrows. ---- */
+  .ci-studenthead{ padding:0 var(--mds-spacing-sm) var(--mds-spacing-xs); }
+  .ci-searchbox{ display:flex; align-items:center; gap:var(--mds-spacing-xs); background:var(--mds-bg-surface-default);
+    border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-sm); padding:var(--mds-spacing-xxs) var(--mds-spacing-xs);
+    font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); margin-bottom:var(--mds-spacing-xs); }
+  .ci-filterchips{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:var(--mds-spacing-xs); }
+  .ci-fchip{ border:1px solid var(--mds-border-default); background:var(--mds-bg-surface-default); border-radius:var(--mds-border-radius-pill);
+    padding:2px 9px; font-size:.6875rem; color:var(--mds-text-subtle); cursor:pointer; }
+  .ci-fchip.on{ background:var(--mds-bg-interactive-primary-default); color:#fff; border-color:transparent; }
+  .ci-students{ display:flex; flex-direction:column; gap:2px; }
+  .ci-student{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:var(--mds-spacing-xs); border:none; background:none;
+    width:100%; text-align:left; border-radius:var(--mds-border-radius-sm); cursor:pointer; min-width:0; }
+  .ci-student:hover{ background:rgba(0,0,0,.04); }
+  .ci-student.current{ background:var(--mds-bg-interactive-primary-default); }
+  .ci-student.current .nm, .ci-student.current .sub{ color:#fff; }
+  .ci-student .av{ width:26px; height:26px; flex:0 0 auto; border-radius:50%; color:#fff; font-size:10px;
+    font-weight:var(--mds-font-weight-semibold); display:flex; align-items:center; justify-content:center; }
+  .ci-student .who{ flex:1; min-width:0; }
+  .ci-student .nm{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); color:var(--mds-text-default);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ci-student .sub{ font-size:.6875rem; color:var(--mds-text-muted); }
+  .ci-student .sdot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
+  .sdot.needsgrading{ background:var(--mds-color-orange-500); }
+  .sdot.graded{ background:var(--mds-color-green-500); }
+  .sdot.nosubmission{ background:var(--mds-color-gray-400); }
+  .sdot.draft{ background:var(--mds-color-purple-500); }
+
+  /* =====================  CONTENT  ===================== */
+  .content-col{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:center; padding:0 var(--shell-pad); }
+  .content{ width:100%; max-width:var(--content-max); }
+  body.wide-mode .content{ max-width:1180px; }
+  .breadcrumb{ color:var(--mds-text-muted); font-size:var(--mds-font-size-paragraph-small); margin-bottom:var(--mds-spacing-sm); display:flex; gap:.4rem; flex-wrap:wrap; }
+  .breadcrumb a{ color:var(--mds-bg-interactive-primary-default); }
+
+  /* activity header: icon tile + title + description + actions */
+  .act-header{ display:flex; gap:var(--mds-spacing-md); align-items:flex-start; margin-bottom:var(--mds-spacing-lg); }
+  .act-tile{ width:48px; height:48px; flex:0 0 auto; border-radius:var(--mds-border-radius-md); display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .act-tile.assessment{ background:var(--mds-activity-icon-assessment-bg); color:var(--mds-activity-icon-assessment-icon); }
+  .act-header .h-main{ flex:1; min-width:0; }
+  .act-header .h-title{ margin:0; font-size:var(--mds-font-size-headings-3); line-height:var(--mds-line-height-headings-3); font-weight:var(--mds-font-weight-bold); letter-spacing:-.2px; }
+  .act-header .h-desc{ margin:var(--mds-spacing-xxs) 0 0; color:var(--mds-text-muted); font-size:var(--mds-font-size-paragraph-small); }
+  .act-header .h-actions{ flex:0 0 auto; display:flex; gap:var(--mds-spacing-xs); align-items:flex-start; }
+
+  /* MDS buttons */
+  .btn{ display:inline-flex; align-items:center; gap:var(--mds-spacing-xs); border:1px solid transparent; border-radius:var(--mds-border-radius-sm);
+    padding:var(--mds-spacing-xs) var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); cursor:pointer; white-space:nowrap; }
+  .btn-primary{ background:var(--mds-bg-interactive-primary-default); color:#fff; }
+  .btn-primary:hover{ background:var(--mds-bg-interactive-primary-hover); }
+  .btn-secondary{ background:var(--mds-bg-surface-default); color:var(--mds-text-subtle); border-color:var(--mds-border-default); }
+  .btn-secondary:hover{ background:var(--mds-bg-surface-subtle); }
+  .btn-ghost{ background:none; color:var(--mds-bg-interactive-primary-default); }
+  .btn-ghost:hover{ background:var(--mds-bg-interactive-primary-default-light); }
+  .btn-danger{ background:var(--mds-bg-surface-default); color:var(--mds-text-danger); border-color:var(--mds-border-default); }
+  .btn-lg{ padding:var(--mds-spacing-sm) var(--mds-spacing-lg); font-size:var(--mds-font-size-paragraph-default); border-radius:var(--mds-border-radius-md); }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .manage-btn{ display:none; }
+  body.role-teacher .manage-btn{ display:inline-flex; }
+
+  /* Manage dropdown */
+  .manage-menu{ position:fixed; z-index:80; min-width:230px; background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md); box-shadow:0 8px 28px rgba(0,0,0,.16); padding:6px; display:none; }
+  .manage-menu.show{ display:block; }
+  .manage-menu .menu-label{ font-size:.6875rem; text-transform:uppercase; letter-spacing:.4px; color:var(--mds-text-muted); padding:6px 10px 3px; }
+  .manage-menu .menu-item{ display:flex; align-items:center; gap:10px; width:100%; padding:8px 10px; border:none; background:none; cursor:pointer; font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-default); border-radius:var(--mds-border-radius-sm); text-align:left; }
+  .manage-menu .menu-item:hover{ background:var(--mds-bg-surface-subtle); }
+  .manage-menu .menu-item i{ width:16px; text-align:center; color:var(--mds-text-muted); }
+  .manage-menu .menu-item.danger{ color:var(--mds-text-danger); }
+  .manage-menu .menu-sep{ height:1px; background:var(--mds-border-subtle); margin:4px 6px; }
+
+  .content p{ margin:0 0 var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-default); line-height:var(--mds-line-height-paragraph-default); }
+  .sec-h{ font-size:var(--mds-font-size-headings-5); font-weight:var(--mds-font-weight-bold); margin:0 0 var(--mds-spacing-md); }
+
+  /* =====================================================================
+     STUDENT: submission status.
+     TODAY this is two stacked key/value tables rendered by
+     classes/output/renderer.php (render_assign_submission_status + the
+     feedback table): Submission status / Grading status / Time remaining /
+     Last modified / <plugin rows> then Grade / Graded on / Graded by /
+     Feedback comments / Annotate PDF. PROPOSED: one status card with a
+     progress track, then the submission and the feedback as content, not rows.
+     ===================================================================== */
+  .status-card{ border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md);
+    margin-bottom:var(--mds-spacing-lg); overflow:hidden; }
+  .status-top{ display:flex; align-items:center; gap:var(--mds-spacing-md); padding:var(--mds-spacing-md) var(--mds-spacing-lg);
+    background:var(--mds-bg-surface-subtle); border-bottom:1px solid var(--mds-border-subtle); flex-wrap:wrap; }
+  .status-top .st-main{ flex:1; min-width:0; }
+  .status-top .st-label{ font-size:.6875rem; text-transform:uppercase; letter-spacing:.4px; color:var(--mds-text-muted); }
+  .status-top .st-value{ font-size:var(--mds-font-size-headings-6); font-weight:var(--mds-font-weight-semibold); margin-top:2px; }
+  .st-chip{ display:inline-flex; align-items:center; gap:6px; font-size:.6875rem; font-weight:var(--mds-font-weight-semibold);
+    padding:3px 10px; border-radius:var(--mds-border-radius-pill); background:var(--mds-bg-surface-strong); color:var(--mds-text-subtle); }
+  .st-chip.submitted{ background:var(--mds-bg-feedback-success-light); color:var(--mds-text-feedback-success); }
+  .st-chip.draft{ background:var(--mds-color-purple-100); color:var(--mds-color-purple-500); }
+  .st-chip.new{ background:var(--mds-bg-surface-strong); color:var(--mds-text-subtle); }
+  .st-chip.late{ background:var(--mds-color-red-50); color:var(--mds-text-danger); }
+  .st-chip.graded{ background:var(--mds-bg-feedback-success-light); color:var(--mds-text-feedback-success); }
+  .st-chip.needsgrading{ background:var(--mds-bg-feedback-warning-light); color:var(--mds-text-feedback-warning); }
+  .st-chip.reopened{ background:var(--mds-bg-interactive-primary-default-light); color:var(--mds-color-blue-700); }
+
+  /* progress track: Open -> Submitted -> Marking -> Feedback released.
+     When markingworkflow is off, the Marking step collapses out (the workflow
+     states only exist when $instance->markingworkflow is set). */
+  .track{ display:flex; align-items:flex-start; padding:var(--mds-spacing-md) var(--mds-spacing-lg); gap:0; }
+  .track-step{ flex:1; min-width:0; position:relative; text-align:center; }
+  .track-step .bul{ width:22px; height:22px; border-radius:50%; margin:0 auto var(--mds-spacing-xs);
+    background:var(--mds-bg-surface-strong); color:var(--mds-text-muted); display:flex; align-items:center; justify-content:center; font-size:10px;
+    position:relative; z-index:1; border:2px solid var(--mds-bg-surface-default); }
+  .track-step.done .bul{ background:var(--mds-color-green-500); color:#fff; }
+  .track-step.current .bul{ background:var(--mds-bg-interactive-primary-default); color:#fff; box-shadow:0 0 0 3px var(--mds-bg-interactive-primary-default-light); }
+  .track-step .tl{ font-size:.75rem; font-weight:var(--mds-font-weight-medium); color:var(--mds-text-subtle); }
+  .track-step.current .tl{ color:var(--mds-text-default); font-weight:var(--mds-font-weight-semibold); }
+  .track-step .tm{ font-size:.6875rem; color:var(--mds-text-muted); margin-top:1px; }
+  .track-step::before{ content:""; position:absolute; top:11px; left:-50%; width:100%; height:2px; background:var(--mds-bg-surface-strong); }
+  .track-step:first-child::before{ display:none; }
+  .track-step.done::before, .track-step.current::before{ background:var(--mds-color-green-500); }
+
+  .status-meta{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:var(--mds-spacing-md);
+    padding:0 var(--mds-spacing-lg) var(--mds-spacing-md); }
+  .status-meta .m-k{ font-size:.6875rem; text-transform:uppercase; letter-spacing:.4px; color:var(--mds-text-muted); }
+  .status-meta .m-v{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-default); margin-top:2px; }
+  .status-meta .m-v.warn{ color:var(--mds-text-feedback-warning); font-weight:var(--mds-font-weight-medium); }
+  .status-meta .m-v.danger{ color:var(--mds-text-danger); font-weight:var(--mds-font-weight-medium); }
+  .status-actions{ display:flex; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-md) var(--mds-spacing-lg);
+    border-top:1px solid var(--mds-border-subtle); flex-wrap:wrap; }
+
+  /* submission content blocks (one per enabled assignsubmission_* plugin) */
+  .subblock{ border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md); margin-bottom:var(--mds-spacing-md); }
+  .subblock-head{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:var(--mds-spacing-sm) var(--mds-spacing-md);
+    border-bottom:1px solid var(--mds-border-subtle); background:var(--mds-bg-surface-subtle); }
+  .subblock-head .t{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-semibold); }
+  .subblock-head .plugintag{ margin-left:auto; font-size:.625rem; color:var(--mds-text-muted); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .subblock-body{ padding:var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-small); line-height:1.55; }
+  .subblock-body p{ font-size:var(--mds-font-size-paragraph-small); margin:0 0 var(--mds-spacing-sm); }
+  .filerow{ display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-xs) 0; }
+  .filerow .fi{ width:30px; height:30px; border-radius:var(--mds-border-radius-sm); background:var(--mds-activity-icon-file-bg);
+    color:var(--mds-activity-icon-file-icon); display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .filerow .fn{ flex:1; min-width:0; font-weight:var(--mds-font-weight-medium); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .filerow .fm{ font-size:.6875rem; color:var(--mds-text-muted); flex:0 0 auto; }
+  .wordcount{ font-size:.6875rem; color:var(--mds-text-muted); margin-top:var(--mds-spacing-xs); }
+  .wordcount.over{ color:var(--mds-text-danger); }
+
+  /* feedback panel */
+  .fb-panel{ border:1px solid var(--mds-color-green-500); border-radius:var(--mds-border-radius-md);
+    background:var(--mds-bg-feedback-success-light); margin-bottom:var(--mds-spacing-lg); overflow:hidden; }
+  .fb-head{ display:flex; align-items:center; gap:var(--mds-spacing-md); padding:var(--mds-spacing-md) var(--mds-spacing-lg); flex-wrap:wrap; }
+  .fb-grade{ font-size:var(--mds-font-size-headings-3); line-height:1; font-weight:var(--mds-font-weight-bold); color:var(--mds-color-green-700); }
+  .fb-grade small{ font-size:var(--mds-font-size-paragraph-default); font-weight:var(--mds-font-weight-regular); color:var(--mds-text-subtle); }
+  .fb-who{ margin-left:auto; font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); text-align:right; }
+  .fb-body{ background:var(--mds-bg-surface-default); padding:var(--mds-spacing-md) var(--mds-spacing-lg); border-top:1px solid var(--mds-color-green-100); }
+  .fb-body h4{ margin:0 0 var(--mds-spacing-xs); font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-semibold); }
+  .fb-body + .fb-body{ border-top:1px solid var(--mds-border-subtle); }
+  .penalty-note{ display:flex; gap:var(--mds-spacing-xs); align-items:flex-start; font-size:.75rem; color:var(--mds-text-danger); margin-top:var(--mds-spacing-xs); }
+
+  /* generic notice */
+  .notice{ display:flex; gap:var(--mds-spacing-sm); align-items:flex-start; border-radius:var(--mds-border-radius-sm);
+    padding:var(--mds-spacing-sm) var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-small); margin-bottom:var(--mds-spacing-md); }
+  .notice i{ margin-top:2px; }
+  .notice.warn{ background:var(--mds-bg-feedback-warning-light); border-left:3px solid var(--mds-text-feedback-warning); color:var(--mds-color-red-800); }
+  .notice.warn i{ color:var(--mds-text-feedback-warning); }
+  .notice.info{ background:var(--mds-bg-interactive-primary-default-light); border-left:3px solid var(--mds-bg-interactive-primary-default); color:var(--mds-color-blue-700); }
+  .notice.info i{ color:var(--mds-bg-interactive-primary-default); }
+  .notice.danger{ background:var(--mds-color-red-50); border-left:3px solid var(--mds-color-red-500); color:var(--mds-color-red-800); }
+  .notice.danger i{ color:var(--mds-color-red-500); }
+
+  /* =====================================================================
+     TEACHER: grading summary (view.php default) + submissions table
+     (gradingtable.php) + bulk/filter action bar (templates/actionbar,
+     templates/bulkactions).
+     ===================================================================== */
+  .summary-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(132px,1fr)); gap:var(--mds-spacing-sm); margin-bottom:var(--mds-spacing-lg); }
+  .sum-tile{ border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md); padding:var(--mds-spacing-md); text-align:left; background:none; cursor:pointer; }
+  .sum-tile:hover{ border-color:var(--mds-bg-interactive-primary-default); background:var(--mds-bg-interactive-primary-default-light); }
+  .sum-tile .n{ font-size:var(--mds-font-size-headings-4); line-height:1; font-weight:var(--mds-font-weight-bold); }
+  .sum-tile .l{ font-size:.75rem; color:var(--mds-text-muted); margin-top:var(--mds-spacing-xxs); }
+  .sum-tile.attention .n{ color:var(--mds-text-feedback-warning); }
+  .sum-tile.done .n{ color:var(--mds-color-green-500); }
+
+  .gt-bar{ display:flex; align-items:center; gap:var(--mds-spacing-xs); flex-wrap:wrap; margin-bottom:var(--mds-spacing-sm); }
+  .gt-bar .spacer{ margin-left:auto; }
+  .gt-search{ display:flex; align-items:center; gap:var(--mds-spacing-xs); border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-sm); padding:var(--mds-spacing-xxs) var(--mds-spacing-xs); font-size:var(--mds-font-size-paragraph-small);
+    color:var(--mds-text-muted); min-width:190px; }
+  .filterchips{ display:flex; gap:4px; flex-wrap:wrap; margin-bottom:var(--mds-spacing-sm); }
+  .fchip{ border:1px solid var(--mds-border-default); background:var(--mds-bg-surface-default); border-radius:var(--mds-border-radius-pill);
+    padding:3px 11px; font-size:.75rem; color:var(--mds-text-subtle); cursor:pointer; }
+  .fchip:hover{ border-color:var(--mds-bg-interactive-primary-default); }
+  .fchip.on{ background:var(--mds-bg-interactive-primary-default); color:#fff; border-color:transparent; }
+  .fchip .ct{ opacity:.7; margin-left:4px; }
+
+  .gtable{ width:100%; border-collapse:collapse; font-size:var(--mds-font-size-paragraph-small); }
+  .gtable th, .gtable td{ text-align:left; padding:var(--mds-spacing-sm); border-bottom:1px solid var(--mds-border-subtle); vertical-align:middle; }
+  .gtable thead th{ font-weight:var(--mds-font-weight-semibold); color:var(--mds-text-subtle); background:var(--mds-bg-surface-subtle);
+    position:sticky; top:var(--nav-h); z-index:2; white-space:nowrap; font-size:.75rem; }
+  .gtable tbody tr:hover{ background:var(--mds-bg-surface-subtle); }
+  .gtable tbody tr.selected{ background:var(--mds-bg-interactive-primary-default-light); }
+  .gt-user{ display:flex; align-items:center; gap:var(--mds-spacing-xs); min-width:0; }
+  .gt-user .av{ width:28px; height:28px; border-radius:50%; color:#fff; font-size:10px; font-weight:var(--mds-font-weight-semibold);
+    display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .gt-user .nm{ font-weight:var(--mds-font-weight-medium); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .gt-user .em{ font-size:.6875rem; color:var(--mds-text-muted); }
+  .gt-grade input{ width:58px; padding:2px 6px; border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-xs);
+    font-family:inherit; font-size:var(--mds-font-size-paragraph-small); text-align:right; }
+  .gt-num{ font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .gt-muted{ color:var(--mds-text-muted); font-size:.75rem; white-space:nowrap; }
+  .gt-actions{ white-space:nowrap; }
+  .col-optional{ display:none; }
+  body.opt-blind .col-blind, body.opt-workflow .col-workflow, body.opt-allocation .col-marker,
+  body.opt-team .col-team{ display:table-cell; }
+  /* blind marking hides the identity columns entirely (gradingtable.php swaps
+     fullname for the anonymous "Participant N" record id) */
+  body.opt-blind .col-identity{ display:none; }
+
+  /* selection / bulk action bar — the real one is a sticky footer
+     (core/sticky_footer + bulk_actions_ui), reproduced here in place */
+  .bulkbar{ display:none; align-items:center; gap:var(--mds-spacing-sm); background:var(--mds-bg-interactive-primary-default);
+    color:#fff; border-radius:var(--mds-border-radius-md); padding:var(--mds-spacing-xs) var(--mds-spacing-md); margin-bottom:var(--mds-spacing-sm); flex-wrap:wrap; }
+  body.has-selection .bulkbar{ display:flex; }
+  .bulkbar .cnt{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-semibold); }
+  .bulkbar .bulkact{ border:1px solid rgba(255,255,255,.5); background:rgba(255,255,255,.12); color:#fff;
+    border-radius:var(--mds-border-radius-sm); padding:3px 10px; font-size:.75rem; cursor:pointer; }
+  .bulkbar .bulkact:hover{ background:rgba(255,255,255,.24); }
+  .bulkbar .clear{ margin-left:auto; border:none; background:none; color:#fff; cursor:pointer; font-size:.75rem; text-decoration:underline; }
+
+  /* =====================================================================
+     TEACHER: the grader (grading_app.mustache = review panel | resizer |
+     grade panel, with grading_actions as a sticky footer).
+     ===================================================================== */
+  .grader{ display:flex; gap:var(--mds-spacing-md); align-items:flex-start; }
+  .gp-review{ flex:1 1 58%; min-width:0; border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md); overflow:hidden; }
+  .gp-grade{ flex:1 1 42%; min-width:0; border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md);
+    position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); max-height:calc(100vh - var(--nav-h) - var(--footer-h) - 3rem); overflow:auto; }
+  .gp-head{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:var(--mds-spacing-sm) var(--mds-spacing-md);
+    background:var(--mds-bg-surface-subtle); border-bottom:1px solid var(--mds-border-subtle); }
+  .gp-head .t{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-semibold); }
+  .gp-head .spacer{ margin-left:auto; }
+  .gp-body{ padding:var(--mds-spacing-md); }
+  .gp-body .field{ margin-bottom:var(--mds-spacing-md); }
+  .grader-user{ display:flex; align-items:center; gap:var(--mds-spacing-sm); margin-bottom:var(--mds-spacing-md); flex-wrap:wrap; }
+  .grader-user .av{ width:40px; height:40px; border-radius:50%; color:#fff; font-weight:var(--mds-font-weight-semibold);
+    display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .grader-user .who .nm{ font-weight:var(--mds-font-weight-semibold); }
+  .grader-user .who .sub{ font-size:.75rem; color:var(--mds-text-muted); }
+  .grader-nav{ margin-left:auto; display:flex; align-items:center; gap:var(--mds-spacing-xs); }
+  .grader-nav .pos{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); font-variant-numeric:tabular-nums; }
+  .navbtn{ width:32px; height:32px; border:1px solid var(--mds-border-default); background:var(--mds-bg-surface-default);
+    border-radius:var(--mds-border-radius-sm); cursor:pointer; color:var(--mds-text-subtle); }
+  .navbtn:hover:not(:disabled){ background:var(--mds-bg-surface-subtle); }
+  .navbtn:disabled{ opacity:.4; cursor:not-allowed; }
+
+  /* advanced grading: rubric grid + marking guide */
+  .rubric{ border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-sm); overflow:hidden; margin-bottom:var(--mds-spacing-md); }
+  .rub-row{ display:flex; border-bottom:1px solid var(--mds-border-subtle); }
+  .rub-row:last-child{ border-bottom:none; }
+  .rub-crit{ flex:0 0 150px; padding:var(--mds-spacing-sm); background:var(--mds-bg-surface-subtle); font-size:.75rem;
+    font-weight:var(--mds-font-weight-medium); border-right:1px solid var(--mds-border-subtle); }
+  .rub-levels{ flex:1; display:flex; min-width:0; }
+  .rub-lvl{ flex:1; padding:var(--mds-spacing-xs); border-right:1px solid var(--mds-border-subtle); font-size:.6875rem;
+    cursor:pointer; color:var(--mds-text-subtle); min-width:0; }
+  .rub-lvl:last-child{ border-right:none; }
+  .rub-lvl:hover{ background:var(--mds-bg-surface-subtle); }
+  .rub-lvl.sel{ background:var(--mds-bg-interactive-primary-default-light); box-shadow:inset 0 0 0 2px var(--mds-bg-interactive-primary-default); color:var(--mds-text-default); }
+  .rub-lvl .pts{ font-weight:var(--mds-font-weight-semibold); display:block; }
+  .rub-remark{ padding:var(--mds-spacing-xs) var(--mds-spacing-sm); }
+  .rub-total{ display:flex; justify-content:flex-end; gap:var(--mds-spacing-xs); font-size:var(--mds-font-size-paragraph-small);
+    font-weight:var(--mds-font-weight-semibold); margin-bottom:var(--mds-spacing-md); }
+  .guide-crit{ border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-sm); padding:var(--mds-spacing-sm);
+    margin-bottom:var(--mds-spacing-xs); }
+  .guide-crit .gc-top{ display:flex; align-items:center; gap:var(--mds-spacing-xs); margin-bottom:var(--mds-spacing-xxs); }
+  .guide-crit .gc-name{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-semibold); flex:1; }
+  .guide-crit .gc-score{ font-size:.75rem; color:var(--mds-text-muted); }
+  .guide-crit .gc-desc{ font-size:.75rem; color:var(--mds-text-muted); margin-bottom:var(--mds-spacing-xs); }
+
+  /* =====================================================================
+     MANAGE WORKSPACE — one tabbed surface replacing the assign secondary nav
+     (Submissions / Settings / Advanced grading / Overrides / Reports).
+     ===================================================================== */
+  body.edit-mode .content{ max-width:1180px; display:flex; flex-direction:column; min-height:calc(100vh - var(--nav-h)); }
+  body.edit-mode .ws-panel{ flex:1 0 auto; }
+  body.edit-mode .cln-footer{ display:none; }
+  body.edit-mode .layout{ padding-bottom:0; }
+
+  .ws-head{ display:flex; align-items:flex-start; gap:var(--mds-spacing-md); margin-bottom:var(--mds-spacing-md); }
+  .ws-head .act-tile{ width:44px; height:44px; font-size:18px; }
+  .ws-head .h-main{ flex:1; min-width:0; }
+  .ws-name{ font-size:var(--mds-font-size-headings-4); line-height:var(--mds-line-height-headings-4); font-weight:var(--mds-font-weight-bold);
+    margin:0; border:1px solid transparent; border-radius:var(--mds-border-radius-sm); padding:2px 6px; margin-left:-6px; }
+  .ws-name:hover, .ws-name:focus{ border-color:var(--mds-border-default); outline:none; background:var(--mds-bg-surface-default); }
+  .ws-sub{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); margin:var(--mds-spacing-xxs) 0 0; }
+  .ws-badge{ display:inline-flex; align-items:center; gap:6px; font-size:.6875rem; font-weight:var(--mds-font-weight-semibold);
+    padding:2px 8px; border-radius:var(--mds-border-radius-pill); background:var(--mds-bg-surface-strong); color:var(--mds-text-subtle);
+    margin-left:var(--mds-spacing-xs); vertical-align:middle; }
+  .ws-badge.draft{ background:var(--mds-bg-feedback-warning-light); color:var(--mds-text-feedback-warning); }
+  .ws-badge.open{ background:var(--mds-bg-feedback-success-light); color:var(--mds-text-feedback-success); }
+  .ws-head .h-actions{ flex:0 0 auto; display:flex; gap:var(--mds-spacing-xs); }
+
+  .ws-tabs{ display:flex; gap:var(--mds-spacing-xs); border-bottom:1px solid var(--mds-border-default);
+    margin-bottom:var(--mds-spacing-lg); flex-wrap:wrap; }
+  .ws-tab{ border:none; background:none; cursor:pointer; padding:var(--mds-spacing-sm); font-size:var(--mds-font-size-paragraph-small);
+    font-weight:var(--mds-font-weight-medium); color:var(--mds-text-subtle); border-bottom:2px solid transparent; margin-bottom:-1px;
+    display:inline-flex; align-items:center; gap:6px; }
+  .ws-tab:hover{ color:var(--mds-text-default); }
+  .ws-tab.on{ color:var(--mds-bg-interactive-primary-default); border-bottom-color:var(--mds-bg-interactive-primary-default); }
+  .ws-tab .pill{ background:var(--mds-bg-feedback-warning-light); color:var(--mds-text-feedback-warning); border-radius:var(--mds-border-radius-pill);
+    padding:0 6px; font-size:.625rem; font-weight:var(--mds-font-weight-semibold); }
+
+  /* shared form controls */
+  .field{ margin-bottom:var(--mds-spacing-md); }
+  .field-label, .field > label{ display:block; font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); margin-bottom:var(--mds-spacing-xxs); }
+  .field .req{ color:var(--mds-text-danger); }
+  .inp{ width:100%; max-width:440px; padding:var(--mds-spacing-xs) var(--mds-spacing-sm); border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-sm); font-family:inherit; font-size:var(--mds-font-size-paragraph-small);
+    background:var(--mds-bg-surface-default); color:var(--mds-text-default); }
+  .inp:focus{ outline:2px solid var(--mds-bg-interactive-primary-default); outline-offset:-1px; border-color:var(--mds-bg-interactive-primary-default); }
+  select.inp{ max-width:340px; }
+  .inp.sm{ max-width:120px; }
+  .inp.xs{ max-width:80px; }
+  .help{ font-size:.75rem; color:var(--mds-text-muted); margin-top:var(--mds-spacing-xxs); max-width:600px; }
+  .inline-2{ display:flex; gap:var(--mds-spacing-sm); align-items:center; flex-wrap:wrap; }
+  input[type="checkbox"], input[type="radio"]{ accent-color:var(--mds-bg-interactive-primary-default); width:16px; height:16px; }
+  .checkrow{ display:flex; align-items:center; gap:var(--mds-spacing-xs); font-size:var(--mds-font-size-paragraph-small); margin-bottom:var(--mds-spacing-xxs); }
+  textarea.inp{ max-width:none; min-height:90px; resize:vertical; }
+  /* fields whose visibility is driven by a real hideIf/disabledIf in mod_form */
+  .field.conditional{ display:none; }
+  .field.conditional.show{ display:block; }
+  .field.gated{ opacity:.45; pointer-events:none; }
+  .cond-tag{ display:inline-block; font-size:.5625rem; text-transform:uppercase; letter-spacing:.4px; font-weight:var(--mds-font-weight-semibold);
+    color:var(--mds-bg-interactive-primary-default); background:var(--mds-bg-interactive-primary-default-light);
+    border-radius:var(--mds-border-radius-xs); padding:1px 5px; margin-left:6px; vertical-align:middle; }
+  .cond-tag.plugin{ color:var(--mds-text-muted); background:var(--mds-bg-surface-strong); }
+
+  /* settings: sticky sub-nav + anchored sections (the two-column pattern) */
+  .set-wrap{ display:flex; gap:var(--mds-spacing-xl); align-items:flex-start; }
+  .set-nav{ flex:0 0 auto; width:190px; position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg));
+    display:flex; flex-direction:column; gap:2px; max-height:calc(100vh - var(--nav-h) - 2rem); overflow:auto; }
+  .set-nav a{ display:block; padding:var(--mds-spacing-xs) var(--mds-spacing-sm); border-radius:var(--mds-border-radius-sm);
+    font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); border-left:2px solid transparent; cursor:pointer; }
+  .set-nav a:hover{ background:var(--mds-bg-surface-subtle); }
+  .set-nav a.on{ color:var(--mds-text-default); font-weight:var(--mds-font-weight-medium);
+    border-left-color:var(--mds-bg-interactive-primary-default); background:var(--mds-bg-interactive-primary-default-light); }
+  .set-body{ flex:1 1 auto; min-width:0; }
+  .set-group{ padding-bottom:var(--mds-spacing-lg); margin-bottom:var(--mds-spacing-lg); border-bottom:1px solid var(--mds-border-subtle);
+    scroll-margin-top:calc(var(--nav-h) + var(--mds-spacing-md)); }
+  .set-group > h3{ font-size:var(--mds-font-size-headings-5); font-weight:var(--mds-font-weight-bold); margin:0 0 var(--mds-spacing-md); }
+  .set-scroll-spacer{ height:60vh; }
+
+  /* submission / feedback plugin cards — today these are a checkbox group whose
+     settings are interleaved into the same flat mform (add_all_plugin_settings) */
+  .plugcard{ border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md); margin-bottom:var(--mds-spacing-xs); overflow:hidden; }
+  .plugcard-head{ display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-sm) var(--mds-spacing-md); cursor:pointer; }
+  .plugcard-head:hover{ background:var(--mds-bg-surface-subtle); }
+  .plugcard .pi{ width:30px; height:30px; border-radius:var(--mds-border-radius-sm); display:flex; align-items:center; justify-content:center;
+    flex:0 0 auto; background:var(--mds-bg-surface-strong); color:var(--mds-text-subtle); }
+  .plugcard.on .pi{ background:var(--mds-activity-icon-assessment-bg); color:var(--mds-activity-icon-assessment-icon); }
+  .plugcard .pn{ flex:1; min-width:0; }
+  .plugcard .pn b{ display:block; font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-semibold); }
+  .plugcard .pn span{ font-size:.75rem; color:var(--mds-text-muted); }
+  .plugcard-body{ display:none; padding:var(--mds-spacing-md); border-top:1px solid var(--mds-border-subtle); background:var(--mds-bg-surface-subtle); }
+  .plugcard.on .plugcard-body{ display:block; }
+  .plugcard.on{ border-color:var(--mds-bg-interactive-primary-default); }
+
+  /* sticky Save footer for the workspace */
+  .ws-footer{ position:sticky; bottom:0; z-index:20; background:var(--mds-bg-surface-default); border-top:1px solid var(--mds-border-default);
+    padding:var(--mds-spacing-sm) 0; margin-top:var(--mds-spacing-lg); display:flex; gap:var(--mds-spacing-sm); justify-content:flex-end; align-items:center; }
+  .ws-footer .dirty{ margin-right:auto; font-size:.75rem; color:var(--mds-text-muted); }
+
+  /* overrides */
+  .ov-row{ display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-sm) var(--mds-spacing-md);
+    border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-sm); margin-bottom:var(--mds-spacing-xs); flex-wrap:wrap; }
+  .ov-row .who{ flex:1 1 180px; min-width:0; font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); }
+  .ov-row .vals{ flex:2 1 320px; font-size:.75rem; color:var(--mds-text-muted); }
+  .ov-row .vals b{ color:var(--mds-text-default); font-weight:var(--mds-font-weight-medium); }
+  .empty{ text-align:center; padding:var(--mds-spacing-xxl) var(--mds-spacing-md); border:2px dashed var(--mds-border-default);
+    border-radius:var(--mds-border-radius-md); }
+  .empty > i{ font-size:30px; color:var(--mds-text-muted); margin-bottom:var(--mds-spacing-sm); }
+  .empty h3{ margin:0 0 var(--mds-spacing-xs); font-size:var(--mds-font-size-headings-6); }
+  .empty p{ color:var(--mds-text-muted); margin:0 0 var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-small); }
+  .subtabs{ display:flex; gap:var(--mds-spacing-xs); margin-bottom:var(--mds-spacing-md); flex-wrap:wrap; }
+  .subtab{ border:1px solid var(--mds-border-default); background:var(--mds-bg-surface-default); border-radius:var(--mds-border-radius-pill);
+    padding:var(--mds-spacing-xxs) var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); cursor:pointer; }
+  .subtab.on{ background:var(--mds-bg-interactive-primary-default); color:#fff; border-color:transparent; }
+  .note-analysis{ font-size:.75rem; color:var(--mds-text-muted); margin-bottom:var(--mds-spacing-md); font-style:italic; }
+
+  /* =====================  STICKY FOOTER (CLN)  ===================== */
+  .cln-footer{ position:fixed; left:0; right:0; bottom:0; height:var(--footer-h); z-index:30;
+    background:var(--mds-bg-surface-default); border-top:1px solid var(--mds-border-subtle); }
+  body.hide-footer .cln-footer{ display:none; }
+  .cln-shell{ display:flex; height:100%; max-width:var(--shell-max); margin:0 auto; padding:0 var(--shell-pad); }
+  .cln-indexspacer{ flex:0 0 auto; width:0; transition:width .32s cubic-bezier(.4,0,.2,1); }
+  body.ci-open:not(.ci-overlay) .cln-indexspacer{ width:var(--ci-width); }
+  body:not(.ci-open):not(.ci-overlay) .cln-indexspacer{ width:calc(var(--btn) + .75rem); }
+  .cln-region{ flex:1 1 auto; min-width:0; display:flex; justify-content:center; padding:0 var(--shell-pad); }
+  .cln-rightspacer{ flex:0 0 auto; width:0; transition:width .3s cubic-bezier(.4,0,.2,1); }
+  body.cb-open:not(.cb-overlay) .cln-rightspacer{ width:var(--cb-width); }
+  .cln-bar{ width:100%; max-width:var(--content-max); display:flex; align-items:center; gap:var(--mds-spacing-md); }
+  body.wide-mode .cln-bar{ max-width:1180px; }
+  .cln-link{ display:inline-flex; align-items:center; gap:var(--mds-spacing-xs); border:none; background:none; cursor:pointer;
+    color:var(--mds-bg-interactive-primary-default); font-size:var(--mds-font-size-paragraph-default); padding:var(--mds-spacing-xxs) 0; }
+  .cln-link:disabled{ color:var(--mds-color-gray-500); cursor:default; }
+  .cln-link .k{ white-space:nowrap; font-weight:var(--mds-font-weight-semibold); }
+  .cln-link:not(:disabled):hover .k{ text-decoration:underline; }
+  .cln-right{ display:flex; align-items:center; gap:var(--mds-spacing-md); margin-left:auto; }
+
+  /* overlay backdrop */
+  .backdrop{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:46; }
+  body.ci-overlay.ci-open .backdrop{ display:block; }
+  body.cb-overlay.cb-open .backdrop{ display:block; }
+
+  /* =====================  MODAL  ===================== */
+  .modal{ position:fixed; inset:0; z-index:90; display:none; align-items:center; justify-content:center; padding:var(--mds-spacing-md); }
+  .modal.show{ display:flex; }
+  .modal-back{ position:absolute; inset:0; background:rgba(0,0,0,.5); }
+  .modal-card{ position:relative; background:var(--mds-bg-surface-default); border-radius:var(--mds-border-radius-md); max-width:480px; width:100%;
+    box-shadow:0 16px 48px rgba(0,0,0,.28); padding:var(--mds-spacing-lg); max-height:88vh; overflow:auto; }
+  .modal-wide{ max-width:720px; }
+  .modal-title{ font-size:var(--mds-font-size-headings-5); font-weight:var(--mds-font-weight-bold); margin:0 0 var(--mds-spacing-sm); }
+  .modal-card p{ font-size:var(--mds-font-size-paragraph-default); margin:0 0 var(--mds-spacing-md); }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:var(--mds-spacing-sm); }
+
+  /* ===================  RIGHT "COURSE BLOCKS" DRAWER  =================== */
+  .toggle-col-right{ flex:0 0 auto; width:var(--btn); margin-left:var(--mds-spacing-sm); display:flex; justify-content:center; }
+  body.cb-open .toggle-col-right{ width:0; margin-left:0; overflow:hidden; }
+  .blocks-btn{ width:var(--btn); height:var(--btn); border:none; cursor:pointer; border-radius:var(--mds-border-radius-sm);
+    background:var(--mds-bg-surface-strong); color:var(--mds-text-subtle); display:flex; align-items:center; justify-content:center;
+    position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); }
+  .blocks-btn:hover{ background:var(--mds-bg-interactive-secondary-hover); }
+  .drawer-right{ flex:0 0 auto; width:0; overflow:hidden; position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg));
+    align-self:flex-start; transition:width .3s cubic-bezier(.4,0,.2,1); }
+  body.cb-open .drawer-right{ width:var(--cb-width); }
+  .cb-card{ width:var(--cb-width); background:var(--mds-bg-surface-subtle); border-radius:var(--mds-border-radius-md);
+    padding:0 var(--mds-spacing-sm) var(--mds-spacing-md); transform:translateX(100%); transition:transform .3s cubic-bezier(.4,0,.2,1); }
+  body.cb-open .cb-card{ transform:translateX(0); }
+  .cb-header{ display:flex; flex-direction:column; align-items:flex-start; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-xs) 0 var(--mds-spacing-sm); }
+  .cb-close{ width:40px; height:40px; border:none; cursor:pointer; border-radius:var(--mds-border-radius-md);
+    background:var(--mds-bg-surface-strong); display:flex; align-items:center; justify-content:center; }
+  .cb-close:hover{ background:var(--mds-bg-interactive-secondary-hover); }
+  .cb-title{ font-size:var(--mds-font-size-heading-6); font-weight:var(--mds-typography-font-weight-semibold); }
+  .cb-block{ background:var(--mds-bg-surface-default); border:var(--mds-stroke-weight-sm) solid var(--mds-border-subtle);
+    border-radius:var(--mds-border-radius-sm); padding:var(--mds-spacing-sm) 0; margin-bottom:var(--mds-spacing-xs); }
+  .cb-block-head{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:0 var(--mds-spacing-md); }
+  .cb-block-head .grip{ color:var(--mds-text-muted); font-size:12px; }
+  .cb-block-title{ font-size:var(--mds-font-size-heading-6); font-weight:var(--mds-typography-font-weight-medium); color:var(--mds-text-subtle); }
+  .cb-block-divider{ height:var(--mds-stroke-weight-sm); background:var(--mds-border-subtle); margin:var(--mds-spacing-sm) 0; }
+  .cb-block-body{ padding:0 var(--mds-spacing-md); font-size:var(--mds-font-size-small); }
+  .cb-block-body p{ margin:0 0 var(--mds-spacing-sm); color:var(--mds-text-muted); font-size:var(--mds-font-size-small); }
+  .cb-block-body a{ color:var(--mds-text-link-primary); }
+  .cb-teacher{ display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:0 var(--mds-spacing-md); }
+  .cb-teacher .name{ font-size:var(--mds-font-size-body); color:var(--mds-text-default); }
+  .cb-teacher .role{ font-size:var(--mds-font-size-small); color:var(--mds-text-muted); margin-top:2px; }
+  .cb-avatar{ width:48px; height:48px; flex:0 0 auto; border-radius:50%; background:var(--mds-color-indigo-500); color:#fff;
+    font-weight:var(--mds-typography-font-weight-semibold); font-size:16px; display:flex; align-items:center; justify-content:center;
+    border:var(--mds-stroke-weight-sm) solid var(--mds-border-default); }
+
+  /* =====================  DEV STATE SWITCHER (prototype only)  ===================== */
+  .devpanel{ position:fixed; top:auto; bottom:calc(var(--footer-h) + var(--mds-spacing-md));
+    right:max(var(--mds-spacing-sm), calc(max(var(--shell-pad), (100vw - var(--shell-max)) / 2 + var(--shell-pad)) - 238px));
+    z-index:95; width:238px; max-height:calc(100vh - var(--nav-h) - 2 * var(--mds-spacing-lg)); overflow:auto;
+    background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md);
+    box-shadow:0 8px 28px rgba(0,0,0,.16); padding:var(--mds-spacing-sm); }
+  body.hide-footer .devpanel{ bottom:var(--mds-spacing-md); }
+  .devpanel h5{ margin:0 0 6px; font-size:.625rem; text-transform:uppercase; letter-spacing:.5px; color:var(--mds-text-muted); }
+  .devpanel h5:not(:first-child){ margin-top:var(--mds-spacing-sm); }
+  .devrow{ display:flex; flex-wrap:wrap; gap:4px; }
+  .devbtn{ border:1px solid var(--mds-border-default); background:var(--mds-bg-surface-subtle); border-radius:var(--mds-border-radius-xs);
+    padding:4px 8px; cursor:pointer; font-size:.6875rem; color:var(--mds-text-subtle); font-weight:var(--mds-font-weight-medium); }
+  .devbtn:hover:not(:disabled){ background:var(--mds-bg-surface-strong); }
+  .devbtn.on{ background:var(--mds-bg-interactive-primary-default); color:#fff; border-color:transparent; }
+  .devbtn:disabled{ opacity:.35; cursor:not-allowed; }
+  .devbtn.on:disabled{ opacity:.5; }
+  .devpanel .cap{ font-size:.625rem; color:var(--mds-text-muted); margin-top:6px; line-height:1.4; }
+  /* collapse/restore so the panel never blocks the screen it is describing */
+  .devpanel-head{ display:flex; align-items:center; gap:var(--mds-spacing-xs); }
+  .devpanel-title{ flex:1; min-width:0; font-size:.625rem; text-transform:uppercase; letter-spacing:.5px;
+    color:var(--mds-text-muted); font-weight:var(--mds-font-weight-semibold); white-space:nowrap; }
+  .devmin{ flex:0 0 auto; width:22px; height:22px; border:1px solid var(--mds-border-default);
+    background:var(--mds-bg-surface-subtle); border-radius:var(--mds-border-radius-xs); cursor:pointer;
+    color:var(--mds-text-subtle); display:flex; align-items:center; justify-content:center; font-size:10px; }
+  .devmin:hover{ background:var(--mds-bg-surface-strong); color:var(--mds-text-default); }
+  .devbody{ margin-top:var(--mds-spacing-xs); }
+  /* minimised: the panel becomes a small chip that restores on click */
+  .devpanel.min{ width:auto; padding:var(--mds-spacing-xxs); }
+  .devpanel.min .devbody, .devpanel.min .devpanel-title{ display:none; }
+  .devpanel.min .devmin{ width:auto; height:26px; padding:0 var(--mds-spacing-xs); gap:6px;
+    font-size:.6875rem; font-weight:var(--mds-font-weight-medium); border-color:transparent;
+    background:var(--mds-bg-interactive-primary-default); color:#fff; }
+  .devpanel.min .devmin:hover{ background:var(--mds-bg-interactive-primary-hover); color:#fff; }
+
+  /* =====================  RESPONSIVE  ===================== */
+  @media (max-width:1024px){
+    :root{ --shell-pad:1.5rem; }
+    .burger{ display:flex; }
+    .nav-left .brand, .nav-left .nav-pills{ display:none; }
+    .grader{ flex-direction:column; }
+    .gp-grade{ position:static; max-height:none; width:100%; }
+  }
+  @media (max-width:1200px){
+    body.cb-overlay .drawer-right{ position:fixed; right:0; top:var(--nav-h); height:calc(100vh - var(--nav-h)); width:auto !important;
+      z-index:47; padding:var(--mds-spacing-md); margin:0; }
+    body.cb-overlay .cb-card{ height:100%; overflow-y:auto; }
+    body.cb-overlay:not(.cb-open) .cb-card{ transform:translateX(360px); }
+    body.cb-overlay .toggle-col-right{ width:var(--btn); margin-left:var(--mds-spacing-sm); }
+    .cln-rightspacer{ display:none; }
+  }
+  @media (max-width:900px){
+    .set-wrap{ flex-direction:column; }
+    .set-nav{ position:static; width:100%; flex-direction:row; flex-wrap:wrap; max-height:none; }
+  }
+  @media (max-width:768px){
+    .toggle-col, .toggle-col-right{ width:0 !important; margin:0 !important; overflow:visible; }
+    .ci-toggle, .blocks-btn{ position:fixed; top:calc(var(--nav-h) + var(--mds-spacing-xs)); z-index:30; box-shadow:0 1px 4px rgba(0,0,0,.12); }
+    .ci-toggle{ left:var(--mds-spacing-sm); }
+    .blocks-btn{ right:var(--mds-spacing-sm); }
+    .layout{ padding-top:calc(var(--btn) + var(--mds-spacing-md)); }
+    body.ci-overlay #drawer{ position:fixed; left:0; top:var(--nav-h); height:calc(100vh - var(--nav-h)); width:auto !important;
+      z-index:47; padding:16px; margin:0; }
+    body.ci-overlay .ci-card{ width:300px; max-width:85vw; height:100%; overflow-y:auto; transform:translateX(-360px);
+      transition:transform .3s cubic-bezier(.4,0,.2,1); }
+    body.ci-overlay.ci-open .ci-card{ transform:translateX(0); }
+    .cln-indexspacer, .cln-rightspacer{ display:none; }
+    .cln-region{ padding:0; }
+    .devpanel{ top:auto; bottom:8px; left:8px; right:8px; width:auto; max-height:60vh; }
+    .gtable thead th{ position:static; }
+    .gtable{ display:block; overflow-x:auto; white-space:nowrap; }
+  }
+  @media (max-width:767px){
+    :root{ --shell-pad:1rem; }
+    .search{ display:none; }
+    .search-icon-btn{ display:flex; }
+    .editmode .label{ display:none; }
+    .profile .pname, .profile .fa-chevron-down{ display:none; }
+    .content-col{ padding:0 1rem; }
+    .act-header{ flex-wrap:wrap; }
+    .act-header .h-actions{ order:3; width:100%; }
+    .act-header .h-title{ font-size:var(--mds-font-size-headings-4); line-height:var(--mds-line-height-headings-4); }
+    .track{ flex-wrap:wrap; gap:var(--mds-spacing-sm); }
+    .track-step{ flex:1 1 45%; }
+    .track-step::before{ display:none; }
+  }
+
+  /* ---- annotations (blue walkthrough callouts + dashed pulsing ring) ---- */
+  .anno-layer{ position:fixed; inset:0; z-index:60; pointer-events:none; }
+  body:not(.annotations-on) .anno-layer{ display:none; }
+  .anno-ring{ position:fixed; border:2px dashed var(--mds-bg-interactive-primary-default); border-radius:8px;
+    box-shadow:0 0 0 3px rgba(15,108,191,.16); pointer-events:none; animation:annoPulse 1.9s ease-in-out infinite; }
+  @keyframes annoPulse{ 0%,100%{ box-shadow:0 0 0 3px rgba(15,108,191,.16); } 50%{ box-shadow:0 0 0 8px rgba(15,108,191,.06); } }
+  .anno-card{ position:fixed; width:238px; background:var(--mds-bg-interactive-primary-default); color:#fff;
+    border-radius:10px; padding:10px 12px 11px; font-size:12px; line-height:1.45; box-shadow:0 10px 28px rgba(0,0,0,.28); pointer-events:auto; }
+  .anno-badge{ position:absolute; top:-11px; left:-11px; width:23px; height:23px; border-radius:50%; background:#fff;
+    color:var(--mds-bg-interactive-primary-default); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 6px rgba(0,0,0,.25); }
+  .anno-title{ font-weight:700; font-size:12px; display:flex; align-items:center; gap:6px; margin:0 16px 3px 0; }
+  .anno-title i{ font-size:12px; }
+  .anno-body{ color:rgba(255,255,255,.92); }
+  .anno-close{ position:absolute; top:5px; right:6px; border:none; background:none; cursor:pointer; color:rgba(255,255,255,.85);
+    font-size:13px; line-height:1; padding:3px; }
+  .anno-close:hover{ color:#fff; }
+  .anno-toggle{ position:fixed; bottom:var(--mds-spacing-md); left:50%; transform:translateX(-50%); z-index:71;
+    background:var(--mds-bg-interactive-primary-default); color:#fff; border:none; border-radius:999px;
+    padding:9px 16px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,.25); display:flex; align-items:center; gap:8px; }
+  body:not(.hide-footer) .anno-toggle, body.edit-mode .anno-toggle{ bottom:calc(var(--footer-h) + var(--mds-spacing-md)); }
+  .anno-toggle:hover{ background:var(--mds-bg-interactive-primary-hover); }
+  .anno-toggle i{ font-size:12px; }
+  body:not(.annotations-on) .anno-toggle{ background:var(--mds-text-subtle); }
+</style>
+</head>
+<body class="ci-open annotations-on role-student">
+
+  <!-- ===== TOP NAV ===== -->
+  <header class="topbar">
+    <div class="topbar-inner shell">
+      <div class="nav-left">
+        <button class="burger" id="burger" aria-label="Open site navigation"><i class="fa-solid fa-bars"></i></button>
+        <div class="brand"><span class="mark"><i class="fa-solid fa-leaf"></i></span><span class="word"><b>Fleetwood</b><span>UNIVERSITY</span></span></div>
+        <nav class="nav-pills"><button class="nav-pill selected"><span class="dot"></span>Dashboard</button><button class="nav-pill">Site Administration</button></nav>
+      </div>
+      <div class="nav-right">
+        <div class="nav-right-group">
+          <div class="search"><i class="fa-solid fa-magnifying-glass"></i><span>Search…</span></div>
+          <button class="search-icon-btn" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+          <div class="editmode"><span class="label">Edit mode</span><button class="switch" id="editSwitch" aria-pressed="false" aria-label="Edit mode"></button></div>
+          <div class="nav-icons"><button class="icon-btn" aria-label="Notifications"><i class="fa-regular fa-bell"></i></button><button class="icon-btn" aria-label="Messages"><i class="fa-regular fa-comment"></i></button></div>
+        </div>
+        <div class="nav-divider"></div>
+        <div class="profile"><span class="avatar" id="profAv">AN</span><span class="pname" id="profName">Ava</span><i class="fa-solid fa-chevron-down"></i></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== PAGE ===== -->
+  <div class="layout shell">
+    <div class="toggle-col">
+      <button class="ci-toggle sticky" id="openBtn" title="Open course index" aria-label="Open course index">
+        <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer" id="drawer">
+      <div class="ci-card">
+        <div class="ci-header">
+          <span class="ci-title" id="ciTitle">Course Index</span>
+          <button class="ci-toggle contained" id="closeBtn" title="Close course index" aria-label="Close course index">
+            <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+          </button>
+        </div>
+        <div class="ci-divider"></div>
+        <div id="drawerBody"></div>
+      </div>
+    </div>
+
+    <main class="content-col">
+      <div class="content" id="view"><!-- rendered by JS --></div>
+    </main>
+
+    <!-- right "Course Blocks" drawer -->
+    <div class="drawer drawer-right" id="drawerRight">
+      <div class="cb-card">
+        <div class="cb-header">
+          <button class="cb-close" id="cbClose" aria-label="Close course blocks">
+            <svg width="20" height="16" viewBox="0 0 20 16" style="transform:scaleX(-1)"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+          </button>
+          <span class="cb-title">Course Blocks</span>
+        </div>
+        <div class="cb-block">
+          <div class="cb-block-head"><span class="grip"><i class="fa-solid fa-grip-vertical"></i></span><span class="cb-block-title">Licence</span></div>
+          <div class="cb-block-divider"></div>
+          <div class="cb-block-body"><p>This Creative Commons course, created by Mary, is available on</p><a href="#">MoodleNet: Biology 101</a></div>
+        </div>
+        <div class="cb-block">
+          <div class="cb-block-head"><span class="cb-block-title">Your teacher</span></div>
+          <div class="cb-block-divider"></div>
+          <div class="cb-teacher"><span class="cb-avatar">ES</span><div><div class="name">Dr. Emily Sanders</div><div class="role">Senior Lecturer, Biology</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="toggle-col-right">
+      <button class="blocks-btn" id="cbOpen" aria-label="Open course blocks">
+        <svg width="20" height="16" viewBox="0 0 20 16" style="transform:scaleX(-1)"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== CLN STICKY FOOTER (core_courseformat linear navigation) ===== -->
+  <footer class="cln-footer" aria-label="Course navigation">
+    <div class="cln-shell">
+      <div class="cln-indexspacer"></div>
+      <div class="cln-region"><div class="cln-bar" id="clnBar"></div></div>
+      <div class="cln-rightspacer"></div>
+    </div>
+  </footer>
+
+  <div class="manage-menu" id="manageMenu" role="menu"></div>
+  <div class="backdrop" id="backdrop"></div>
+
+  <!-- ===== MODAL (confirm submission / grant extension / override form) ===== -->
+  <div class="modal" id="modal">
+    <div class="modal-back" id="modalBack"></div>
+    <div class="modal-card" id="modalCard" role="dialog" aria-modal="true"><div id="modalBody"></div></div>
+  </div>
+
+  <!-- ===== DEV STATE SWITCHER (prototype only — delete for merge) ===== -->
+  <div class="devpanel" id="devpanel">
+    <div class="devpanel-head">
+      <span class="devpanel-title">Prototype state</span>
+      <button class="devmin" id="devMin" aria-expanded="true" aria-controls="devBody" title="Minimise the state switcher">
+        <i class="fa-solid fa-minus" id="devMinIcon"></i><span id="devMinLabel"></span>
+      </button>
+    </div>
+    <div class="devbody" id="devBody">
+    <h5>Role</h5>
+    <div class="devrow" data-group="role">
+      <button class="devbtn" data-role="student">Student</button>
+      <button class="devbtn" data-role="teacher">Teacher</button>
+    </div>
+    <h5 id="hStudent">Student view</h5>
+    <div class="devrow" data-group="sview">
+      <button class="devbtn" data-state="s-none">No submission</button>
+      <button class="devbtn" data-state="s-edit">Editing</button>
+      <button class="devbtn" data-state="s-draft">Draft</button>
+      <button class="devbtn" data-state="s-submitted">Submitted</button>
+      <button class="devbtn" data-state="s-graded">Feedback</button>
+    </div>
+    <h5 id="hTeacher">Teacher view</h5>
+    <div class="devrow" data-group="tview">
+      <button class="devbtn" data-state="t-summary">Summary</button>
+      <button class="devbtn" data-state="t-submissions">Submissions</button>
+      <button class="devbtn" data-state="t-grader">Grader</button>
+    </div>
+    <h5 id="hWorkspace">Manage workspace</h5>
+    <div class="devrow" data-group="ws">
+      <button class="devbtn" data-state="w-submissions">Submissions</button>
+      <button class="devbtn" data-state="w-settings">Settings</button>
+      <button class="devbtn" data-state="w-types">Submission &amp; feedback</button>
+      <button class="devbtn" data-state="w-advgrading">Advanced grading</button>
+      <button class="devbtn" data-state="w-overrides">Overrides</button>
+      <button class="devbtn" data-state="w-reports">Reports</button>
+    </div>
+    <h5>Settings variants</h5>
+    <div class="devrow" data-group="opts">
+      <button class="devbtn" data-opt="workflow">Marking workflow</button>
+      <button class="devbtn" data-opt="allocation">Marker allocation</button>
+      <button class="devbtn" data-opt="blind">Blind marking</button>
+      <button class="devbtn" data-opt="team">Team submission</button>
+      <button class="devbtn" data-opt="timelimit">Time limit</button>
+      <button class="devbtn" data-opt="penalty">Late penalty</button>
+    </div>
+    <h5>Grading method</h5>
+    <div class="devrow" data-group="gm">
+      <button class="devbtn" data-gm="simple">Simple direct</button>
+      <button class="devbtn" data-gm="rubric">Rubric</button>
+      <button class="devbtn" data-gm="guide">Marking guide</button>
+    </div>
+    <p class="cap" id="devCap"></p>
+    </div>
+  </div>
+
+  <!-- ===== annotations (removable explainer callouts — the significant
+       changes vs the current assignment). Each targets a live element; cards
+       whose target is off-screen for the current state hide themselves. ===== -->
+  <button class="anno-toggle" id="annoToggle" title="Show or hide the explainer annotations">
+    <i class="fa-solid fa-location-dot"></i> <span id="annoToggleLabel">Hide annotations</span>
+  </button>
+  <div class="anno-layer" id="annoLayer">
+    <div class="anno-card" data-target=".status-card .track" data-side="bottom">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-badge">1</div>
+      <div class="anno-title"><i class="fa-solid fa-timeline"></i> Status as a journey</div>
+      <div class="anno-body">Submission status, grading status and time remaining are three rows in a key/value table today. Here they become one track a student can read at a glance — and the marking step only appears when marking workflow is switched on.</div>
+    </div>
+    <div class="anno-card" data-target=".manage-btn" data-side="left">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-badge">2</div>
+      <div class="anno-title"><i class="fa-solid fa-gear"></i> Manage menu</div>
+      <div class="anno-body">The assignment's secondary nav — Settings, Advanced grading, Overrides, Download submissions, Reveal identities, Permissions, Logs, Backup — collapses into one educator-only dropdown.</div>
+    </div>
+    <div class="anno-card" data-target=".subblock" data-side="right">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-badge">3</div>
+      <div class="anno-title"><i class="fa-solid fa-paperclip"></i> Submission shown, not linked</div>
+      <div class="anno-body">Each enabled submission type renders its own block inline. Today online text and files are squeezed into cells of the same status table.</div>
+    </div>
+    <div class="anno-card" data-target=".fb-panel" data-side="right">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-badge">4</div>
+      <div class="anno-title"><i class="fa-solid fa-comment-dots"></i> Feedback as a result, not a table</div>
+      <div class="anno-body">The grade leads, then the marker's comments, the annotated file and the completed rubric. Any late penalty is shown as an adjustment on the grade rather than buried in a row.</div>
+    </div>
+    <div class="anno-card" data-target=".summary-grid" data-side="bottom">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-badge">5</div>
+      <div class="anno-title"><i class="fa-solid fa-chart-simple"></i> Counts become filters</div>
+      <div class="anno-body">The grading summary's numbers are the real ones from view.php. Here each tile is clickable and drops you into the submissions list already filtered — Needs grading is the one teachers actually want.</div>
+    </div>
+    <div class="anno-card" data-target=".filterchips" data-side="bottom">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-badge">6</div>
+      <div class="anno-title"><i class="fa-solid fa-filter"></i> One filter row</div>
+      <div class="anno-body">The real filters live in three separate places — a status dropdown, an "extra filters" dropdown for workflow and marker, and a separate options form. They become one visible row of chips with live counts.</div>
+    </div>
+    <div class="anno-card" data-target=".bulkbar" data-side="bottom">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-badge">7</div>
+      <div class="anno-title"><i class="fa-solid fa-list-check"></i> Bulk actions in context</div>
+      <div class="anno-body">Selecting rows reveals the real batch operations — grant extension, message, lock, set marking state, allocate marker, download. Today they sit in a "With selected…" dropdown at the very bottom of the page.</div>
+    </div>
+    <div class="anno-card" data-target=".ci-students" data-side="right">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-badge">8</div>
+      <div class="anno-title"><i class="fa-solid fa-users"></i> Students in the left drawer</div>
+      <div class="anno-body">While grading, the course index becomes the class list — searchable, filterable, showing who still needs marking. Today this is an autocomplete dropdown plus two arrows, and you can't see where you are in the cohort.</div>
+    </div>
+    <div class="anno-card" data-target=".gp-grade" data-side="left">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-badge">9</div>
+      <div class="anno-title"><i class="fa-solid fa-pen-to-square"></i> Grade panel kept</div>
+      <div class="anno-body">The split of submission on the left and grading on the right is the existing grader and it works — it stays. What changes is that Save moves into the same sticky footer the rest of the course uses.</div>
+    </div>
+    <div class="anno-card" data-target=".ws-tabs" data-side="bottom">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-badge">10</div>
+      <div class="anno-title"><i class="fa-solid fa-table-columns"></i> One manage workspace</div>
+      <div class="anno-body">Submissions, Settings, Advanced grading, Overrides and Reports are separate pages today. They become tabs on one surface, so you never lose your place while setting an assignment up.</div>
+    </div>
+    <div class="anno-card" data-target=".set-nav" data-side="right">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-badge">11</div>
+      <div class="anno-title"><i class="fa-solid fa-list-ul"></i> Anchored settings</div>
+      <div class="anno-body">Every field from the real settings form, in one scrolling page with a sticky section rail that tracks where you are — instead of eleven collapsed accordions you have to open one at a time.</div>
+    </div>
+    <div class="anno-card" data-target=".plugcard" data-side="right">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-badge">12</div>
+      <div class="anno-title"><i class="fa-solid fa-puzzle-piece"></i> Submission types as cards</div>
+      <div class="anno-body">Turning a type on reveals its own settings inside the card. Today the plugin checkboxes sit in one group and their settings are appended further down the same flat form.</div>
+    </div>
+    <div class="anno-card" data-target="#gradeGroup" data-side="right">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-badge">13</div>
+      <div class="anno-title"><i class="fa-solid fa-code-branch"></i> Conditional fields, made visible</div>
+      <div class="anno-body">Marking workflow reveals allocation; allocation reveals marker count; more than one marker reveals the combining method and its rounding. These are the real rules from the settings form — shown as they unfold rather than as greyed-out clutter.</div>
+    </div>
+    <div class="anno-card" data-target=".cln-bar" data-side="top">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-badge">14</div>
+      <div class="anno-title"><i class="fa-solid fa-arrow-right-arrow-left"></i> Course Linear Navigation</div>
+      <div class="anno-body">The same sticky Previous/Next footer used across the course. An assignment is a single node, so it steps straight to its neighbours — this already exists in core, it is not new work.</div>
+    </div>
+    <div class="anno-card" data-target="#devpanel" data-side="left">
+      <button class="anno-close" aria-label="Dismiss">&times;</button>
+      <div class="anno-badge">15</div>
+      <div class="anno-title"><i class="fa-solid fa-flask"></i> Prototype state switcher</div>
+      <div class="anno-body">Demo-only, not a proposed feature. Flip between student and teacher states, the manage tabs, and the settings variants that change what the screens show.</div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================ SAMPLE DATA ============================
+     Real field names, fictional values. Roster reused from the Biology 101
+     seed used by the other prototypes. */
+  var ASSIGN = {
+    name:"Fieldwork Report: Local Ecosystem Biodiversity Survey",
+    intro:"Submit your completed biodiversity survey report using the template provided. Include your raw quadrat data as an appendix.",
+    duedate:"Friday, 14 August 2026, 5:00 PM",
+    cutoff:"Monday, 17 August 2026, 5:00 PM",
+    from:"Monday, 27 July 2026, 9:00 AM",
+    gradingdue:"Friday, 28 August 2026, 5:00 PM",
+    grademax:100
+  };
+
+  var P = {
+    ava:{n:"Ava Nguyen", i:"AN", c:"#0f6cbf"},
+    liam:{n:"Liam Okafor", i:"LO", c:"#6f42c1"},
+    sofia:{n:"Sofia Rossi", i:"SR", c:"#e8590c"},
+    noah:{n:"Noah Patel", i:"NP", c:"#008196"},
+    mia:{n:"Mia Johansson", i:"MJ", c:"#db1a74"},
+    ethan:{n:"Ethan Kim", i:"EK", c:"#357a32" },
+    zara:{n:"Zara Ahmed", i:"ZA", c:"#6a737b"},
+    tom:{n:"Tom Bergström", i:"TB", c:"#ca3120"}
+  };
+
+  /* status values are the real ASSIGN_SUBMISSION_STATUS_* / grading statuses */
+  var ROWS = [
+    { p:P.ava,   email:"ava.nguyen@fleetwood.edu",     status:"submitted", late:false, grade:null, modified:"12 Aug, 4:12 PM", wf:"inmarking",      marker:"Dr. Sanders", team:"Group A" },
+    { p:P.liam,  email:"liam.okafor@fleetwood.edu",    status:"submitted", late:true,  grade:null, modified:"15 Aug, 9:03 AM", wf:"notmarked",      marker:"Dr. Sanders", team:"Group A" },
+    { p:P.sofia, email:"sofia.rossi@fleetwood.edu",    status:"submitted", late:false, grade:78,   modified:"13 Aug, 1:40 PM", wf:"readyforrelease",marker:"T. Whitfield", team:"Group B" },
+    { p:P.noah,  email:"noah.patel@fleetwood.edu",     status:"draft",     late:false, grade:null, modified:"14 Aug, 11:22 AM",wf:"notmarked",      marker:"—",           team:"Group B" },
+    { p:P.mia,   email:"mia.johansson@fleetwood.edu",  status:"submitted", late:false, grade:91,   modified:"11 Aug, 6:55 PM", wf:"released",       marker:"Dr. Sanders", team:"Group C" },
+    { p:P.ethan, email:"ethan.kim@fleetwood.edu",      status:"new",       late:false, grade:null, modified:"—",              wf:"notmarked",      marker:"—",           team:"Group C" },
+    { p:P.zara,  email:"zara.ahmed@fleetwood.edu",     status:"submitted", late:false, grade:null, modified:"14 Aug, 2:31 PM", wf:"readyforreview", marker:"T. Whitfield", team:"Group D" },
+    { p:P.tom,   email:"tom.bergstrom@fleetwood.edu",  status:"new",       late:false, grade:null, modified:"—",              wf:"notmarked",      marker:"—",           team:"Group D" }
+  ];
+
+  var WF_LABEL = { notmarked:"Not marked", inmarking:"In marking", readyforreview:"Marking completed",
+                   inreview:"In review", readyforrelease:"Ready for release", released:"Released" };
+  var STATUS_LABEL = { new:"No submission", draft:"Draft (not submitted)", submitted:"Submitted for grading", reopened:"Reopened" };
+
+  /* ============================ STATE ============================ */
+  var S = {
+    role:"student",
+    sview:"s-submitted",
+    tview:"t-summary",
+    ws:"w-settings",
+    edit:false,
+    opts:{ workflow:false, allocation:false, blind:false, team:false, timelimit:false, penalty:false },
+    gm:"simple",
+    graderIndex:0,
+    selection:[],
+    filter:"all"
+  };
+
+  var view = document.getElementById("view");
+  var drawerBody = document.getElementById("drawerBody");
+  var ciTitle = document.getElementById("ciTitle");
+  var body = document.body;
+
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+  function av(p, cls){ return '<span class="'+(cls||"av")+'" style="background:'+p.c+'">'+p.i+'</span>'; }
+
+  /* the state actually being shown, once role + edit mode are resolved */
+  function currentState(){
+    if(S.edit) return S.ws;
+    return S.role === "student" ? S.sview : S.tview;
+  }
+
+  /* ============================ LEFT DRAWER ============================
+     Course Index normally; the class list while grading. Reusing the same
+     drawer is the proposal — see annotation 8. */
+  var SECTIONS = [
+    { t:"Introduction", items:[
+      { t:"Course Syllabus & Study Guide", ic:"file", i:"fa-book" },
+      { t:"Introductions & Ice Breaker Forum", ic:"communication", i:"fa-comments" }
+    ]},
+    { t:"Impact on biodiversity", items:[
+      { t:"Reading: Sampling methods", ic:"file", i:"fa-file-lines" },
+      { t:"Fieldwork Report: Local Ecosystem Biodiversity Survey", ic:"assessment", i:"fa-pen-to-square", current:true },
+      { t:"Quiz: Evolution checkpoint", ic:"assessment", i:"fa-list-check" }
+    ]}
+  ];
+
+  function renderCourseIndex(){
+    ciTitle.textContent = "Course Index";
+    var h = "";
+    SECTIONS.forEach(function(sec){
+      h += '<div class="ci-section"><button class="ci-sec-head"><span class="chev"><i class="fa-solid fa-chevron-down"></i></span>'
+        + '<span class="txt">'+esc(sec.t)+'</span></button><div class="ci-activities">';
+      sec.items.forEach(function(it){
+        h += '<button class="ci-row'+(it.current?" current":"")+'">'
+          + '<span class="act-icon '+it.ic+'"><i class="fa-solid '+it.i+'"></i></span>'
+          + '<span class="txt">'+esc(it.t)+'</span></button>';
+      });
+      h += '</div></div>';
+    });
+    drawerBody.innerHTML = h;
+    drawerBody.querySelectorAll(".ci-sec-head").forEach(function(b){
+      b.addEventListener("click", function(){ b.closest(".ci-section").classList.toggle("collapsed"); });
+    });
+  }
+
+  function studentDot(r){
+    if(r.status === "new") return "nosubmission";
+    if(r.status === "draft") return "draft";
+    return r.grade === null ? "needsgrading" : "graded";
+  }
+  function studentSub(r){
+    if(r.status === "new") return "No submission";
+    if(r.status === "draft") return "Draft";
+    if(S.opts.workflow) return WF_LABEL[r.wf];
+    return r.grade === null ? "Needs grading" : "Graded " + r.grade + "/" + ASSIGN.grademax;
+  }
+
+  function renderStudentList(){
+    ciTitle.textContent = "Students";
+    var need = ROWS.filter(function(r){ return r.status !== "new" && r.grade === null; }).length;
+    var h = '<div class="ci-studenthead">'
+      + '<div class="ci-searchbox"><i class="fa-solid fa-magnifying-glass"></i><span>Search students…</span></div>'
+      + '<div class="ci-filterchips">'
+      + '<button class="ci-fchip on">All <span>'+ROWS.length+'</span></button>'
+      + '<button class="ci-fchip">Needs grading <span>'+need+'</span></button>'
+      + '<button class="ci-fchip">No submission</button>'
+      + '</div></div><div class="ci-students">';
+    ROWS.forEach(function(r, i){
+      var name = S.opts.blind ? ("Participant " + (i+1)) : r.p.n;
+      var avatar = S.opts.blind
+        ? '<span class="av" style="background:var(--mds-color-gray-500)"><i class="fa-solid fa-user-secret"></i></span>'
+        : av(r.p);
+      h += '<button class="ci-student'+(i===S.graderIndex?" current":"")+'" data-i="'+i+'">'
+        + avatar
+        + '<span class="who"><span class="nm">'+esc(name)+'</span><span class="sub">'+esc(studentSub(r))+'</span></span>'
+        + '<span class="sdot '+studentDot(r)+'" title="'+esc(studentSub(r))+'"></span></button>';
+    });
+    h += '</div>';
+    drawerBody.innerHTML = h;
+    drawerBody.querySelectorAll(".ci-student").forEach(function(b){
+      b.addEventListener("click", function(){ S.graderIndex = +b.dataset.i; render(); });
+    });
+  }
+
+  function renderDrawer(){
+    if(currentState() === "t-grader") renderStudentList();
+    else renderCourseIndex();
+  }
+
+  /* ============================ CLN FOOTER ============================ */
+  function renderCLN(){
+    var bar = document.getElementById("clnBar");
+    /* In the grader the same sticky footer carries the grading actions
+       (mod/assign/templates/grading_actions.mustache) rather than the course
+       Previous/Next — see annotation 9. */
+    if(currentState() === "t-grader"){
+      var last = S.graderIndex === ROWS.length - 1;
+      bar.innerHTML = ''
+        + '<button class="btn btn-secondary"><i class="fa-solid fa-rotate-left"></i> Reset</button>'
+        + '<div class="cln-right">'
+        + '<button class="btn btn-secondary" id="saveOnly">Save changes</button>'
+        + '<button class="btn btn-primary" id="saveNext"'+(last?" disabled":"")+'>Save and show next <i class="fa-solid fa-arrow-right"></i></button>'
+        + '</div>';
+      var sn = document.getElementById("saveNext");
+      if(sn) sn.addEventListener("click", function(){
+        if(S.graderIndex < ROWS.length - 1){ S.graderIndex++; render(); }
+      });
+      return;
+    }
+    bar.innerHTML = ''
+      + '<button class="cln-link"><i class="fa-solid fa-arrow-left"></i><span class="k">Reading: Sampling methods</span></button>'
+      + '<div class="cln-right">'
+      + '<button class="cln-link"><span class="k">Quiz: Evolution checkpoint</span><i class="fa-solid fa-arrow-right"></i></button>'
+      + '</div>';
+  }
+
+  /* ============================ STUDENT VIEWS ============================
+     Mirrors classes/output/renderer.php: submission status + grading status +
+     time remaining + last modified + per-plugin content, then the feedback
+     table. Re-expressed as a status card + content blocks + feedback panel. */
+
+  function actHeader(){
+    var manage = '<button class="btn btn-secondary manage-btn" id="manageBtn">Manage <i class="fa-solid fa-chevron-down"></i></button>';
+    return '<div class="breadcrumb"><a href="#">Biology 101</a> / <a href="#">Impact on biodiversity</a> / <span>Fieldwork Report</span></div>'
+      + '<div class="act-header">'
+      + '<div class="act-tile assessment"><i class="fa-solid fa-pen-to-square"></i></div>'
+      + '<div class="h-main"><h1 class="h-title">'+esc(ASSIGN.name)+'</h1>'
+      + '<p class="h-desc">Assignment · Due '+ASSIGN.duedate+'</p></div>'
+      + '<div class="h-actions">'+manage+'</div></div>'
+      + '<p>'+esc(ASSIGN.intro)+'</p>';
+  }
+
+  /* the track collapses the Marking step out when markingworkflow is off */
+  function track(stage){
+    var steps = [{k:"open",l:"Open",m:ASSIGN.from},{k:"submitted",l:"Submitted",m:"14 Aug, 2:31 PM"}];
+    if(S.opts.workflow) steps.push({k:"marking",l:"Marking",m:"In progress"});
+    steps.push({k:"feedback",l:"Feedback",m:"By "+ASSIGN.gradingdue.split(",")[1]});
+    var order = steps.map(function(s){ return s.k; });
+    var at = order.indexOf(stage);
+    return '<div class="track">' + steps.map(function(s,i){
+      var cls = i < at ? "done" : (i === at ? "current" : "");
+      var ic = i < at ? '<i class="fa-solid fa-check"></i>' : (i === at ? '<i class="fa-solid fa-circle" style="font-size:6px"></i>' : '');
+      return '<div class="track-step '+cls+'"><div class="bul">'+ic+'</div><div class="tl">'+s.l+'</div><div class="tm">'+esc(s.m)+'</div></div>';
+    }).join("") + '</div>';
+  }
+
+  function statusCard(opts){
+    var meta = ''
+      + '<div><div class="m-k">Due date</div><div class="m-v">'+ASSIGN.duedate+'</div></div>'
+      + '<div><div class="m-k">Time remaining</div><div class="m-v '+(opts.remainingClass||"")+'">'+opts.remaining+'</div></div>'
+      + '<div><div class="m-k">Last modified</div><div class="m-v">'+(opts.modified||"—")+'</div></div>';
+    if(S.opts.timelimit) meta += '<div><div class="m-k">Time limit</div><div class="m-v">2 hours</div></div>';
+    if(S.opts.team) meta += '<div><div class="m-k">Submission group</div><div class="m-v">Group B</div></div>';
+    return '<div class="status-card">'
+      + '<div class="status-top"><div class="st-main"><div class="st-label">Submission status</div>'
+      + '<div class="st-value">'+opts.title+'</div></div>'+opts.chips+'</div>'
+      + track(opts.stage)
+      + '<div class="status-meta">'+meta+'</div>'
+      + (opts.actions ? '<div class="status-actions">'+opts.actions+'</div>' : '')
+      + '</div>';
+  }
+
+  function onlineTextBlock(readonly){
+    var text = "Our quadrat survey of the eastern reserve recorded 42 distinct species across 12 sampling points. "
+      + "Species richness was highest in the riparian zone, which is consistent with the edge-effect hypothesis discussed in week 4…";
+    if(readonly){
+      return '<div class="subblock"><div class="subblock-head"><i class="fa-solid fa-align-left"></i>'
+        + '<span class="t">Online text</span><span class="plugintag">assignsubmission_onlinetext</span></div>'
+        + '<div class="subblock-body"><p>'+esc(text)+'</p>'
+        + '<div class="wordcount">1,180 of 1,500 words</div></div></div>';
+    }
+    return '<div class="subblock"><div class="subblock-head"><i class="fa-solid fa-align-left"></i>'
+      + '<span class="t">Online text</span><span class="plugintag">assignsubmission_onlinetext</span></div>'
+      + '<div class="subblock-body"><textarea class="inp">'+esc(text)+'</textarea>'
+      + '<div class="wordcount">1,180 of 1,500 words</div></div></div>';
+  }
+
+  function fileBlock(readonly){
+    var files = '<div class="filerow"><span class="fi"><i class="fa-solid fa-file-pdf"></i></span>'
+      + '<span class="fn">biodiversity-survey-report.pdf</span><span class="fm">1.8 MB</span></div>'
+      + '<div class="filerow"><span class="fi"><i class="fa-solid fa-file-csv"></i></span>'
+      + '<span class="fn">quadrat-raw-data.csv</span><span class="fm">24 KB</span></div>';
+    return '<div class="subblock"><div class="subblock-head"><i class="fa-solid fa-paperclip"></i>'
+      + '<span class="t">File submissions</span><span class="plugintag">assignsubmission_file</span></div>'
+      + '<div class="subblock-body">'+files
+      + (readonly ? '' : '<div style="margin-top:.5rem"><button class="btn btn-secondary"><i class="fa-solid fa-plus"></i> Add file</button>'
+          + '<div class="help">Maximum 3 files, 10 MB each. Accepted types: PDF, CSV, DOCX.</div></div>')
+      + '</div></div>';
+  }
+
+  function feedbackPanel(){
+    var penalty = S.opts.penalty
+      ? '<div class="penalty-note"><i class="fa-solid fa-triangle-exclamation"></i><span>Late by 1 day — a 5% penalty was applied (raw mark 96).</span></div>'
+      : '';
+    var rubricOut = S.gm === "rubric" ? rubricGrid(true)
+      : (S.gm === "guide" ? guideOut() : '');
+    var gradeShown = S.opts.penalty ? 91 : 91;
+    return '<div class="fb-panel">'
+      + '<div class="fb-head"><div><div class="st-label">Grade</div>'
+      + '<div class="fb-grade">'+gradeShown+'<small> / '+ASSIGN.grademax+'</small></div>'+penalty+'</div>'
+      + '<div class="fb-who">Graded by '+(S.opts.blind ? "the marking team" : "Dr. Emily Sanders")+'<br>21 August 2026, 10:14 AM</div></div>'
+      + '<div class="fb-body"><h4>Feedback comments</h4><p style="font-size:.875rem;margin:0">Excellent sampling design and a genuinely careful discussion of edge effects. '
+      + 'Your species accumulation curve needed a confidence interval — see the annotation on page 4.</p></div>'
+      + '<div class="fb-body"><h4>Annotated submission</h4>'
+      + '<div class="filerow"><span class="fi"><i class="fa-solid fa-file-pdf"></i></span>'
+      + '<span class="fn">biodiversity-survey-report-annotated.pdf</span><span class="fm">assignfeedback_editpdf</span></div></div>'
+      + (rubricOut ? '<div class="fb-body"><h4>'+(S.gm==="rubric"?"Rubric":"Marking guide")+'</h4>'+rubricOut+'</div>' : '')
+      + '</div>';
+  }
+
+  function renderStudent(){
+    var h = actHeader();
+    var st = S.sview;
+
+    if(st === "s-none"){
+      h += statusCard({
+        title:"No submission yet", stage:"open",
+        chips:'<span class="st-chip new"><i class="fa-regular fa-circle"></i> No submission</span>',
+        remaining:"6 days 4 hours", modified:"—",
+        actions:'<button class="btn btn-primary btn-lg" data-go="s-edit">Add submission</button>'
+      });
+      h += '<div class="notice info"><i class="fa-solid fa-circle-info"></i><span>You can edit your submission until the due date. After the cut-off date on '+ASSIGN.cutoff+' no submissions are accepted.</span></div>';
+    }
+
+    if(st === "s-edit"){
+      h += '<h2 class="sec-h">Your submission</h2>';
+      h += onlineTextBlock(false) + fileBlock(false);
+      h += '<div class="notice info"><i class="fa-solid fa-circle-info"></i><span>Saving keeps this as a draft. You must click <b>Submit assignment</b> before it can be graded.</span></div>';
+      h += '<div style="display:flex;gap:.75rem"><button class="btn btn-primary" data-go="s-draft">Save changes</button>'
+        + '<button class="btn btn-secondary" data-go="s-none">Cancel</button></div>';
+    }
+
+    if(st === "s-draft"){
+      h += statusCard({
+        title:"Draft — not submitted", stage:"open",
+        chips:'<span class="st-chip draft"><i class="fa-regular fa-pen-to-square"></i> Draft</span>',
+        remaining:"6 days 4 hours", modified:"14 Aug 2026, 11:22 AM",
+        actions:'<button class="btn btn-primary" data-modal="confirm">Submit assignment</button>'
+          + '<button class="btn btn-secondary" data-go="s-edit">Edit submission</button>'
+      });
+      h += onlineTextBlock(true) + fileBlock(true);
+    }
+
+    if(st === "s-submitted"){
+      h += statusCard({
+        title:"Submitted for grading", stage:"submitted",
+        chips:'<span class="st-chip submitted"><i class="fa-solid fa-check"></i> Submitted</span>'
+          + (S.opts.workflow ? ' <span class="st-chip needsgrading">Marking in progress</span>' : ''),
+        remaining:"Submitted 2 days 9 hours early", modified:"14 Aug 2026, 2:31 PM",
+        actions:'<button class="btn btn-secondary" data-go="s-edit">Edit submission</button>'
+      });
+      h += onlineTextBlock(true) + fileBlock(true);
+      h += '<div class="subblock"><div class="subblock-head"><i class="fa-regular fa-comments"></i>'
+        + '<span class="t">Submission comments</span><span class="plugintag">assignsubmission_comments</span></div>'
+        + '<div class="subblock-body"><p style="color:var(--mds-text-muted)">No comments yet.</p>'
+        + '<button class="btn btn-secondary"><i class="fa-solid fa-plus"></i> Add a comment</button></div></div>';
+    }
+
+    if(st === "s-graded"){
+      h += statusCard({
+        title:"Graded", stage:"feedback",
+        chips:'<span class="st-chip graded"><i class="fa-solid fa-check"></i> Graded</span>',
+        remaining:"Assignment was submitted 2 days 9 hours early", modified:"14 Aug 2026, 2:31 PM"
+      });
+      h += feedbackPanel();
+      h += onlineTextBlock(true) + fileBlock(true);
+    }
+    return h;
+  }
+
+  /* ============================ ADVANCED GRADING ============================
+     grade/grading/form/rubric + /guide. `filled` renders the completed version
+     a student sees; otherwise it is the interactive marking grid. */
+  var RUBRIC = [
+    { c:"Sampling design", levels:[["0","Not attempted"],["10","Method stated, not justified"],["20","Method justified"],["30","Design justified and limitations addressed"]], sel:3 },
+    { c:"Data analysis",   levels:[["0","Not attempted"],["10","Descriptive only"],["20","Appropriate statistics"],["30","Statistics with uncertainty quantified"]], sel:2 },
+    { c:"Discussion",      levels:[["0","Not attempted"],["10","Restates results"],["20","Interprets results"],["25","Interprets and connects to theory"]], sel:3 },
+    { c:"Presentation",    levels:[["0","Poor"],["5","Adequate"],["10","Clear and well referenced"]], sel:2 }
+  ];
+
+  function rubricGrid(filled){
+    var h = '<div class="rubric">';
+    RUBRIC.forEach(function(r, ri){
+      h += '<div class="rub-row"><div class="rub-crit">'+esc(r.c)+'</div><div class="rub-levels">';
+      r.levels.forEach(function(l, li){
+        var sel = li === r.sel;
+        if(filled && !sel) return;
+        h += '<div class="rub-lvl'+(sel?" sel":"")+'" data-crit="'+ri+'" data-lvl="'+li+'">'
+          + '<span class="pts">'+l[0]+' pts</span>'+esc(l[1])+'</div>';
+      });
+      h += '</div></div>';
+    });
+    h += '</div>';
+    var total = RUBRIC.reduce(function(a,r){ return a + parseInt(r.levels[r.sel][0],10); }, 0);
+    h += '<div class="rub-total"><span>Rubric total</span><span>'+total+' / 95</span></div>';
+    return h;
+  }
+
+  function guideOut(){
+    var crits = [
+      { n:"Sampling design", max:30, got:28, cmt:"Design well justified; quadrat placement rationale was strong." },
+      { n:"Data analysis",   max:30, got:24, cmt:"Species accumulation curve needs a confidence interval." },
+      { n:"Discussion",      max:25, got:24, cmt:"Good connection to edge-effect theory." },
+      { n:"Presentation",    max:15, got:15, cmt:"Clear structure, references complete." }
+    ];
+    return crits.map(function(c){
+      return '<div class="guide-crit"><div class="gc-top"><span class="gc-name">'+esc(c.n)+'</span>'
+        + '<span class="gc-score">'+c.got+' / '+c.max+'</span></div>'
+        + '<div class="gc-desc">'+esc(c.cmt)+'</div></div>';
+    }).join("");
+  }
+
+  /* ============================ TEACHER: SUMMARY ============================
+     Counts are the real grading-summary rows from view.php. */
+  function counts(){
+    return {
+      participants: ROWS.length,
+      drafts: ROWS.filter(function(r){ return r.status === "draft"; }).length,
+      submitted: ROWS.filter(function(r){ return r.status === "submitted"; }).length,
+      needsgrading: ROWS.filter(function(r){ return r.status === "submitted" && r.grade === null; }).length,
+      nosubmission: ROWS.filter(function(r){ return r.status === "new"; }).length
+    };
+  }
+
+  function renderTeacherSummary(){
+    var c = counts();
+    var h = actHeader();
+    h += '<div class="summary-grid">'
+      + '<button class="sum-tile" data-filter="all"><div class="n">'+c.participants+'</div><div class="l">Participants</div></button>'
+      + '<button class="sum-tile" data-filter="draft"><div class="n">'+c.drafts+'</div><div class="l">Drafts</div></button>'
+      + '<button class="sum-tile" data-filter="submitted"><div class="n">'+c.submitted+'</div><div class="l">Submitted</div></button>'
+      + '<button class="sum-tile attention" data-filter="requiregrading"><div class="n">'+c.needsgrading+'</div><div class="l">Needs grading</div></button>'
+      + '<button class="sum-tile" data-filter="notsubmitted"><div class="n">'+c.nosubmission+'</div><div class="l">No submission</div></button>'
+      + '</div>';
+    h += '<div class="status-card"><div class="status-meta" style="padding:var(--mds-spacing-md) var(--mds-spacing-lg)">'
+      + '<div><div class="m-k">Opened</div><div class="m-v">'+ASSIGN.from+'</div></div>'
+      + '<div><div class="m-k">Due</div><div class="m-v">'+ASSIGN.duedate+'</div></div>'
+      + '<div><div class="m-k">Cut-off</div><div class="m-v">'+ASSIGN.cutoff+'</div></div>'
+      + '<div><div class="m-k">Remind me to grade by</div><div class="m-v warn">'+ASSIGN.gradingdue+'</div></div>'
+      + '</div></div>';
+    h += '<div style="display:flex;gap:.75rem;flex-wrap:wrap">'
+      + '<button class="btn btn-primary btn-lg" data-go="t-submissions">View all submissions</button>'
+      + '<button class="btn btn-secondary btn-lg" data-go="t-grader">Grade</button></div>';
+    return h;
+  }
+
+  /* ============================ TEACHER: SUBMISSIONS TABLE ============================
+     Columns follow gradingtable.php; optional columns appear only when the
+     matching setting is on (blind marking swaps identity for a record id). */
+  var FILTERS = [
+    { k:"all", l:"All" },
+    { k:"requiregrading", l:"Needs grading" },
+    { k:"submitted", l:"Submitted" },
+    { k:"draft", l:"Drafts" },
+    { k:"notsubmitted", l:"No submission" },
+    { k:"grantedextension", l:"Granted extension" }
+  ];
+
+  function matchFilter(r, k){
+    if(k === "all") return true;
+    if(k === "requiregrading") return r.status === "submitted" && r.grade === null;
+    if(k === "submitted") return r.status === "submitted";
+    if(k === "draft") return r.status === "draft";
+    if(k === "notsubmitted") return r.status === "new";
+    if(k === "grantedextension") return false;
+    return true;
+  }
+
+  function renderSubmissions(){
+    var h = actHeader();
+    h += '<div class="gt-bar">'
+      + '<div class="gt-search"><i class="fa-solid fa-magnifying-glass"></i><span>Search by name or email…</span></div>'
+      + '<span class="spacer"></span>'
+      + '<button class="btn btn-secondary"><i class="fa-solid fa-download"></i> Download all</button>'
+      + '<button class="btn btn-primary" data-go="t-grader"><i class="fa-solid fa-pen"></i> Start grading</button>'
+      + '</div>';
+
+    h += '<div class="filterchips">' + FILTERS.map(function(f){
+      var n = ROWS.filter(function(r){ return matchFilter(r, f.k); }).length;
+      return '<button class="fchip'+(S.filter===f.k?" on":"")+'" data-filter="'+f.k+'">'+f.l+'<span class="ct">'+n+'</span></button>';
+    }).join("") + '</div>';
+
+    h += '<div class="bulkbar">'
+      + '<span class="cnt"><span id="selCount">0</span> selected</span>'
+      + '<button class="bulkact">Grant extension</button>'
+      + '<button class="bulkact">Send message</button>'
+      + '<button class="bulkact">Lock submissions</button>'
+      + (S.opts.workflow ? '<button class="bulkact">Set marking state</button>' : '')
+      + (S.opts.allocation ? '<button class="bulkact">Allocate marker</button>' : '')
+      + '<button class="bulkact">Download</button>'
+      + '<button class="clear" id="clearSel">Clear</button></div>';
+
+    var shown = ROWS.map(function(r,i){ return {r:r,i:i}; }).filter(function(o){ return matchFilter(o.r, S.filter); });
+
+    h += '<table class="gtable"><thead><tr>'
+      + '<th style="width:32px"><input type="checkbox" id="selAll"></th>'
+      + (S.opts.blind ? '<th>Identifier</th>' : '<th class="col-identity">Student</th>')
+      + (S.opts.team ? '<th class="col-optional col-team">Group</th>' : '')
+      + '<th>Status</th>'
+      + (S.opts.workflow ? '<th class="col-optional col-workflow">Marking state</th>' : '')
+      + (S.opts.allocation ? '<th class="col-optional col-marker">Marker</th>' : '')
+      + '<th>Grade</th><th>Last modified</th><th>Feedback</th><th></th>'
+      + '</tr></thead><tbody>';
+
+    shown.forEach(function(o){
+      var r = o.r, i = o.i;
+      var chip = r.status === "new" ? '<span class="st-chip new">No submission</span>'
+        : r.status === "draft" ? '<span class="st-chip draft">Draft</span>'
+        : '<span class="st-chip submitted">Submitted</span>'
+          + (r.late ? ' <span class="st-chip late">Late</span>' : '');
+      var who = S.opts.blind
+        ? '<span class="gt-muted">Participant ' + (i+1) + '</span>'
+        : '<div class="gt-user">'+av(r.p)+'<div style="min-width:0"><div class="nm">'+esc(r.p.n)+'</div>'
+          + '<div class="em">'+esc(r.email)+'</div></div></div>';
+      h += '<tr data-i="'+i+'">'
+        + '<td><input type="checkbox" class="rowsel"></td>'
+        + '<td'+(S.opts.blind?'':' class="col-identity"')+'>'+who+'</td>'
+        + (S.opts.team ? '<td class="col-optional col-team gt-muted">'+esc(r.team)+'</td>' : '')
+        + '<td>'+chip+'</td>'
+        + (S.opts.workflow ? '<td class="col-optional col-workflow gt-muted">'+WF_LABEL[r.wf]+'</td>' : '')
+        + (S.opts.allocation ? '<td class="col-optional col-marker gt-muted">'+esc(r.marker)+'</td>' : '')
+        + '<td class="gt-grade">' + (S.gm === "simple"
+            ? '<input value="'+(r.grade===null?"":r.grade)+'" placeholder="–"> <span class="gt-muted">/'+ASSIGN.grademax+'</span>'
+            : '<span class="gt-num">'+(r.grade===null?"–":r.grade+" / "+ASSIGN.grademax)+'</span>')
+        + '</td>'
+        + '<td class="gt-muted">'+esc(r.modified)+'</td>'
+        + '<td class="gt-muted">'+(r.grade===null?'—':'<i class="fa-solid fa-comment-dots"></i> Comments')+'</td>'
+        + '<td class="gt-actions"><button class="btn btn-secondary" data-grade="'+i+'">Grade</button></td>'
+        + '</tr>';
+    });
+    h += '</tbody></table>';
+    if(S.gm === "simple"){
+      h += '<div class="help" style="margin-top:.75rem">Quick grading is on — type marks directly in the table. It is disabled automatically when an advanced grading method is in use, exactly as it is today.</div>';
+    } else {
+      h += '<div class="help" style="margin-top:.75rem">Quick grading is unavailable because this assignment uses '
+        + (S.gm === "rubric" ? "a rubric" : "a marking guide") + '. Open the grader to mark against it.</div>';
+    }
+    return h;
+  }
+
+  /* ============================ TEACHER: GRADER ============================
+     grading_app.mustache = review panel | resizer | grade panel, with
+     grading_actions pinned. Student navigation moves to the left drawer. */
+  function renderGrader(){
+    var r = ROWS[S.graderIndex];
+    var name = S.opts.blind ? ("Participant " + (S.graderIndex+1)) : r.p.n;
+    var h = '<div class="breadcrumb"><a href="#">Biology 101</a> / <a href="#">Fieldwork Report</a> / <span>Grading</span></div>';
+
+    h += '<div class="grader-user">'
+      + (S.opts.blind ? '<span class="av" style="background:var(--mds-color-gray-500);width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff"><i class="fa-solid fa-user-secret"></i></span>' : av(r.p, "av"))
+      + '<div class="who"><div class="nm">'+esc(name)+'</div>'
+      + '<div class="sub">'+esc(studentSub(r))+' · Last modified '+esc(r.modified)+'</div></div>'
+      + '<div class="grader-nav">'
+      + '<button class="navbtn" id="gPrev"'+(S.graderIndex===0?" disabled":"")+'><i class="fa-solid fa-chevron-left"></i></button>'
+      + '<span class="pos">'+(S.graderIndex+1)+' of '+ROWS.length+'</span>'
+      + '<button class="navbtn" id="gNext"'+(S.graderIndex===ROWS.length-1?" disabled":"")+'><i class="fa-solid fa-chevron-right"></i></button>'
+      + '</div></div>';
+
+    if(r.status === "new"){
+      h += '<div class="notice warn"><i class="fa-solid fa-triangle-exclamation"></i><span>This student has not submitted. You can still enter a grade, grant an extension, or move on.</span></div>';
+    } else if(r.late){
+      h += '<div class="notice danger"><i class="fa-solid fa-clock"></i><span>Submitted 1 day 4 hours late.'
+        + (S.opts.penalty ? ' A 5% late penalty will be applied automatically.' : '') + '</span></div>';
+    }
+
+    h += '<div class="grader">';
+
+    /* review panel */
+    h += '<div class="gp-review"><div class="gp-head"><i class="fa-solid fa-file-lines"></i><span class="t">Submission</span>'
+      + '<span class="spacer"></span><button class="btn btn-secondary"><i class="fa-solid fa-up-right-and-down-left-from-center"></i> Pop out</button></div>'
+      + '<div class="gp-body">'
+      + (r.status === "new"
+          ? '<p class="gt-muted" style="margin:0">No submission to review.</p>'
+          : onlineTextBlock(true) + fileBlock(true))
+      + '</div></div>';
+
+    /* grade panel */
+    var gradeControl = S.gm === "simple"
+      ? '<div class="field"><label>Grade out of '+ASSIGN.grademax+'</label>'
+        + '<input class="inp sm" value="'+(r.grade===null?"":r.grade)+'" placeholder="–"></div>'
+      : (S.gm === "rubric"
+          ? '<div class="field"><label>Rubric</label>'+rubricGrid(false)+'</div>'
+          : '<div class="field"><label>Marking guide</label>'+guideOut()
+            + '<div class="help">Frequently used comments can be inserted into each criterion.</div></div>');
+
+    h += '<div class="gp-grade"><div class="gp-head"><i class="fa-solid fa-pen-to-square"></i><span class="t">Grade</span></div>'
+      + '<div class="gp-body">'
+      + gradeControl
+      + '<div class="field"><label>Feedback comments <span class="cond-tag plugin">assignfeedback_comments</span></label>'
+      + '<textarea class="inp" placeholder="Feedback for this student…"></textarea></div>'
+      + '<div class="field"><label>Feedback files <span class="cond-tag plugin">assignfeedback_file</span></label>'
+      + '<button class="btn btn-secondary"><i class="fa-solid fa-upload"></i> Upload feedback file</button></div>'
+      + (S.opts.workflow
+          ? '<div class="field"><label>Marking workflow state</label><select class="inp">'
+            + Object.keys(WF_LABEL).map(function(k){ return '<option'+(k===r.wf?" selected":"")+'>'+WF_LABEL[k]+'</option>'; }).join("")
+            + '</select><div class="help">Grades stay hidden from the student until the state reaches Released.</div></div>'
+          : '')
+      + (S.opts.allocation
+          ? '<div class="field"><label>Allocated marker</label><select class="inp">'
+            + '<option>Dr. Emily Sanders</option><option>T. Whitfield</option><option>Not allocated</option></select></div>'
+          : '')
+      + '<div class="field"><label class="checkrow"><input type="checkbox" checked> Notify student</label>'
+      + '<div class="help">Defaults to the assignment\'s "Notify students" setting; you can override it per student.</div></div>'
+      + '<div class="field"><label>Attempt settings</label>'
+      + '<button class="btn btn-secondary"><i class="fa-solid fa-rotate-left"></i> Allow another attempt</button></div>'
+      + '</div></div>';
+
+    h += '</div>';
+    return h;
+  }
+
+  /* ============================ MANAGE WORKSPACE ============================
+     Tabs replace the assign secondary nav. Every settings field below exists in
+     mod_form.php; the conditional groups reproduce its real hideIf/disabledIf. */
+  var WS_TABS = [
+    { k:"w-submissions", l:"Submissions", i:"fa-inbox" },
+    { k:"w-settings",    l:"Settings",    i:"fa-gear" },
+    { k:"w-types",       l:"Submission & feedback", i:"fa-puzzle-piece" },
+    { k:"w-advgrading",  l:"Advanced grading", i:"fa-table-cells" },
+    { k:"w-overrides",   l:"Overrides",   i:"fa-user-clock" },
+    { k:"w-reports",     l:"Reports",     i:"fa-chart-line" }
+  ];
+
+  function wsHead(){
+    var c = counts();
+    var h = '<div class="breadcrumb"><a href="#">Biology 101</a> / <a href="#">Impact on biodiversity</a> / <span>Fieldwork Report</span></div>'
+      + '<div class="ws-head"><div class="act-tile assessment"><i class="fa-solid fa-pen-to-square"></i></div>'
+      + '<div class="h-main"><h1 class="ws-name" contenteditable spellcheck="false">'+esc(ASSIGN.name)+'</h1>'
+      + '<p class="ws-sub">Assignment · Due '+ASSIGN.duedate
+      + '<span class="ws-badge open"><i class="fa-solid fa-circle" style="font-size:6px"></i> Open</span></p></div>'
+      + '<div class="h-actions"><button class="btn btn-secondary" data-preview="1"><i class="fa-regular fa-eye"></i> View as student</button>'
+      + '<button class="btn btn-secondary manage-btn" id="manageBtn">Manage <i class="fa-solid fa-chevron-down"></i></button></div></div>';
+    h += '<div class="ws-tabs">' + WS_TABS.map(function(t){
+      var pill = (t.k === "w-submissions" && c.needsgrading) ? ' <span class="pill">'+c.needsgrading+'</span>' : '';
+      return '<button class="ws-tab'+(S.ws===t.k?" on":"")+'" data-ws="'+t.k+'">'
+        + '<i class="fa-solid '+t.i+'"></i>'+t.l+pill+'</button>';
+    }).join("") + '</div>';
+    return h;
+  }
+
+  /* --- Settings tab: the full mod_form.php field set, sectioned --- */
+  var SET_SECTIONS = [
+    ["sec-general","General"], ["sec-availability","Availability"],
+    ["sec-submission","Submission settings"], ["sec-group","Group submission"],
+    ["sec-notify","Notifications"], ["sec-grade","Grade"],
+    ["sec-common","Common module settings"], ["sec-restrict","Restrict access"],
+    ["sec-completion","Activity completion"], ["sec-tags","Tags"], ["sec-comp","Competencies"]
+  ];
+
+  function ck(label, checked, help){
+    return '<label class="checkrow"><input type="checkbox"'+(checked?" checked":"")+'> <span>'+label+'</span></label>'
+      + (help ? '<div class="help">'+help+'</div>' : '');
+  }
+  function sel(label, options, help, extra){
+    return '<div class="field'+(extra||"")+'"><label>'+label+'</label><select class="inp">'
+      + options.map(function(o){ return '<option>'+o+'</option>'; }).join("")
+      + '</select>'+(help?'<div class="help">'+help+'</div>':'')+'</div>';
+  }
+  function dateField(label, on, help){
+    return '<div class="field"><label>'+label+'</label><div class="inline-2">'
+      + '<input class="inp" style="max-width:230px" value="'+(on?"14 August 2026, 17:00":"")+'" placeholder="Not set">'
+      + '<label class="checkrow" style="margin:0"><input type="checkbox"'+(on?" checked":"")+'> Enable</label></div>'
+      + (help?'<div class="help">'+help+'</div>':'')+'</div>';
+  }
+
+  function renderSettingsTab(){
+    var h = '<div class="set-wrap"><nav class="set-nav" id="setNav">'
+      + SET_SECTIONS.map(function(s,i){ return '<a data-goto="'+s[0]+'"'+(i===0?' class="on"':'')+'>'+s[1]+'</a>'; }).join("")
+      + '</nav><div class="set-body">';
+
+    /* General */
+    h += '<div class="set-group" id="sec-general"><h3>General</h3>'
+      + '<div class="field"><label>Assignment name <span class="req">*</span></label>'
+      + '<input class="inp" value="'+esc(ASSIGN.name)+'" maxlength="1333"></div>'
+      + '<div class="field"><label>Description</label><textarea class="inp">'+esc(ASSIGN.intro)+'</textarea>'
+      + ck("Display description on course page", false) + '</div>'
+      + '<div class="field"><label>Activity instructions</label><textarea class="inp" placeholder="Shown only while a student is working on their submission…"></textarea>'
+      + '<div class="help">Separate from the description — these appear on the submission page rather than the course page.</div></div>'
+      + '<div class="field"><label>Additional files</label>'
+      + '<button class="btn btn-secondary"><i class="fa-solid fa-upload"></i> Add file</button>'
+      + '<div class="help">Templates and reference material shown to students on the assignment page.</div></div>'
+      + '<div class="field">'+ck("Attach additional files to student submissions", false,
+          "Copies the additional files into each student's submission so they can annotate and return them.")+'</div>'
+      + '</div>';
+
+    /* Availability */
+    h += '<div class="set-group" id="sec-availability"><h3>Availability</h3>'
+      + dateField("Allow submissions from", true)
+      + dateField("Due date", true, "Submissions are still accepted after this date but are marked late.")
+      + dateField("Cut-off date", true, "No submissions accepted after this date without an extension.")
+      + dateField("Remind me to grade by", true)
+      + '<div class="field conditional'+(S.opts.timelimit?" show":"")+'" id="fTimelimit"><label>Time limit '
+      + '<span class="cond-tag">site setting</span></label><div class="inline-2">'
+      + '<input class="inp xs" value="2"><select class="inp sm"><option>hours</option><option>minutes</option><option>days</option></select>'
+      + '<label class="checkrow" style="margin:0"><input type="checkbox" checked> Enable</label></div>'
+      + '<div class="help">Only available when timed assignments are enabled site-wide.</div></div>'
+      + '<div class="field">'+ck("Always show description", true,
+          "When off, the description is hidden until the \"Allow submissions from\" date.")+'</div>'
+      + '</div>';
+
+    /* Submission settings */
+    h += '<div class="set-group" id="sec-submission"><h3>Submission settings</h3>'
+      + sel("Require students to click submit", ["No","Yes"],
+          "When Yes, students keep a draft until they explicitly submit.")
+      + sel("Require that students accept the submission statement", ["No","Yes"])
+      + sel("Additional attempts", ["Never","Manually","Automatically until pass"], null)
+      + '<div class="field conditional show"><label>Maximum attempts</label>'
+      + '<select class="inp"><option>Unlimited</option><option>1</option><option selected>2</option><option>3</option></select>'
+      + '<div class="help">Hidden entirely when additional attempts are set to Never.</div></div>'
+      + '</div>';
+
+    /* Group submission */
+    h += '<div class="set-group" id="sec-group"><h3>Group submission settings</h3>'
+      + '<div class="field"><label>Students submit in groups</label>'
+      + '<select class="inp" id="selTeam"><option'+(S.opts.team?"":" selected")+'>No</option>'
+      + '<option'+(S.opts.team?" selected":"")+'>Yes</option></select>'
+      + '<div class="help">Turning this on reveals the four fields below — they are hidden otherwise.</div></div>'
+      + '<div class="field conditional'+(S.opts.team?" show":"")+'"><label>Require group to make submission</label>'
+      + '<select class="inp"><option>No</option><option>Yes</option></select></div>'
+      + '<div class="field conditional'+(S.opts.team?" show":"")+'"><label>Require all group members submit</label>'
+      + '<select class="inp"><option>No</option><option>Yes</option></select>'
+      + '<div class="help">Also requires "Require students to click submit" to be Yes.</div></div>'
+      + '<div class="field conditional'+(S.opts.team?" show":"")+'"><label>Grouping for student groups</label>'
+      + '<select class="inp"><option>None</option><option>Lab groups</option></select></div>'
+      + '</div>';
+
+    /* Notifications */
+    h += '<div class="set-group" id="sec-notify"><h3>Notifications</h3>'
+      + sel("Notify graders about submissions", ["No","Yes"])
+      + sel("Notify graders about late submissions", ["No","Yes"],
+          "Disabled when graders are already notified about every submission.")
+      + sel("Default setting for \"Notify students\"", ["Yes","No"],
+          "The default state of the notify checkbox in the grader — markers can still override it per student.")
+      + '</div>';
+
+    /* Grade — the conditional cluster, annotation 13 */
+    h += '<div class="set-group" id="sec-grade"><h3>Grade</h3>'
+      + '<div class="field"><label>Grade type</label><select class="inp"><option>Point</option><option>Scale</option><option>None</option></select></div>'
+      + '<div class="field"><label>Maximum grade</label><input class="inp xs" value="100"></div>'
+      + '<div class="field"><label>Grading method</label><select class="inp" id="selGm">'
+      + '<option value="simple"'+(S.gm==="simple"?" selected":"")+'>Simple direct grading</option>'
+      + '<option value="rubric"'+(S.gm==="rubric"?" selected":"")+'>Rubric</option>'
+      + '<option value="guide"'+(S.gm==="guide"?" selected":"")+'>Marking guide</option></select>'
+      + '<div class="help">Choosing a rubric or marking guide sends you to the Advanced grading tab to define it, and disables quick grading and multiple markers.</div></div>'
+      + '<div class="field"><label>Grade category</label><select class="inp"><option>Uncategorised</option><option>Coursework</option></select></div>'
+      + '<div class="field"><label>Grade to pass</label><input class="inp xs" value="50"></div>'
+      + '<div class="field conditional'+(S.opts.penalty?" show":"")+'"><label>Apply late penalty <span class="cond-tag">site setting</span></label>'
+      + '<select class="inp"><option>No</option><option selected>Yes</option></select>'
+      + '<div class="help">Only offered when a due date is set, the grade type is Point, and grade penalties are enabled site-wide.</div></div>'
+      + '<div class="field"><label>Anonymous submissions</label><select class="inp" id="selBlind">'
+      + '<option'+(S.opts.blind?"":" selected")+'>No</option><option'+(S.opts.blind?" selected":"")+'>Yes</option></select>'
+      + '<div class="help">Hides student identities from markers. Cannot be changed once a submission or grade exists.</div></div>'
+      + '<div class="field"><label>Hide grader identity from students</label><select class="inp"><option>No</option><option>Yes</option></select></div>'
+      + '<div class="field"><label>Use marking workflow</label><select class="inp" id="selWorkflow">'
+      + '<option'+(S.opts.workflow?"":" selected")+'>No</option><option'+(S.opts.workflow?" selected":"")+'>Yes</option></select>'
+      + '<div class="help">Grades stay hidden from students until they are explicitly released.</div></div>'
+      + '<div class="field conditional'+(S.opts.workflow?" show":"")+'" id="fAllocation"><label>Use marking allocation</label>'
+      + '<select class="inp" id="selAllocation"><option'+(S.opts.allocation?"":" selected")+'>No</option>'
+      + '<option'+(S.opts.allocation?" selected":"")+'>Yes</option></select></div>'
+      + '<div class="field conditional'+(S.opts.workflow && S.opts.allocation && S.gm==="simple" ?" show":"")+'" id="fMarkerCount">'
+      + '<label>Number of markers</label><select class="inp xs" id="selMarkers"><option>1</option><option selected>2</option><option>3</option></select>'
+      + '<div class="help">Disabled while an advanced grading method is selected.</div></div>'
+      + '<div class="field conditional'+(S.opts.workflow && S.opts.allocation && S.gm==="simple" ?" show":"")+'">'
+      + '<label>How to combine multiple marks</label><select class="inp"><option>Average</option><option>Highest</option><option>Lowest</option></select></div>'
+      + '<div class="field conditional'+(S.opts.workflow && S.opts.allocation && S.gm==="simple" ?" show":"")+'">'
+      + '<label>Rounding for averaged marks</label><select class="inp"><option>Nearest</option><option>Up</option><option>Down</option></select>'
+      + '<div class="help">Only applies when marks are combined by average.</div></div>'
+      + '<div class="field conditional'+(S.opts.workflow && S.opts.blind ?" show":"")+'"><label>Anonymous marking</label>'
+      + '<select class="inp"><option>No</option><option>Yes</option></select>'
+      + '<div class="help">Requires both marking workflow and anonymous submissions.</div></div>'
+      + '</div>';
+
+    /* Common / restrict / completion / tags / competencies */
+    h += '<div class="set-group" id="sec-common"><h3>Common module settings</h3>'
+      + sel("Availability", ["Show on course page","Hide on course page","Make available but don't show"])
+      + '<div class="field"><label>ID number</label><input class="inp sm" placeholder="Optional"></div>'
+      + sel("Force language", ["Do not force","English","Español"])
+      + sel("Group mode", ["No groups","Separate groups","Visible groups"])
+      + sel("Grouping", ["None","Lab groups"])
+      + '</div>';
+
+    h += '<div class="set-group" id="sec-restrict"><h3>Restrict access</h3>'
+      + '<div class="field"><button class="btn btn-secondary"><i class="fa-solid fa-plus"></i> Add restriction…</button>'
+      + '<div class="help">Restrict by date, grade, group, user profile or completion of another activity.</div></div></div>';
+
+    h += '<div class="set-group" id="sec-completion"><h3>Activity completion</h3>'
+      + sel("Completion tracking", ["None","Students can manually mark it done","Add requirements"])
+      + '<div class="field conditional show">'
+      + ck("View the activity", false)
+      + ck("Receive a grade", true)
+      + ck("Receive a passing grade", false)
+      + ck("Make a submission", true, "Assignment-specific rule — this is the FEATURE_COMPLETION_HAS_RULES condition.")
+      + '</div></div>';
+
+    h += '<div class="set-group" id="sec-tags"><h3>Tags</h3>'
+      + '<div class="field"><button class="btn btn-secondary"><i class="fa-solid fa-plus"></i> Add tag</button></div></div>';
+
+    h += '<div class="set-group" id="sec-comp"><h3>Competencies</h3>'
+      + '<div class="field"><button class="btn btn-secondary"><i class="fa-solid fa-plus"></i> Add competencies…</button></div>'
+      + sel("Upon activity completion", ["Do nothing","Attach evidence","Send for review","Complete the competency"])
+      + '</div>';
+
+    h += '<div class="set-scroll-spacer"></div></div></div>';
+    return h;
+  }
+
+  /* --- Submission & feedback types tab --- */
+  var SUB_PLUGINS = [
+    { k:"onlinetext", n:"Online text", d:"Students type their response directly in the editor.", i:"fa-align-left", on:true,
+      body:'<div class="field"><label class="checkrow"><input type="checkbox" checked> Word limit</label></div>'
+         + '<div class="field"><input class="inp xs" value="1500"><div class="help">Students are warned when they exceed the limit.</div></div>' },
+    { k:"file", n:"File submissions", d:"Students upload one or more files.", i:"fa-paperclip", on:true,
+      body:'<div class="field"><label>Maximum number of files</label><select class="inp xs"><option>1</option><option>2</option><option selected>3</option></select></div>'
+         + '<div class="field"><label>Maximum submission size</label><select class="inp"><option>2 MB</option><option selected>10 MB</option><option>50 MB</option></select></div>'
+         + '<div class="field"><label>Accepted file types</label><input class="inp" value=".pdf, .csv, .docx">'
+         + '<div class="help">Leave blank to accept any type.</div></div>' },
+    { k:"comments", n:"Submission comments", d:"Students and markers can leave comments on the submission.", i:"fa-comments", on:true, body:'' }
+  ];
+  var FB_PLUGINS = [
+    { k:"comments", n:"Feedback comments", d:"Markers leave written feedback on each submission.", i:"fa-comment-dots", on:true,
+      body:'<div class="field">'+ck("Comment inline", false, "Copies the student's online text into the feedback box so the marker can annotate it directly.")+'</div>' },
+    { k:"editpdf", n:"Annotate PDF", d:"Markers annotate submissions in the browser.", i:"fa-file-pdf", on:true, body:'' },
+    { k:"file", n:"Feedback files", d:"Markers upload files back to the student.", i:"fa-file-arrow-up", on:false, body:'' },
+    { k:"offline", n:"Offline grading worksheet", d:"Download a spreadsheet of grades, mark offline, upload it back.", i:"fa-file-csv", on:false, body:'' }
+  ];
+
+  function plugCards(list, subtype){
+    return list.map(function(p){
+      return '<div class="plugcard'+(p.on?" on":"")+'" data-plug="'+subtype+'_'+p.k+'">'
+        + '<div class="plugcard-head"><span class="pi"><i class="fa-solid '+p.i+'"></i></span>'
+        + '<span class="pn"><b>'+p.n+'</b><span>'+p.d+'</span></span>'
+        + '<span class="plugintag" style="font-size:.625rem;color:var(--mds-text-muted)">assign'+subtype+'_'+p.k+'</span>'
+        + '<input type="checkbox" class="plugtoggle"'+(p.on?" checked":"")+'></div>'
+        + (p.body ? '<div class="plugcard-body">'+p.body+'</div>' : '')
+        + '</div>';
+    }).join("");
+  }
+
+  function renderTypesTab(){
+    return '<h2 class="sec-h">Submission types</h2>'
+      + '<p class="help" style="margin-bottom:1rem">Each type is a plugin. Turning one on reveals only its own settings — today these are appended to the bottom of one flat form.</p>'
+      + plugCards(SUB_PLUGINS, "submission")
+      + '<h2 class="sec-h" style="margin-top:2rem">Feedback types</h2>'
+      + plugCards(FB_PLUGINS, "feedback");
+  }
+
+  /* --- Advanced grading tab --- */
+  function renderAdvGradingTab(){
+    if(S.gm === "simple"){
+      return '<div class="empty"><i class="fa-solid fa-table-cells"></i>'
+        + '<h3>No advanced grading method in use</h3>'
+        + '<p>This assignment uses simple direct grading. Choose a rubric or marking guide to build a structured grading form.</p>'
+        + '<div style="display:flex;gap:.5rem;justify-content:center">'
+        + '<button class="btn btn-primary" data-setgm="rubric">Use a rubric</button>'
+        + '<button class="btn btn-secondary" data-setgm="guide">Use a marking guide</button></div></div>';
+    }
+    if(S.gm === "rubric"){
+      return '<div class="gt-bar"><h2 class="sec-h" style="margin:0">Define rubric</h2><span class="spacer"></span>'
+        + '<span class="ws-badge open">Ready for use</span>'
+        + '<button class="btn btn-secondary">Save as template</button></div>'
+        + '<div class="field"><label>Name</label><input class="inp" value="Fieldwork report rubric"></div>'
+        + rubricGrid(false)
+        + '<div style="display:flex;gap:.5rem;margin-bottom:1.5rem"><button class="btn btn-secondary"><i class="fa-solid fa-plus"></i> Add criterion</button></div>'
+        + '<h3 class="sec-h" style="font-size:1rem">Rubric options</h3>'
+        + ck("Sort levels by score, ascending", true)
+        + ck("Allow users to preview the rubric", true)
+        + ck("Display points for each level to students", true)
+        + ck("Allow marker remarks per criterion", true)
+        + ck("Show remarks to students", true)
+        + ck("Do not allow the lowest level to be zero", false);
+    }
+    return '<div class="gt-bar"><h2 class="sec-h" style="margin:0">Define marking guide</h2><span class="spacer"></span>'
+      + '<span class="ws-badge open">Ready for use</span></div>'
+      + '<div class="field"><label>Name</label><input class="inp" value="Fieldwork report guide"></div>'
+      + guideOut()
+      + '<div style="display:flex;gap:.5rem;margin:1rem 0 1.5rem"><button class="btn btn-secondary"><i class="fa-solid fa-plus"></i> Add criterion</button>'
+      + '<button class="btn btn-secondary"><i class="fa-solid fa-comment"></i> Add frequently used comment</button></div>'
+      + ck("Show guide definition to students", true)
+      + ck("Show marks per criterion to students", true);
+  }
+
+  /* --- Overrides tab --- */
+  function renderOverridesTab(){
+    return '<div class="subtabs"><button class="subtab on">User overrides</button><button class="subtab">Group overrides</button></div>'
+      + '<div class="gt-bar"><span class="spacer"></span>'
+      + '<button class="btn btn-primary" data-modal="override"><i class="fa-solid fa-plus"></i> Add user override</button></div>'
+      + '<div class="ov-row"><span class="who">'+av(P.noah,"av")+' Noah Patel</span>'
+      + '<span class="vals">Due <b>21 August 2026, 5:00 PM</b> · Cut-off <b>24 August 2026</b> · Reason: <b>Documented illness</b></span>'
+      + '<button class="btn btn-secondary">Edit</button><button class="btn btn-danger">Delete</button></div>'
+      + '<div class="ov-row"><span class="who">'+av(P.zara,"av")+' Zara Ahmed</span>'
+      + '<span class="vals">Time limit <b>3 hours</b> · Reason: <b>Approved accommodation</b></span>'
+      + '<button class="btn btn-secondary">Edit</button><button class="btn btn-danger">Delete</button></div>'
+      + '<div class="help" style="margin-top:1rem">Overrides carry the five real fields — allow submissions from, due date, cut-off date, time limit and a reason. Extensions granted from the submissions table are stored separately and shown on the student\'s status card.</div>';
+  }
+
+  /* --- Reports tab --- */
+  function renderReportsTab(){
+    var c = counts();
+    return '<p class="note-analysis">Reporting only — nothing here changes the assignment.</p>'
+      + '<div class="summary-grid">'
+      + '<div class="sum-tile"><div class="n">'+Math.round(c.submitted/c.participants*100)+'%</div><div class="l">Submission rate</div></div>'
+      + '<div class="sum-tile done"><div class="n">84.5</div><div class="l">Mean grade</div></div>'
+      + '<div class="sum-tile attention"><div class="n">'+c.needsgrading+'</div><div class="l">Awaiting marking</div></div>'
+      + '<div class="sum-tile"><div class="n">1</div><div class="l">Late submissions</div></div></div>'
+      + '<h3 class="sec-h" style="font-size:1rem">Available reports</h3>'
+      + '<div class="ov-row"><span class="who">Grade summary</span><span class="vals">Distribution and mean by group</span><button class="btn btn-secondary">Open</button></div>'
+      + '<div class="ov-row"><span class="who">Marking progress</span><span class="vals">Per-marker workload and workflow state breakdown</span><button class="btn btn-secondary">Open</button></div>'
+      + '<div class="ov-row"><span class="who">Activity log</span><span class="vals">Submission and grading events for this assignment</span><button class="btn btn-secondary">Open</button></div>';
+  }
+
+  function renderWorkspace(){
+    var h = wsHead() + '<div class="ws-panel">';
+    if(S.ws === "w-submissions") h += renderSubmissions().replace(/^[\s\S]*?<div class="gt-bar">/, '<div class="gt-bar">');
+    else if(S.ws === "w-settings") h += renderSettingsTab();
+    else if(S.ws === "w-types") h += renderTypesTab();
+    else if(S.ws === "w-advgrading") h += renderAdvGradingTab();
+    else if(S.ws === "w-overrides") h += renderOverridesTab();
+    else h += renderReportsTab();
+    h += '</div>';
+    if(S.ws === "w-settings" || S.ws === "w-types" || S.ws === "w-advgrading"){
+      h += '<div class="ws-footer"><span class="dirty">Changes are saved to this assignment only.</span>'
+        + '<button class="btn btn-secondary">Cancel</button>'
+        + '<button class="btn btn-primary">Save changes</button></div>';
+    }
+    return h;
+  }
+
+  /* ============================ RENDER ============================ */
+  function applyBodyFlags(){
+    body.classList.toggle("role-teacher", S.role === "teacher");
+    body.classList.toggle("role-student", S.role === "student");
+    body.classList.toggle("edit-mode", S.edit);
+    body.classList.toggle("wide-mode", S.edit || currentState() === "t-submissions" || currentState() === "t-grader");
+    Object.keys(S.opts).forEach(function(k){ body.classList.toggle("opt-"+k, !!S.opts[k]); });
+    var st = currentState();
+    body.classList.toggle("hide-footer", S.edit || st === "s-edit" || st === "t-submissions");
+    body.classList.remove("has-selection");
+  }
+
+  function render(){
+    applyBodyFlags();
+    var st = currentState();
+    if(S.edit) view.innerHTML = renderWorkspace();
+    else if(S.role === "student") view.innerHTML = renderStudent();
+    else if(st === "t-summary") view.innerHTML = renderTeacherSummary();
+    else if(st === "t-submissions") view.innerHTML = renderSubmissions();
+    else view.innerHTML = renderGrader();
+
+    renderDrawer();
+    renderCLN();
+    document.getElementById("profAv").textContent = S.role === "teacher" ? "ES" : "AN";
+    document.getElementById("profName").textContent = S.role === "teacher" ? "Emily" : "Ava";
+    wireView();
+    syncDev();
+    requestAnimationFrame(updateAnnotations);
+  }
+
+  /* ============================ EVENT WIRING ============================ */
+  function wireView(){
+    view.querySelectorAll("[data-go]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var t = b.dataset.go;
+        if(t.indexOf("s-") === 0){ S.sview = t; }
+        else { S.role = "teacher"; S.tview = t; }
+        render();
+      });
+    });
+    view.querySelectorAll(".sum-tile[data-filter]").forEach(function(b){
+      b.addEventListener("click", function(){ S.filter = b.dataset.filter; S.tview = "t-submissions"; S.edit = false; render(); });
+    });
+    view.querySelectorAll(".fchip[data-filter]").forEach(function(b){
+      b.addEventListener("click", function(){ S.filter = b.dataset.filter; render(); });
+    });
+
+    var selAll = view.querySelector("#selAll");
+    function syncSel(){
+      var boxes = Array.prototype.slice.call(view.querySelectorAll(".rowsel"));
+      var n = boxes.filter(function(b){ return b.checked; }).length;
+      body.classList.toggle("has-selection", n > 0);
+      var c = view.querySelector("#selCount"); if(c) c.textContent = n;
+      boxes.forEach(function(b){ b.closest("tr").classList.toggle("selected", b.checked); });
+      requestAnimationFrame(updateAnnotations);
+    }
+    view.querySelectorAll(".rowsel").forEach(function(b){ b.addEventListener("change", syncSel); });
+    if(selAll) selAll.addEventListener("change", function(){
+      view.querySelectorAll(".rowsel").forEach(function(b){ b.checked = selAll.checked; });
+      syncSel();
+    });
+    var clr = view.querySelector("#clearSel");
+    if(clr) clr.addEventListener("click", function(){
+      view.querySelectorAll(".rowsel").forEach(function(b){ b.checked = false; });
+      if(selAll) selAll.checked = false;
+      syncSel();
+    });
+
+    view.querySelectorAll("[data-grade]").forEach(function(b){
+      b.addEventListener("click", function(){ S.graderIndex = +b.dataset.grade; S.edit = false; S.tview = "t-grader"; render(); });
+    });
+    var gp = view.querySelector("#gPrev"), gn = view.querySelector("#gNext");
+    if(gp) gp.addEventListener("click", function(){ if(S.graderIndex > 0){ S.graderIndex--; render(); } });
+    if(gn) gn.addEventListener("click", function(){ if(S.graderIndex < ROWS.length-1){ S.graderIndex++; render(); } });
+
+    view.querySelectorAll("[data-ws]").forEach(function(b){
+      b.addEventListener("click", function(){ S.ws = b.dataset.ws; render(); });
+    });
+
+    var setNav = view.querySelector("#setNav");
+    if(setNav){
+      setNav.querySelectorAll("a").forEach(function(a){
+        a.addEventListener("click", function(){
+          var el = document.getElementById(a.dataset.goto);
+          if(el) el.scrollIntoView({ behavior:"smooth", block:"start" });
+        });
+      });
+    }
+
+    view.querySelectorAll(".plugcard").forEach(function(card){
+      var head = card.querySelector(".plugcard-head");
+      var box = card.querySelector(".plugtoggle");
+      head.addEventListener("click", function(e){
+        if(e.target !== box){ box.checked = !box.checked; }
+        card.classList.toggle("on", box.checked);
+        requestAnimationFrame(updateAnnotations);
+      });
+    });
+
+    view.querySelectorAll(".rub-lvl[data-crit]").forEach(function(l){
+      l.addEventListener("click", function(){ RUBRIC[+l.dataset.crit].sel = +l.dataset.lvl; render(); });
+    });
+
+    bindSelect("#selTeam", function(v){ S.opts.team = (v === "Yes"); });
+    bindSelect("#selBlind", function(v){ S.opts.blind = (v === "Yes"); });
+    bindSelect("#selWorkflow", function(v){ S.opts.workflow = (v === "Yes"); if(!S.opts.workflow) S.opts.allocation = false; });
+    bindSelect("#selAllocation", function(v){ S.opts.allocation = (v === "Yes"); });
+    var gmSel = view.querySelector("#selGm");
+    if(gmSel) gmSel.addEventListener("change", function(){ S.gm = gmSel.value; render(); });
+    view.querySelectorAll("[data-setgm]").forEach(function(b){
+      b.addEventListener("click", function(){ S.gm = b.dataset.setgm; render(); });
+    });
+    view.querySelectorAll("[data-preview]").forEach(function(b){
+      b.addEventListener("click", function(){
+        S.edit = false; S.role = "student"; S.sview = "s-submitted";
+        editSwitch.setAttribute("aria-pressed","false"); render();
+      });
+    });
+    view.querySelectorAll("[data-modal]").forEach(function(b){
+      b.addEventListener("click", function(){ openModal(b.dataset.modal); });
+    });
+    var mb = view.querySelector("#manageBtn");
+    if(mb) mb.addEventListener("click", function(e){ e.stopPropagation(); openManage(mb); });
+  }
+
+  function bindSelect(q, fn){
+    var el = view.querySelector(q);
+    if(!el) return;
+    el.addEventListener("change", function(){ fn(el.value); render(); });
+  }
+
+  function spy(){
+    var nav = document.querySelector("#setNav");
+    if(!nav) return;
+    var line = 184, best = null;
+    SET_SECTIONS.forEach(function(s){
+      var el = document.getElementById(s[0]);
+      if(el && el.getBoundingClientRect().top <= line) best = s[0];
+    });
+    nav.querySelectorAll("a").forEach(function(a){ a.classList.toggle("on", a.dataset.goto === best); });
+  }
+
+  /* ---- Manage dropdown: the real assign secondary nav, consolidated ---- */
+  var manageMenu = document.getElementById("manageMenu");
+  function openManage(trigger){
+    manageMenu.innerHTML = ''
+      + '<div class="menu-label">Set up</div>'
+      + '<button class="menu-item" data-ws="w-settings"><i class="fa-solid fa-gear"></i>Settings</button>'
+      + '<button class="menu-item" data-ws="w-types"><i class="fa-solid fa-puzzle-piece"></i>Submission &amp; feedback types</button>'
+      + '<button class="menu-item" data-ws="w-advgrading"><i class="fa-solid fa-table-cells"></i>Advanced grading</button>'
+      + '<button class="menu-item" data-ws="w-overrides"><i class="fa-solid fa-user-clock"></i>Overrides</button>'
+      + '<div class="menu-sep"></div>'
+      + '<div class="menu-label">Marking</div>'
+      + '<button class="menu-item" data-tv="t-submissions"><i class="fa-solid fa-inbox"></i>View all submissions</button>'
+      + '<button class="menu-item" data-tv="t-grader"><i class="fa-solid fa-pen"></i>Grade</button>'
+      + '<button class="menu-item"><i class="fa-solid fa-download"></i>Download all submissions</button>'
+      + '<button class="menu-item"><i class="fa-solid fa-table"></i>View gradebook</button>'
+      + (S.opts.blind ? '<button class="menu-item danger"><i class="fa-solid fa-user-secret"></i>Reveal student identities</button>' : '')
+      + '<div class="menu-sep"></div>'
+      + '<div class="menu-label">More</div>'
+      + '<button class="menu-item" data-ws="w-reports"><i class="fa-solid fa-chart-line"></i>Reports</button>'
+      + '<button class="menu-item"><i class="fa-solid fa-user-shield"></i>Permissions</button>'
+      + '<button class="menu-item"><i class="fa-solid fa-clock-rotate-left"></i>Logs</button>'
+      + '<button class="menu-item"><i class="fa-solid fa-box-archive"></i>Backup</button>'
+      + '<button class="menu-item"><i class="fa-solid fa-rotate-left"></i>Restore</button>'
+      + '<button class="menu-item"><i class="fa-solid fa-medal"></i>Competency breakdown</button>';
+    var r = trigger.getBoundingClientRect();
+    manageMenu.classList.add("show");
+    var mw = manageMenu.offsetWidth;
+    manageMenu.style.left = Math.max(8, Math.min(r.right - mw, window.innerWidth - mw - 8)) + "px";
+    manageMenu.style.top = (r.bottom + 6) + "px";
+    manageMenu.querySelectorAll("[data-ws]").forEach(function(b){
+      b.addEventListener("click", function(){
+        S.edit = true; S.ws = b.dataset.ws;
+        editSwitch.setAttribute("aria-pressed","true"); closeManage(); render();
+      });
+    });
+    manageMenu.querySelectorAll("[data-tv]").forEach(function(b){
+      b.addEventListener("click", function(){ S.edit = false; S.tview = b.dataset.tv; closeManage(); render(); });
+    });
+  }
+  function closeManage(){ manageMenu.classList.remove("show"); }
+  document.addEventListener("click", function(e){ if(!manageMenu.contains(e.target)) closeManage(); });
+
+  /* ---- modals ---- */
+  var modal = document.getElementById("modal"), modalBody = document.getElementById("modalBody");
+  function openModal(kind){
+    var h = "";
+    if(kind === "confirm"){
+      h = '<h3 class="modal-title">Submit assignment?</h3>'
+        + '<p>Once submitted, you will not be able to make any more changes.</p>'
+        + '<label class="checkrow" style="margin-bottom:1rem"><input type="checkbox"> <span>This submission is my own work, except where I have acknowledged the use of other works.</span></label>'
+        + '<div class="help" style="margin-bottom:1rem">The statement only appears when "Require that students accept the submission statement" is set to Yes.</div>'
+        + '<div class="modal-actions"><button class="btn btn-secondary" data-close="1">Cancel</button>'
+        + '<button class="btn btn-primary" data-submitnow="1">Submit assignment</button></div>';
+    } else if(kind === "override"){
+      h = '<h3 class="modal-title">Add user override</h3>'
+        + '<div class="field"><label>Override user <span class="req">*</span></label><input class="inp" placeholder="Search students…"></div>'
+        + dateField("Allow submissions from", false)
+        + dateField("Due date", true)
+        + dateField("Cut-off date", false)
+        + '<div class="field"><label>Time limit</label><div class="inline-2"><input class="inp xs" value="3">'
+        + '<select class="inp sm"><option>hours</option><option>minutes</option></select>'
+        + '<label class="checkrow" style="margin:0"><input type="checkbox"> Enable</label></div></div>'
+        + '<div class="field"><label>Reason</label><textarea class="inp" placeholder="Recorded against the override…"></textarea></div>'
+        + '<div class="modal-actions"><button class="btn btn-secondary" data-close="1">Cancel</button>'
+        + '<button class="btn btn-primary" data-close="1">Save</button></div>';
+    }
+    modalBody.innerHTML = h;
+    modal.classList.add("show");
+    modalBody.querySelectorAll("[data-close]").forEach(function(b){ b.addEventListener("click", closeModal); });
+    modalBody.querySelectorAll("[data-submitnow]").forEach(function(b){
+      b.addEventListener("click", function(){ closeModal(); S.sview = "s-submitted"; render(); });
+    });
+  }
+  function closeModal(){ modal.classList.remove("show"); }
+  document.getElementById("modalBack").addEventListener("click", closeModal);
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape"){ closeModal(); closeManage(); } });
+
+  /* ============================ DEV SWITCHER ============================ */
+  var devpanel = document.getElementById("devpanel");
+  function syncDev(){
+    devpanel.querySelectorAll("[data-role]").forEach(function(b){ b.classList.toggle("on", b.dataset.role === S.role); });
+    /* these buttons set the role they belong to, so they stay clickable —
+       only the group heading dims to show which role you are currently in */
+    devpanel.querySelectorAll('[data-group="sview"] .devbtn').forEach(function(b){
+      b.classList.toggle("on", !S.edit && S.role === "student" && b.dataset.state === S.sview);
+    });
+    devpanel.querySelectorAll('[data-group="tview"] .devbtn').forEach(function(b){
+      b.classList.toggle("on", !S.edit && S.role === "teacher" && b.dataset.state === S.tview);
+    });
+    devpanel.querySelectorAll('[data-group="ws"] .devbtn').forEach(function(b){
+      b.classList.toggle("on", S.edit && b.dataset.state === S.ws);
+    });
+    devpanel.querySelectorAll("[data-opt]").forEach(function(b){
+      b.classList.toggle("on", !!S.opts[b.dataset.opt]);
+      if(b.dataset.opt === "allocation") b.disabled = !S.opts.workflow;
+    });
+    devpanel.querySelectorAll("[data-gm]").forEach(function(b){ b.classList.toggle("on", b.dataset.gm === S.gm); });
+    document.getElementById("hStudent").classList.toggle("dim", S.role !== "student");
+    document.getElementById("hTeacher").classList.toggle("dim", S.role !== "teacher" || S.edit);
+    document.getElementById("hWorkspace").classList.toggle("dim", S.role !== "teacher");
+
+    var cap;
+    if(S.role === "student") cap = "Student states. Switch to Teacher for the marking and management screens.";
+    else if(S.edit) cap = "Manage workspace. Turn Edit mode off for the teacher's activity view.";
+    else cap = "Teacher activity view. Turn Edit mode on (top right) for the manage workspace.";
+    if(S.gm !== "simple") cap += " Advanced grading is on, so quick grading and multiple markers are disabled — as in the real form.";
+    document.getElementById("devCap").textContent = cap;
+  }
+
+  devpanel.querySelectorAll("[data-role]").forEach(function(b){
+    b.addEventListener("click", function(){
+      S.role = b.dataset.role;
+      if(S.role === "student"){ S.edit = false; editSwitch.setAttribute("aria-pressed","false"); }
+      render();
+    });
+  });
+  devpanel.querySelectorAll('[data-group="sview"] .devbtn, [data-group="tview"] .devbtn').forEach(function(b){
+    b.addEventListener("click", function(){
+      S.edit = false; editSwitch.setAttribute("aria-pressed","false");
+      if(b.dataset.state.indexOf("s-") === 0){ S.role = "student"; S.sview = b.dataset.state; }
+      else { S.role = "teacher"; S.tview = b.dataset.state; }
+      render();
+    });
+  });
+  devpanel.querySelectorAll('[data-group="ws"] .devbtn').forEach(function(b){
+    b.addEventListener("click", function(){
+      S.role = "teacher"; S.edit = true; S.ws = b.dataset.state;
+      editSwitch.setAttribute("aria-pressed","true");
+      render();
+    });
+  });
+  devpanel.querySelectorAll("[data-opt]").forEach(function(b){
+    b.addEventListener("click", function(){
+      var k = b.dataset.opt;
+      S.opts[k] = !S.opts[k];
+      if(k === "workflow" && !S.opts.workflow) S.opts.allocation = false;
+      render();
+    });
+  });
+  devpanel.querySelectorAll("[data-gm]").forEach(function(b){
+    b.addEventListener("click", function(){ S.gm = b.dataset.gm; render(); });
+  });
+
+  /* minimise / restore the state switcher so it never blocks the screen */
+  var devMin = document.getElementById("devMin");
+  devMin.addEventListener("click", function(){
+    var min = devpanel.classList.toggle("min");
+    devMin.setAttribute("aria-expanded", String(!min));
+    devMin.title = min ? "Restore the state switcher" : "Minimise the state switcher";
+    document.getElementById("devMinIcon").className = min ? "fa-solid fa-flask" : "fa-solid fa-minus";
+    document.getElementById("devMinLabel").textContent = min ? "State" : "";
+    requestAnimationFrame(updateAnnotations);
+  });
+
+  /* ============================ SHELL CONTROLS ============================ */
+  var editSwitch = document.getElementById("editSwitch");
+  editSwitch.addEventListener("click", function(){
+    var on = editSwitch.getAttribute("aria-pressed") === "true";
+    if(!on && S.role !== "teacher") S.role = "teacher";
+    S.edit = !on;
+    editSwitch.setAttribute("aria-pressed", String(!on));
+    render();
+  });
+
+  var backdrop = document.getElementById("backdrop");
+  function setLeft(open){ body.classList.toggle("ci-open", open); requestAnimationFrame(updateAnnotations); }
+  function setRight(open){ body.classList.toggle("cb-open", open); requestAnimationFrame(updateAnnotations); }
+  document.getElementById("openBtn").addEventListener("click", function(){ setLeft(true); });
+  document.getElementById("closeBtn").addEventListener("click", function(){ setLeft(false); });
+  document.getElementById("cbOpen").addEventListener("click", function(){ setRight(true); });
+  document.getElementById("cbClose").addEventListener("click", function(){ setRight(false); });
+  backdrop.addEventListener("click", function(){
+    if(body.classList.contains("ci-overlay")) setLeft(false);
+    if(body.classList.contains("cb-overlay")) setRight(false);
+  });
+
+  var mqCi = window.matchMedia("(max-width:768px)");
+  var mqCb = window.matchMedia("(max-width:1200px)");
+  function applyMode(){
+    body.classList.toggle("ci-overlay", mqCi.matches);
+    body.classList.toggle("cb-overlay", mqCb.matches);
+    if(mqCi.matches) body.classList.remove("ci-open");
+    else body.classList.add("ci-open");
+    requestAnimationFrame(updateAnnotations);
+  }
+  mqCi.addEventListener("change", applyMode);
+  mqCb.addEventListener("change", applyMode);
+
+  /* ============================ ANNOTATIONS ============================ */
+  var annoLayer = document.getElementById("annoLayer");
+  var annoCards = Array.prototype.slice.call(annoLayer.querySelectorAll(".anno-card"));
+  var annoRings = annoCards.map(function(){
+    var r = document.createElement("div"); r.className = "anno-ring"; annoLayer.appendChild(r); return r;
+  });
+  var annoOn = true;
+
+  function firstVisibleTarget(q){
+    var els = document.querySelectorAll(q);
+    for(var i = 0; i < els.length; i++){ if(els[i].offsetParent !== null) return els[i]; }
+    return null;
+  }
+
+  function updateAnnotations(){
+    var vw = window.innerWidth, vh = window.innerHeight;
+    annoCards.forEach(function(card, i){
+      var ring = annoRings[i];
+      if(!annoOn || card.dataset.dismissed === "1"){ card.style.display = "none"; ring.style.display = "none"; return; }
+      var target = firstVisibleTarget(card.dataset.target);
+      var tr = target && target.getBoundingClientRect();
+      var visible = tr && tr.width > 0 && tr.height > 0 && tr.bottom > 64 && tr.top < vh - 8 && tr.right > 0 && tr.left < vw;
+      if(!visible){ card.style.display = "none"; ring.style.display = "none"; return; }
+      card.style.display = "block"; ring.style.display = "block";
+      ring.style.left = (tr.left - 4) + "px"; ring.style.top = (tr.top - 4) + "px";
+      ring.style.width = (tr.width + 8) + "px"; ring.style.height = (tr.height + 8) + "px";
+      var cw = card.offsetWidth || 238, chh = card.offsetHeight || 90, side = card.dataset.side, cl, ct;
+      if(side === "top" && tr.top - chh - 18 < 72) side = "bottom";
+      else if(side === "bottom" && tr.bottom + chh + 18 > vh - 8 && tr.top - chh - 18 >= 72) side = "top";
+      if(side === "right"){ cl = tr.right + 18; ct = tr.top - 6; }
+      else if(side === "top"){ cl = tr.left; ct = tr.top - chh - 18; }
+      else if(side === "bottom"){ cl = tr.left; ct = tr.bottom + 18; }
+      else { cl = tr.left - cw - 18; ct = tr.top - 6; }
+      cl = Math.max(8, Math.min(cl, vw - cw - 8));
+      if(side === "top"){ ct = Math.max(72, Math.min(ct, tr.top - chh - 8)); }
+      else if(side === "bottom"){ ct = Math.min(vh - chh - 8, Math.max(ct, tr.bottom + 8)); }
+      else { ct = Math.max(72, Math.min(ct, vh - chh - 8)); }
+      card.style.left = cl + "px"; card.style.top = ct + "px";
+    });
+  }
+
+  annoCards.forEach(function(card){
+    card.querySelector(".anno-close").addEventListener("click", function(){
+      card.dataset.dismissed = "1"; updateAnnotations();
+    });
+  });
+  document.getElementById("annoToggle").addEventListener("click", function(){
+    annoOn = !annoOn;
+    body.classList.toggle("annotations-on", annoOn);
+    document.getElementById("annoToggleLabel").textContent = annoOn ? "Hide annotations" : "Show annotations";
+    if(annoOn) annoCards.forEach(function(c){ delete c.dataset.dismissed; });
+    updateAnnotations();
+  });
+  window.addEventListener("scroll", function(){ updateAnnotations(); spy(); }, { passive:true });
+  window.addEventListener("resize", updateAnnotations);
+
+  /* ============================ INIT ============================ */
+  applyMode();
+  render();
+  window.addEventListener("load", updateAnnotations);
+  setTimeout(updateAnnotations, 80);
+})();
+</script>
+
+<!--
+NOTES (fill in once reviewed, then delete this file):
+
+Prototype: Assignment (mod_assign) — the activity, its settings, and the tabs
+used to manage it. Same container as the book / quiz / forum prototypes (MDS
+:root tokens, top nav, left drawer, right Course Blocks drawer, CLN sticky
+footer, dev state switcher, annotation layer).
+
+GROUNDED 1:1 IN CODE — nothing below was invented:
+- Settings = mod_form.php, every field, in its real groups: General (name,
+  description + show-on-course, activity instructions, additional files, attach
+  files to submission), Availability (allow-from, due, cut-off, remind-me-to-
+  grade-by, time limit, always show description), Submission settings (require
+  submit, submission statement, attempts reopened, max attempts), Group
+  submission (4 fields, all gated on teamsubmission), Notifications (3), Grade
+  (grade type/max, grading method, category, grade to pass, penalty, blind
+  marking, hide grader, marking workflow, allocation, marker count, multi-mark
+  method + rounding, anonymous marking), then standard_coursemodule_elements
+  (common module settings, restrict access, completion incl. the assign-specific
+  "Make a submission" rule, tags, competencies).
+- The conditional cascade is the REAL hideIf/disabledIf chain and is live in the
+  prototype: markingworkflow gates markingallocation; allocation gates
+  markercount; markercount>1 gates multimarkmethod, which gates multimarkrounding;
+  any advancedgradingmethod disables markercount and multimark*; markinganonymous
+  needs BOTH markingworkflow and blindmarking; gradepenalty needs a due date, a
+  Point grade type, and the site-level penalty setting.
+- Submissions table = gradingtable.php's column set, including the optional
+  columns (team, marker N, workflow state, record id) that only appear when the
+  matching setting is on. Blind marking swaps identity for "Participant N".
+- Filters = ASSIGN_FILTER_* (none / submitted / notsubmitted / requiregrading /
+  draft / grantedextension). Bulk actions = the real batch operations
+  (templates/bulkactions/grading): extension, message, lock, set marking state,
+  allocate marker, delete, download.
+- Grader = grading_app.mustache (review panel | resizer | grade panel) with
+  grading_actions. Marking workflow states are the six real constants.
+- Overrides = override_form.php's five fields + reason.
+- Advanced grading = grade/grading/form/rubric and /guide, with their real option
+  sets (sort levels ascending, lock zero points, show description/score to
+  teacher/student, enable remarks; guide: show definition, show marks per
+  criterion).
+- Submission/feedback plugin settings are the real ones (onlinetext word limit;
+  file max files / max size / accepted types; comments inline).
+
+NET-NEW (the actual proposals, each carrying an annotation):
+1. Status card + progress track replacing the two stacked key/value tables in
+   classes/output/renderer.php. The Marking step only exists when marking
+   workflow is on, which is honest to the data model.
+2. Submission and feedback rendered as content blocks per plugin, rather than
+   squeezed into cells of the status table.
+3. Grading summary counts become clickable filters into the submissions list.
+4. One filter row replacing the status dropdown + "extra filters" dropdown +
+   options form (three places today).
+5. Bulk actions surface on selection instead of a "With selected…" dropdown at
+   the bottom of the page.
+6. STUDENTS IN THE LEFT DRAWER while grading — the course index is re-purposed
+   as a searchable, filterable class list with per-student marking status. Today
+   this is grading_navigation_user_selector.mustache (an autocomplete) plus two
+   arrows, with no sense of position in the cohort. This is the assign analogue
+   of "book chapters / quiz questions in the course index", and it is cheaper:
+   it needs no delegated-section work because students are not course content.
+7. Manage dropdown + one tabbed workspace (Submissions / Settings / Submission &
+   feedback / Advanced grading / Overrides / Reports) replacing the secondary nav.
+8. Two-column anchored settings with a sticky section rail (the MDS pattern).
+9. Submission/feedback types as toggle cards that reveal their own settings,
+   instead of a checkbox group whose settings are appended to the same flat form
+   further down (add_all_plugin_settings).
+10. Grader Save moves into the shared sticky footer.
+
+RETAINED DELIBERATELY: the review-panel/grade-panel split (it works), quick
+grading in the table (and its real disabling under advanced grading), and the
+CLN footer — which already exists in core_courseformat and is NOT new work.
+
+Real-implementation notes:
+- assign_supports() declares groups, groupings, grade, penalty, outcomes,
+  advanced grading, plagiarism and comments — so unlike book this activity
+  genuinely needs the full standard_coursemodule_elements surface.
+- The settings re-presentation is presentation-only: no field added, removed or
+  renamed. The risk is that assignsubmission_*/assignfeedback_* plugins inject
+  into the same mform, so the plugin-card grouping needs a real API for a plugin
+  to declare which card its settings belong to.
+- locallib.php is ~11k lines and gradingtable.php ~2.3k; the table and grader
+  are the expensive parts, not the settings.
+
+Answer: <fill in after review>
+-->
+</body>
+</html>
