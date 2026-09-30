@@ -1301,7 +1301,7 @@
               </div>
             </div>
             <div class="blk-foot">
-              <a class="blk-discover" href="https://marketplace.moodle.com/?type=2" target="_blank" rel="noopener">
+              <a class="blk-discover" id="blkDiscover" href="https://marketplace.moodle.com/?type=2" target="_blank" rel="noopener">
                 Discover more blocks on Moodle Marketplace<i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
                 <span class="visually-hidden">(opens in a new tab)</span></a>
               <button class="btn btn-primary" id="blkInsert">Insert</button>
@@ -1397,6 +1397,11 @@
     <div class="devrow" id="libSwitch">
       <button class="devbtn on" data-v="browser">Browser</button>
       <button class="devbtn" data-v="drawer">Drawer</button>
+    </div>
+    <h5>Marketplace</h5>
+    <div class="devrow" id="marketSwitch">
+      <button class="devbtn on" data-v="on">Reachable</button>
+      <button class="devbtn" data-v="off">Unreachable</button>
     </div>
     <h5>Six columns from</h5>
     <div class="devrow" id="sixSwitch">
@@ -1696,13 +1701,11 @@
                             desc:"Files only you can see, ready to attach or use in any course." },
     lp:                   { title:"Learning plans", icon:"fa-route", w:2, h:3,
                             desc:"Your learning plans, and the competencies waiting for you to review them." },
-    /* Third-party blocks. Completion Progress has its icon and summary from its
-       Moodle Plugins directory listing (marketplace.moodle.com/plugins/2571),
-       as a block browser could show them. The other two are in-house blocks a
-       university might build: a name, and nothing else. */
-    completion_progress:  { title:"Completion Progress", thirdparty:true,
-                            img:"https://marketplace.moodle.com/plugins/2571/screenshots/block_completion_progress-6a5699b80b8d3.png",
-                            desc:"The Completion Progress block is a time-management tool for students." },
+    /* Third-party blocks: a name, and nothing else. Completion Progress gets
+       its icon and summary from the Marketplace (see MARKET below) when the
+       site can reach it; the other two are in-house blocks a university might
+       build, which are on no marketplace. */
+    completion_progress:  { title:"Completion Progress", thirdparty:true },
     libraryhours:         { title:"Library opening hours", thirdparty:true },
     wellbeing:            { title:"Student wellbeing check-in for first-year undergraduate programmes", thirdparty:true }
   };
@@ -2576,6 +2579,26 @@
   document.getElementById("blkClose").addEventListener("click", function(){ closeBrowser(); });
   el.browser.addEventListener("cancel", function(e){ e.preventDefault(); closeBrowser(); });
 
+  /* Marketplace details, as the server would have stored them (ticket #10),
+     from each plugin's Moodle Plugins directory listing. Reachable is a site
+     that contacts the Marketplace. Unreachable is a firewalled or air-gapped
+     site, or one with the lookup turned off: no Marketplace icon or summary,
+     so the fallbacks show, and no link to the Marketplace. Core blocks never
+     depend on this; they declare their own. */
+  var MARKET = {
+    completion_progress:{ img:"https://marketplace.moodle.com/plugins/2571/screenshots/block_completion_progress-6a5699b80b8d3.png",
+                          desc:"The Completion Progress block is a time-management tool for students." }
+  };
+  function setMarketplace(on){
+    Object.keys(MARKET).forEach(function(t){
+      CATALOG[t].img = on ? MARKET[t].img : null;
+      CATALOG[t].desc = on ? MARKET[t].desc : FALLBACK_DESC;
+    });
+    document.getElementById("blkDiscover").hidden = !on;
+    if(el.browser.open) renderBrowser();
+  }
+  setMarketplace(true);
+
   /* ---------- block actions menu: only what still means something here ---------- */
   var menuFor = null;
   function toggleMenu(btn){
@@ -2707,6 +2730,7 @@
     group("contentSwitch", function(v){ seed(v); refresh({ animate:false }); });
     group("themeSwitch", function(v){ body.classList.toggle("theme-dark", v === "dark"); });
     group("libSwitch", function(v){ closeSheet(true); libraryMode = v; });
+    group("marketSwitch", function(v){ setMarketplace(v === "on"); });
     group("sixSwitch", function(v){ TH.six = +v; state.cols = 0; measureCols(); });
     onEditChange = sync; sync();
   })();
@@ -3134,7 +3158,10 @@ Decisions:
   - Footer link "Discover more blocks on Moodle Marketplace" (marketplace.moodle.com/?type=2, the directory's own Blocks
     filter), left-aligned, new tab. It only points somewhere: installing a plugin still needs a site administrator.
   - Third-party examples: Completion Progress uses its Plugins directory icon and summary (listing 2571). The icon is the file's
-    one remote load, set from JS after render; offline or emailed, the card falls back to initials, so the file still works. Marketplace icons aren't square (100x38 here), so the tile fits, not crops.
+    one remote load, set from JS after render; offline or emailed, the card falls back to initials, so the file still works.
+    (The real build must store the icon on the site: a learner's browser never contacts the Marketplace.)
+  - State > Marketplace: Unreachable is a site that doesn't contact the Marketplace. Completion Progress drops to initials and
+    the fallback line, and the Discover link is hidden. Core blocks are unchanged: they declare their own. Marketplace icons aren't square (100x38 here), so the tile fits, not crops.
     Two invented in-house blocks show the no-icon, no-description case.
   - Fallback for a block that declares nothing (most in-house blocks): initials on a neutral tile, "Added to your site by an
     administrator." for a description, default size 2x3. Applied
