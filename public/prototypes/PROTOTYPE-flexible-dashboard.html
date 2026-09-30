@@ -818,10 +818,18 @@
   }
   /* Fallback for a block with no icon of its own (most third-party blocks): its
      initials on a neutral tile, so several add-ons still tell apart at a glance. */
+  /* A plugin's own icon: marketplace icons are not square (Completion Progress is
+     100x38), so fit it inside the tile rather than crop or stretch it. */
+  .blk-icon.is-image{ background:var(--surface); padding:var(--sp-xxs); }
+  .blk-icon img{ display:block; max-width:100%; max-height:100%; object-fit:contain; }
+  body.wireframe .blk-icon img{ filter:grayscale(1); }
   .blk-icon.is-fallback{ background:var(--bg-strong); color:var(--text-subtle); font-size:var(--fs-md); font-weight:var(--fw-bold); }
   .blk-none{ grid-column:1 / -1; padding:var(--sp-xl) 0; text-align:center; color:var(--text-muted); }
   .blk-none button{ margin-top:var(--sp-sm); }
-  .blk-foot{ display:flex; justify-content:flex-end; gap:var(--sp-xs); padding:var(--sp-md) var(--sp-xl); border-top:1px solid var(--border-subtle); }
+  .blk-foot{ display:flex; align-items:center; justify-content:flex-end; gap:var(--sp-xs); padding:var(--sp-md) var(--sp-xl); border-top:1px solid var(--border-subtle); }
+  /* Left-aligned: a way out to find more, kept apart from Insert/Close. A new tab, so the edit isn't lost. */
+  .blk-discover{ margin-right:auto; display:inline-flex; align-items:center; gap:var(--sp-xxs); color:var(--primary); font-size:var(--fs-sm); text-decoration:underline; }
+  .blk-discover i{ font-size:var(--fs-sm); }
   @media (max-width:1023.98px){ .blk-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); } }
   /* Below tablet: full screen, one column of cards. */
   @media (max-width:767.98px){
@@ -830,6 +838,8 @@
     .blk-grid{ grid-template-columns:minmax(0, 1fr); }
     .blk-enter{ display:none; }
     .blk-search input{ padding-right:var(--sp-sm); }
+    .blk-foot{ flex-wrap:wrap; }
+    .blk-discover{ flex:1 1 100%; margin:0 0 var(--sp-xs); }
   }
 
   /* ---- reset confirmation ---- */
@@ -1291,6 +1301,9 @@
               </div>
             </div>
             <div class="blk-foot">
+              <a class="blk-discover" href="https://marketplace.moodle.com/?type=2" target="_blank" rel="noopener">
+                Discover more blocks on Moodle Marketplace<i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+                <span class="visually-hidden">(opens in a new tab)</span></a>
               <button class="btn btn-primary" id="blkInsert">Insert</button>
               <button class="btn btn-secondary" id="blkCancel">Close</button>
             </div>
@@ -1683,12 +1696,15 @@
                             desc:"Files only you can see, ready to attach or use in any course." },
     lp:                   { title:"Learning plans", icon:"fa-route", w:2, h:3,
                             desc:"Your learning plans, and the competencies waiting for you to review them." },
-    /* Third-party blocks, as a site might have them installed: a name, and
-       often nothing else. The first has a description but no icon. */
+    /* Third-party blocks. Completion Progress has its icon and summary from its
+       Moodle Plugins directory listing (marketplace.moodle.com/plugins/2571),
+       as a block browser could show them. The other two are in-house blocks a
+       university might build: a name, and nothing else. */
     completion_progress:  { title:"Completion Progress", thirdparty:true,
-                            desc:"A bar for each course showing which activities you've completed." },
-    xp:                   { title:"Level Up XP", thirdparty:true },
-    configurable_reports: { title:"Configurable reports for managers, teachers and faculty administrators", thirdparty:true }
+                            img:"https://marketplace.moodle.com/plugins/2571/screenshots/block_completion_progress-6a5699b80b8d3.png",
+                            desc:"The Completion Progress block is a time-management tool for students." },
+    libraryhours:         { title:"Library opening hours", thirdparty:true },
+    wellbeing:            { title:"Student wellbeing check-in for first-year undergraduate programmes", thirdparty:true }
   };
   /* Fallbacks for a block that declares nothing beyond its name: its initials
      for an icon, an honest line for a description, and the default size. */
@@ -1699,7 +1715,7 @@
   }
   Object.keys(CATALOG).forEach(function(t){
     var d = CATALOG[t];
-    if(!d.icon) d.mono = initials(d.title);
+    d.mono = initials(d.title);             // also the fallback if an image icon fails to load
     if(!d.desc) d.desc = FALLBACK_DESC;
     if(!d.w){ d.w = 2; d.h = 3; }
   });
@@ -2482,6 +2498,8 @@
       : q ? '<div class="blk-none"><p>No blocks match "' + esc(q) + '".</p>'
           + '<button class="btn btn-secondary" id="blkClear">Clear search</button></div>'
       : '<div class="blk-none"><p>Every block is already on your dashboard.</p></div>';
+    // The one remote load in this file (see NOTES): set after render, and it falls back to initials if it fails.
+    el.brGrid.querySelectorAll("img[data-icon-url]").forEach(function(img){ img.src = img.dataset.iconUrl; });
     var first = el.brGrid.querySelector(".blk-card.is-selected") || el.brGrid.querySelector(".blk-card");
     if(first) first.tabIndex = 0;
 
@@ -2495,7 +2513,8 @@
     return '<div class="blk-card' + (sel ? " is-selected" : "") + '" role="option" tabindex="-1"'
       + ' id="blk-' + t + '" data-type="' + t + '" aria-selected="' + sel + '">'
       + (d.icon ? '<span class="blk-icon" aria-hidden="true"><i class="fa-solid ' + d.icon + '"></i></span>'
-                : '<span class="blk-icon is-fallback" aria-hidden="true">' + esc(d.mono) + '</span>')
+        : d.img ? '<span class="blk-icon is-image" aria-hidden="true"><img data-icon-url="' + esc(d.img) + '" alt=""></span>'
+        : '<span class="blk-icon is-fallback" aria-hidden="true">' + esc(d.mono) + '</span>')
       + '<span class="blk-text"><span class="blk-head"><span class="blk-name">' + esc(d.title) + '</span></span>'
       + '<span class="blk-desc">' + esc(d.desc) + '</span></span></div>';
   }
@@ -2526,6 +2545,13 @@
     if(!target && id && tiles[id]) kbStart(id, "move", tiles[id].querySelector(".tile-grip"));
   }
   el.brSearch.addEventListener("input", renderBrowser);
+  // An image icon that can't load (offline, blocked, moved) falls back to the block's initials.
+  el.brGrid.addEventListener("error", function(e){
+    if(e.target.tagName !== "IMG") return;
+    var tile = e.target.parentNode, card = tile.closest(".blk-card");
+    tile.classList.remove("is-image"); tile.classList.add("is-fallback");
+    tile.textContent = CATALOG[card.dataset.type].mono;
+  }, true);
   el.brSearch.addEventListener("keydown", function(e){
     if(e.key === "Enter"){ e.preventDefault(); brInsert(); }
     else if(e.key === "ArrowDown"){
@@ -3105,7 +3131,12 @@ Decisions:
     declarations (natural home: MDL-89639). One icon tint for every card; activity-purpose colours already mean something in
     MDS. No categories, size chip or Added/New badges (all removed on review): search plus an A-Z grid.
   - Blocks already on the dashboard that allow one instance are not listed, as get_addable_blocks() already does.
-  - Fallback for a block that declares nothing (most third-party blocks): initials on a neutral tile, "Added to your site by an
+  - Footer link "Discover more blocks on Moodle Marketplace" (marketplace.moodle.com/?type=2, the directory's own Blocks
+    filter), left-aligned, new tab. It only points somewhere: installing a plugin still needs a site administrator.
+  - Third-party examples: Completion Progress uses its Plugins directory icon and summary (listing 2571). The icon is the file's
+    one remote load, set from JS after render; offline or emailed, the card falls back to initials, so the file still works. Marketplace icons aren't square (100x38 here), so the tile fits, not crops.
+    Two invented in-house blocks show the no-icon, no-description case.
+  - Fallback for a block that declares nothing (most in-house blocks): initials on a neutral tile, "Added to your site by an
     administrator." for a description, default size 2x3. Applied
     once to CATALOG, so the drawer and the tile content get the same fallbacks.
   - Selected card = primary border + inset bar, so it survives wireframe mode.
