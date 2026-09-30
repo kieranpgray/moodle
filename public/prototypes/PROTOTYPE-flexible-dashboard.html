@@ -760,6 +760,94 @@
   .sheet-none{ padding:var(--sp-lg) 0; text-align:center; color:var(--text-muted); font-size:var(--fs-sm); }
   .tile.is-ghost .tile-body{ display:flex; align-items:center; justify-content:center; color:var(--text-muted); }
 
+  /* ---- block browser: a Confluence-style alternative to the drawer ----
+     One modal, three parts: categories on the left, search and a grid of
+     cards on the right, Insert/Close at the foot. Selection is never colour
+     alone (border weight + inset bar), and Added / New are words, so the
+     states survive wireframe mode. Every icon tile shares one tint: block
+     categories have no meaning in MDS, and borrowing the activity-purpose
+     colours would say something they don't. */
+  .blk-browser{
+    width:min(1100px, calc(100vw - 2 * var(--sp-xl))); height:min(760px, calc(100vh - 2 * var(--sp-xl)));
+    max-width:none; max-height:none; padding:0; border:none; border-radius:var(--r-xl);
+    background:var(--surface); color:var(--text-default); box-shadow:var(--shadow-lg); overflow:hidden;
+  }
+  .blk-browser[open]{ display:grid; grid-template-rows:auto minmax(0, 1fr) auto; }
+  .blk-browser::backdrop{ background:var(--overlay); }
+  .blk-top{ display:flex; align-items:center; justify-content:space-between; gap:var(--sp-md); padding:var(--sp-md) var(--sp-xl) var(--sp-sm); }
+  .blk-top h2{ margin:0; font-size:var(--fs-h3); font-weight:var(--fw-bold); }
+  .blk-close{
+    width:var(--btn); height:var(--btn); padding:0; border:none; border-radius:var(--r-md); background:transparent;
+    color:var(--text-default); font-size:var(--fs-lead); cursor:pointer;
+  }
+  .blk-close:hover{ background:var(--hover-tint-strong); }
+  .blk-body{ display:grid; grid-template-columns:220px minmax(0, 1fr); gap:var(--sp-xl); min-height:0; padding:0 var(--sp-xl); }
+  .blk-cats{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:var(--sp-xxs); }
+  .blk-cat{
+    width:100%; display:flex; align-items:center; justify-content:space-between; gap:var(--sp-xs);
+    min-height:var(--btn); padding:0 var(--sp-sm); border:none; border-radius:var(--r-md); background:transparent;
+    color:var(--text-default); font:inherit; text-align:left; cursor:pointer;
+  }
+  .blk-cat:hover{ background:var(--hover-tint); }
+  .blk-cat.is-current{ background:var(--primary-light); color:var(--primary); font-weight:var(--fw-semibold); box-shadow:inset 3px 0 0 var(--primary); }
+  .blk-cat-count{ font-size:var(--fs-sm); color:var(--text-muted); font-weight:var(--fw-regular); }
+  .blk-cat.is-current .blk-cat-count{ color:inherit; }   /* muted on primary-light is 4.19:1 */
+  .blk-main{ display:flex; flex-direction:column; min-height:0; }
+  .blk-search{ position:relative; flex:0 0 auto; }
+  .blk-search > i{ position:absolute; left:var(--sp-md); top:50%; transform:translateY(-50%); color:var(--text-muted); }
+  .blk-search input{
+    width:100%; height:48px; padding:0 96px 0 44px; border:1px solid var(--border-ring); border-radius:var(--r-md);
+    background:var(--surface); color:var(--text-default); font:inherit; font-size:var(--fs-md);
+  }
+  .blk-enter{
+    position:absolute; right:var(--sp-xs); top:50%; transform:translateY(-50%);
+    display:inline-flex; align-items:center; gap:var(--sp-xxs); padding:var(--sp-xxs) var(--sp-xs);
+    border-radius:var(--r-sm); background:var(--bg-strong); color:var(--text-subtle); font-size:var(--fs-sm);
+  }
+  .blk-where{ margin:var(--sp-sm) 0 var(--sp-xs); font-size:var(--fs-sm); color:var(--text-subtle); }
+  .blk-status{ margin:0 0 var(--sp-xs); font-size:var(--fs-sm); color:var(--text-muted); }
+  .blk-grid{
+    flex:1 1 auto; min-height:0; overflow:auto; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr));
+    align-content:start; gap:var(--sp-xs); padding:var(--sp-xxs) var(--sp-xxs) var(--sp-md);
+  }
+  .blk-card{
+    display:flex; gap:var(--sp-sm); align-items:flex-start; padding:var(--sp-sm); min-width:0;
+    border:1px solid transparent; border-radius:var(--r-md); cursor:pointer;
+  }
+  .blk-card:hover{ background:var(--hover-tint); }
+  /* the second border pixel is an inset shadow, so selecting a card never shifts its content */
+  .blk-card.is-selected{ border-color:var(--primary); background:var(--primary-light); box-shadow:inset 0 0 0 1px var(--primary), inset 4px 0 0 var(--primary); }
+  .blk-icon{
+    flex:0 0 48px; height:48px; display:flex; align-items:center; justify-content:center;
+    border-radius:var(--r-md); border:1px solid var(--border-default); background:var(--primary-light); color:var(--primary); font-size:var(--fs-lead);
+  }
+  .blk-text{ min-width:0; flex:1 1 auto; display:flex; flex-direction:column; gap:var(--sp-xxs); }
+  .blk-head{ min-width:0; }
+  .blk-name{ font-weight:var(--fw-semibold); min-width:0; overflow-wrap:anywhere; }
+  .blk-desc{
+    color:var(--text-subtle); font-size:var(--fs-sm); line-height:var(--lh-md);
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  /* Fallback for a block with no icon of its own (most third-party blocks): its
+     initials on a neutral tile, so several add-ons still tell apart at a glance. */
+  .blk-icon.is-fallback{ background:var(--bg-strong); color:var(--text-subtle); font-size:var(--fs-md); font-weight:var(--fw-bold); }
+  .blk-none{ grid-column:1 / -1; padding:var(--sp-xl) 0; text-align:center; color:var(--text-muted); }
+  .blk-none button{ margin-top:var(--sp-sm); }
+  .blk-foot{ display:flex; justify-content:flex-end; gap:var(--sp-xs); padding:var(--sp-md) var(--sp-xl); border-top:1px solid var(--border-subtle); }
+  @media (max-width:1099.98px){ .blk-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+  /* Below tablet: full screen, categories become a scrolling row of chips, one column of cards. */
+  @media (max-width:767.98px){
+    .blk-browser{ width:100vw; height:100vh; border-radius:0; }
+    .blk-top, .blk-body, .blk-foot{ padding-left:var(--sp-md); padding-right:var(--sp-md); }
+    .blk-body{ grid-template-columns:minmax(0, 1fr); grid-template-rows:auto minmax(0, 1fr); gap:var(--sp-sm); }
+    .blk-cats{ flex-direction:row; overflow-x:auto; padding-bottom:var(--sp-xxs); }
+    .blk-cat{ width:auto; white-space:nowrap; border:1px solid var(--border-default); border-radius:var(--r-pill); }
+    .blk-cat.is-current{ box-shadow:none; border:2px solid var(--primary); }
+    .blk-grid{ grid-template-columns:minmax(0, 1fr); }
+    .blk-enter{ display:none; }
+    .blk-search input{ padding-right:var(--sp-sm); }
+  }
+
   /* ---- reset confirmation ---- */
   .dash-confirm{
     width:100%; max-width:28rem; padding:var(--sp-lg); border:none; border-radius:var(--r-xl);
@@ -1162,7 +1250,7 @@
               <button class="btn btn-tertiary" id="resetBtn">Reset to default</button>
               <button class="btn btn-secondary" id="doneBtn">Done</button>
               <button class="btn btn-primary" id="addBtn"
-                      data-annot="Opens the block drawer. Drag a block onto your dashboard, or press Add."
+                      data-annot="Opens the block browser: pick a category or search, then Insert. State › Block library brings back the drawer."
                       data-annot-side="bottom"><i class="fa-solid fa-plus" aria-hidden="true"></i>Add a block</button>
             </div>
           </div>
@@ -1197,6 +1285,31 @@
             <div class="dash-confirm-actions">
               <button class="btn btn-secondary" id="resetCancel">Cancel</button>
               <button class="btn btn-danger" id="resetConfirm">Reset dashboard</button>
+            </div>
+          </dialog>
+
+          <dialog class="blk-browser" id="blkBrowser" aria-labelledby="blkTitle">
+            <div class="blk-top">
+              <h2 id="blkTitle">Add a block</h2>
+              <button class="blk-close" id="blkClose" aria-label="Close" title="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+            </div>
+            <div class="blk-body">
+              <nav aria-label="Block categories"><ul class="blk-cats" id="blkCats"></ul></nav>
+              <div class="blk-main">
+                <div class="blk-search">
+                  <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                  <input type="search" id="blkSearch" placeholder="Search blocks" aria-label="Search blocks"
+                         aria-describedby="blkWhere" autocomplete="off">
+                  <span class="blk-enter" aria-hidden="true"><i class="fa-solid fa-arrow-turn-down fa-rotate-90"></i>Enter</span>
+                </div>
+                <p class="blk-where" id="blkWhere"></p>
+                <p class="blk-status" id="blkStatus" role="status"></p>
+                <div class="blk-grid" id="blkGrid" role="listbox" aria-label="Blocks"></div>
+              </div>
+            </div>
+            <div class="blk-foot">
+              <button class="btn btn-primary" id="blkInsert">Insert</button>
+              <button class="btn btn-secondary" id="blkCancel">Close</button>
             </div>
           </dialog>
 
@@ -1283,6 +1396,11 @@
     <div class="devrow" id="netSwitch">
       <button class="devbtn on" data-v="online">Online</button>
       <button class="devbtn" data-v="offline">Offline</button>
+    </div>
+    <h5>Block library</h5>
+    <div class="devrow" id="libSwitch">
+      <button class="devbtn on" data-v="browser">Browser</button>
+      <button class="devbtn" data-v="drawer">Drawer</button>
     </div>
     <h5>Six columns from</h5>
     <div class="devrow" id="sixSwitch">
@@ -1557,30 +1675,61 @@
   var DEFAULT_MIN = { w:1, h:2 };            // one default minimum for every block (MDL-89636)
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  /* Categories and "New" are invented: Moodle blocks only report a name and a
+     title today. See NOTES. */
+  var CATS = [
+    { id:"all", label:"All blocks" },
+    { id:"progress", label:"Courses & progress" },
+    { id:"deadlines", label:"Deadlines & calendar" },
+    { id:"activity", label:"Recent activity" },
+    { id:"content", label:"Your own content" },
+    { id:"other", label:"Other blocks" }       // only listed when something falls into it
+  ];
   var CATALOG = {
-    myoverview:           { title:"Course overview", icon:"fa-graduation-cap", w:4, h:5, min:{ w:2, h:3 },
-                            desc:"Your courses with progress, filters and search." },
-    timeline:             { title:"Timeline", icon:"fa-list-check", w:4, h:4, min:{ w:2, h:3 },
-                            desc:"What's due next and what's overdue, across all your courses." },
-    calendar_month:       { title:"Calendar", icon:"fa-calendar", w:2, h:4, min:{ w:2, h:4 },
-                            desc:"This month at a glance, with course and site events." },
-    recentlyaccesseditems:{ title:"Recently accessed items", icon:"fa-clock-rotate-left", w:2, h:3,
-                            desc:"Jump back into the activities you opened last." },
-    badges:               { title:"Latest badges", icon:"fa-award", w:2, h:2,
-                            desc:"Badges you've earned most recently." },
-    online_users:         { title:"Online users", icon:"fa-user-group", w:2, h:3,
-                            desc:"Who is on the site right now." },
-    html:                 { title:"Text", icon:"fa-align-left", w:3, h:2, multi:true, configurable:true,
+    myoverview:           { title:"Course overview", icon:"fa-graduation-cap", w:4, h:5, min:{ w:2, h:3 }, cat:"progress",
+                            desc:"All your courses with progress bars, plus filters and search to find the one you need." },
+    timeline:             { title:"Timeline", icon:"fa-list-check", w:4, h:4, min:{ w:2, h:3 }, cat:"deadlines",
+                            desc:"What's due next and what's overdue, across every course, sorted by date or by course." },
+    calendar_month:       { title:"Calendar", icon:"fa-calendar", w:2, h:4, min:{ w:2, h:4 }, cat:"deadlines",
+                            desc:"This month at a glance, with course, group and site events you can open in one click." },
+    recentlyaccesseditems:{ title:"Recently accessed items", icon:"fa-clock-rotate-left", w:2, h:3, cat:"activity",
+                            desc:"Jump straight back into the last activities and resources you opened." },
+    badges:               { title:"Latest badges", icon:"fa-award", w:2, h:2, cat:"progress",
+                            desc:"The badges you've earned most recently, with a link to all of them." },
+    online_users:         { title:"Online users", icon:"fa-user-group", w:2, h:3, cat:"activity",
+                            desc:"Who else is on the site right now, from the last five minutes." },
+    html:                 { title:"Text", icon:"fa-align-left", w:3, h:2, multi:true, configurable:true, cat:"content",
                             desc:"Your own text, links and images. Add as many as you like." },
-    calendar_upcoming:    { title:"Upcoming events", icon:"fa-calendar-day", w:2, h:3,
-                            desc:"The next few events from your calendar." },
-    starredcourses:       { title:"Starred courses", icon:"fa-star", w:3, h:3,
-                            desc:"The courses you've starred, one click away." },
-    private_files:        { title:"Private files", icon:"fa-folder", w:2, h:3,
-                            desc:"Files only you can see, ready to use anywhere." },
-    lp:                   { title:"Learning plans", icon:"fa-route", w:2, h:3,
-                            desc:"Your learning plans and competencies to review." }
+    calendar_upcoming:    { title:"Upcoming events", icon:"fa-calendar-day", w:2, h:3, cat:"deadlines",
+                            desc:"The next few events from your calendar, with their dates and times." },
+    starredcourses:       { title:"Starred courses", icon:"fa-star", w:3, h:3, cat:"progress",
+                            desc:"The courses you've starred, pinned in one place and one click away." },
+    private_files:        { title:"Private files", icon:"fa-folder", w:2, h:3, cat:"content",
+                            desc:"Files only you can see, ready to attach or use in any course." },
+    lp:                   { title:"Learning plans", icon:"fa-route", w:2, h:3, cat:"progress",
+                            desc:"Your learning plans, and the competencies waiting for you to review them." },
+    /* Third-party blocks, as a site might have them installed: a name, and
+       often nothing else. The first has a description but no icon. */
+    completion_progress:  { title:"Completion Progress", thirdparty:true,
+                            desc:"A bar for each course showing which activities you've completed." },
+    xp:                   { title:"Level Up XP", thirdparty:true },
+    configurable_reports: { title:"Configurable reports for managers, teachers and faculty administrators", thirdparty:true }
   };
+  /* Fallbacks for a block that declares nothing beyond its name: its initials
+     for an icon, an honest line for a description, "Other blocks" for a
+     category, and the default size. */
+  var FALLBACK_DESC = "Added to your site by an administrator.";
+  function initials(title){
+    return title.split(/\s+/).filter(function(w){ return /^[A-Za-z0-9]/.test(w); }).slice(0, 2)
+      .map(function(w){ return w.charAt(0).toUpperCase(); }).join("");
+  }
+  Object.keys(CATALOG).forEach(function(t){
+    var d = CATALOG[t];
+    if(!d.icon) d.mono = initials(d.title);
+    if(!d.desc) d.desc = FALLBACK_DESC;
+    if(!d.cat) d.cat = "other";
+    if(!d.w){ d.w = 2; d.h = 3; }
+  });
   var HTML_TITLE = "Announcements from the Faculty of Environmental and Biological Sciences";
 
   function blockHTML(type){
@@ -1630,7 +1779,10 @@
       case "html":
         return '<div class="b-text"><p>Fieldwork week runs 12 to 16 October. Transport leaves the main gate at 8:00 each day.</p><p><a href="#">Read the fieldwork safety guidance</a></p></div>';
       default:
-        return '<div class="b-zero"><i class="fa-solid ' + CATALOG[type].icon + '" aria-hidden="true"></i><span>' + esc(CATALOG[type].desc) + '</span></div>';
+        var d = CATALOG[type];
+        // A third-party block renders its own content; the prototype can only stand in for it.
+        return '<div class="b-zero"><i class="fa-solid ' + (d.icon || "fa-cube") + '" aria-hidden="true"></i><span>'
+          + esc(d.thirdparty ? d.title + " shows its own content here." : d.desc) + '</span></div>';
     }
     function ev(name, course, due){
       return '<div class="b-event"><span class="ic" aria-hidden="true"><i class="fa-solid fa-pen-to-square"></i></span>'
@@ -1664,7 +1816,11 @@
     sheetList:document.getElementById("sheetList"), sheetSearch:document.getElementById("sheetSearch"),
     sheetWhere:document.querySelector("#sheetWhere span"), toast:document.getElementById("toast"),
     toastText:document.getElementById("toastText"), toastUndo:document.getElementById("toastUndo"),
-    emptyText:document.getElementById("emptyText")
+    emptyText:document.getElementById("emptyText"),
+    browser:document.getElementById("blkBrowser"), brCats:document.getElementById("blkCats"),
+    brSearch:document.getElementById("blkSearch"), brWhere:document.getElementById("blkWhere"),
+    brStatus:document.getElementById("blkStatus"), brGrid:document.getElementById("blkGrid"),
+    brInsert:document.getElementById("blkInsert")
   };
   var tiles = {};                     // id -> tile element (created once, reused, so content never re-renders)
 
@@ -2239,12 +2395,14 @@
     t.scrollIntoView({ block:"nearest", behavior:reduceMotion ? "auto" : "smooth" });
     t.querySelector(".tile-grip").focus({ preventScroll:true });
     toast(def.title + " added.", true);
+    return id;
   }
 
   /* ---------- block library ---------- */
   var sheetTarget = null, sheetOpener = null;
   function present(type){ return Object.keys(state.blocks).some(function(id){ return state.blocks[id].type === type; }); }
   function openSheet(target, opener){
+    if(libraryMode === "browser") return openBrowser(target, opener);
     closeMenu();
     sheetTarget = target; sheetOpener = opener || document.activeElement;
     el.sheetWhere.textContent = target
@@ -2255,6 +2413,7 @@
     setTimeout(function(){ el.sheetSearch.focus(); }, 60);
   }
   function closeSheet(silent){
+    closeBrowser(silent);
     if(!body.classList.contains("cb-open")) return;
     setRight(false);
     el.grid.querySelectorAll(".gap-region.is-target").forEach(function(n){ n.classList.remove("is-target"); });
@@ -2306,6 +2465,134 @@
     var rm = e.target.closest(".tile-remove"); if(rm) return removeBlock(rm.closest(".tile").dataset.id);
     var more = e.target.closest(".tile-more"); if(more) return toggleMenu(more);
   });
+
+
+  /* ---------- block browser (the alternative to the drawer) ----------
+     Opened through openSheet(), so every "Add a block" entry point and every
+     empty cell reaches it. One block at a time: click selects, Insert or
+     Enter adds, double-click adds. The top match is always selected, so
+     typing then Enter adds it. Opened from the toolbar, the new block lands
+     in the first free space and is picked up for moving straight away. */
+  var libraryMode = "browser";
+  var br = { target:null, opener:null, cat:"all", sel:null };
+  function brMatches(t){
+    var q = el.brSearch.value.trim().toLowerCase(), d = CATALOG[t];
+    return !q || (d.title + " " + d.desc).toLowerCase().indexOf(q) > -1;
+  }
+  function brCanAdd(t){ return CATALOG[t].multi || !present(t); }
+  function openBrowser(target, opener){
+    closeMenu();
+    br.target = target; br.opener = opener || document.activeElement; br.cat = "all"; br.sel = null;
+    el.brSearch.value = "";
+    el.brWhere.textContent = target
+      ? "Your block will go in the space you picked."
+      : "Your block will go in the first free space, ready for you to move.";
+    renderBrowser();
+    el.browser.showModal();
+    el.brSearch.focus();
+  }
+  function closeBrowser(silent){
+    if(!el.browser.open) return;
+    el.browser.close();
+    el.grid.querySelectorAll(".gap-region.is-target").forEach(function(n){ n.classList.remove("is-target"); });
+    if(!silent && br.opener && document.contains(br.opener)) br.opener.focus();
+  }
+  function renderBrowser(){
+    var q = el.brSearch.value.trim();
+    var inCat = function(t){ return br.cat === "all" || CATALOG[t].cat === br.cat; };
+    var all = Object.keys(CATALOG).sort(function(a, b){ return CATALOG[a].title.localeCompare(CATALOG[b].title); });
+    var shown = all.filter(function(t){ return inCat(t) && brMatches(t); });
+    // Like Moodle's own addable list: a block that allows one instance and is already here isn't offered.
+    var free = shown.filter(brCanAdd), used = shown.filter(function(t){ return !brCanAdd(t); });
+    if(free.indexOf(br.sel) < 0) br.sel = free[0] || null;
+
+    var focusedCat = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.cat;
+    el.brCats.innerHTML = CATS.filter(function(c){
+      return c.id !== "other" || all.some(function(t){ return CATALOG[t].cat === "other"; });
+    }).map(function(c){
+      var n = all.filter(function(t){ return (c.id === "all" || CATALOG[t].cat === c.id) && brMatches(t) && brCanAdd(t); }).length;
+      var on = c.id === br.cat;
+      return '<li><button class="blk-cat' + (on ? " is-current" : "") + '" data-cat="' + c.id + '" aria-pressed="' + on + '">'
+        + '<span>' + esc(c.label) + '</span><span class="blk-cat-count" aria-label="' + n + ' blocks">' + n + '</span></button></li>';
+    }).join("");
+    if(focusedCat){ var fb = el.brCats.querySelector('[data-cat="' + focusedCat + '"]'); if(fb) fb.focus(); }
+
+    el.brGrid.innerHTML = free.length ? free.map(brCard).join("")
+      : q ? '<div class="blk-none"><p>No blocks match "' + esc(q) + '"' + (br.cat === "all" ? "" : " in this category") + '.</p>'
+          + '<button class="btn btn-secondary" id="blkClear">Clear search</button></div>'
+      : '<div class="blk-none"><p>Every block here is already on your dashboard.</p></div>';
+    var first = el.brGrid.querySelector(".blk-card.is-selected") || el.brGrid.querySelector(".blk-card");
+    if(first) first.tabIndex = 0;
+
+    var cat = CATS.filter(function(c){ return c.id === br.cat; })[0];
+    el.brStatus.textContent = free.length + (free.length === 1 ? " block" : " blocks") + " you can add"
+      + (br.cat === "all" ? "" : " in " + cat.label) + (q ? ' matching "' + q + '"' : "")
+      + (used.length ? ". Blocks already on your dashboard aren't listed." : ".");
+    el.brInsert.disabled = !br.sel;
+  }
+  function brCard(t){
+    var d = CATALOG[t], sel = t === br.sel;
+    return '<div class="blk-card' + (sel ? " is-selected" : "") + '" role="option" tabindex="-1"'
+      + ' id="blk-' + t + '" data-type="' + t + '" aria-selected="' + sel + '">'
+      + (d.icon ? '<span class="blk-icon" aria-hidden="true"><i class="fa-solid ' + d.icon + '"></i></span>'
+                : '<span class="blk-icon is-fallback" aria-hidden="true">' + esc(d.mono) + '</span>')
+      + '<span class="blk-text"><span class="blk-head"><span class="blk-name">' + esc(d.title) + '</span></span>'
+      + '<span class="blk-desc">' + esc(d.desc) + '</span></span></div>';
+  }
+  /* Focus follows the arrow keys; selection follows focus. */
+  function brFocus(card){
+    el.brGrid.querySelectorAll(".blk-card").forEach(function(c){
+      c.tabIndex = -1; c.classList.remove("is-selected"); c.setAttribute("aria-selected", "false");
+    });
+    card.tabIndex = 0;
+    br.sel = card.dataset.type;
+    card.classList.add("is-selected"); card.setAttribute("aria-selected", "true");
+    el.brInsert.disabled = !br.sel;
+    card.focus();
+  }
+  function brStep(card, key){
+    var cards = [].slice.call(el.brGrid.querySelectorAll(".blk-card")), i = cards.indexOf(card);
+    var perRow = cards.filter(function(c){ return c.offsetTop === cards[0].offsetTop; }).length || 1;
+    var j = { ArrowRight:i + 1, ArrowLeft:i - 1, ArrowDown:i + perRow, ArrowUp:i - perRow, Home:0, End:cards.length - 1 }[key];
+    if(key === "ArrowUp" && j < 0) return el.brSearch.focus();
+    brFocus(cards[Math.max(0, Math.min(cards.length - 1, j))]);
+  }
+  function brInsert(type){
+    type = type || br.sel;
+    if(!type || !brCanAdd(type)) return;
+    var target = br.target;
+    closeBrowser(true);
+    var id = addBlock(type, target);
+    if(!target && id && tiles[id]) kbStart(id, "move", tiles[id].querySelector(".tile-grip"));
+  }
+  el.brSearch.addEventListener("input", renderBrowser);
+  el.brSearch.addEventListener("keydown", function(e){
+    if(e.key === "Enter"){ e.preventDefault(); brInsert(); }
+    else if(e.key === "ArrowDown"){
+      var c = el.brGrid.querySelector(".blk-card.is-selected") || el.brGrid.querySelector(".blk-card");
+      if(c){ e.preventDefault(); brFocus(c); }
+    }
+  });
+  el.brCats.addEventListener("click", function(e){
+    var b = e.target.closest(".blk-cat"); if(!b) return;
+    br.cat = b.dataset.cat; br.sel = null; renderBrowser();
+  });
+  el.brGrid.addEventListener("click", function(e){
+    if(e.target.closest("#blkClear")){ el.brSearch.value = ""; renderBrowser(); return el.brSearch.focus(); }
+    var c = e.target.closest(".blk-card"); if(c) brFocus(c);
+  });
+  el.brGrid.addEventListener("dblclick", function(e){
+    var c = e.target.closest(".blk-card"); if(c) brInsert(c.dataset.type);
+  });
+  el.brGrid.addEventListener("keydown", function(e){
+    var c = e.target.closest(".blk-card"); if(!c) return;
+    if(e.key === "Enter" || e.key === " "){ e.preventDefault(); brInsert(c.dataset.type); }
+    else if(/^(Arrow|Home$|End$)/.test(e.key)){ e.preventDefault(); brStep(c, e.key); }
+  });
+  el.brInsert.addEventListener("click", function(){ brInsert(); });
+  document.getElementById("blkCancel").addEventListener("click", function(){ closeBrowser(); });
+  document.getElementById("blkClose").addEventListener("click", function(){ closeBrowser(); });
+  el.browser.addEventListener("cancel", function(e){ e.preventDefault(); closeBrowser(); });
 
   /* ---------- block actions menu: only what still means something here ---------- */
   var menuFor = null;
@@ -2437,6 +2724,7 @@
     group("modeSwitch", function(v){ setEdit(v === "edit"); });
     group("contentSwitch", function(v){ seed(v); refresh({ animate:false }); });
     group("themeSwitch", function(v){ body.classList.toggle("theme-dark", v === "dark"); });
+    group("libSwitch", function(v){ closeSheet(true); libraryMode = v; });
     group("sixSwitch", function(v){ TH.six = +v; state.cols = 0; measureCols(); });
     onEditChange = sync; sync();
   })();
@@ -2852,6 +3140,19 @@ Decisions:
   - Drag-time cell guides are --text-muted at full opacity (4.6:1 light); the 55% guides measured 1.7:1.
   - Reset asks first and has no undo: on the server it deletes the page and its blocks (my_reset_page).
   - The dashboard is not capped at 1440 (MDL-89636 sets max-width:none on /my); only the top navigation keeps the cap.
+  - Block library has two forms, switched in State: a Confluence-style browser (default) and the earlier drawer. Both open
+    through openSheet(), so every Add entry point and every empty cell reaches whichever is on.
+  - Browser: one block at a time. Click selects, Insert / Enter / double-click adds; the top match is always selected, so
+    type then Enter works. Opened from a cell it fills that cell; from the toolbar it takes the first free space and is picked
+    up (kbStart) so arrows move it at once. A modal covers the grid, so there is no drag-out from the browser.
+  - Categories and the two-line descriptions are invented: blocks report only a name and a title today. Real data would need
+    Block API metadata (natural home: MDL-89639). One icon tint for every card; activity-purpose colours already mean
+    something in MDS. No size chip and no Added/New badges (removed on review).
+  - Blocks already on the dashboard that allow one instance are not listed, as get_addable_blocks() already does.
+  - Fallback for a block that declares nothing (most third-party blocks): initials on a neutral tile, "Added to your site by an
+    administrator." for a description, the "Other blocks" category (listed only when non-empty), default size 2x3. Applied
+    once to CATALOG, so the drawer and the tile content get the same fallbacks.
+  - Selected card = primary border + inset bar, so it survives wireframe mode.
 Traps:
   - The shell's dev region declares function place() for the guides; a dashboard place() was silently overridden (every tile fell
     back to auto-flow). Dashboard code uses placeCell().
@@ -2860,6 +3161,7 @@ Traps:
   - The shell's overlay-mode rules re-show .toggle-col below 992px; the dashboard's hide rule is html-prefixed to win.
   - The more menu was placed from an offsetParent read while it was display:none (null, so body), then applied inside .layout:
     it landed 100px+ from its button. It is position:fixed now, measured from the button.
+  - The browser is a modal <dialog> in the top layer: annotations cannot sit over it, so its callout is on the Add button.
 -->
 
 <!-- SHELL-NOTES (inherited, do not edit here — change the template instead)
