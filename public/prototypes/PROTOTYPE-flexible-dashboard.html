@@ -51,6 +51,12 @@
     --border-subtle:#e9ecef; --border-default:#dee2e6; --border-ring:#8f959e; /* $mds-border-subtle/default, $mds-border-interactive-secondary-default */
     --primary:#0f6cbf; --primary-dark:#0c5699; --primary-active:#094173;    /* $mds-bg-interactive-primary-default/hover/active */
     --primary-light:#e7f0f9; --primary-subtle:#cfe2f2;                      /* $mds-bg-feedback-primary-light/subtle */
+    /* MDS Button / Choicebox / Dropdown values the dashboard mirrors (see the MDS mirror block below) */
+    --btn-secondary-bg:#dee2e6; --btn-secondary-hover:#ced4da;              /* $mds-bg-interactive-secondary-default/hover */
+    --border-interactive:#ced4da;                                           /* $mds-border-interactive-secondary-default (gray-400) */
+    --border-feedback-primary:#9fc4e5; --text-feedback-primary:#062b4c;     /* $mds-border-feedback-primary, $mds-text-feedback-primary */
+    --lh-xs:.75rem; --lh-h6:1.2rem;                                         /* $mds-line-height-paragraph-xs, -headings-6 */
+    --icon-xs:.75rem; --icon-sm:1rem; --icon-md:1.25rem;                   /* $mds-icons-xs/sm/md */
     --surface:#ffffff; --page-bg:#ffffff;                                   /* $mds-bg-surface-default */
     --ci-row-hover:#e9ecef;                                                 /* $mds-bg-nav-pill-hover */
     /* feedback: $mds-bg-feedback-{danger,success,warning,info}-default / -light */
@@ -136,6 +142,7 @@
     --activity-teal:#6a737b;    --activity-teal-bg:#e9ecef;
     --activity-purple:#6a737b;  --activity-purple-bg:#e9ecef;
     --activity-orange:#6a737b;  --activity-orange-bg:#e9ecef;
+    --border-feedback-primary:#8f959e; --text-feedback-primary:#1d2125;
     --on-primary:#ffffff; --on-primary-muted:rgba(255,255,255,.75);
     --focus-ring:2px solid var(--text-default);
     /* proto-lint-disable mds: a flat grey stands in for avatar art in wireframe */
@@ -535,6 +542,8 @@
     --hover-tint:rgba(255,255,255,.06); --hover-tint-strong:rgba(255,255,255,.1);
     --shadow-sm:0 .125rem .25rem rgba(0,0,0,.4); --shadow-md:0 .5rem 1rem rgba(0,0,0,.5); --shadow-lg:0 1rem 3rem rgba(0,0,0,.6);
     --focus-ring:2px solid var(--accent);
+    --btn-secondary-bg:#495057; --btn-secondary-hover:#6a737b; --border-interactive:#6a737b; /* gray-700 / gray-600 */
+    --border-feedback-primary:#0c5699; --text-feedback-primary:#cfe2f2;     /* blue-600 / blue-100 */
   }
 
   /* =====================  DASHBOARD PAGE  =====================
@@ -553,25 +562,36 @@
   .dash-greeting{ margin:0 0 var(--sp-md); font-size:var(--fs-h2); font-weight:var(--fw-medium); line-height:1.2; }
 
   /* ---- buttons: one primary, secondary outlined, tertiary text ---- */
+  /* ---- buttons: a mirror of MDS Button (lib/bundles/design-system/js/components/button) ----
+     .btn + one variant class = <Button variant=...>; .btn-sm = size="sm"; .btn-icon = an
+     icon-only ghost Button (no label). Same padding, type, radius and colours as the
+     component, so each one ports as a <Button>, not as bespoke CSS. */
   .btn{
     display:inline-flex; align-items:center; justify-content:center; gap:var(--sp-xs);
-    height:36px; padding:0 var(--sp-sm); border-radius:var(--r-md); border:1px solid transparent;
-    font-size:var(--fs-sm); font-weight:var(--fw-medium); cursor:pointer; white-space:nowrap;
-    background:transparent; color:var(--text-default);
+    padding:var(--sp-xs) var(--sp-sm); border:none; border-radius:var(--r-md);
+    font:inherit; font-size:var(--fs-md); font-weight:var(--fw-regular); line-height:var(--lh-xs);
+    white-space:nowrap; cursor:pointer; background:var(--primary); color:var(--text-inverse);
   }
-  .btn:disabled{ cursor:default; opacity:.5; }
-  .btn-primary{ background:var(--primary); color:var(--on-primary); }
+  .btn i{ font-size:var(--icon-xs); width:var(--icon-xs); line-height:1; }
+  .btn:focus-visible, .btn-icon:focus-visible{ outline:2px solid var(--primary); outline-offset:1px; }
   .btn-primary:hover:not(:disabled){ background:var(--primary-dark); }
-  .btn-secondary{ background:var(--surface); border-color:var(--border-ring); }
-  .btn-secondary:hover:not(:disabled){ background:var(--bg-strong); }
-  .btn-tertiary{ color:var(--accent); padding:0 var(--sp-xs); }
-  .btn-tertiary:hover:not(:disabled){ background:var(--hover-tint-strong); }
+  .btn-primary:active:not(:disabled){ background:var(--primary-active); }
+  .btn-secondary{ background:var(--btn-secondary-bg); color:var(--text-subtle); }
+  .btn-secondary:hover:not(:disabled){ background:var(--btn-secondary-hover); }
+  .btn-ghost{ background:transparent; color:var(--text-subtle); }
+  .btn-ghost:hover:not(:disabled){ background:var(--btn-secondary-hover); }
+  .btn-danger{ background:var(--danger); color:var(--text-inverse); }
+  .btn-danger:hover:not(:disabled){ background:var(--danger-text); }
+  .btn-sm{ padding:var(--sp-xxs) var(--sp-xs); border-radius:var(--r-sm); font-size:var(--fs-sm); font-weight:var(--fw-medium); }
+  .btn:disabled{ cursor:default; background:var(--primary-subtle); }
+  .btn-secondary:disabled, .btn-ghost:disabled{ background:var(--btn-secondary-bg); color:var(--text-muted); }
+  .btn-ghost:disabled{ background:transparent; }
   .btn-icon{
-    width:32px; height:32px; padding:0; flex:0 0 32px; border:none; border-radius:var(--r-md);
-    background:transparent; color:var(--text-subtle); cursor:pointer;
-    display:inline-flex; align-items:center; justify-content:center; font-size:var(--fs-sm);
+    display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto;
+    padding:var(--sp-xs); border:none; border-radius:var(--r-xl); background:transparent; color:var(--text-subtle); cursor:pointer;
   }
-  .btn-icon:hover{ background:var(--hover-tint-strong); color:var(--text-default); }
+  .btn-icon i{ font-size:var(--icon-xs); width:var(--icon-xs); line-height:1; }
+  .btn-icon:hover{ background:var(--btn-secondary-hover); }
 
   /* ---- edit toolbar: sticky, so "Add a block" is always in reach on a long page ---- */
   .dash-toolbar{
@@ -707,17 +727,20 @@
   .dash-empty .em-actions{ display:flex; gap:var(--sp-xs); flex-wrap:wrap; justify-content:center; margin-top:var(--sp-xs); }
 
   /* ---- block actions menu ---- */
+  /* mirrors MDS DropdownMenu + DropdownItemAction: 1px border-default, radius md, padding xxs,
+     min width 13.5625rem, no shadow; items 16px regular in text-subtle */
   .tile-menu{
-    position:fixed; z-index:65; min-width:220px; padding:var(--sp-xxs); display:none;
-    background:var(--surface); border:1px solid var(--border-subtle); border-radius:var(--r-md); box-shadow:var(--shadow-md);
+    position:fixed; z-index:65; min-width:13.5625rem; padding:var(--sp-xxs); display:none;
+    background:var(--surface); border:1px solid var(--border-default); border-radius:var(--r-md);
   }
   .tile-menu.open{ display:block; }
   .tile-menu button{
-    display:flex; align-items:center; gap:var(--sp-xs); width:100%; height:36px; padding:0 var(--sp-sm);
-    border:none; background:transparent; border-radius:var(--r-sm); cursor:pointer;
-    font-size:var(--fs-sm); color:var(--text-default); text-align:left;
+    display:flex; align-items:center; gap:var(--sp-xs); width:100%; padding:var(--sp-xs) var(--sp-sm);
+    border:none; background:transparent; border-radius:var(--r-xs); cursor:pointer;
+    font:inherit; font-size:var(--fs-md); line-height:var(--lh-md); color:var(--text-subtle); text-align:left;
   }
-  .tile-menu button:hover, .tile-menu button:focus-visible{ background:var(--hover-tint-strong); }
+  .tile-menu button:hover{ background:var(--primary-light); color:var(--primary); }
+  .tile-menu button:focus-visible{ outline:2px solid var(--primary); outline-offset:1px; }
   .tile-menu i{ width:16px; color:var(--text-muted); }
 
   /* ---- block library: the existing block drawer, opened over the page ----
@@ -750,7 +773,6 @@
   .pick .cb-block-head{ padding-right:var(--sp-sm); }
   .pick .cb-block-title{ flex:1 1 auto; min-width:0; }
   .pick .cb-block-body p{ margin:0; }
-  .pick-add{ height:28px; padding:0 var(--sp-sm); }
   .pick-present{ font-size:var(--fs-sm); color:var(--text-muted); display:inline-flex; gap:var(--sp-xxs); align-items:center; white-space:nowrap; }
   .pick.is-present{ cursor:default; }
   .pick.is-present .grip{ visibility:hidden; }
@@ -760,86 +782,104 @@
   .sheet-none{ padding:var(--sp-lg) 0; text-align:center; color:var(--text-muted); font-size:var(--fs-sm); }
   .tile.is-ghost .tile-body{ display:flex; align-items:center; justify-content:center; color:var(--text-muted); }
 
-  /* ---- block browser: a Confluence-style alternative to the drawer ----
-     One modal: search and a grid of cards, Insert/Close at the foot.
-     Selection is never colour alone (border weight + inset bar), so it
-     survives wireframe mode. Every icon tile shares one tint: borrowing the
-     activity-purpose colours would say something they don't. */
+  /* ---- block browser ----
+     Laid out like core's modal (core/modal: header with an h2.modal-title and a close
+     button, body, footer with the secondary action before the primary one). There is no
+     MDS or ESM dialog yet, so it is a native <dialog>, as the MDL-89636 branch's own
+     dialogs are. The search field follows core/search_input_auto (Bootstrap form-control
+     plus a clear button) with the leading icon of core/search_input_navbar_inline. Each
+     card is an MDS Choicebox (a radio styled as a card), so the list is a native radio
+     group: arrow keys move and select, and it is one tab stop. */
   .blk-browser{
-    width:min(960px, calc(100vw - 2 * var(--sp-xl))); height:min(760px, calc(100vh - 2 * var(--sp-xl)));
-    max-width:none; max-height:none; padding:0; border:none; border-radius:var(--r-xl);
+    width:min(1040px, calc(100vw - 2 * var(--sp-xl))); height:min(760px, calc(100vh - 2 * var(--sp-xl)));
+    max-width:none; max-height:none; padding:0; border:1px solid var(--border-default); border-radius:var(--r-md);
     background:var(--surface); color:var(--text-default); box-shadow:var(--shadow-lg); overflow:hidden;
   }
   .blk-browser[open]{ display:grid; grid-template-rows:auto minmax(0, 1fr) auto; }
   .blk-browser::backdrop{ background:var(--overlay); }
-  .blk-top{ display:flex; align-items:center; justify-content:space-between; gap:var(--sp-md); padding:var(--sp-md) var(--sp-xl) var(--sp-sm); }
-  .blk-top h2{ margin:0; font-size:var(--fs-h3); font-weight:var(--fw-bold); }
+  .blk-top{ display:flex; align-items:center; justify-content:space-between; gap:var(--sp-md); padding:var(--sp-md); border-bottom:1px solid var(--border-default); }
+  .blk-top h2{ margin:0; font-size:var(--fs-lead); font-weight:var(--fw-bold); line-height:var(--lh-md); }
+  /* mirrors MDS CloseButton: a 20px mark at 60% opacity */
   .blk-close{
-    width:var(--btn); height:var(--btn); padding:0; border:none; border-radius:var(--r-md); background:transparent;
-    color:var(--text-default); font-size:var(--fs-lead); cursor:pointer;
+    width:var(--icon-md); height:var(--icon-md); padding:0; border:none; border-radius:var(--r-xs); background:transparent;
+    color:var(--text-default); font-size:var(--icon-md); line-height:1; opacity:.6; cursor:pointer;
   }
-  .blk-close:hover{ background:var(--hover-tint-strong); }
-  .blk-body{ display:flex; flex-direction:column; min-height:0; padding:0 var(--sp-xl); }
+  .blk-close:hover{ opacity:.75; }
+  .blk-close:focus-visible{ outline:2px solid var(--primary); outline-offset:0; opacity:1; }
+  .blk-body{ display:flex; flex-direction:column; min-height:0; padding:var(--sp-md) var(--sp-md) 0; }
   .blk-main{ display:flex; flex-direction:column; min-height:0; }
   .blk-search{ position:relative; flex:0 0 auto; }
-  .blk-search > i{ position:absolute; left:var(--sp-md); top:50%; transform:translateY(-50%); color:var(--text-muted); }
+  .blk-search > i{ position:absolute; left:var(--sp-sm); top:50%; transform:translateY(-50%); color:var(--text-muted); }
   .blk-search input{
-    width:100%; height:48px; padding:0 96px 0 44px; border:1px solid var(--border-ring); border-radius:var(--r-md);
-    background:var(--surface); color:var(--text-default); font:inherit; font-size:var(--fs-md);
+    width:100%; padding:.375rem 2.25rem; border:1px solid var(--border-ring); border-radius:var(--r-sm);
+    background:var(--surface); color:var(--text-default); font:inherit; font-size:var(--fs-md); line-height:var(--lh-md);
   }
-  .blk-enter{
-    position:absolute; right:var(--sp-xs); top:50%; transform:translateY(-50%);
-    display:inline-flex; align-items:center; gap:var(--sp-xxs); padding:var(--sp-xxs) var(--sp-xs);
-    border-radius:var(--r-sm); background:var(--bg-strong); color:var(--text-subtle); font-size:var(--fs-sm);
+  .blk-search input::-webkit-search-cancel-button{ display:none; }
+  .blk-clear{
+    position:absolute; right:var(--sp-xxs); top:50%; transform:translateY(-50%);
+    padding:var(--sp-xs); border:none; background:transparent; color:var(--text-muted); line-height:1; cursor:pointer; border-radius:var(--r-xs);
   }
+  .blk-clear[hidden]{ display:none; }
+  .blk-clear:focus-visible{ outline:2px solid var(--primary); outline-offset:0; }
   .blk-where{ margin:var(--sp-sm) 0 var(--sp-xs); font-size:var(--fs-sm); color:var(--text-subtle); }
   .blk-status{ margin:0 0 var(--sp-xs); font-size:var(--fs-sm); color:var(--text-muted); }
+  /* Choicebox's wrapper has a 320px minimum, so the grid fits as many 320px columns as it can: three at 1040. */
   .blk-grid{
-    flex:1 1 auto; min-height:0; overflow:auto; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr));
-    align-content:start; gap:var(--sp-xs); padding:var(--sp-xxs) var(--sp-xxs) var(--sp-md);
+    flex:1 1 auto; min-height:0; overflow:auto; display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+    align-content:start; gap:var(--sp-xs); padding:var(--sp-xxs) var(--sp-xxs) var(--sp-md); margin:0 calc(-1 * var(--sp-xxs));
   }
-  .blk-card{
-    display:flex; gap:var(--sp-sm); align-items:flex-start; padding:var(--sp-sm); min-width:0;
-    border:1px solid transparent; border-radius:var(--r-md); cursor:pointer;
+  /* ---- MDS Choicebox mirror (lib/bundles/design-system/js/components/choicebox) ---- */
+  .mds-choicebox-wrapper{ display:block; align-self:start; min-width:320px; }
+  .mds-choicebox-input{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; pointer-events:none; }
+  .mds-choicebox{
+    display:flex; align-items:flex-start; gap:var(--sp-xs); width:100%; box-sizing:border-box;
+    padding:var(--sp-xs) var(--sp-sm); border:1px solid var(--border-default); border-radius:var(--r-md);
+    background:var(--bg-subtle); cursor:pointer;
   }
-  .blk-card:hover{ background:var(--hover-tint); }
-  /* the second border pixel is an inset shadow, so selecting a card never shifts its content */
-  .blk-card.is-selected{ border-color:var(--primary); background:var(--primary-light); box-shadow:inset 0 0 0 1px var(--primary), inset 4px 0 0 var(--primary); }
-  .blk-icon{
-    flex:0 0 48px; height:48px; display:flex; align-items:center; justify-content:center;
-    border-radius:var(--r-md); border:1px solid var(--border-default); background:var(--primary-light); color:var(--primary); font-size:var(--fs-lead);
+  .mds-choicebox-input:not(:checked) + .mds-choicebox:hover{ background:var(--surface); }
+  .mds-choicebox-input:not(:checked) + .mds-choicebox:active{ background:var(--bg-strong); }
+  .mds-choicebox-input:checked + .mds-choicebox{ background:var(--primary-light); border-color:var(--border-feedback-primary); }
+  .mds-choicebox-input:checked + .mds-choicebox:hover{ background:var(--bg-subtle); }
+  .mds-choicebox-icon{ display:flex; align-items:center; justify-content:center; flex-shrink:0; padding:var(--sp-xxs); font-size:var(--icon-sm); color:var(--text-default); }
+  .mds-choicebox-input:checked + .mds-choicebox .mds-choicebox-icon{ color:var(--text-feedback-primary); }
+  .mds-choicebox-labels{ display:flex; flex-direction:column; flex:1 0 0; gap:var(--sp-xxs); padding:var(--sp-xxs) 0; min-width:0; }
+  .mds-choicebox-label{ font-size:var(--fs-md); font-weight:var(--fw-medium); line-height:var(--lh-h6); color:var(--text-default); word-break:break-word; }
+  .mds-choicebox-input:checked + .mds-choicebox .mds-choicebox-label{ color:var(--text-feedback-primary); }
+  .mds-choicebox-supporting-text{ font-size:var(--fs-sm); line-height:var(--lh-sm); color:var(--text-subtle); word-break:break-word; }
+  .mds-choicebox-indicator{ position:relative; display:flex; align-items:center; justify-content:center; width:16px; height:16px; flex-shrink:0; margin-top:calc(var(--sp-xxs) + (var(--lh-h6) - 1rem) / 2); }
+  .mds-choicebox-indicator::after{ content:""; width:16px; height:16px; box-sizing:border-box; border-radius:var(--r-pill); border:1px solid var(--border-interactive); background:var(--bg-subtle); }
+  .mds-choicebox-input:checked + .mds-choicebox .mds-choicebox-indicator::after{ border:none; background:var(--primary); }
+  /* the checkmark is MDS's own mask, so its colour follows the token */
+  .mds-choicebox-input:checked + .mds-choicebox .mds-choicebox-indicator::before{
+    content:""; position:absolute; width:16px; height:16px; background:var(--text-inverse);
+    -webkit-mask:url('data:image/svg+xml,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20%3E%20%3Cpath%20d%3D%22M6.05791%2011.1853C6.47273%2011.6049%207.1138%2011.6049%207.52862%2011.1853L12.3556%206.30245C12.7704%205.88283%2012.7704%205.23433%2012.3556%204.81471C11.9407%204.3951%2011.2997%204.3951%2010.8848%204.81471L6.81212%208.93461L5.11515%207.25613C4.70034%206.83651%204.05926%206.83651%203.64444%207.25613C3.22963%207.67575%203.22963%208.32425%203.64444%208.74387L6.05791%2011.1853Z%22%20fill%3D%22%23000000%22%20%2F%3E%20%3C%2Fsvg%3E') center / cover no-repeat; mask:url('data:image/svg+xml,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20%3E%20%3Cpath%20d%3D%22M6.05791%2011.1853C6.47273%2011.6049%207.1138%2011.6049%207.52862%2011.1853L12.3556%206.30245C12.7704%205.88283%2012.7704%205.23433%2012.3556%204.81471C11.9407%204.3951%2011.2997%204.3951%2010.8848%204.81471L6.81212%208.93461L5.11515%207.25613C4.70034%206.83651%204.05926%206.83651%203.64444%207.25613C3.22963%207.67575%203.22963%208.32425%203.64444%208.74387L6.05791%2011.1853Z%22%20fill%3D%22%23000000%22%20%2F%3E%20%3C%2Fsvg%3E') center / cover no-repeat;
   }
-  .blk-text{ min-width:0; flex:1 1 auto; display:flex; flex-direction:column; gap:var(--sp-xxs); }
-  .blk-head{ min-width:0; }
-  .blk-name{ font-weight:var(--fw-semibold); min-width:0; overflow-wrap:anywhere; }
-  .blk-desc{
-    color:var(--text-subtle); font-size:var(--fs-sm); line-height:var(--lh-md);
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  .mds-choicebox-input:focus-visible + .mds-choicebox .mds-choicebox-indicator::after{ outline:2px solid var(--primary); outline-offset:1px; }
+  @media (forced-colors:active){
+    .mds-choicebox{ border-color:ButtonText; }
+    .mds-choicebox-input:checked + .mds-choicebox{ border-color:Highlight; }
   }
-  /* Fallback for a block with no icon of its own (most third-party blocks): its
-     initials on a neutral tile, so several add-ons still tell apart at a glance. */
-  /* A plugin's own icon: marketplace icons are not square (Completion Progress is
-     100x38), so fit it inside the tile rather than crop or stretch it. */
-  .blk-icon.is-image{ background:var(--surface); padding:var(--sp-xxs); }
-  .blk-icon img{ display:block; max-width:100%; max-height:100%; object-fit:contain; }
-  body.wireframe .blk-icon img{ filter:grayscale(1); }
-  .blk-icon.is-fallback{ background:var(--bg-strong); color:var(--text-subtle); font-size:var(--fs-md); font-weight:var(--fw-bold); }
+  /* A block's own icon is an <i> or an <svg> in Choicebox's icon slot (the only elements it
+     accepts). A Marketplace image goes in as an <svg><image>, sized to the slot's height;
+     initials go in as an <i>. */
+  .blk-img{ display:block; height:var(--icon-sm); width:auto; }
+  body.wireframe .blk-img{ filter:grayscale(1); }
+  .blk-initials{ display:inline-flex; align-items:center; justify-content:center; min-width:var(--icon-sm); height:var(--icon-sm); padding:0 2px;
+    border-radius:var(--r-xs); background:var(--bg-strong); color:var(--text-subtle); font-style:normal; font-size:var(--fs-sm); line-height:1; font-weight:var(--fw-bold); }
   .blk-none{ grid-column:1 / -1; padding:var(--sp-xl) 0; text-align:center; color:var(--text-muted); }
   .blk-none button{ margin-top:var(--sp-sm); }
-  .blk-foot{ display:flex; align-items:center; justify-content:flex-end; gap:var(--sp-xs); padding:var(--sp-md) var(--sp-xl); border-top:1px solid var(--border-subtle); }
-  /* Left-aligned: a way out to find more, kept apart from Insert/Close. A new tab, so the edit isn't lost. */
-  .blk-discover{ margin-right:auto; display:inline-flex; align-items:center; gap:var(--sp-xxs); color:var(--primary); font-size:var(--fs-sm); text-decoration:underline; }
-  .blk-discover i{ font-size:var(--fs-sm); }
-  @media (max-width:1023.98px){ .blk-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+  .blk-foot{ display:flex; align-items:center; justify-content:flex-end; gap:var(--sp-xs); padding:var(--sp-md); border-top:1px solid var(--border-default); }
+  /* mirrors MDS Link (primary) with an end icon; left-aligned, apart from the buttons. */
+  .blk-discover{ margin-right:auto; display:inline-flex; align-items:center; gap:var(--sp-xxs); color:var(--primary); font-size:var(--fs-md); text-decoration:underline; }
+  .blk-discover:hover{ color:var(--primary-dark); }
+  .blk-discover i{ font-size:var(--icon-xs); }
   /* Below tablet: full screen, one column of cards. */
   @media (max-width:767.98px){
-    .blk-browser{ width:100vw; height:100vh; border-radius:0; }
-    .blk-top, .blk-body, .blk-foot{ padding-left:var(--sp-md); padding-right:var(--sp-md); }
-    .blk-grid{ grid-template-columns:minmax(0, 1fr); }
-    .blk-enter{ display:none; }
-    .blk-search input{ padding-right:var(--sp-sm); }
+    .blk-browser{ width:100vw; height:100vh; border-radius:0; border:none; }
     .blk-foot{ flex-wrap:wrap; }
     .blk-discover{ flex:1 1 100%; margin:0 0 var(--sp-xs); }
+    .mds-choicebox-wrapper{ min-width:0; }
+    .blk-grid{ grid-template-columns:minmax(0, 1fr); }
   }
 
   /* ---- reset confirmation ---- */
@@ -851,8 +891,6 @@
   .dash-confirm h2{ margin:0 0 var(--sp-xs); font-size:var(--fs-lead); font-weight:var(--fw-semibold); }
   .dash-confirm p{ margin:0; color:var(--text-subtle); line-height:var(--lh-md); }
   .dash-confirm-actions{ display:flex; justify-content:flex-end; gap:var(--sp-xs); margin-top:var(--sp-lg); }
-  .btn-danger{ background:var(--danger); color:var(--on-primary); }
-  .btn-danger:hover{ background:var(--danger-text); }
 
   /* ---- toast ---- */
   .toast{
@@ -1240,8 +1278,8 @@
               <span class="tb-hint">Changes save automatically.</span>
             </div>
             <div class="tb-actions">
-              <button class="btn btn-tertiary" id="undoBtn" disabled><i class="fa-solid fa-rotate-left" aria-hidden="true"></i>Undo</button>
-              <button class="btn btn-tertiary" id="resetBtn">Reset to default</button>
+              <button class="btn btn-ghost" id="undoBtn" disabled><i class="fa-solid fa-rotate-left" aria-hidden="true"></i>Undo</button>
+              <button class="btn btn-ghost" id="resetBtn">Reset page to default</button>
               <button class="btn btn-secondary" id="doneBtn">Done</button>
               <button class="btn btn-primary" id="addBtn"
                       data-annot="Opens the block browser: search or browse, then Insert. State › Block library brings back the drawer."
@@ -1256,7 +1294,7 @@
             <button class="add-zone" id="addZone"><i class="fa-solid fa-plus" aria-hidden="true"></i>Add a block</button>
 
             <div class="dash-empty" id="dashEmpty">
-              <span class="em-icon" aria-hidden="true"><i class="fa-solid fa-table-cells-large"></i></span>
+              <span class="em-icon" aria-hidden="true"><i class="fa-solid fa-gauge"></i></span>
               <h2>Your dashboard is empty</h2>
               <p id="emptyText">Add blocks to see your courses, deadlines and calendar in one place. You can move and resize them any time.</p>
               <div class="em-actions">
@@ -1293,19 +1331,19 @@
                   <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
                   <input type="search" id="blkSearch" placeholder="Search blocks" aria-label="Search blocks"
                          aria-describedby="blkWhere" autocomplete="off">
-                  <span class="blk-enter" aria-hidden="true"><i class="fa-solid fa-arrow-turn-down fa-rotate-90"></i>Enter</span>
+                  <button class="blk-clear" id="blkSearchClear" aria-label="Clear search input" hidden><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                 </div>
                 <p class="blk-where" id="blkWhere"></p>
                 <p class="blk-status" id="blkStatus" role="status"></p>
-                <div class="blk-grid" id="blkGrid" role="listbox" aria-label="Blocks"></div>
+                <div class="blk-grid" id="blkGrid" role="radiogroup" aria-label="Blocks"></div>
               </div>
             </div>
             <div class="blk-foot">
               <a class="blk-discover" id="blkDiscover" href="https://marketplace.moodle.com/?type=2" target="_blank" rel="noopener">
                 Discover more blocks on Moodle Marketplace<i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
-                <span class="visually-hidden">(opens in a new tab)</span></a>
+                <span class="visually-hidden">Opens in new window</span></a>
+              <button class="btn btn-secondary" id="blkCancel">Cancel</button>
               <button class="btn btn-primary" id="blkInsert">Insert</button>
-              <button class="btn btn-secondary" id="blkCancel">Close</button>
             </div>
           </dialog>
 
@@ -1679,27 +1717,27 @@
   /* Descriptions are invented: Moodle blocks only report a name and a title
      today. See NOTES. */
   var CATALOG = {
-    myoverview:           { title:"Course overview", icon:"fa-graduation-cap", w:4, h:5, min:{ w:2, h:3 },
+    myoverview:           { title:"Course overview", icon:"fa-solid fa-graduation-cap", w:4, h:5, min:{ w:2, h:3 },
                             desc:"All your courses with progress bars, plus filters and search to find the one you need." },
-    timeline:             { title:"Timeline", icon:"fa-list-check", w:4, h:4, min:{ w:2, h:3 },
+    timeline:             { title:"Timeline", icon:"fa-regular fa-clock", w:4, h:4, min:{ w:2, h:3 },
                             desc:"What's due next and what's overdue, across every course, sorted by date or by course." },
-    calendar_month:       { title:"Calendar", icon:"fa-calendar", w:2, h:4, min:{ w:2, h:4 },
+    calendar_month:       { title:"Calendar", icon:"fa-regular fa-calendar", w:2, h:4, min:{ w:2, h:4 },
                             desc:"This month at a glance, with course, group and site events you can open in one click." },
-    recentlyaccesseditems:{ title:"Recently accessed items", icon:"fa-clock-rotate-left", w:2, h:3,
+    recentlyaccesseditems:{ title:"Recently accessed items", icon:"fa-solid fa-clock-rotate-left", w:2, h:3,
                             desc:"Jump straight back into the last activities and resources you opened." },
-    badges:               { title:"Latest badges", icon:"fa-award", w:2, h:2,
+    badges:               { title:"Latest badges", icon:"fa-solid fa-award", w:2, h:2,
                             desc:"The badges you've earned most recently, with a link to all of them." },
-    online_users:         { title:"Online users", icon:"fa-user-group", w:2, h:3,
+    online_users:         { title:"Online users", icon:"fa-solid fa-users", w:2, h:3,
                             desc:"Who else is on the site right now, from the last five minutes." },
-    html:                 { title:"Text", icon:"fa-align-left", w:3, h:2, multi:true, configurable:true,
+    html:                 { title:"Text", icon:"fa-solid fa-align-left", w:3, h:2, multi:true, configurable:true,
                             desc:"Your own text, links and images. Add as many as you like." },
-    calendar_upcoming:    { title:"Upcoming events", icon:"fa-calendar-day", w:2, h:3,
+    calendar_upcoming:    { title:"Upcoming events", icon:"fa-regular fa-calendar-check", w:2, h:3,
                             desc:"The next few events from your calendar, with their dates and times." },
-    starredcourses:       { title:"Starred courses", icon:"fa-star", w:3, h:3,
+    starredcourses:       { title:"Starred courses", icon:"fa-solid fa-star", w:3, h:3,
                             desc:"The courses you've starred, pinned in one place and one click away." },
-    private_files:        { title:"Private files", icon:"fa-folder", w:2, h:3,
+    private_files:        { title:"Private files", icon:"fa-solid fa-folder", w:2, h:3,
                             desc:"Files only you can see, ready to attach or use in any course." },
-    lp:                   { title:"Learning plans", icon:"fa-route", w:2, h:3,
+    lp:                   { title:"Learning plans", icon:"fa-solid fa-list-check", w:2, h:3,
                             desc:"Your learning plans, and the competencies waiting for you to review them." },
     /* Third-party blocks: a name, and nothing else. Completion Progress gets
        its icon and summary from the Marketplace (see MARKET below) when the
@@ -1773,7 +1811,7 @@
       default:
         var d = CATALOG[type];
         // A third-party block renders its own content; the prototype can only stand in for it.
-        return '<div class="b-zero"><i class="fa-solid ' + (d.icon || "fa-cube") + '" aria-hidden="true"></i><span>'
+        return '<div class="b-zero"><i class="' + (d.icon || "fa-regular fa-square-plus") + '" aria-hidden="true"></i><span>'
           + esc(d.thirdparty ? d.title + " shows its own content here." : d.desc) + '</span></div>';
     }
     function ev(name, course, due){
@@ -1812,7 +1850,7 @@
     browser:document.getElementById("blkBrowser"),
     brSearch:document.getElementById("blkSearch"), brWhere:document.getElementById("blkWhere"),
     brStatus:document.getElementById("blkStatus"), brGrid:document.getElementById("blkGrid"),
-    brInsert:document.getElementById("blkInsert")
+    brInsert:document.getElementById("blkInsert"), brClear:document.getElementById("blkSearchClear")
   };
   var tiles = {};                     // id -> tile element (created once, reused, so content never re-renders)
 
@@ -1888,11 +1926,11 @@
     s.setAttribute("aria-labelledby", "tt-" + id);
     s.innerHTML =
       '<header class="tile-head">'
-      + '<button class="btn-icon tile-grip" aria-pressed="false" aria-describedby="gripHelp" aria-label="Move ' + esc(title) + '"><i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>'
+      + '<button class="btn-icon tile-grip" aria-pressed="false" aria-describedby="gripHelp" aria-label="Move ' + esc(title) + '"><i class="fa-solid fa-arrows-up-down-left-right" aria-hidden="true"></i></button>'
       + '<h2 class="tile-title" id="tt-' + id + '" title="' + esc(title) + '">' + esc(title) + '</h2>'
       + '<div class="tile-actions">'
       + '<button class="btn-icon tile-more" aria-haspopup="menu" aria-expanded="false" aria-label="More actions for ' + esc(title) + '"><i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i></button>'
-      + '<button class="btn-icon tile-remove" aria-label="Remove ' + esc(title) + '"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>'
+      + '<button class="btn-icon tile-remove" aria-label="Remove ' + esc(title) + '"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>'
       + '</div></header>'
       + '<div class="tile-body">' + blockHTML(b.type) + '</div>'
       + '<button class="tile-resize" aria-pressed="false" aria-describedby="resizeHelp" aria-label="Resize ' + esc(title) + '"></button>'
@@ -2418,10 +2456,10 @@
     var card = function(t, on){
       var d = CATALOG[t];
       return '<div class="cb-block pick' + (on ? " is-present" : "") + '" data-type="' + t + '">'
-        + '<div class="cb-block-head"><span class="grip" aria-hidden="true"><i class="fa-solid fa-grip-vertical"></i></span>'
+        + '<div class="cb-block-head"><span class="grip" aria-hidden="true"><i class="fa-solid fa-arrows-up-down-left-right"></i></span>'
         + '<span class="cb-block-title">' + esc(d.title) + '</span>'
         + (on ? '<span class="pick-present"><i class="fa-solid fa-check" aria-hidden="true"></i>Added</span>'
-              : '<button class="btn btn-secondary pick-add" aria-label="Add ' + esc(d.title) + '">Add</button>')
+              : '<button class="btn btn-secondary btn-sm pick-add" aria-label="Add ' + esc(d.title) + '">Add</button>')
         + '</div>'
         + (on ? "" : '<div class="cb-block-divider"></div><div class="cb-block-body"><p>' + esc(d.desc) + '</p></div>')
         + '</div>';
@@ -2502,42 +2540,37 @@
           + '<button class="btn btn-secondary" id="blkClear">Clear search</button></div>'
       : '<div class="blk-none"><p>Every block is already on your dashboard.</p></div>';
     // The one remote load in this file (see NOTES): set after render, and it falls back to initials if it fails.
-    el.brGrid.querySelectorAll("img[data-icon-url]").forEach(function(img){ img.src = img.dataset.iconUrl; });
-    var first = el.brGrid.querySelector(".blk-card.is-selected") || el.brGrid.querySelector(".blk-card");
-    if(first) first.tabIndex = 0;
+    el.brGrid.querySelectorAll("image[data-icon-url]").forEach(function(img){ img.setAttribute("href", img.dataset.iconUrl); });
+    el.brClear.hidden = !q;
 
     el.brStatus.textContent = free.length + (free.length === 1 ? " block" : " blocks") + " you can add"
       + (q ? ' matching "' + q + '"' : "")
       + (used.length ? ". Blocks already on your dashboard aren't listed." : ".");
     el.brInsert.disabled = !br.sel;
   }
+  /* One MDS Choicebox per block: a visually hidden radio, then its label as the card. */
+  function brInitials(t){ return '<i class="blk-initials">' + esc(CATALOG[t].mono) + '</i>'; }
+  function brIcon(t){
+    var d = CATALOG[t];
+    if(d.icon) return '<i class="' + d.icon + '"></i>';
+    if(d.img) return '<svg class="blk-img" viewBox="0 0 ' + d.imgW + ' ' + d.imgH + '" width="' + Math.round(16 * d.imgW / d.imgH) + '" height="16">'
+      + '<image data-icon-url="' + esc(d.img) + '" width="' + d.imgW + '" height="' + d.imgH + '"/></svg>';
+    return brInitials(t);
+  }
   function brCard(t){
-    var d = CATALOG[t], sel = t === br.sel;
-    return '<div class="blk-card' + (sel ? " is-selected" : "") + '" role="option" tabindex="-1"'
-      + ' id="blk-' + t + '" data-type="' + t + '" aria-selected="' + sel + '">'
-      + (d.icon ? '<span class="blk-icon" aria-hidden="true"><i class="fa-solid ' + d.icon + '"></i></span>'
-        : d.img ? '<span class="blk-icon is-image" aria-hidden="true"><img data-icon-url="' + esc(d.img) + '" alt=""></span>'
-        : '<span class="blk-icon is-fallback" aria-hidden="true">' + esc(d.mono) + '</span>')
-      + '<span class="blk-text"><span class="blk-head"><span class="blk-name">' + esc(d.title) + '</span></span>'
-      + '<span class="blk-desc">' + esc(d.desc) + '</span></span></div>';
+    var d = CATALOG[t];
+    return '<div class="mds-choicebox-wrapper">'
+      + '<input class="mds-choicebox-input" type="radio" name="blkPick" id="blk-' + t + '" value="' + t + '"' + (t === br.sel ? " checked" : "") + '>'
+      + '<label class="mds-choicebox" for="blk-' + t + '">'
+      + '<span class="mds-choicebox-icon" aria-hidden="true">' + brIcon(t) + '</span>'
+      + '<span class="mds-choicebox-labels"><span class="mds-choicebox-label">' + esc(d.title) + '</span>'
+      + '<span class="mds-choicebox-supporting-text">' + esc(d.desc) + '</span></span>'
+      + '<span class="mds-choicebox-indicator" aria-hidden="true"></span></label></div>';
   }
-  /* Focus follows the arrow keys; selection follows focus. */
-  function brFocus(card){
-    el.brGrid.querySelectorAll(".blk-card").forEach(function(c){
-      c.tabIndex = -1; c.classList.remove("is-selected"); c.setAttribute("aria-selected", "false");
-    });
-    card.tabIndex = 0;
-    br.sel = card.dataset.type;
-    card.classList.add("is-selected"); card.setAttribute("aria-selected", "true");
-    el.brInsert.disabled = !br.sel;
-    card.focus();
-  }
-  function brStep(card, key){
-    var cards = [].slice.call(el.brGrid.querySelectorAll(".blk-card")), i = cards.indexOf(card);
-    var perRow = cards.filter(function(c){ return c.offsetTop === cards[0].offsetTop; }).length || 1;
-    var j = { ArrowRight:i + 1, ArrowLeft:i - 1, ArrowDown:i + perRow, ArrowUp:i - perRow, Home:0, End:cards.length - 1 }[key];
-    if(key === "ArrowUp" && j < 0) return el.brSearch.focus();
-    brFocus(cards[Math.max(0, Math.min(cards.length - 1, j))]);
+  function brFocusChecked(){
+    var r = el.brGrid.querySelector(".mds-choicebox-input:checked") || el.brGrid.querySelector(".mds-choicebox-input");
+    if(r) r.focus();
+    return r;
   }
   function brInsert(type){
     type = type || br.sel;
@@ -2550,29 +2583,28 @@
   el.brSearch.addEventListener("input", renderBrowser);
   // An image icon that can't load (offline, blocked, moved) falls back to the block's initials.
   el.brGrid.addEventListener("error", function(e){
-    if(e.target.tagName !== "IMG") return;
-    var tile = e.target.parentNode, card = tile.closest(".blk-card");
-    tile.classList.remove("is-image"); tile.classList.add("is-fallback");
-    tile.textContent = CATALOG[card.dataset.type].mono;
+    if(e.target.tagName.toLowerCase() !== "image") return;
+    var slot = e.target.closest(".mds-choicebox-icon"), t = slot.closest("label").htmlFor.replace(/^blk-/, "");
+    slot.innerHTML = brInitials(t);
   }, true);
   el.brSearch.addEventListener("keydown", function(e){
     if(e.key === "Enter"){ e.preventDefault(); brInsert(); }
-    else if(e.key === "ArrowDown"){
-      var c = el.brGrid.querySelector(".blk-card.is-selected") || el.brGrid.querySelector(".blk-card");
-      if(c){ e.preventDefault(); brFocus(c); }
-    }
+    else if(e.key === "ArrowDown" && brFocusChecked()){ e.preventDefault(); }
+  });
+  el.brClear.addEventListener("click", function(){ el.brSearch.value = ""; renderBrowser(); el.brSearch.focus(); });
+  // The radios do the rest natively: arrow keys move and select, Space selects, one tab stop.
+  el.brGrid.addEventListener("change", function(e){
+    if(e.target.name !== "blkPick") return;
+    br.sel = e.target.value; el.brInsert.disabled = false;
   });
   el.brGrid.addEventListener("click", function(e){
-    if(e.target.closest("#blkClear")){ el.brSearch.value = ""; renderBrowser(); return el.brSearch.focus(); }
-    var c = e.target.closest(".blk-card"); if(c) brFocus(c);
+    if(e.target.closest("#blkClear")){ el.brSearch.value = ""; renderBrowser(); el.brSearch.focus(); }
   });
   el.brGrid.addEventListener("dblclick", function(e){
-    var c = e.target.closest(".blk-card"); if(c) brInsert(c.dataset.type);
+    var l = e.target.closest(".mds-choicebox"); if(l) brInsert(l.htmlFor.replace(/^blk-/, ""));
   });
   el.brGrid.addEventListener("keydown", function(e){
-    var c = e.target.closest(".blk-card"); if(!c) return;
-    if(e.key === "Enter" || e.key === " "){ e.preventDefault(); brInsert(c.dataset.type); }
-    else if(/^(Arrow|Home$|End$)/.test(e.key)){ e.preventDefault(); brStep(c, e.key); }
+    if(e.key === "Enter" && e.target.name === "blkPick"){ e.preventDefault(); brInsert(e.target.value); }
   });
   el.brInsert.addEventListener("click", function(){ brInsert(); });
   document.getElementById("blkCancel").addEventListener("click", function(){ closeBrowser(); });
@@ -2586,12 +2618,12 @@
      so the fallbacks show, and no link to the Marketplace. Core blocks never
      depend on this; they declare their own. */
   var MARKET = {
-    completion_progress:{ img:"https://marketplace.moodle.com/plugins/2571/screenshots/block_completion_progress-6a5699b80b8d3.png",
+    completion_progress:{ img:"https://marketplace.moodle.com/plugins/2571/screenshots/block_completion_progress-6a5699b80b8d3.png", w:100, h:38,
                           desc:"The Completion Progress block is a time-management tool for students." }
   };
   function setMarketplace(on){
     Object.keys(MARKET).forEach(function(t){
-      CATALOG[t].img = on ? MARKET[t].img : null;
+      CATALOG[t].img = on ? MARKET[t].img : null; CATALOG[t].imgW = MARKET[t].w; CATALOG[t].imgH = MARKET[t].h;
       CATALOG[t].desc = on ? MARKET[t].desc : FALLBACK_DESC;
     });
     document.getElementById("blkDiscover").hidden = !on;
@@ -2605,7 +2637,7 @@
     if(menuFor === btn) return closeMenu();
     closeMenu();
     var id = btn.closest(".tile").dataset.id, def = CATALOG[state.blocks[id].type];
-    var items = (def.configurable ? [["fa-gear", "Configure"]] : []).concat([["fa-user-shield", "Manage permissions"], ["fa-user-check", "Check permissions"]]);
+    var items = (def.configurable ? [["fa-gear", "Configure"]] : []).concat([["fa-user-lock", "Manage permissions"], ["fa-user-lock", "Check permissions"]]);
     el.menu.innerHTML = items.map(function(i){ return '<button role="menuitem" tabindex="-1"><i class="fa-solid ' + i[0] + '" aria-hidden="true"></i>' + i[1] + '</button>'; }).join("");
     el.menu.classList.add("open"); btn.setAttribute("aria-expanded", "true"); menuFor = btn;
     positionMenu();
@@ -3166,13 +3198,23 @@ Decisions:
   - Fallback for a block that declares nothing (most in-house blocks): initials on a neutral tile, "Added to your site by an
     administrator." for a description, default size 2x3. Applied
     once to CATALOG, so the drawer and the tile content get the same fallbacks.
-  - Selected card = primary border + inset bar, so it survives wireframe mode.
+  - MDS and core mirror (2026-09-30), so each piece ports as the real component:
+    buttons = MDS Button (.btn-primary/secondary/ghost/danger, .btn-sm, .btn-icon = icon-only ghost, 28px); tile menu = MDS
+    DropdownMenu/DropdownItemAction; block cards = MDS Choicebox (native radio group: arrows move and select, one tab stop, Enter
+    adds); browser = core/modal layout (header, body, footer with Cancel before Insert), core search_input_auto plus a clear button,
+    MDS CloseButton and Link. Icons are ones core already maps (i/dragdrop, i/delete, i/permissions, i/settings, i/calendar,
+    i/scheduled, i/competencies, i/externallink...). Toolbar reset uses core's "Reset page to default".
+  - Gaps no mirror can close (MDS has none yet): dialog/modal, toast with an action (ticket 2), text/search input, card/tile.
+    Choicebox's icon slot is 16px and takes only <i> or <svg>: Marketplace images go in as <svg><image>, initials as <i>.
+    Its 320px minimum width caps the grid at three columns in a 1040px dialog.
 Traps:
   - The shell's dev region declares function place() for the guides; a dashboard place() was silently overridden (every tile fell
     back to auto-flow). Dashboard code uses placeCell().
   - The Browser pane's viewport emulation does not always reach a ResizeObserver: columns also re-measure on window resize.
   - Re-appending tiles to keep DOM order = reading order drops focus; reorderDom() puts it back.
   - The shell's overlay-mode rules re-show .toggle-col below 992px; the dashboard's hide rule is html-prefixed to win.
+  - The shell's :root labels --border-ring (#8f959e, gray-500) as $mds-border-interactive-secondary-default, which is gray-400
+    (#ced4da). The dashboard's MDS mirror uses --border-interactive (the real value) and leaves the shell alone.
   - The more menu was placed from an offsetParent read while it was display:none (null, so body), then applied inside .layout:
     it landed 100px+ from its button. It is position:fixed now, measured from the button.
   - The browser is a modal <dialog> in the top layer: annotations cannot sit over it, so its callout is on the Add button.
