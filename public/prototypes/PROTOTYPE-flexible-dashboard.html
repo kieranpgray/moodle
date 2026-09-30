@@ -761,14 +761,12 @@
   .tile.is-ghost .tile-body{ display:flex; align-items:center; justify-content:center; color:var(--text-muted); }
 
   /* ---- block browser: a Confluence-style alternative to the drawer ----
-     One modal, three parts: categories on the left, search and a grid of
-     cards on the right, Insert/Close at the foot. Selection is never colour
-     alone (border weight + inset bar), and Added / New are words, so the
-     states survive wireframe mode. Every icon tile shares one tint: block
-     categories have no meaning in MDS, and borrowing the activity-purpose
-     colours would say something they don't. */
+     One modal: search and a grid of cards, Insert/Close at the foot.
+     Selection is never colour alone (border weight + inset bar), so it
+     survives wireframe mode. Every icon tile shares one tint: borrowing the
+     activity-purpose colours would say something they don't. */
   .blk-browser{
-    width:min(1100px, calc(100vw - 2 * var(--sp-xl))); height:min(760px, calc(100vh - 2 * var(--sp-xl)));
+    width:min(960px, calc(100vw - 2 * var(--sp-xl))); height:min(760px, calc(100vh - 2 * var(--sp-xl)));
     max-width:none; max-height:none; padding:0; border:none; border-radius:var(--r-xl);
     background:var(--surface); color:var(--text-default); box-shadow:var(--shadow-lg); overflow:hidden;
   }
@@ -781,17 +779,7 @@
     color:var(--text-default); font-size:var(--fs-lead); cursor:pointer;
   }
   .blk-close:hover{ background:var(--hover-tint-strong); }
-  .blk-body{ display:grid; grid-template-columns:220px minmax(0, 1fr); gap:var(--sp-xl); min-height:0; padding:0 var(--sp-xl); }
-  .blk-cats{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:var(--sp-xxs); }
-  .blk-cat{
-    width:100%; display:flex; align-items:center; justify-content:space-between; gap:var(--sp-xs);
-    min-height:var(--btn); padding:0 var(--sp-sm); border:none; border-radius:var(--r-md); background:transparent;
-    color:var(--text-default); font:inherit; text-align:left; cursor:pointer;
-  }
-  .blk-cat:hover{ background:var(--hover-tint); }
-  .blk-cat.is-current{ background:var(--primary-light); color:var(--primary); font-weight:var(--fw-semibold); box-shadow:inset 3px 0 0 var(--primary); }
-  .blk-cat-count{ font-size:var(--fs-sm); color:var(--text-muted); font-weight:var(--fw-regular); }
-  .blk-cat.is-current .blk-cat-count{ color:inherit; }   /* muted on primary-light is 4.19:1 */
+  .blk-body{ display:flex; flex-direction:column; min-height:0; padding:0 var(--sp-xl); }
   .blk-main{ display:flex; flex-direction:column; min-height:0; }
   .blk-search{ position:relative; flex:0 0 auto; }
   .blk-search > i{ position:absolute; left:var(--sp-md); top:50%; transform:translateY(-50%); color:var(--text-muted); }
@@ -834,15 +822,11 @@
   .blk-none{ grid-column:1 / -1; padding:var(--sp-xl) 0; text-align:center; color:var(--text-muted); }
   .blk-none button{ margin-top:var(--sp-sm); }
   .blk-foot{ display:flex; justify-content:flex-end; gap:var(--sp-xs); padding:var(--sp-md) var(--sp-xl); border-top:1px solid var(--border-subtle); }
-  @media (max-width:1099.98px){ .blk-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); } }
-  /* Below tablet: full screen, categories become a scrolling row of chips, one column of cards. */
+  @media (max-width:1023.98px){ .blk-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+  /* Below tablet: full screen, one column of cards. */
   @media (max-width:767.98px){
     .blk-browser{ width:100vw; height:100vh; border-radius:0; }
     .blk-top, .blk-body, .blk-foot{ padding-left:var(--sp-md); padding-right:var(--sp-md); }
-    .blk-body{ grid-template-columns:minmax(0, 1fr); grid-template-rows:auto minmax(0, 1fr); gap:var(--sp-sm); }
-    .blk-cats{ flex-direction:row; overflow-x:auto; padding-bottom:var(--sp-xxs); }
-    .blk-cat{ width:auto; white-space:nowrap; border:1px solid var(--border-default); border-radius:var(--r-pill); }
-    .blk-cat.is-current{ box-shadow:none; border:2px solid var(--primary); }
     .blk-grid{ grid-template-columns:minmax(0, 1fr); }
     .blk-enter{ display:none; }
     .blk-search input{ padding-right:var(--sp-sm); }
@@ -1250,7 +1234,7 @@
               <button class="btn btn-tertiary" id="resetBtn">Reset to default</button>
               <button class="btn btn-secondary" id="doneBtn">Done</button>
               <button class="btn btn-primary" id="addBtn"
-                      data-annot="Opens the block browser: pick a category or search, then Insert. State › Block library brings back the drawer."
+                      data-annot="Opens the block browser: search or browse, then Insert. State › Block library brings back the drawer."
                       data-annot-side="bottom"><i class="fa-solid fa-plus" aria-hidden="true"></i>Add a block</button>
             </div>
           </div>
@@ -1294,7 +1278,6 @@
               <button class="blk-close" id="blkClose" aria-label="Close" title="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
             </div>
             <div class="blk-body">
-              <nav aria-label="Block categories"><ul class="blk-cats" id="blkCats"></ul></nav>
               <div class="blk-main">
                 <div class="blk-search">
                   <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
@@ -1675,38 +1658,30 @@
   var DEFAULT_MIN = { w:1, h:2 };            // one default minimum for every block (MDL-89636)
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* Categories and "New" are invented: Moodle blocks only report a name and a
-     title today. See NOTES. */
-  var CATS = [
-    { id:"all", label:"All blocks" },
-    { id:"progress", label:"Courses & progress" },
-    { id:"deadlines", label:"Deadlines & calendar" },
-    { id:"activity", label:"Recent activity" },
-    { id:"content", label:"Your own content" },
-    { id:"other", label:"Other blocks" }       // only listed when something falls into it
-  ];
+  /* Descriptions are invented: Moodle blocks only report a name and a title
+     today. See NOTES. */
   var CATALOG = {
-    myoverview:           { title:"Course overview", icon:"fa-graduation-cap", w:4, h:5, min:{ w:2, h:3 }, cat:"progress",
+    myoverview:           { title:"Course overview", icon:"fa-graduation-cap", w:4, h:5, min:{ w:2, h:3 },
                             desc:"All your courses with progress bars, plus filters and search to find the one you need." },
-    timeline:             { title:"Timeline", icon:"fa-list-check", w:4, h:4, min:{ w:2, h:3 }, cat:"deadlines",
+    timeline:             { title:"Timeline", icon:"fa-list-check", w:4, h:4, min:{ w:2, h:3 },
                             desc:"What's due next and what's overdue, across every course, sorted by date or by course." },
-    calendar_month:       { title:"Calendar", icon:"fa-calendar", w:2, h:4, min:{ w:2, h:4 }, cat:"deadlines",
+    calendar_month:       { title:"Calendar", icon:"fa-calendar", w:2, h:4, min:{ w:2, h:4 },
                             desc:"This month at a glance, with course, group and site events you can open in one click." },
-    recentlyaccesseditems:{ title:"Recently accessed items", icon:"fa-clock-rotate-left", w:2, h:3, cat:"activity",
+    recentlyaccesseditems:{ title:"Recently accessed items", icon:"fa-clock-rotate-left", w:2, h:3,
                             desc:"Jump straight back into the last activities and resources you opened." },
-    badges:               { title:"Latest badges", icon:"fa-award", w:2, h:2, cat:"progress",
+    badges:               { title:"Latest badges", icon:"fa-award", w:2, h:2,
                             desc:"The badges you've earned most recently, with a link to all of them." },
-    online_users:         { title:"Online users", icon:"fa-user-group", w:2, h:3, cat:"activity",
+    online_users:         { title:"Online users", icon:"fa-user-group", w:2, h:3,
                             desc:"Who else is on the site right now, from the last five minutes." },
-    html:                 { title:"Text", icon:"fa-align-left", w:3, h:2, multi:true, configurable:true, cat:"content",
+    html:                 { title:"Text", icon:"fa-align-left", w:3, h:2, multi:true, configurable:true,
                             desc:"Your own text, links and images. Add as many as you like." },
-    calendar_upcoming:    { title:"Upcoming events", icon:"fa-calendar-day", w:2, h:3, cat:"deadlines",
+    calendar_upcoming:    { title:"Upcoming events", icon:"fa-calendar-day", w:2, h:3,
                             desc:"The next few events from your calendar, with their dates and times." },
-    starredcourses:       { title:"Starred courses", icon:"fa-star", w:3, h:3, cat:"progress",
+    starredcourses:       { title:"Starred courses", icon:"fa-star", w:3, h:3,
                             desc:"The courses you've starred, pinned in one place and one click away." },
-    private_files:        { title:"Private files", icon:"fa-folder", w:2, h:3, cat:"content",
+    private_files:        { title:"Private files", icon:"fa-folder", w:2, h:3,
                             desc:"Files only you can see, ready to attach or use in any course." },
-    lp:                   { title:"Learning plans", icon:"fa-route", w:2, h:3, cat:"progress",
+    lp:                   { title:"Learning plans", icon:"fa-route", w:2, h:3,
                             desc:"Your learning plans, and the competencies waiting for you to review them." },
     /* Third-party blocks, as a site might have them installed: a name, and
        often nothing else. The first has a description but no icon. */
@@ -1716,8 +1691,7 @@
     configurable_reports: { title:"Configurable reports for managers, teachers and faculty administrators", thirdparty:true }
   };
   /* Fallbacks for a block that declares nothing beyond its name: its initials
-     for an icon, an honest line for a description, "Other blocks" for a
-     category, and the default size. */
+     for an icon, an honest line for a description, and the default size. */
   var FALLBACK_DESC = "Added to your site by an administrator.";
   function initials(title){
     return title.split(/\s+/).filter(function(w){ return /^[A-Za-z0-9]/.test(w); }).slice(0, 2)
@@ -1727,7 +1701,6 @@
     var d = CATALOG[t];
     if(!d.icon) d.mono = initials(d.title);
     if(!d.desc) d.desc = FALLBACK_DESC;
-    if(!d.cat) d.cat = "other";
     if(!d.w){ d.w = 2; d.h = 3; }
   });
   var HTML_TITLE = "Announcements from the Faculty of Environmental and Biological Sciences";
@@ -1817,7 +1790,7 @@
     sheetWhere:document.querySelector("#sheetWhere span"), toast:document.getElementById("toast"),
     toastText:document.getElementById("toastText"), toastUndo:document.getElementById("toastUndo"),
     emptyText:document.getElementById("emptyText"),
-    browser:document.getElementById("blkBrowser"), brCats:document.getElementById("blkCats"),
+    browser:document.getElementById("blkBrowser"),
     brSearch:document.getElementById("blkSearch"), brWhere:document.getElementById("blkWhere"),
     brStatus:document.getElementById("blkStatus"), brGrid:document.getElementById("blkGrid"),
     brInsert:document.getElementById("blkInsert")
@@ -2474,7 +2447,7 @@
      typing then Enter adds it. Opened from the toolbar, the new block lands
      in the first free space and is picked up for moving straight away. */
   var libraryMode = "browser";
-  var br = { target:null, opener:null, cat:"all", sel:null };
+  var br = { target:null, opener:null, sel:null };
   function brMatches(t){
     var q = el.brSearch.value.trim().toLowerCase(), d = CATALOG[t];
     return !q || (d.title + " " + d.desc).toLowerCase().indexOf(q) > -1;
@@ -2482,7 +2455,7 @@
   function brCanAdd(t){ return CATALOG[t].multi || !present(t); }
   function openBrowser(target, opener){
     closeMenu();
-    br.target = target; br.opener = opener || document.activeElement; br.cat = "all"; br.sel = null;
+    br.target = target; br.opener = opener || document.activeElement; br.sel = null;
     el.brSearch.value = "";
     el.brWhere.textContent = target
       ? "Your block will go in the space you picked."
@@ -2499,34 +2472,21 @@
   }
   function renderBrowser(){
     var q = el.brSearch.value.trim();
-    var inCat = function(t){ return br.cat === "all" || CATALOG[t].cat === br.cat; };
     var all = Object.keys(CATALOG).sort(function(a, b){ return CATALOG[a].title.localeCompare(CATALOG[b].title); });
-    var shown = all.filter(function(t){ return inCat(t) && brMatches(t); });
+    var shown = all.filter(brMatches);
     // Like Moodle's own addable list: a block that allows one instance and is already here isn't offered.
     var free = shown.filter(brCanAdd), used = shown.filter(function(t){ return !brCanAdd(t); });
     if(free.indexOf(br.sel) < 0) br.sel = free[0] || null;
 
-    var focusedCat = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.cat;
-    el.brCats.innerHTML = CATS.filter(function(c){
-      return c.id !== "other" || all.some(function(t){ return CATALOG[t].cat === "other"; });
-    }).map(function(c){
-      var n = all.filter(function(t){ return (c.id === "all" || CATALOG[t].cat === c.id) && brMatches(t) && brCanAdd(t); }).length;
-      var on = c.id === br.cat;
-      return '<li><button class="blk-cat' + (on ? " is-current" : "") + '" data-cat="' + c.id + '" aria-pressed="' + on + '">'
-        + '<span>' + esc(c.label) + '</span><span class="blk-cat-count" aria-label="' + n + ' blocks">' + n + '</span></button></li>';
-    }).join("");
-    if(focusedCat){ var fb = el.brCats.querySelector('[data-cat="' + focusedCat + '"]'); if(fb) fb.focus(); }
-
     el.brGrid.innerHTML = free.length ? free.map(brCard).join("")
-      : q ? '<div class="blk-none"><p>No blocks match "' + esc(q) + '"' + (br.cat === "all" ? "" : " in this category") + '.</p>'
+      : q ? '<div class="blk-none"><p>No blocks match "' + esc(q) + '".</p>'
           + '<button class="btn btn-secondary" id="blkClear">Clear search</button></div>'
-      : '<div class="blk-none"><p>Every block here is already on your dashboard.</p></div>';
+      : '<div class="blk-none"><p>Every block is already on your dashboard.</p></div>';
     var first = el.brGrid.querySelector(".blk-card.is-selected") || el.brGrid.querySelector(".blk-card");
     if(first) first.tabIndex = 0;
 
-    var cat = CATS.filter(function(c){ return c.id === br.cat; })[0];
     el.brStatus.textContent = free.length + (free.length === 1 ? " block" : " blocks") + " you can add"
-      + (br.cat === "all" ? "" : " in " + cat.label) + (q ? ' matching "' + q + '"' : "")
+      + (q ? ' matching "' + q + '"' : "")
       + (used.length ? ". Blocks already on your dashboard aren't listed." : ".");
     el.brInsert.disabled = !br.sel;
   }
@@ -2572,10 +2532,6 @@
       var c = el.brGrid.querySelector(".blk-card.is-selected") || el.brGrid.querySelector(".blk-card");
       if(c){ e.preventDefault(); brFocus(c); }
     }
-  });
-  el.brCats.addEventListener("click", function(e){
-    var b = e.target.closest(".blk-cat"); if(!b) return;
-    br.cat = b.dataset.cat; br.sel = null; renderBrowser();
   });
   el.brGrid.addEventListener("click", function(e){
     if(e.target.closest("#blkClear")){ el.brSearch.value = ""; renderBrowser(); return el.brSearch.focus(); }
@@ -3145,12 +3101,12 @@ Decisions:
   - Browser: one block at a time. Click selects, Insert / Enter / double-click adds; the top match is always selected, so
     type then Enter works. Opened from a cell it fills that cell; from the toolbar it takes the first free space and is picked
     up (kbStart) so arrows move it at once. A modal covers the grid, so there is no drag-out from the browser.
-  - Categories and the two-line descriptions are invented: blocks report only a name and a title today. Real data would need
-    Block API metadata (natural home: MDL-89639). One icon tint for every card; activity-purpose colours already mean
-    something in MDS. No size chip and no Added/New badges (removed on review).
+  - Icons and two-line descriptions are invented: blocks report only a name and a title today. Real data would need Block API
+    declarations (natural home: MDL-89639). One icon tint for every card; activity-purpose colours already mean something in
+    MDS. No categories, size chip or Added/New badges (all removed on review): search plus an A-Z grid.
   - Blocks already on the dashboard that allow one instance are not listed, as get_addable_blocks() already does.
   - Fallback for a block that declares nothing (most third-party blocks): initials on a neutral tile, "Added to your site by an
-    administrator." for a description, the "Other blocks" category (listed only when non-empty), default size 2x3. Applied
+    administrator." for a description, default size 2x3. Applied
     once to CATALOG, so the drawer and the tile content get the same fallbacks.
   - Selected card = primary border + inset bar, so it survives wireframe mode.
 Traps:
