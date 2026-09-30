@@ -579,7 +579,8 @@
   .btn-secondary{ background:var(--btn-secondary-bg); color:var(--text-subtle); }
   .btn-secondary:hover:not(:disabled){ background:var(--btn-secondary-hover); }
   .btn-ghost{ background:transparent; color:var(--text-subtle); }
-  .btn-ghost:hover:not(:disabled){ background:var(--btn-secondary-hover); }
+  /* custom hover (not MDS's gray-400 fill): a light tint, as the dashboard had before the MDS pass */
+  .btn-ghost:hover:not(:disabled){ background:var(--hover-tint-strong); color:var(--text-default); }
   .btn-danger{ background:var(--danger); color:var(--text-inverse); }
   .btn-danger:hover:not(:disabled){ background:var(--danger-text); }
   .btn-sm{ padding:var(--sp-xxs) var(--sp-xs); border-radius:var(--r-sm); font-size:var(--fs-sm); font-weight:var(--fw-medium); }
@@ -588,10 +589,11 @@
   .btn-ghost:disabled{ background:transparent; }
   .btn-icon{
     display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto;
-    padding:var(--sp-xs); border:none; border-radius:var(--r-xl); background:transparent; color:var(--text-subtle); cursor:pointer;
+    padding:var(--sp-xs); border:none; border-radius:var(--r-md); background:transparent; color:var(--text-subtle); cursor:pointer;
   }
   .btn-icon i{ font-size:var(--icon-xs); width:var(--icon-xs); line-height:1; }
-  .btn-icon:hover{ background:var(--btn-secondary-hover); }
+  /* custom: a rounded square with a light tint, not MDS's grey circle */
+  .btn-icon:hover{ background:var(--hover-tint-strong); color:var(--text-default); }
 
   /* ---- edit toolbar: sticky, so "Add a block" is always in reach on a long page ---- */
   .dash-toolbar{
@@ -739,7 +741,7 @@
     border:none; background:transparent; border-radius:var(--r-xs); cursor:pointer;
     font:inherit; font-size:var(--fs-md); line-height:var(--lh-md); color:var(--text-subtle); text-align:left;
   }
-  .tile-menu button:hover{ background:var(--primary-light); color:var(--primary); }
+  .tile-menu button:hover{ background:var(--hover-tint-strong); color:var(--text-default); }   /* custom: tint, not MDS's blue */
   .tile-menu button:focus-visible{ outline:2px solid var(--primary); outline-offset:1px; }
   .tile-menu i{ width:16px; color:var(--text-muted); }
 
@@ -836,10 +838,10 @@
     padding:var(--sp-xs) var(--sp-sm); border:1px solid var(--border-default); border-radius:var(--r-md);
     background:var(--bg-subtle); cursor:pointer;
   }
-  .mds-choicebox-input:not(:checked) + .mds-choicebox:hover{ background:var(--surface); }
-  .mds-choicebox-input:not(:checked) + .mds-choicebox:active{ background:var(--bg-strong); }
+  /* custom hovers: a light tint over the card, and a selected card stays selected-looking on hover */
+  .mds-choicebox-input:not(:checked) + .mds-choicebox:hover{ background:linear-gradient(var(--hover-tint), var(--hover-tint)), var(--bg-subtle); }
+  .mds-choicebox-input:not(:checked) + .mds-choicebox:active{ background:linear-gradient(var(--hover-tint-strong), var(--hover-tint-strong)), var(--bg-subtle); }
   .mds-choicebox-input:checked + .mds-choicebox{ background:var(--primary-light); border-color:var(--border-feedback-primary); }
-  .mds-choicebox-input:checked + .mds-choicebox:hover{ background:var(--bg-subtle); }
   .mds-choicebox-icon{ display:flex; align-items:center; justify-content:center; flex-shrink:0; padding:var(--sp-xxs); font-size:var(--icon-sm); color:var(--text-default); }
   .mds-choicebox-input:checked + .mds-choicebox .mds-choicebox-icon{ color:var(--text-feedback-primary); }
   .mds-choicebox-labels{ display:flex; flex-direction:column; flex:1 0 0; gap:var(--sp-xxs); padding:var(--sp-xxs) 0; min-width:0; }
@@ -1926,11 +1928,11 @@
     s.setAttribute("aria-labelledby", "tt-" + id);
     s.innerHTML =
       '<header class="tile-head">'
-      + '<button class="btn-icon tile-grip" aria-pressed="false" aria-describedby="gripHelp" aria-label="Move ' + esc(title) + '"><i class="fa-solid fa-arrows-up-down-left-right" aria-hidden="true"></i></button>'
+      + '<button class="btn-icon tile-grip" aria-pressed="false" aria-describedby="gripHelp" aria-label="Move ' + esc(title) + '"><i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>'
       + '<h2 class="tile-title" id="tt-' + id + '" title="' + esc(title) + '">' + esc(title) + '</h2>'
       + '<div class="tile-actions">'
       + '<button class="btn-icon tile-more" aria-haspopup="menu" aria-expanded="false" aria-label="More actions for ' + esc(title) + '"><i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i></button>'
-      + '<button class="btn-icon tile-remove" aria-label="Remove ' + esc(title) + '"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>'
+      + '<button class="btn-icon tile-remove" aria-label="Remove ' + esc(title) + '"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>'
       + '</div></header>'
       + '<div class="tile-body">' + blockHTML(b.type) + '</div>'
       + '<button class="tile-resize" aria-pressed="false" aria-describedby="resizeHelp" aria-label="Resize ' + esc(title) + '"></button>'
@@ -2456,7 +2458,7 @@
     var card = function(t, on){
       var d = CATALOG[t];
       return '<div class="cb-block pick' + (on ? " is-present" : "") + '" data-type="' + t + '">'
-        + '<div class="cb-block-head"><span class="grip" aria-hidden="true"><i class="fa-solid fa-arrows-up-down-left-right"></i></span>'
+        + '<div class="cb-block-head"><span class="grip" aria-hidden="true"><i class="fa-solid fa-grip-vertical"></i></span>'
         + '<span class="cb-block-title">' + esc(d.title) + '</span>'
         + (on ? '<span class="pick-present"><i class="fa-solid fa-check" aria-hidden="true"></i>Added</span>'
               : '<button class="btn btn-secondary btn-sm pick-add" aria-label="Add ' + esc(d.title) + '">Add</button>')
@@ -3199,11 +3201,13 @@ Decisions:
     administrator." for a description, default size 2x3. Applied
     once to CATALOG, so the drawer and the tile content get the same fallbacks.
   - MDS and core mirror (2026-09-30), so each piece ports as the real component:
-    buttons = MDS Button (.btn-primary/secondary/ghost/danger, .btn-sm, .btn-icon = icon-only ghost, 28px); tile menu = MDS
+    buttons = MDS Button (.btn-primary/secondary/ghost/danger, .btn-sm, .btn-icon = icon-only ghost, 28px) with custom hovers
+    (a light tint, and square icon buttons, by review choice); tile menu = MDS
     DropdownMenu/DropdownItemAction; block cards = MDS Choicebox (native radio group: arrows move and select, one tab stop, Enter
     adds); browser = core/modal layout (header, body, footer with Cancel before Insert), core search_input_auto plus a clear button,
-    MDS CloseButton and Link. Icons are ones core already maps (i/dragdrop, i/delete, i/permissions, i/settings, i/calendar,
-    i/scheduled, i/competencies, i/externallink...). Toolbar reset uses core's "Reset page to default".
+    MDS CloseButton and Link. Icons are ones core already maps (i/permissions, i/settings, i/calendar,
+    i/scheduled, i/competencies, i/externallink...), except the grip and the remove cross, kept by review choice: the grip has
+    no core pix key yet. Toolbar reset uses core's "Reset page to default".
   - Gaps no mirror can close (MDS has none yet): dialog/modal, toast with an action (ticket 2), text/search input, card/tile.
     Choicebox's icon slot is 16px and takes only <i> or <svg>: Marketplace images go in as <svg><image>, initials as <i>.
     Its 320px minimum width caps the grid at three columns in a 1040px dialog.
