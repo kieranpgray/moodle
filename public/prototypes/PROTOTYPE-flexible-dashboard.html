@@ -902,7 +902,10 @@
     font-size:var(--fs-sm); transition:opacity .16s ease, transform .16s ease;
   }
   .toast.show{ opacity:1; transform:translate(-50%, 0); pointer-events:auto; }
-  .toast button{ border:none; background:transparent; color:var(--toast-link); font:inherit; font-weight:var(--fw-semibold); cursor:pointer; padding:0; }
+  .toast button{
+    display:inline-flex; align-items:center; justify-content:center; min-width:24px; min-height:24px; padding:0 var(--sp-xxs);
+    border:none; border-radius:var(--r-xs); background:transparent; color:var(--toast-link); font:inherit; font-weight:var(--fw-semibold); cursor:pointer;
+  }
 
   /* ---- block content (stand-ins for each block's own renderer) ---- */
   .b-filters{ display:flex; gap:var(--sp-xs); flex-wrap:wrap; margin-bottom:var(--sp-sm); }
@@ -1290,7 +1293,7 @@
           </div>
 
           <div class="dash-canvas" id="dashCanvas">
-            <div class="dash-grid" id="dashGrid" aria-label="Dashboard blocks">
+            <div class="dash-grid" id="dashGrid" role="group" aria-label="Dashboard blocks">
               <div class="drop-slot" id="dropSlot" aria-hidden="true"></div>
             </div>
             <button class="add-zone" id="addZone"><i class="fa-solid fa-plus" aria-hidden="true"></i>Add a block</button>
@@ -1306,7 +1309,7 @@
             </div>
           </div>
 
-          <div class="visually-hidden" id="dashLive" aria-live="assertive" aria-atomic="true"></div>
+          <div class="visually-hidden" id="dashLive" aria-live="polite" aria-atomic="true"></div>
           <p class="visually-hidden" id="gripHelp">Press Space to pick the block up, arrow keys to move it, Space to drop it, Escape to cancel.</p>
           <p class="visually-hidden" id="resizeHelp">Press Space to start resizing, arrow keys to change the size, Space to finish, Escape to cancel.</p>
 
@@ -2069,7 +2072,17 @@
     state.online = on;
     if(on && state.pending){ save(); toast("Back online. Your changes are saved.", false); }
   }
-  function announce(msg){ el.live.textContent = ""; setTimeout(function(){ el.live.textContent = msg; }, 30); }
+  /* One voice per message. The toast is itself a polite status region, so when it is
+     already showing the same words, the page's own announcer stays quiet rather than
+     saying them a second time. Polite, not assertive: routine changes shouldn't cut off
+     whatever the screen reader is reading. */
+  function announce(msg){
+    el.live.textContent = "";
+    setTimeout(function(){
+      if(el.toast.classList.contains("show") && el.toastText.textContent === msg) return;
+      el.live.textContent = msg;
+    }, 30);
+  }
   var toastTimer, toastFn = null;
   /* action: { label, fn, persist } — defaults to Undo when withUndo is set. A
      persistent toast (tap mode's instructions) stays until its action or the
@@ -2083,9 +2096,21 @@
     el.toastUndo.style.display = act ? "" : "none";
     toastFn = act ? act.fn : null;
     el.toast.classList.add("show"); clearTimeout(toastTimer);
-    if(!(act && act.persist)) toastTimer = setTimeout(hideToast, 6000);
+    toastPersist = !!(act && act.persist);
+    if(!toastPersist && !toastHeld) toastTimer = setTimeout(hideToast, 6000);
   }
-  function hideToast(){ el.toast.classList.remove("show"); toastFn = null; }
+  function hideToast(){ el.toast.classList.remove("show"); toastFn = null; toastPersist = false; }
+  // The timer pauses while the toast is hovered or has focus, so its action can't vanish mid-reach.
+  var toastPersist = false, toastHeld = 0;
+  function holdToast(){ toastHeld++; clearTimeout(toastTimer); }
+  function releaseToast(){
+    toastHeld = Math.max(0, toastHeld - 1);
+    if(!toastHeld && !toastPersist && el.toast.classList.contains("show")) toastTimer = setTimeout(hideToast, 6000);
+  }
+  el.toast.addEventListener("mouseenter", holdToast);
+  el.toast.addEventListener("mouseleave", releaseToast);
+  el.toast.addEventListener("focusin", holdToast);
+  el.toast.addEventListener("focusout", releaseToast);
   el.toastUndo.addEventListener("click", function(){ var f = toastFn; if(f) f(); });
   el.undo.addEventListener("click", undo);
 
@@ -2238,9 +2263,9 @@
 
   el.grid.addEventListener("pointerdown", function(e){
     if(!state.edit) return;
-    // while a block is picked up by tap, only its own handle does anything (a second click
-    // cancels); every other press, even on another block's handle, is a placement
-    if(tap && !isTapHandle(e.target)) return;
+    // while a block is picked up by tap, every press is a placement, handled by the click
+    // listener below - including one on its own handle, which the preview has moved under the pointer
+    if(tap) return;
     var t = e.target.closest(".tile"); if(!t || t.classList.contains("is-lifted")) return;
     if(e.target.closest(".tile-resize")) return beginPointer(e, "resize", t.dataset.id);
     if(e.target.closest(".tile-grip")) return beginPointer(e, "move", t.dataset.id);
@@ -2253,16 +2278,12 @@
      pointer and no drag. Click (or tap) a handle without moving, and the block
      is picked up; the next click on the grid places it (move) or sets its new
      bottom-right corner (resize). With a mouse, hovering previews the result
-     first. A second click on the same handle, the toast's Cancel, a click
-     outside the grid, or Escape all cancel. No extra controls are needed. */
+     first, and the preview carries the block's own handle along under the
+     pointer, so a click on that handle places it too (it used to cancel, which
+     undid the very resize being confirmed). The toast's Cancel, a click outside
+     the grid, or Escape cancel; a placement that changes nothing says so. */
   var tap = null;
-  function isTapHandle(target){
-    if(!tap || !target.closest) return false;
-    var h = target.closest(tap.mode === "move" ? ".tile-grip" : ".tile-resize");
-    return !!h && h.closest(".tile").dataset.id === tap.id;
-  }
   function startTap(id, mode){
-    if(tap && tap.id === id && tap.mode === mode){ endTap(false, "Cancelled. Nothing changed."); return; }
     if(tap) endTap(false);
     if(kb) kbEnd(false);
     var base = displayLayout(), item = base.filter(function(i){ return i.id === id; })[0];
@@ -2313,11 +2334,13 @@
   document.addEventListener("click", function(e){
     if(!tap) return;
     if(tap.ignoreClick){ tap.ignoreClick = false; return; }   // the click that picked it up
-    if(e.target.closest && (e.target.closest(".toast") || isTapHandle(e.target))) return;
+    if(e.target.closest && e.target.closest(".toast")) return;
     e.preventDefault(); e.stopPropagation();
     var pv = tapPreview(e.clientX, e.clientY);
     if(!pv){ endTap(false, "Cancelled. Nothing changed."); return; }
     var id = tap.id, mode = tap.mode, base = tap.base, it = pv.filter(function(i){ return i.id === id; })[0];
+    var was = base.filter(function(i){ return i.id === id; })[0];
+    if(it.c === was.c && it.r === was.r && it.w === was.w && it.h === was.h){ endTap(false, "Done. Nothing changed."); return; }
     endTap(true);
     var n = disturbed(base, pv, id);
     commit(pv, (mode === "move" ? titleOf(id) + " moved to row " + (it.r + 1) + ", column " + (it.c + 1) + "."
@@ -2335,8 +2358,11 @@
     btn.setAttribute("aria-pressed", "true");
     tiles[id].classList.add("is-active");
     if(mode === "resize") tiles[id].classList.add("is-resizing");
-    announce((mode === "move" ? "Picked up " : "Resizing ") + titleOf(id) + ". " + describe(item, mode) +
-      (mode === "move" ? " Arrow keys move it. Space drops it. Escape cancels." : " Arrow keys change the size. Space finishes. Escape cancels."));
+    // Shown on screen as well as announced: sighted keyboard users need the keys too.
+    toast(mode === "move" ? "Use the arrow keys to move " + titleOf(id) + ". Press Space to drop it, or Escape to cancel."
+                          : "Use the arrow keys to resize " + titleOf(id) + ". Press Space to finish, or Escape to cancel.",
+          false, { label:"Cancel", persist:true, fn:function(){ kbEnd(false); } });
+    announce((mode === "move" ? "Picked up " : "Resizing ") + titleOf(id) + ". " + describe(item, mode));
   }
   function describe(it, mode){
     return mode === "move" ? "Row " + (it.r + 1) + ", column " + (it.c + 1) + "." : it.w + " columns wide, " + it.h + " rows tall.";
@@ -2365,6 +2391,7 @@
   }
   function kbEnd(keep){
     var k = kb; kb = null; if(!k) return;
+    hideToast();
     k.btn.setAttribute("aria-pressed", "false");
     if(tiles[k.id]) tiles[k.id].classList.remove("is-active", "is-resizing");
     if(keep && k.preview !== k.base){
@@ -2384,7 +2411,10 @@
     else if(/^Arrow/.test(e.key)){ e.preventDefault(); kbArrow(e.key); }
   });
   el.grid.addEventListener("focusout", function(e){
-    if(kb && e.target === kb.btn && !(e.relatedTarget && kb.btn.contains(e.relatedTarget))) kbEnd(true);
+    if(!kb || e.target !== kb.btn) return;
+    var to = e.relatedTarget;
+    if(to && (kb.btn.contains(to) || el.toast.contains(to))) return;   // the toast's Cancel decides instead
+    kbEnd(true);
   });
 
   /* ---------- remove, with undo instead of a confirm dialog ---------- */
@@ -3160,7 +3190,11 @@ Decisions:
     measured identical in view and edit.
   - Titles stay left-aligned; the grip sits before the title (28px shift on entering edit mode, accepted).
   - Empty space is one quiet region per gap (merged rectangles), label on hover only; the full cell grid shows only while dragging.
-    Gap regions are pointer-only (tabindex -1); the keyboard path is Add a block + the library's placement note.
+    Each gap region is a labelled button in the Tab order ("Empty space, row R, column C. Add a block here.").
+  - Accessibility pass (2026-10-09): keyboard move/resize shows its keys in a persistent toast with Cancel (not only to screen
+    readers); one announcement per message (the toast is the polite status region, the page announcer skips a message the
+    toast is already showing, and is polite, not assertive); the toast's timer pauses on hover and focus; its action is 24px+;
+    the grid is a labelled group. axe-core: 0 violations.
   - Drop preview: solid 2px accent outline + hatch, 5.1:1 (light) and 6.3:1 (dark) against the page. Never colour alone.
   - Remove is one click with Undo in a toast, not a confirm dialog. Undo also in the toolbar and on Ctrl/Cmd+Z.
   - Saving is optimistic and silent: no Save button and no status line. The only message is a toast when offline
@@ -3174,8 +3208,9 @@ Decisions:
     at that width becomes the saved layout. The real model for per-width layouts is still open on the ticket.
   - Single-pointer alternative to dragging (WCAG 2.2 SC 2.5.7), deliberately no more than AA: click a handle without dragging to
     pick the block up, then click the target cell (move) or the new bottom-right cell (resize). Mouse gets a hover preview; a
-    persistent toast says what to do and has Cancel (touch has no Escape). Only the picked block's own handle cancels; a tap on
-    any other block, even its handle, is a placement. No on-screen arrow buttons.
+    persistent toast says what to do and has Cancel (touch has no Escape). Every click while picked up is a placement, including
+    one on the block's own handle: the hover preview carries that handle under the pointer, so treating it as cancel undid the
+    resize being confirmed. A placement that changes nothing says "Nothing changed". No on-screen arrow buttons.
   - Empty regions are labelled tab stops in reading order among the tiles (the ticket requires empty cells to be focusable).
   - Drag-time cell guides are --text-muted at full opacity (4.6:1 light); the 55% guides measured 1.7:1.
   - Reset asks first and has no undo: on the server it deletes the page and its blocks (my_reset_page).
