@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTOTYPE &mdash; Create activity workflow (throwaway, not for merge)</title>
+
+<!-- Noto Sans (matches --mds-font-family-base) + Font Awesome, via CDN.
+     Needs network on first open; degrades to system font offline. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+  /*
+    ============================================================
+    THROWAWAY PROTOTYPE — CREATE ACTIVITY WORKFLOW
+    ============================================================
+
+    QUESTION IT ANSWERS
+    When a teacher adds an activity, should the screen they land on be a
+    CREATE screen — its own heading, no course tab bar, a short essentials
+    form with the rest one click away — instead of today's course-shell page
+    carrying the activity's entire settings form?
+
+    Flip Today / Proposed in the State panel on any step to compare.
+
+    WHAT IS REUSED
+    The container (MDS token block, top nav, course index drawer, sticky
+    footer, two-column settings layout, form fields, dev state switcher,
+    annotation callouts) follows PROTOTYPE-course-settings.html so this reads
+    as a sibling of the settings work. Layout measures come from
+    TEMPLATE-shell.html.
+
+    GROUNDING — every claim below was read in the codebase, not inferred.
+      public/course/modedit.php:39            $showonly param already exists
+      public/course/modedit.php:60-95         create branch: course context, no cm
+      public/course/modedit.php:91            "Adding a new {$a}" is the page heading
+      public/course/modedit.php:126           edit branch heading is "Edit settings"
+      public/course/modedit.php:78            navigation_node::override_active_url(course)
+      public/course/modedit.php:214-218       context_course when there is no cm
+      public/course/modedit.php:237           heading_with_help(..., '', ...) renders NO help
+      public/lib/formslib.php:491,1876        filter_shown_headers() — render a header subset
+      public/course/format/classes/output/local/content/cm/completion.php:141
+                                              showonly=activitycompletionheader in core today
+      public/course/format/classes/output/local/content/cm/availability.php:109
+                                              showonly=availabilityconditionsheader
+      public/course/moodleform_mod.php:1080   add_action_buttons(): submitbutton2 + submitbutton
+      public/course/moodleform_mod.php:1113   set_sticky_footer('buttonar') — footer already sticky
+      public/lib/classes/navigation/views/secondary.php:222  nav switches on context level
+      public/lib/classes/navigation/views/secondary.php:709  module tabs need a cmid
+      public/theme/boost/classes/output/core_renderer.php:228-248
+                                              THE H1 MECHANISM (see NOTES) — Boost overwrites
+                                              $heading with cm->get_formatted_name() in module
+                                              context, which is why edit shows the activity name
+                                              and create shows the course name.
+      public/course/lib.php:2433              create_module() — form-free create already exists
+    Delete this file once the question is answered (NOTES at the bottom).
+  */
+
+  :root{
+    /* ---- MDS primitives (dist/tokens/css/primitives.css, resolved) ---- */
+    --mds-color-blue-50:#e7f0f9; --mds-color-blue-500:#0f6cbf; --mds-color-blue-600:#0c5699; --mds-color-blue-700:#094173;
+    --mds-color-cyan-100:#cce6ea; --mds-color-cyan-500:#008196;
+    --mds-color-pink-100:#f8d1e3; --mds-color-pink-500:#db1a74;
+    --mds-color-orange-100:#ffe3d1; --mds-color-orange-600:#cc5e13;
+    --mds-color-purple-100:#e0d5f5; --mds-color-purple-600:#6610f2;
+    --mds-color-green-50:#ebf2ea; --mds-color-green-100:#d9e7d8; --mds-color-green-500:#357a32;
+    --mds-color-red-50:#faeae9; --mds-color-red-500:#ca3120; --mds-color-red-600:#a2271a;
+    --mds-color-yellow-50:#fff9e6; --mds-color-yellow-500:#f0ad4e; --mds-color-yellow-700:#8a6116;
+    --mds-color-gray-100:#f8f9fa; --mds-color-gray-200:#e9ecef; --mds-color-gray-300:#dee2e6;
+    --mds-color-gray-400:#ced4da; --mds-color-gray-500:#8f959e; --mds-color-gray-600:#6a737b;
+    --mds-color-gray-700:#495057; --mds-color-gray-800:#343a40; --mds-color-gray-900:#1d2125; --mds-color-gray-white:#fff;
+
+    /* ---- MDS semantic (dist/tokens/css/colors.css) ---- */
+    --mds-text-default:var(--mds-color-gray-900);
+    --mds-text-subtle:var(--mds-color-gray-700);
+    --mds-text-muted:var(--mds-color-gray-600);
+    --mds-text-danger:var(--mds-color-red-500);
+    --mds-bg-surface-default:var(--mds-color-gray-white);
+    --mds-bg-surface-subtle:var(--mds-color-gray-100);
+    --mds-bg-surface-strong:var(--mds-color-gray-200);
+    --mds-border-default:var(--mds-color-gray-300);
+    --mds-border-subtle:var(--mds-color-gray-200);
+    --mds-border-interactive-secondary-default:var(--mds-color-gray-500);
+    --mds-bg-interactive-primary-default:var(--mds-color-blue-500);
+    --mds-bg-interactive-primary-hover:var(--mds-color-blue-600);
+    --mds-bg-interactive-primary-active:var(--mds-color-blue-700);
+    --mds-bg-interactive-primary-default-light:var(--mds-color-blue-50);
+    --mds-bg-nav-pill-selected:var(--mds-color-gray-200);
+    --mds-bg-feedback-success-light:var(--mds-color-green-50);
+    /* activity-icon categories, keyed by MOD_PURPOSE_* (lib/moodlelib.php:491-503) */
+    --mds-activity-icon-assessment-bg:var(--mds-color-pink-100);        --mds-activity-icon-assessment-icon:var(--mds-color-pink-500);
+    --mds-activity-icon-communication-bg:var(--mds-color-orange-100);   --mds-activity-icon-communication-icon:var(--mds-color-orange-600);
+    --mds-activity-icon-content-bg:var(--mds-color-cyan-100);           --mds-activity-icon-content-icon:var(--mds-color-cyan-500);
+    --mds-activity-icon-collaboration-bg:var(--mds-color-green-100);    --mds-activity-icon-collaboration-icon:var(--mds-color-green-500);
+    --mds-activity-icon-interactivecontent-bg:var(--mds-color-purple-100); --mds-activity-icon-interactivecontent-icon:var(--mds-color-purple-600);
+    --mds-activity-icon-administration-bg:var(--mds-color-gray-200);    --mds-activity-icon-administration-icon:var(--mds-color-gray-700);
+
+    /* ---- MDS spacing (dist/tokens/css/spacing.css) ---- */
+    --mds-spacing-xxs:.25rem; --mds-spacing-xs:.5rem; --mds-spacing-sm:.75rem;
+    --mds-spacing-md:1rem; --mds-spacing-lg:1.25rem; --mds-spacing-xl:2rem; --mds-spacing-xxl:3rem;
+
+    /* ---- MDS radius (dist/tokens/css/borders.css) ---- */
+    --mds-border-radius-xs:.25rem; --mds-border-radius-sm:.375rem; --mds-border-radius-md:.5rem;
+    --mds-border-radius-lg:.75rem; --mds-border-radius-xl:1rem; --mds-border-radius-pill:50rem;
+
+    /* ---- MDS typography (dist/tokens/css/typography.css) ---- */
+    --mds-font-family-base:"Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mds-font-size-headings-3:1.75rem; --mds-line-height-headings-3:2.25rem;
+    --mds-font-size-headings-4:1.5rem;  --mds-line-height-headings-4:2rem;
+    --mds-font-size-headings-5:1.25rem; --mds-line-height-headings-5:1.75rem;
+    --mds-font-size-headings-6:1rem;    --mds-line-height-headings-6:1.5rem;
+    --mds-font-size-paragraph-default:1rem;   --mds-line-height-paragraph-default:1.5rem;
+    --mds-font-size-paragraph-small:.875rem;  --mds-line-height-paragraph-small:1.25rem;
+    --mds-font-size-body:1rem;
+    --mds-font-weight-regular:400; --mds-font-weight-medium:500; --mds-font-weight-semibold:600; --mds-font-weight-bold:700;
+
+    /* ---- local layout (not visual tokens) ---- */
+    --shell-max:1440px; --shell-pad:1.25rem;
+    --nav-h:64px; --footer-h:64px;
+    --ci-width:285px; --btn:40px;
+    --content-max:830px;  /* $course-content-maxwidth, Boost's real value */
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ min-height:100%; }
+  body{
+    margin:0; padding-top:var(--nav-h);
+    font-family:var(--mds-font-family-base);
+    color:var(--mds-text-default);
+    background:var(--mds-bg-surface-default);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{ color:var(--mds-bg-interactive-primary-default); text-decoration:none; }
+  button{ font-family:inherit; }
+  .shell{ max-width:var(--shell-max); margin:0 auto; padding:0 var(--shell-pad); }
+
+  /* =====================  TOP NAV  =====================
+     Geometry from the Figma header component (node 105:189) via
+     TEMPLATE-shell.html: 64px bar, contents capped to the shell, inset 20px.
+     Fixed rather than sticky so it survives the very bottom of a long form. */
+  .topbar{ position:fixed; top:0; left:0; right:0; z-index:40;
+    background:var(--mds-bg-surface-subtle); border-bottom:1px solid var(--mds-border-subtle); }
+  .topbar-inner{ height:calc(var(--nav-h) - 1px); display:flex; align-items:center; justify-content:space-between; gap:var(--mds-spacing-md); }
+  .nav-left{ display:flex; align-items:center; gap:2rem; min-width:0; }
+  .brand{ display:flex; align-items:center; gap:.5rem; height:40px; }
+  .brand .mark{ font-size:26px; }
+  .brand .word b{ display:block; font-weight:var(--mds-font-weight-bold); font-size:17px; letter-spacing:.2px; line-height:1; }
+  .brand .word span{ display:block; font-size:11px; letter-spacing:2px; color:var(--mds-text-subtle); }
+  .nav-pills{ display:flex; align-items:center; gap:var(--mds-spacing-xxs); }
+  .nav-pill{ display:flex; align-items:center; gap:var(--mds-spacing-xxs); height:32px; padding:0 var(--mds-spacing-sm);
+    border-radius:var(--mds-border-radius-md); border:none; background:transparent;
+    font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium);
+    color:var(--mds-text-subtle); cursor:pointer; white-space:nowrap; }
+  .nav-pill .dot{ width:4px; height:4px; border-radius:50%; background:var(--mds-bg-interactive-primary-default); }
+  .nav-pill.selected{ background:var(--mds-bg-nav-pill-selected); color:var(--mds-text-default); }
+  .burger{ display:none; width:var(--btn); height:var(--btn); border:none; background:transparent;
+    border-radius:var(--mds-border-radius-sm); cursor:pointer; font-size:20px; align-items:center; justify-content:center; }
+  .nav-right{ display:flex; align-items:center; gap:var(--mds-spacing-xs); }
+  .nav-right-group{ display:flex; align-items:center; gap:var(--mds-spacing-md); }
+  .search{ display:flex; align-items:center; gap:var(--mds-spacing-xs); width:256px; height:36px; padding:0 var(--mds-spacing-sm);
+    background:var(--mds-bg-surface-strong); border-radius:var(--mds-border-radius-md); color:var(--mds-text-subtle); font-size:14px; }
+  .editmode{ display:flex; align-items:center; gap:var(--mds-spacing-xs); }
+  .editmode .label{ font-size:16px; white-space:nowrap; }
+  .switch{ width:32px; height:18px; border-radius:var(--mds-border-radius-pill); background:var(--mds-bg-interactive-primary-default);
+    position:relative; border:none; cursor:pointer; flex:0 0 auto; }
+  .switch::after{ content:""; position:absolute; top:2px; left:16px; width:14px; height:14px; border-radius:50%; background:#fff; transition:left .15s ease; }
+  .switch[aria-pressed="false"]{ background:var(--mds-border-interactive-secondary-default); }
+  .switch[aria-pressed="false"]::after{ left:2px; }
+  .icon-btn{ width:28px; height:28px; border:none; background:transparent; border-radius:var(--mds-border-radius-sm);
+    color:var(--mds-text-subtle); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .nav-icons{ display:flex; align-items:center; gap:var(--mds-spacing-xs); }
+  .nav-divider{ width:1px; height:24px; background:var(--mds-bg-surface-strong); }
+  .profile{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:0 var(--mds-spacing-xs); border-radius:var(--mds-border-radius-pill); cursor:pointer; }
+  .avatar{ width:32px; height:32px; border-radius:50%; border:1px solid var(--mds-border-default);
+    background:linear-gradient(135deg,#f0a878,#c9805a); display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:600; }
+  .profile .pname{ font-size:14px; font-weight:500; }
+  .profile .fa-chevron-down{ font-size:8px; color:var(--mds-text-subtle); }
+
+  /* =====================  PAGE LAYOUT  ===================== */
+  .layout{ display:flex; align-items:flex-start; max-width:var(--shell-max); margin:0 auto;
+    padding:var(--mds-spacing-lg) var(--shell-pad) var(--mds-spacing-xxl); position:relative;
+    min-height:calc(100vh - var(--nav-h)); }
+  .toggle-col{ position:absolute; left:4px; top:var(--mds-spacing-lg); bottom:0; width:var(--btn); display:flex; justify-content:center; }
+  body.ci-open .toggle-col{ display:none; }
+  .ci-toggle{ width:var(--btn); height:var(--btn); border:none; cursor:pointer; border-radius:var(--mds-border-radius-sm);
+    background:var(--mds-bg-surface-strong); color:var(--mds-text-subtle); display:flex; align-items:center; justify-content:center; }
+  .ci-toggle.sticky{ position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); }
+  .ci-toggle.contained{ background:transparent; }
+  .sidebar-icon{ width:20px; height:16px; display:block; }
+
+  .drawer{ flex:0 0 auto; width:0; overflow:hidden; position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg));
+    align-self:flex-start; transition:width .32s cubic-bezier(.4,0,.2,1); }
+  body.ci-open #drawer{ width:var(--ci-width); }
+  .ci-card{ width:var(--ci-width); background:var(--mds-bg-surface-strong); border-radius:var(--mds-border-radius-md);
+    padding:0 var(--mds-spacing-sm) var(--mds-spacing-md);
+    max-height:calc(100vh - var(--nav-h) - 2 * var(--mds-spacing-lg)); overflow:hidden auto;
+    transform:translateX(-100%); transition:transform .32s cubic-bezier(.4,0,.2,1); }
+  body.ci-open .ci-card{ transform:translateX(0); }
+  .ci-header{ display:flex; align-items:center; justify-content:space-between; height:53px; padding-left:var(--mds-spacing-md); padding-top:var(--mds-spacing-xs); }
+  .ci-title{ font-size:16px; font-weight:600; }
+  .ci-divider{ height:1px; background:var(--mds-border-default); }
+  .ci-sec-head{ display:flex; align-items:center; gap:var(--mds-spacing-xs); padding:var(--mds-spacing-sm);
+    border:none; background:none; width:100%; cursor:pointer; text-align:left; border-radius:var(--mds-border-radius-sm); }
+  .ci-sec-head:hover{ background:rgba(0,0,0,.04); }
+  .ci-sec-head .chev{ width:10px; font-size:8px; color:var(--mds-text-muted); flex:0 0 auto; text-align:center; transition:transform .15s ease; }
+  .ci-sec-head .txt{ font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ci-section.collapsed .chev{ transform:rotate(-90deg); }
+  .ci-section.collapsed .ci-activities{ display:none; }
+  .ci-activities{ padding-left:var(--mds-spacing-md); display:flex; flex-direction:column; gap:var(--mds-spacing-xxs); }
+  .ci-activity{ display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-sm);
+    border-radius:var(--mds-border-radius-sm); cursor:pointer; min-width:0; }
+  .ci-activity:hover{ background:rgba(0,0,0,.04); }
+  .ci-acticon{ font-size:14px; color:var(--mds-color-pink-500); flex:0 0 auto; }
+  .ci-activity .txt{ font-size:14px; font-weight:500; color:var(--mds-text-subtle); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  .ci-activity.pageitem{ background:var(--mds-bg-interactive-primary-default); }
+  .ci-activity.pageitem .txt, .ci-activity.pageitem .ci-acticon{ color:#fff; }
+  /* the not-yet-saved activity, shown as a ghost row while creating */
+  .ci-activity.ghost{ background:var(--mds-bg-interactive-primary-default-light);
+    outline:1px dashed var(--mds-bg-interactive-primary-default); outline-offset:-1px; }
+  .ci-activity.ghost .txt{ color:var(--mds-bg-interactive-primary-default); font-style:italic; }
+  body:not(.step-create) .ci-activity.ghost{ display:none; }
+  body.flow-today .ci-activity.ghost{ display:none; }
+
+  .content-col{ flex:1 1 auto; min-width:0; margin:0 auto; padding:0 23px; }
+  body.limitedwidth .content-col{ max-width:var(--content-max); }
+
+  /* =====================  SHARED CONTROLS  ===================== */
+  .btn{ display:inline-flex; align-items:center; gap:var(--mds-spacing-xs); border:1px solid var(--mds-border-default);
+    background:var(--mds-bg-surface-default); border-radius:var(--mds-border-radius-sm);
+    padding:var(--mds-spacing-xs) var(--mds-spacing-md); font-size:var(--mds-font-size-paragraph-small);
+    font-weight:var(--mds-font-weight-medium); color:var(--mds-text-subtle); cursor:pointer; white-space:nowrap; }
+  .btn:hover{ background:var(--mds-bg-surface-subtle); }
+  .btn-primary{ background:var(--mds-bg-interactive-primary-default); color:#fff; border-color:transparent; }
+  .btn-primary:hover{ background:var(--mds-bg-interactive-primary-hover); }
+  .btn-ghost{ background:none; border-color:transparent; color:var(--mds-text-subtle); }
+  .btn-ghost:hover{ background:var(--mds-bg-surface-subtle); }
+  .btn:focus-visible, .nav-pill:focus-visible{ outline:2px solid var(--mds-bg-interactive-primary-default); outline-offset:2px; }
+
+  /* split button: primary action + a caret opening its variants */
+  .split{ display:inline-flex; }
+  .split .btn-primary:first-child{ border-top-right-radius:0; border-bottom-right-radius:0; }
+  .split .split-caret{ border-top-left-radius:0; border-bottom-left-radius:0; padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
+    border-left:1px solid rgba(255,255,255,.35); }
+  .split-wrap{ position:relative; }
+  .split-menu{ display:none; position:absolute; right:0; bottom:calc(100% + 6px); min-width:250px; z-index:30;
+    background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-md); box-shadow:0 8px 28px rgba(0,0,0,.16); padding:var(--mds-spacing-xxs); }
+  .split-wrap.open .split-menu{ display:block; }
+  .split-menu button{ display:block; width:100%; text-align:left; border:none; background:none; cursor:pointer;
+    padding:var(--mds-spacing-xs) var(--mds-spacing-sm); border-radius:var(--mds-border-radius-sm);
+    font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); }
+  .split-menu button:hover{ background:var(--mds-bg-surface-subtle); color:var(--mds-text-default); }
+
+  /* =====================  WORKSPACE HEAD  =====================
+     Breadcrumb + h1 + (in Today only) the course secondary navigation. */
+  .ws-head{ padding:0 0 var(--mds-spacing-md); }
+  .ws-eyebrow{ display:flex; align-items:center; gap:.4rem; flex-wrap:wrap;
+    font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); margin-bottom:var(--mds-spacing-xs); }
+  .ws-eyebrow i{ font-size:.6rem; }
+  .ws-titlerow{ display:flex; align-items:center; gap:var(--mds-spacing-sm); }
+  .ws-titlerow h1{ margin:0; font-size:var(--mds-font-size-headings-3); line-height:var(--mds-line-height-headings-3);
+    font-weight:var(--mds-font-weight-bold); }
+  /* activity icon tile, same construction core uses (.activityiconcontainer) */
+  .acticon{ width:40px; height:40px; border-radius:var(--mds-border-radius-md); flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .acticon.assessment{ background:var(--mds-activity-icon-assessment-bg); color:var(--mds-activity-icon-assessment-icon); }
+  .acticon.communication{ background:var(--mds-activity-icon-communication-bg); color:var(--mds-activity-icon-communication-icon); }
+  .acticon.content{ background:var(--mds-activity-icon-content-bg); color:var(--mds-activity-icon-content-icon); }
+  .acticon.collaboration{ background:var(--mds-activity-icon-collaboration-bg); color:var(--mds-activity-icon-collaboration-icon); }
+  .acticon.interactivecontent{ background:var(--mds-activity-icon-interactivecontent-bg); color:var(--mds-activity-icon-interactivecontent-icon); }
+  .acticon.administration{ background:var(--mds-activity-icon-administration-bg); color:var(--mds-activity-icon-administration-icon); }
+  .acticon.sm{ width:32px; height:32px; font-size:14px; }
+
+  .ws-secondnav{ display:flex; align-items:center; gap:var(--mds-spacing-xxs); height:32px;
+    margin-top:var(--mds-spacing-md); overflow-x:auto; scrollbar-width:none; }
+  .ws-secondnav::-webkit-scrollbar{ display:none; }
+  .ws-secondnav .nav-pill{ flex:0 0 auto; }
+  .ws-secondnav .nav-pill:hover:not(.selected){ background:var(--mds-bg-surface-subtle); color:var(--mds-text-default); }
+
+  /* the create screen's honest replacement for a tab bar: what is being made,
+     and where it is going. Both values the create path already holds
+     ($sectionnum / get_section_name at modedit.php:90). */
+  .create-context{ display:flex; align-items:center; flex-wrap:wrap; gap:var(--mds-spacing-xs);
+    margin-top:var(--mds-spacing-xs); font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); }
+  .create-context .sectionpick{ display:inline-flex; align-items:center; gap:var(--mds-spacing-xxs);
+    border:1px solid var(--mds-border-default); background:var(--mds-bg-surface-default);
+    border-radius:var(--mds-border-radius-sm); padding:2px var(--mds-spacing-xs); cursor:pointer;
+    font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); color:var(--mds-text-subtle); }
+  .create-context .sectionpick i{ font-size:.6rem; }
+
+  /* =====================  SETTINGS FORM  =====================
+     Shape carried over verbatim from PROTOTYPE-course-settings.html, so the
+     "All settings" state of this screen is the settings design already agreed,
+     not a second dialect. */
+  .settings-body{ display:grid; grid-template-columns:200px 1fr; gap:var(--mds-spacing-xl); align-items:start; }
+  .settings-nav{ position:sticky; top:calc(var(--nav-h) + var(--mds-spacing-lg)); display:flex; flex-direction:column; gap:2px; }
+  .settings-nav a{ padding:var(--mds-spacing-xs) var(--mds-spacing-sm); border-radius:var(--mds-border-radius-sm); cursor:pointer;
+    font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium);
+    color:var(--mds-text-subtle); border-left:2px solid transparent; }
+  .settings-nav a:hover{ background:var(--mds-bg-surface-subtle); }
+  .settings-nav a.active{ color:var(--mds-bg-interactive-primary-default);
+    border-left-color:var(--mds-bg-interactive-primary-default); background:var(--mds-bg-interactive-primary-default-light); }
+  .settings-form{ min-width:0; }
+  .set-section{ margin-bottom:var(--mds-spacing-xl); scroll-margin-top:calc(var(--nav-h) + var(--mds-spacing-lg)); }
+  /* Every group header is flex, not just the collapsed one: the chevron, the
+     label and the trailing count have to lay out the same either way, or the
+     header reflows when a group opens. */
+  .set-section > h2{ margin:0 0 var(--mds-spacing-md); padding-bottom:var(--mds-spacing-xs);
+    border-bottom:1px solid var(--mds-border-subtle);
+    display:flex; align-items:center; gap:var(--mds-spacing-xs);
+    font-size:var(--mds-font-size-headings-6); font-weight:var(--mds-font-weight-bold); }
+  .set-section .hcount{ margin-left:auto; font-size:var(--mds-font-size-paragraph-small);
+    font-weight:var(--mds-font-weight-regular); color:var(--mds-text-muted); }
+
+  /* --- collapsible headers exist ONLY on the Today screen ---
+     mform renders every group as a collapsible header, and the Today screen is
+     a reproduction of main, so it keeps them. The proposed screen does not:
+     with the rail doing the navigating, a header that also hides its own
+     content is a second mechanism for the same job, and the two disagree about
+     where you are. */
+  .set-section .hbtn{ display:flex; align-items:center; gap:var(--mds-spacing-xs); width:100%;
+    border:none; background:none; cursor:pointer; padding:0; text-align:left;
+    font:inherit; color:inherit; }
+  .set-section .hbtn:focus-visible{ outline:2px solid var(--mds-bg-interactive-primary-default); outline-offset:3px; }
+  .set-section.collapsed .set-fields{ display:none; }
+  .set-section .hchev{ font-size:.7rem; color:var(--mds-text-muted); transition:transform .15s ease; }
+  .set-section.collapsed .hchev{ transform:rotate(-90deg); }
+
+  .field{ margin-bottom:var(--mds-spacing-md); }
+  .field > label.flabel{ display:block; font-size:var(--mds-font-size-paragraph-small);
+    font-weight:var(--mds-font-weight-semibold); margin-bottom:var(--mds-spacing-xxs); }
+  .field .req{ color:var(--mds-text-danger); margin-left:2px; }
+  .field .fhelp{ font-size:.8125rem; color:var(--mds-text-muted); margin-top:var(--mds-spacing-xxs); }
+  .input, .select, .textarea{ width:100%; font-family:inherit; font-size:var(--mds-font-size-paragraph-default);
+    color:var(--mds-text-default); background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-sm); padding:var(--mds-spacing-xs) var(--mds-spacing-sm); }
+  .input:focus, .select:focus, .textarea:focus{ outline:none; border-color:var(--mds-bg-interactive-primary-default);
+    box-shadow:0 0 0 2px rgba(15,108,191,.18); }
+  .select{ appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' stroke='%236a737b' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 12px center; background-size:12px 12px; padding-right:32px; }
+  .field-inline{ display:flex; gap:var(--mds-spacing-sm); align-items:flex-end; flex-wrap:wrap; }
+  .field-inline > *{ flex:1 1 160px; }
+  .checkline{ display:flex; align-items:flex-start; gap:var(--mds-spacing-xs); font-size:var(--mds-font-size-paragraph-default); }
+  .checkline input{ margin-top:3px; accent-color:var(--mds-bg-interactive-primary-default); }
+  .rte{ border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-sm); }
+  .rte-toolbar{ display:flex; gap:2px; padding:var(--mds-spacing-xxs) var(--mds-spacing-xs);
+    border-bottom:1px solid var(--mds-border-default); color:var(--mds-text-muted); font-size:12px; }
+  .rte-toolbar span{ width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:4px; }
+  .rte-area{ min-height:96px; padding:var(--mds-spacing-sm); font-size:var(--mds-font-size-paragraph-default); outline:none; }
+  .rte-area:empty::before{ content:attr(data-placeholder); color:var(--mds-text-muted); }
+  /* date_time_selector: d / m / y / h / m + the optional Enable checkbox */
+  .datefield{ display:flex; align-items:center; gap:var(--mds-spacing-xs); flex-wrap:wrap; }
+  .datefield .select{ width:auto; min-width:64px; }
+  .datefield .checkline{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); }
+
+  /* A field lifted into General from another group. It keeps its real home
+     visible so the form does not quietly lie about where the setting lives —
+     the same field is not rendered twice, it has moved. */
+  .field .fhome{ display:inline-flex; align-items:center; gap:4px; margin-left:var(--mds-spacing-xs);
+    font-size:.6875rem; font-weight:var(--mds-font-weight-medium); color:var(--mds-text-muted);
+    background:var(--mds-bg-surface-strong); border-radius:var(--mds-border-radius-pill); padding:1px 8px; }
+  /* the group a lifted field came from says so, rather than looking incomplete */
+  .set-section .lifted-note{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted);
+    margin:calc(-1 * var(--mds-spacing-xs)) 0 var(--mds-spacing-md); }
+
+  /* =====================  STICKY SAVE FOOTER  =====================
+     core/sticky_footer, which the module form already uses:
+     moodleform_mod::add_action_buttons() ends with set_sticky_footer('buttonar'). */
+  .savebar{ position:fixed; left:0; right:0; bottom:0; z-index:35; height:var(--footer-h);
+    background:var(--mds-bg-surface-default); border-top:1px solid var(--mds-border-default);
+    box-shadow:0 -2px 12px rgba(0,0,0,.06); display:flex; align-items:center; }
+  .savebar-inner{ display:flex; align-items:center; gap:var(--mds-spacing-xs); width:100%; }
+  .savebar .sb-left{ margin-right:auto; font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted);
+    display:flex; align-items:center; gap:.4rem; min-width:0; }
+  .savebar .sb-left .sb-truncate{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  body.step-chooser .savebar, body.step-course .savebar, body.step-done .savebar{ display:none; }
+  body:not(.step-chooser):not(.step-course):not(.step-done) .layout{ padding-bottom:calc(var(--footer-h) + var(--mds-spacing-xl)); }
+
+  /* =====================  COURSE PAGE (entry point)  ===================== */
+  .scard{ border:1px solid var(--mds-border-subtle); border-radius:var(--mds-border-radius-lg);
+    background:var(--mds-bg-surface-subtle); padding:var(--mds-spacing-md); margin-bottom:var(--mds-spacing-md); }
+  .shead{ display:flex; align-items:center; gap:var(--mds-spacing-xs); margin-bottom:var(--mds-spacing-sm); }
+  .shead h2{ margin:0; font-size:var(--mds-font-size-headings-5); font-weight:var(--mds-font-weight-bold); }
+  .acard{ display:flex; align-items:center; gap:var(--mds-spacing-sm); background:var(--mds-bg-surface-default);
+    border:1px solid var(--mds-border-subtle); border-radius:var(--mds-border-radius-md);
+    padding:var(--mds-spacing-sm) var(--mds-spacing-md); margin-bottom:var(--mds-spacing-xs); }
+  .acard .aname{ font-weight:var(--mds-font-weight-medium); }
+  .acard .ameta{ font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); }
+  .acard.justmade{ border-color:var(--mds-color-green-500); background:var(--mds-bg-feedback-success-light); }
+  .addactivity{ display:flex; align-items:center; justify-content:center; gap:var(--mds-spacing-xs); width:100%;
+    border:1px dashed var(--mds-border-interactive-secondary-default); border-radius:var(--mds-border-radius-md);
+    background:none; cursor:pointer; padding:var(--mds-spacing-sm); color:var(--mds-bg-interactive-primary-default);
+    font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium); }
+  .addactivity:hover{ background:var(--mds-bg-interactive-primary-default-light); }
+
+  /* =====================  ACTIVITY CHOOSER MODAL  =====================
+     Reproduces core's modal: large, scrollable:false, tabs from
+     activitychooser/exporter.js (All, Starred, Recommended, then one tab per
+     MOD_PURPOSE_* category), tiles from local/activitychooser/item.mustache
+     (icon + name + info button + star). */
+  .modal-overlay{ display:none; position:fixed; inset:0; z-index:90; background:rgba(0,0,0,.45);
+    align-items:center; justify-content:center; padding:var(--mds-spacing-md); }
+  body.step-chooser .modal-overlay{ display:flex; }
+  .chooser{ width:100%; max-width:800px; max-height:min(760px, 88vh); display:flex; flex-direction:column;
+    background:var(--mds-bg-surface-default); border-radius:var(--mds-border-radius-lg);
+    box-shadow:0 20px 60px rgba(0,0,0,.3); overflow:hidden; }
+  .chooser-head{ display:flex; align-items:center; justify-content:space-between;
+    padding:var(--mds-spacing-md); border-bottom:1px solid var(--mds-border-subtle); }
+  .chooser-head h2{ margin:0; font-size:var(--mds-font-size-headings-5); font-weight:var(--mds-font-weight-bold); }
+  .chooser-close{ width:32px; height:32px; border:none; background:none; cursor:pointer;
+    border-radius:var(--mds-border-radius-sm); color:var(--mds-text-muted); font-size:16px; }
+  .chooser-close:hover{ background:var(--mds-bg-surface-subtle); }
+  .chooser-search{ padding:var(--mds-spacing-md) var(--mds-spacing-md) 0; }
+  .chooser-search .searchbox{ display:flex; align-items:center; gap:var(--mds-spacing-xs);
+    border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-sm);
+    padding:var(--mds-spacing-xs) var(--mds-spacing-sm); color:var(--mds-text-muted); }
+  .chooser-search input{ border:none; outline:none; flex:1; font-family:inherit;
+    font-size:var(--mds-font-size-paragraph-default); color:var(--mds-text-default); background:none; }
+  .chooser-body{ display:grid; grid-template-columns:184px 1fr; gap:var(--mds-spacing-md);
+    padding:var(--mds-spacing-md); min-height:0; flex:1 1 auto; }
+  .chooser-tabs{ display:flex; flex-direction:column; gap:2px; overflow-y:auto; }
+  .chooser-tabs button{ display:flex; align-items:center; gap:var(--mds-spacing-xs); text-align:left; border:none;
+    background:none; cursor:pointer; padding:var(--mds-spacing-xs) var(--mds-spacing-sm);
+    border-radius:var(--mds-border-radius-sm); font-size:var(--mds-font-size-paragraph-small);
+    font-weight:var(--mds-font-weight-medium); color:var(--mds-text-subtle); }
+  .chooser-tabs button:hover{ background:var(--mds-bg-surface-subtle); }
+  .chooser-tabs button.on{ background:var(--mds-bg-nav-pill-selected); color:var(--mds-text-default); }
+  .chooser-tabs .sep{ height:1px; background:var(--mds-border-subtle); margin:var(--mds-spacing-xs) 0; }
+  .chooser-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(168px, 1fr));
+    gap:var(--mds-spacing-xs); overflow-y:auto; align-content:start; }
+  .chooser-item{ position:relative; display:flex; align-items:flex-start; gap:var(--mds-spacing-xs);
+    border:1px solid transparent; border-radius:var(--mds-border-radius-md); padding:var(--mds-spacing-xs);
+    cursor:pointer; background:none; text-align:left; }
+  .chooser-item:hover{ background:var(--mds-bg-surface-subtle); border-color:var(--mds-border-subtle); }
+  .chooser-item .ciname{ font-size:var(--mds-font-size-paragraph-small); font-weight:var(--mds-font-weight-medium);
+    color:var(--mds-text-default); line-height:1.3; }
+  .chooser-item .ciacts{ display:flex; gap:2px; margin-top:2px; color:var(--mds-text-muted); font-size:11px; }
+  .chooser-foot{ padding:var(--mds-spacing-sm) var(--mds-spacing-md); border-top:1px solid var(--mds-border-subtle);
+    background:var(--mds-bg-surface-subtle); font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-muted); }
+
+  /* =====================  AFTER CREATE  ===================== */
+  .donecard{ border:1px solid var(--mds-color-green-500); background:var(--mds-bg-feedback-success-light);
+    border-radius:var(--mds-border-radius-md); padding:var(--mds-spacing-md); margin-bottom:var(--mds-spacing-lg);
+    display:flex; align-items:flex-start; gap:var(--mds-spacing-sm); }
+  .donecard i{ color:var(--mds-color-green-500); font-size:18px; margin-top:2px; }
+  .donecard h3{ margin:0 0 var(--mds-spacing-xxs); font-size:var(--mds-font-size-headings-6); font-weight:var(--mds-font-weight-bold); }
+  .donecard p{ margin:0; font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); }
+  .donecard .doneacts{ margin-top:var(--mds-spacing-sm); display:flex; gap:var(--mds-spacing-xs); flex-wrap:wrap; }
+  .summaryrow{ display:flex; align-items:center; justify-content:space-between; gap:var(--mds-spacing-md);
+    padding:var(--mds-spacing-xs) 0; border-bottom:1px solid var(--mds-border-subtle);
+    font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); }
+  .summaryrow:last-of-type{ border-bottom:none; }
+  .summaryrow b{ color:var(--mds-text-default); }
+
+  /* =====================  SCREEN SWITCHING  ===================== */
+  .screen{ display:none; }
+  body.step-course   #screenCourse{ display:block; }
+  body.step-chooser  #screenCourse{ display:block; }   /* the modal opens over it */
+  body.step-create.flow-today    #screenToday{ display:block; }
+  body.step-create.flow-proposed #screenNew{ display:block; }
+  body.step-done     #screenDone{ display:block; }
+
+  /* The variable this prototype exists to test — what the open General group
+     asks for on arrival — is applied by re-rendering the form, not by hiding
+     fields with CSS. See renderProposed() below. */
+
+  /* =====================  CALLOUT  ===================== */
+  .callout{ border-left:3px solid var(--mds-bg-interactive-primary-default);
+    background:var(--mds-bg-interactive-primary-default-light); border-radius:0 var(--mds-border-radius-sm) var(--mds-border-radius-sm) 0;
+    padding:var(--mds-spacing-sm) var(--mds-spacing-md); margin-bottom:var(--mds-spacing-md);
+    font-size:var(--mds-font-size-paragraph-small); color:var(--mds-text-subtle); }
+  .callout.warn{ border-left-color:var(--mds-color-yellow-500); background:var(--mds-color-yellow-50); }
+  .callout b{ color:var(--mds-text-default); }
+  .callout code{ background:var(--mds-bg-surface-strong); border-radius:3px; padding:1px 4px; font-size:.8125rem; }
+  body:not(.annotations-on) .callout{ display:none; }
+
+  /* =====================  DEV STATE SWITCHER  ===================== */
+  .devswitch{ position:fixed; left:8px; bottom:calc(var(--footer-h) + 12px); z-index:95; width:248px;
+    background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-md); box-shadow:0 8px 28px rgba(0,0,0,.16); padding:var(--mds-spacing-sm); }
+  .dev-head{ display:flex; align-items:center; gap:var(--mds-spacing-xs); margin-bottom:var(--mds-spacing-xs); }
+  .dev-name{ font-size:.6875rem; text-transform:uppercase; letter-spacing:.5px; color:var(--mds-text-muted);
+    font-weight:var(--mds-font-weight-semibold); }
+  .dev-toggle{ margin-left:auto; width:22px; height:22px; border:1px solid var(--mds-border-default);
+    background:var(--mds-bg-surface-subtle); border-radius:var(--mds-border-radius-xs); cursor:pointer;
+    color:var(--mds-text-subtle); font-size:10px; display:flex; align-items:center; justify-content:center; }
+  .devswitch h5{ margin:var(--mds-spacing-xs) 0 4px; font-size:.625rem; text-transform:uppercase;
+    letter-spacing:.5px; color:var(--mds-text-muted); }
+  .devrow{ display:flex; flex-wrap:wrap; gap:4px; }
+  .devbtn{ border:1px solid var(--mds-border-default); background:var(--mds-bg-surface-subtle);
+    border-radius:var(--mds-border-radius-xs); padding:4px 8px; cursor:pointer; font-family:inherit;
+    font-size:.6875rem; color:var(--mds-text-subtle); font-weight:var(--mds-font-weight-medium); }
+  .devbtn:hover{ background:var(--mds-bg-surface-strong); }
+  .devbtn.on{ background:var(--mds-bg-interactive-primary-default); color:#fff; border-color:transparent; }
+  .devbtn:disabled{ opacity:.4; cursor:default; }
+  .devswitch.min{ width:auto; padding:4px; }
+  .devswitch.min .dev-body, .devswitch.min .dev-name{ display:none; }
+  .devswitch.min .dev-toggle{ margin:0; width:auto; height:26px; padding:0 var(--mds-spacing-xs);
+    border-color:transparent; background:var(--mds-bg-interactive-primary-default); color:#fff;
+    font-size:.6875rem; font-weight:var(--mds-font-weight-medium); gap:6px; }
+  .anno-toggle{ position:fixed; bottom:calc(var(--footer-h) + 12px); left:50%; transform:translateX(-50%); z-index:94;
+    background:var(--mds-bg-interactive-primary-default); color:#fff; border:none; border-radius:999px;
+    padding:8px 15px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,.25); display:flex; align-items:center; gap:8px; }
+  body:not(.annotations-on) .anno-toggle{ background:var(--mds-text-subtle); }
+
+  /* =====================  RESPONSIVE  ===================== */
+  @media (max-width:1024px){
+    .burger{ display:flex; }
+    .nav-left .brand, .nav-left .nav-pills{ display:none; }
+  }
+  @media (max-width:991.98px){
+    body.ci-overlay #drawer{ position:fixed; left:0; top:var(--nav-h); height:calc(100vh - var(--nav-h));
+      width:auto !important; z-index:47; padding:16px; transform:translateX(-110%);
+      transition:transform .3s cubic-bezier(.4,0,.2,1); }
+    body.ci-overlay.ci-open #drawer{ transform:translateX(0); }
+    body.ci-overlay .ci-card{ width:300px; max-width:85vw; height:100%; max-height:none; transform:none; }
+    body.ci-overlay .toggle-col{ position:static; width:var(--btn); margin-right:12px; }
+  }
+  @media (max-width:900px){
+    .settings-body{ grid-template-columns:1fr; }
+    /* One scrolling row, not a wrapped block. Thirteen groups wrapped is six
+       rows of chips before the form even starts, which buries the field the
+       screen exists to ask for. */
+    .settings-nav{ position:sticky; top:var(--nav-h); z-index:10;
+      flex-direction:row; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none;
+      gap:var(--mds-spacing-xxs); padding:var(--mds-spacing-xs) 0;
+      background:var(--mds-bg-surface-default); border-bottom:1px solid var(--mds-border-subtle); }
+    .settings-nav::-webkit-scrollbar{ display:none; }
+    .settings-nav a{ flex:0 0 auto; white-space:nowrap; }
+    .settings-nav a, .settings-nav a.active{ border-left:none; }
+    .settings-nav a.active{ background:var(--mds-bg-nav-pill-selected); color:var(--mds-text-default); }
+    .chooser-body{ grid-template-columns:1fr; }
+    .chooser-tabs{ flex-direction:row; flex-wrap:wrap; }
+    .chooser-tabs .sep{ display:none; }
+  }
+  @media (max-width:767px){
+    :root{ --shell-pad:1rem; }
+    .search, .editmode .label, .profile .pname{ display:none; }
+    .content-col{ padding:0 16px; }
+    .devswitch{ width:calc(100vw - 16px); }
+  }
+  /* Three buttons plus a context label do not fit a phone. The secondary exit
+     is already the second item in the split menu, so drop the duplicate rather
+     than shrinking everything: the primary action stays full size and the
+     alternative stays one tap away.
+     Today's pair is left to scroll instead — it is a faithful reproduction of
+     a problem that exists on main, and hiding it would hide the comparison. */
+  @media (max-width:600px){
+    .savebar .sb-left{ display:none; }
+    #createReturnBtn{ display:none; }
+    .savebar-inner{ overflow-x:auto; scrollbar-width:none; justify-content:flex-end; }
+    .savebar-inner::-webkit-scrollbar{ display:none; }
+  }
+</style>
+</head>
+<!-- Landing state: the proposed CREATE screen, which is the thing being
+     decided. The chooser and the course page are one click away in the State
+     panel; the screen the question is about is not. -->
+<body class="limitedwidth ci-open edit-on annotations-on flow-proposed step-create scope-asis">
+
+  <!-- ===== TOP NAV ===== -->
+  <header class="topbar">
+    <div class="topbar-inner shell">
+      <div class="nav-left">
+        <button class="burger" id="burger" aria-label="Open site navigation"><i class="fa-solid fa-bars"></i></button>
+        <div class="brand">
+          <span class="mark"><i class="fa-solid fa-leaf"></i></span>
+          <span class="word"><b>Fleetwood</b><span>UNIVERSITY</span></span>
+        </div>
+        <nav class="nav-pills">
+          <button class="nav-pill"><span class="dot"></span>Dashboard</button>
+          <button class="nav-pill selected">My courses</button>
+        </nav>
+      </div>
+      <div class="nav-right">
+        <div class="nav-right-group">
+          <div class="search"><i class="fa-solid fa-magnifying-glass"></i><span>Search&hellip;</span></div>
+          <div class="editmode">
+            <span class="label">Edit mode</span>
+            <button class="switch" id="editSwitch" aria-pressed="true" aria-label="Edit mode"></button>
+          </div>
+          <div class="nav-icons">
+            <button class="icon-btn" aria-label="Notifications"><i class="fa-regular fa-bell"></i></button>
+            <button class="icon-btn" aria-label="Messages"><i class="fa-regular fa-comment"></i></button>
+          </div>
+        </div>
+        <div class="nav-divider"></div>
+        <div class="profile">
+          <span class="avatar">S</span><span class="pname">Sarah</span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== PAGE ===== -->
+  <div class="layout">
+
+    <div class="toggle-col">
+      <button class="ci-toggle sticky" id="openBtn" title="Open course index" aria-label="Open course index">
+        <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer" id="drawer">
+      <div class="ci-card">
+        <div class="ci-header">
+          <span class="ci-title">Course index</span>
+          <button class="ci-toggle contained" id="closeBtn" title="Close course index" aria-label="Close course index">
+            <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+          </button>
+        </div>
+        <div class="ci-divider"></div>
+        <div id="sections"></div>
+      </div>
+    </div>
+
+    <main class="content-col">
+
+      <!-- ============================================================
+           SCREEN 1 — the course page. The entry point, and where both
+           flows return to. Included so the reviewer sees where the
+           journey starts and ends, not just the middle of it.
+           ============================================================ -->
+      <div class="screen" id="screenCourse">
+        <div class="ws-head">
+          <div class="ws-eyebrow"><a href="#">Dashboard</a> <i class="fa-solid fa-chevron-right"></i>
+            <a href="#">My courses</a> <i class="fa-solid fa-chevron-right"></i> <span>Biology 101</span></div>
+          <div class="ws-titlerow"><h1>Biology 101</h1></div>
+          <nav class="ws-secondnav" aria-label="Course navigation">
+            <button class="nav-pill selected">Course</button>
+            <button class="nav-pill">Settings</button>
+            <button class="nav-pill">Participants</button>
+            <button class="nav-pill">Grades</button>
+            <button class="nav-pill">Activities</button>
+            <button class="nav-pill">More</button>
+          </nav>
+        </div>
+
+        <div class="callout">
+          <b>Start here.</b> Edit mode is on. Press <b>Add an activity or resource</b> in Week 3
+          to begin. The State panel, bottom left, switches between the flow as it is today and
+          the proposed flow at every step.
+        </div>
+
+        <div class="scard">
+          <div class="shead"><h2>Week 3 &mdash; Cell biology</h2></div>
+          <div class="acard">
+            <span class="acticon sm content"><i class="fa-solid fa-file-lines"></i></span>
+            <span><span class="aname">Membrane transport and osmoregulation</span><br>
+              <span class="ameta">Page</span></span>
+          </div>
+          <!-- highlighted because core already anchors the return to it:
+               modedit.php:207 sets #module-<cmid> on the course URL -->
+          <div class="acard justmade" id="madeCard" hidden>
+            <span class="acticon sm assessment"><i class="fa-solid fa-file-pen"></i></span>
+            <span><span class="aname">Cell structure fieldwork report</span><br>
+              <span class="ameta">Assignment &middot; Opened 14 August</span></span>
+          </div>
+          <button class="addactivity" id="addActivityBtn">
+            <i class="fa-solid fa-plus"></i> Add an activity or resource
+          </button>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           SCREEN 2 — TODAY. Faithful reproduction of what
+           course/modedit.php renders on the create path.
+           ============================================================ -->
+      <div class="screen" id="screenToday">
+        <div class="ws-head">
+          <!-- modedit.php:78 overrides the active URL to the COURSE SECTION,
+               and :217 sets the heading to $course->fullname -->
+          <div class="ws-eyebrow"><a href="#">Dashboard</a> <i class="fa-solid fa-chevron-right"></i>
+            <a href="#">My courses</a> <i class="fa-solid fa-chevron-right"></i>
+            <a href="#">Biology 101</a> <i class="fa-solid fa-chevron-right"></i>
+            <span>Adding a new Assignment</span></div>
+          <div class="ws-titlerow"><h1>Biology 101</h1></div>
+          <!-- COURSE secondary navigation, with Course selected. The page is in
+               a course context (modedit.php:216), so secondary.php:222 builds
+               the course tabs and nothing reflects the task in progress. -->
+          <nav class="ws-secondnav" aria-label="Course navigation">
+            <button class="nav-pill selected">Course</button>
+            <button class="nav-pill">Settings</button>
+            <button class="nav-pill">Participants</button>
+            <button class="nav-pill">Grades</button>
+            <button class="nav-pill">Activities</button>
+            <button class="nav-pill">More</button>
+          </nav>
+        </div>
+
+        <div class="callout warn">
+          <b>The problem, in one screen.</b> The heading is the course. The selected tab is
+          <b>Course</b>, which is not where you are and not where you are going. The only thing
+          naming the task is the smaller heading below. Then 13 settings groups arrive in one
+          column with no way to move between them except scrolling and opening headers &mdash;
+          all before the activity exists.
+        </div>
+
+        <h2 style="margin:0 0 var(--mds-spacing-md); font-size:var(--mds-font-size-headings-4);
+                   line-height:var(--mds-line-height-headings-4); font-weight:var(--mds-font-weight-bold);">
+          Adding a new Assignment</h2>
+
+        <!-- No rail on this screen: main has none on modedit.php. The only way
+             to reach a group is to scroll past every group above it, or to open
+             and close mform's collapsible headers. -->
+        <form class="settings-form" id="todayForm" onsubmit="return false;"></form>
+      </div>
+
+      <!-- ============================================================
+           SCREEN 3 — PROPOSED. A create screen: its own heading, no
+           course tab bar, essentials only, everything else one click away.
+           ============================================================ -->
+      <div class="screen" id="screenNew">
+        <div class="ws-head">
+          <!-- The breadcrumb keeps the course context, so nothing is lost by
+               dropping the tab bar. The section is in it because the section
+               is where the activity is going. -->
+          <div class="ws-eyebrow"><a href="#">Dashboard</a> <i class="fa-solid fa-chevron-right"></i>
+            <a href="#">My courses</a> <i class="fa-solid fa-chevron-right"></i>
+            <a href="#">Biology 101</a> <i class="fa-solid fa-chevron-right"></i>
+            <a href="#">Week 3 &mdash; Cell biology</a> <i class="fa-solid fa-chevron-right"></i>
+            <span>New assignment</span></div>
+
+          <!-- h1 = the thing being made, with its activity icon. This is the
+               structural rhyme with the edit screen, where the h1 is the
+               activity name with the same icon tile. -->
+          <div class="ws-titlerow">
+            <span class="acticon assessment"><i class="fa-solid fa-file-pen"></i></span>
+            <h1 id="newTitle">New assignment</h1>
+          </div>
+
+          <!-- No tab bar. In its place: where this is going, and a way to
+               change it. Both values modedit.php already has on the create
+               path (:60-66 sectionnum, :90 get_section_name). -->
+          <div class="create-context">
+            <span>Adding to</span>
+            <button class="sectionpick" id="sectionPick">
+              Week 3 &mdash; Cell biology <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <span>&middot; visible to students when you finish</span>
+          </div>
+        </div>
+
+        <div class="callout" id="createCallout">
+          <b>What changed.</b> The heading names the task and carries the activity icon, so
+          create and edit rhyme. There is no tab bar, because there is nothing to navigate to
+          yet &mdash; the breadcrumb carries the course. And there is one way to move around
+          the form: the rail. Nothing collapses, nothing hides, so what you see on the rail is
+          what is on the page.
+        </div>
+
+        <!-- Same rail and same form as the settings screen. Every group is open;
+             the rail is the navigation, and mform's collapsible headers are
+             gone because they were a second mechanism for the same job. -->
+        <div class="settings-body">
+          <nav class="settings-nav" id="newNav" aria-label="Settings groups"></nav>
+          <form class="settings-form" id="newForm" onsubmit="return false;"></form>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           SCREEN 4 — after create. Today's primary button already lands
+           here (modedit.php:195 redirects to mod/*/view.php), so this is
+           not new behaviour, only a clearer handover.
+           ============================================================ -->
+      <div class="screen" id="screenDone">
+        <div class="ws-head">
+          <div class="ws-eyebrow"><a href="#">Dashboard</a> <i class="fa-solid fa-chevron-right"></i>
+            <a href="#">My courses</a> <i class="fa-solid fa-chevron-right"></i>
+            <a href="#">Biology 101</a> <i class="fa-solid fa-chevron-right"></i>
+            <a href="#">Week 3 &mdash; Cell biology</a> <i class="fa-solid fa-chevron-right"></i>
+            <span>Cell structure fieldwork report</span></div>
+          <div class="ws-titlerow">
+            <span class="acticon assessment"><i class="fa-solid fa-file-pen"></i></span>
+            <h1>Cell structure fieldwork report</h1>
+          </div>
+          <!-- NOW the activity tabs are real: the cmid exists, so
+               secondary.php:709 load_module_navigation() can build them. -->
+          <nav class="ws-secondnav" aria-label="Activity navigation">
+            <button class="nav-pill selected">Assignment</button>
+            <button class="nav-pill">Settings</button>
+            <button class="nav-pill">Submissions</button>
+            <button class="nav-pill">Advanced grading</button>
+            <button class="nav-pill">More</button>
+          </nav>
+        </div>
+
+        <div class="donecard">
+          <i class="fa-solid fa-circle-check"></i>
+          <div>
+            <h3>Assignment created</h3>
+            <p>You are on the activity itself, first tab, not on its settings. Everything you did
+              not fill in is under Settings whenever you want it.</p>
+            <div class="doneacts">
+              <button class="btn" id="doneAddAnother"><i class="fa-solid fa-plus"></i> Add another activity</button>
+              <button class="btn" id="doneBackToCourse">Back to Week 3</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- mod/assign/view.php as a teacher sees it on a brand new assignment:
+             the description, then the grading summary with everything at zero.
+             Shown so it is unmistakable that the landing page is the ACTIVITY,
+             not another form. -->
+        <p style="margin:0 0 var(--mds-spacing-lg); color:var(--mds-text-subtle);">
+          Record what you observe under the microscope and submit your annotated diagrams.
+        </p>
+        <div class="scard" style="background:var(--mds-bg-surface-default); border-color:var(--mds-border-default);">
+          <div class="shead"><h2 style="font-size:var(--mds-font-size-headings-6);">Grading summary</h2></div>
+          <div class="summaryrow"><span>Participants</span><b>28</b></div>
+          <div class="summaryrow"><span>Submitted</span><b>0</b></div>
+          <div class="summaryrow"><span>Needs grading</span><b>0</b></div>
+          <div class="summaryrow"><span>Due date</span><b>No due date set</b></div>
+          <div style="margin-top:var(--mds-spacing-md); display:flex; gap:var(--mds-spacing-xs); flex-wrap:wrap;">
+            <button class="btn">View all submissions</button>
+            <button class="btn">Grade</button>
+          </div>
+        </div>
+
+        <div class="callout">
+          <b>Why the tabs could not be shown while creating.</b>
+          <code>load_module_navigation()</code> builds every tab as
+          <code>/mod/&lt;name&gt;/view.php?id=&lt;cmid&gt;</code>, and there is no cmid before
+          the activity exists. Faking it would produce dead <b>Submissions</b> and
+          <b>Advanced grading</b> links. Verified at
+          <code>secondary.php:709</code> and <code>modlib.php:959</code>. They are real here,
+          which is exactly why this is the right place to land.
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ===== STICKY SAVE FOOTER =====
+       mform already renders its buttons in core/sticky_footer:
+       moodleform_mod::add_action_buttons() ends with set_sticky_footer('buttonar'). -->
+  <div class="savebar" id="saveBar">
+    <div class="savebar-inner shell">
+      <span class="sb-left">
+        <i class="fa-regular fa-folder-open"></i>
+        <span class="sb-truncate" id="sbContext">Week 3 &mdash; Cell biology</span>
+      </span>
+      <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+
+      <!-- TODAY: the two real buttons, in the real order. submitbutton2 is
+           created first, so "Save and return to course" is the LEFT one, and
+           submitbutton ("Save and display") is the right, default one.
+           moodleform_mod.php:1096-1111. -->
+      <span id="todayButtons">
+        <button class="btn">Save and return to course</button>
+        <button class="btn btn-primary">Save and display</button>
+      </span>
+
+      <!-- PROPOSED: the same two submits, renamed to what they do, plus one
+           new variant behind the caret. -->
+      <span id="newButtons" class="split-wrap">
+        <button class="btn" id="createReturnBtn">Create and return to course</button>
+        <span class="split">
+          <button class="btn btn-primary" id="createBtn">Create assignment</button>
+          <button class="btn btn-primary split-caret" id="createCaret" aria-haspopup="menu" aria-expanded="false" aria-label="More create options">
+            <i class="fa-solid fa-chevron-up"></i>
+          </button>
+        </span>
+        <div class="split-menu" id="createMenu" role="menu">
+          <button role="menuitem" id="menuCreateOpen">Create and open the assignment</button>
+          <button role="menuitem" id="menuCreateAnother">Create and add another</button>
+          <button role="menuitem" id="menuCreateReturn">Create and return to course</button>
+        </div>
+      </span>
+    </div>
+  </div>
+
+  <!-- ===== ACTIVITY CHOOSER MODAL =====
+       Unchanged from core in this proposal. It is already a good picker; the
+       problem starts at what happens after you choose. -->
+  <div class="modal-overlay">
+    <div class="chooser" role="dialog" aria-modal="true" aria-labelledby="chooserTitle">
+      <div class="chooser-head">
+        <h2 id="chooserTitle">Add an activity or resource</h2>
+        <button class="chooser-close" id="chooserClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="chooser-search">
+        <div class="searchbox">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" placeholder="Search activities and resources" aria-label="Search activities and resources">
+        </div>
+      </div>
+      <div class="chooser-body">
+        <!-- Tab order from activitychooser/exporter.js:120-155: All, Starred,
+             Recommended, separator, then one tab per MOD_PURPOSE_* category. -->
+        <div class="chooser-tabs" id="chooserTabs" role="tablist" aria-label="Activity categories"></div>
+        <div class="chooser-grid" id="chooserGrid" role="menu"></div>
+      </div>
+      <div class="chooser-foot">
+        Choosing an activity is the commitment point. In both flows it takes you to a full page
+        &mdash; what differs is what that page says you are doing.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DEV STATE SWITCHER (throwaway) ===== -->
+  <div class="devswitch" id="devSwitch">
+    <div class="dev-head">
+      <span class="dev-name">Prototype state</span>
+      <button class="dev-toggle" id="devToggle" aria-expanded="true" title="Minimise">
+        <i class="fa-solid fa-minus" id="devToggleIcon"></i><span id="devToggleLabel"></span>
+      </button>
+    </div>
+    <div class="dev-body" id="devBody">
+      <h5>Flow</h5>
+      <div class="devrow" id="devFlow">
+        <button class="devbtn" data-flow="today">Today</button>
+        <button class="devbtn on" data-flow="proposed">Proposed</button>
+      </div>
+      <h5>Step</h5>
+      <div class="devrow" id="devStep">
+        <button class="devbtn" data-step="course">Course page</button>
+        <button class="devbtn" data-step="chooser">Chooser</button>
+        <button class="devbtn on" data-step="create">Create</button>
+        <button class="devbtn" data-step="done">After create</button>
+      </div>
+      <h5>Groups</h5>
+      <div class="devrow" id="devScope">
+        <button class="devbtn on" data-scope="asis">As mform defines them</button>
+        <button class="devbtn" data-scope="module">Lift essentials into General</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="anno-toggle" id="annoToggle"><i class="fa-solid fa-eye"></i> Hide notes</button>
+
+<script>
+(function(){
+  "use strict";
+
+  var body = document.body;
+
+  /* ============================================================
+     DATA
+     ============================================================ */
+
+  /* The activity chooser's tabs, in the order exporter.js builds them
+     (activitychooser/exporter.js:120-155). The category tabs are the
+     MOD_PURPOSE_* constants from lib/moodlelib.php:491-503. */
+  var CHOOSER_TABS = [
+    { id:"all",               label:"All",                 icon:"fa-border-all" },
+    { id:"starred",           label:"Starred",             icon:"fa-star" },
+    { id:"recommended",       label:"Recommended",         icon:"fa-thumbs-up" },
+    { sep:true },
+    { id:"administration",    label:"Administration",      icon:"fa-gear" },
+    { id:"assessment",        label:"Assessment",          icon:"fa-file-pen" },
+    { id:"collaboration",     label:"Collaboration",       icon:"fa-users" },
+    { id:"communication",     label:"Communication",       icon:"fa-comments" },
+    { id:"content",           label:"Content",             icon:"fa-file-lines" },
+    { id:"interactivecontent",label:"Interactive content", icon:"fa-wand-magic-sparkles" }
+  ];
+
+  /* The 23 core modules, with the purpose each declares via
+     FEATURE_MOD_PURPOSE. Purpose drives the icon tile colour, which is why
+     these are worth getting right rather than inventing. */
+  var MODULES = [
+    { name:"Assignment",   purpose:"assessment",         icon:"fa-file-pen",   star:true, rec:true },
+    { name:"Book",         purpose:"content",            icon:"fa-book" },
+    { name:"Chat",         purpose:"communication",      icon:"fa-comment-dots" },
+    { name:"Choice",       purpose:"assessment",         icon:"fa-circle-check" },
+    { name:"Database",     purpose:"collaboration",      icon:"fa-database" },
+    { name:"External tool",purpose:"content",            icon:"fa-arrow-up-right-from-square" },
+    { name:"Feedback",     purpose:"assessment",         icon:"fa-clipboard-question" },
+    { name:"File",         purpose:"content",            icon:"fa-file" },
+    { name:"Folder",       purpose:"content",            icon:"fa-folder" },
+    { name:"Forum",        purpose:"communication",      icon:"fa-comments", star:true },
+    { name:"Glossary",     purpose:"collaboration",      icon:"fa-spell-check" },
+    { name:"H5P",          purpose:"interactivecontent", icon:"fa-wand-magic-sparkles" },
+    { name:"IMS package",  purpose:"content",            icon:"fa-box-archive" },
+    { name:"Lesson",       purpose:"interactivecontent", icon:"fa-diagram-project" },
+    { name:"Page",         purpose:"content",            icon:"fa-file-lines", rec:true },
+    { name:"Question bank",purpose:"administration",     icon:"fa-layer-group" },
+    { name:"Quiz",         purpose:"assessment",         icon:"fa-list-check", star:true, rec:true },
+    { name:"SCORM package",purpose:"interactivecontent", icon:"fa-cube" },
+    { name:"Subsection",   purpose:"administration",     icon:"fa-folder-tree" },
+    { name:"Text and media",purpose:"content",           icon:"fa-align-left" },
+    { name:"URL",          purpose:"content",            icon:"fa-link" },
+    { name:"Wiki",         purpose:"collaboration",      icon:"fa-pen-nib" },
+    { name:"Workshop",     purpose:"assessment",         icon:"fa-people-arrows" }
+  ];
+
+  /* The assignment settings form, group by group, in the order mform renders
+     it. Verified against:
+       mod/assign/mod_form.php:48,78,130,172,210
+       mod/assign/locallib.php:1779,1788  (submission + feedback types)
+       course/moodleform_mod.php:523,619,653,659,692,964
+     "expanded" mirrors what mform opens by default: General always, plus
+     availability (mod_form.php:79) and submission types (locallib.php:1795). */
+  var GROUPS = [
+    { key:"general",                  label:"General",                  expanded:true },
+    { key:"availability",             label:"Availability",             expanded:true },
+    { key:"submissiontypes",          label:"Submission types",         expanded:true },
+    { key:"feedbacktypes",            label:"Feedback types" },
+    { key:"submissionsettings",       label:"Submission settings" },
+    { key:"groupsubmissionsettings",  label:"Group submission settings" },
+    { key:"notifications",            label:"Notifications" },
+    { key:"modstandardgrade",         label:"Grade" },
+    { key:"modstandardelshdr",        label:"Common module settings" },
+    { key:"availabilityconditionsheader", label:"Restrict access" },
+    { key:"activitycompletionheader", label:"Activity completion" },
+    { key:"tagshdr",                  label:"Tags" },
+    { key:"competenciessection",      label:"Competencies" }
+  ];
+
+  /* Placeholder fields, so each group renders as a real group rather than an
+     empty box. Only the shape matters here — the question this prototype asks
+     is about how many groups arrive at once, not about their contents. */
+  var FIELDS = {
+    general:["Assignment name*","Description","Display description on course page","Activity instructions","Additional files","Attach instructions to submission"],
+    availability:["Allow submissions from","Due date","Cut-off date","Remind me to grade by","Time limit","Always show description"],
+    submissiontypes:["Submission types","Word limit","Maximum number of uploaded files","Maximum submission size","Accepted file types"],
+    feedbacktypes:["Feedback types","Comment inline","Feedback files","Offline grading worksheet"],
+    submissionsettings:["Require students to click submit","Require that students accept the submission statement","Additional attempts","Maximum attempts","Blind marking"],
+    groupsubmissionsettings:["Students submit in groups","Require all group members submit","Grouping for student groups","Group mode","Hide groups"],
+    notifications:["Notify graders about submissions","Notify graders about late submissions","Default setting for Notify students"],
+    modstandardgrade:["Grade type","Maximum grade","Grading method","Grade category","Grade to pass","Anonymous submissions","Use marking workflow"],
+    modstandardelshdr:["Availability","ID number","Force language","Group mode","Grouping"],
+    availabilityconditionsheader:["Access restrictions"],
+    activitycompletionheader:["Completion tracking","Require view","Require grade","Expect completed on"],
+    tagshdr:["Tags"],
+    competenciessection:["Course competencies","Upon activity completion"]
+  };
+
+  var SECTIONS = [
+    { title:"Introduction", collapsed:true, items:[
+      { t:"Course syllabus and reading list", icon:"fa-file-lines" },
+      { t:"Introductions and ice breaker discussion forum", icon:"fa-comments" }
+    ]},
+    { title:"Week 3 — Cell biology", items:[
+      { t:"Membrane transport and osmoregulation", icon:"fa-file-lines" },
+      { t:"New assignment", icon:"fa-file-pen", ghost:true }
+    ]},
+    { title:"Week 4 — Ecosystem vulnerability", collapsed:true, items:[
+      { t:"Photosynthesis and cellular respiration quiz", icon:"fa-list-check" }
+    ]}
+  ];
+
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){
+    return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"})[c]; }); }
+
+  /* ============================================================
+     RENDER
+     ============================================================ */
+
+  /* ---- course index ---- */
+  document.getElementById("sections").innerHTML = SECTIONS.map(function(sec){
+    var items = sec.items.map(function(it){
+      var cls = "ci-activity" + (it.ghost ? " ghost" : "");
+      var flag = it.ghost ? ' data-ghost="1"' : "";
+      return '<div class="' + cls + '"' + flag + '>'
+        + '<i class="fa-solid ' + it.icon + ' ci-acticon"></i>'
+        + '<span class="txt">' + esc(it.t) + '</span></div>';
+    }).join("");
+    return '<div class="ci-section' + (sec.collapsed ? ' collapsed' : '') + '">'
+      + '<button class="ci-sec-head"><span class="chev"><i class="fa-solid fa-chevron-down"></i></span>'
+      + '<span class="txt">' + esc(sec.title) + '</span></button>'
+      + '<div class="ci-activities">' + items + '</div></div>';
+  }).join("");
+  document.querySelectorAll(".ci-sec-head").forEach(function(h){
+    h.addEventListener("click", function(){ h.parentNode.classList.toggle("collapsed"); });
+  });
+
+  /* ---- chooser ---- */
+  var activeTab = "all";
+  function renderChooserTabs(){
+    document.getElementById("chooserTabs").innerHTML = CHOOSER_TABS.map(function(t){
+      if(t.sep) return '<div class="sep"></div>';
+      return '<button role="tab" class="' + (t.id === activeTab ? "on" : "") + '" data-tab="' + t.id + '">'
+        + '<i class="fa-solid ' + t.icon + '" style="width:14px"></i> ' + esc(t.label) + '</button>';
+    }).join("");
+  }
+  function modsForTab(id){
+    if(id === "all") return MODULES;
+    if(id === "starred") return MODULES.filter(function(m){ return m.star; });
+    if(id === "recommended") return MODULES.filter(function(m){ return m.rec; });
+    return MODULES.filter(function(m){ return m.purpose === id; });
+  }
+  function renderChooserGrid(){
+    document.getElementById("chooserGrid").innerHTML = modsForTab(activeTab).map(function(m){
+      return '<button class="chooser-item" role="menuitem" data-mod="' + esc(m.name) + '">'
+        + '<span class="acticon sm ' + m.purpose + '"><i class="fa-solid ' + m.icon + '"></i></span>'
+        + '<span><span class="ciname">' + esc(m.name) + '</span>'
+        + '<span class="ciacts"><i class="fa-regular fa-circle-question"></i>'
+        + '<i class="' + (m.star ? "fa-solid" : "fa-regular") + ' fa-star"></i></span></span></button>';
+    }).join("");
+  }
+  renderChooserTabs(); renderChooserGrid();
+
+  document.getElementById("chooserTabs").addEventListener("click", function(e){
+    var b = e.target.closest("button[data-tab]"); if(!b) return;
+    activeTab = b.dataset.tab; renderChooserTabs(); renderChooserGrid();
+  });
+  /* Choosing a module is the commitment point in both flows. */
+  document.getElementById("chooserGrid").addEventListener("click", function(e){
+    var b = e.target.closest("button[data-mod]"); if(!b) return;
+    setStep("create");
+  });
+
+  /* Fields a module could declare as worth asking at create time but which do
+     NOT live in its general header — so they cannot come from showonly=general.
+     Lifting them into General is the "module essentials" variant; the group
+     they came from is labelled on the field and noted in its own group. */
+  var LIFTED = {
+    "Due date":      "Availability",
+    "Grade type":    "Grade",
+    "Maximum grade": "Grade"
+  };
+
+  /* ---- settings form ----
+     opts.lift         lift the module-essentials fields into General
+     opts.collapsible  render mform's collapsible headers (Today only — the
+                       proposed screen navigates with the rail instead) */
+  function renderGroups(navEl, formEl, opts){
+    opts = opts || {};
+    var lift = !!opts.lift;
+    var collapsible = !!opts.collapsible;
+
+    if(navEl){
+      navEl.innerHTML = GROUPS.map(function(g, i){
+        return '<a href="#" data-target="' + g.key + '" class="' + (i === 0 ? "active" : "") + '">'
+          + esc(g.label) + '</a>';
+      }).join("");
+    }
+
+    formEl.innerHTML = GROUPS.map(function(g){
+      var open = collapsible ? !!g.expanded : true;
+      var list = (FIELDS[g.key] || []).slice();
+      if(g.key === "general"){
+        if(lift) list = list.concat(Object.keys(LIFTED));
+      } else if(lift){
+        list = list.filter(function(f){ return !LIFTED[f]; });
+      }
+
+      var fields = list.map(function(f, fi){
+        var required = /\*$/.test(f);
+        var clean = f.replace(/\*$/, "");
+        /* Every control gets an id and its label a matching for=. Unlabelled
+           inputs are the single most common accessibility miss in a hand-built
+           form, and a prototype that shows the design with them missing is not
+           showing the design. */
+        var fid = formEl.id + "-" + g.key + "-" + fi;
+        var label = '<label class="flabel" for="' + fid + '">' + esc(clean)
+          + (required ? '<span class="req">*</span>' : "")
+          + (lift && g.key === "general" && LIFTED[clean]
+              ? '<span class="fhome"><i class="fa-solid fa-arrow-turn-up" style="transform:rotate(90deg)" aria-hidden="true"></i>'
+                + esc(LIFTED[clean]) + '</span>'
+              : "")
+          + '</label>';
+
+        if(/^Description$/.test(f)){
+          return '<div class="field">' + label
+            + '<div class="rte"><div class="rte-toolbar" aria-hidden="true">'
+            + '<span><i class="fa-solid fa-bold"></i></span><span><i class="fa-solid fa-italic"></i></span>'
+            + '<span><i class="fa-solid fa-list-ul"></i></span><span><i class="fa-solid fa-link"></i></span>'
+            + '</div><div class="rte-area" id="' + fid + '" role="textbox" aria-multiline="true" tabindex="0"'
+            + ' contenteditable="true" data-placeholder="What are students being asked to do?"></div></div></div>';
+        }
+        if(/date|by$|from$/i.test(f)){
+          var parts = [["Day","21"],["Month","August"],["Year","2026"],["Hour","17"],["Minute","00"]];
+          return '<div class="field">' + label + '<div class="datefield">'
+            + parts.map(function(p, pi){
+                return '<select class="select" aria-label="' + p[0] + '"'
+                  + (pi === 0 ? ' id="' + fid + '"' : "") + '><option>' + p[1] + '</option></select>';
+              }).join("")
+            + '<label class="checkline"><input type="checkbox"> Enable</label></div></div>';
+        }
+        if(/^(Require|Notify|Display|Comment|Students submit|Always show|Attach|Anonymous|Use marking|Hide groups|Blind)/i.test(f)){
+          return '<div class="field"><label class="checkline" for="' + fid + '">'
+            + '<input type="checkbox" id="' + fid + '"> ' + esc(clean) + '</label></div>';
+        }
+        if(/type|method|category|mode|Grouping|language|tracking|Availability|Completion/i.test(f)){
+          return '<div class="field">' + label
+            + '<select class="select" id="' + fid + '"><option>Default</option></select></div>';
+        }
+        return '<div class="field">' + label
+          + '<input class="input" type="text" id="' + fid + '"></div>';
+      }).join("");
+
+      /* A group that gave a field up says so, rather than looking as though a
+         setting went missing. */
+      var note = "";
+      if(lift && g.key !== "general"){
+        var gone = Object.keys(LIFTED).filter(function(f){ return LIFTED[f] === g.label; });
+        if(gone.length){
+          note = '<div class="lifted-note">' + esc(gone.join(" and "))
+            + (gone.length === 1 ? " is" : " are") + ' asked for in General when creating.</div>';
+        }
+      }
+
+      /* namespaced by form: both forms render the same 13 groups, and a bare
+         id="grp-general" in each makes two elements share an id — invalid, and
+         document.querySelector then silently returns whichever came first */
+      var count = '<span class="hcount">' + list.length
+        + (list.length === 1 ? " setting" : " settings") + '</span>';
+      /* Collapsible: a real <button>, so the group can be opened from the
+         keyboard, as mform's own headers are. Not collapsible: a plain
+         heading, and the rail is the only way to move between groups. */
+      var head = collapsible
+        ? '<h2><button type="button" class="hbtn" aria-expanded="' + open + '">'
+          + '<i class="fa-solid fa-chevron-down hchev" aria-hidden="true"></i>' + esc(g.label)
+          + count + '</button></h2>'
+        : '<h2 id="' + formEl.id + '-h-' + g.key + '">' + esc(g.label) + count + '</h2>';
+
+      return '<section class="set-section' + (open ? "" : " collapsed") + '" data-grp="' + g.key + '"'
+        + (collapsible ? "" : ' aria-labelledby="' + formEl.id + '-h-' + g.key + '"') + '>'
+        + head + '<div class="set-fields">' + note + fields + '</div></section>';
+    }).join("");
+  }
+
+  /* Listeners live on the containers, which survive a re-render, so they are
+     attached ONCE. Attaching them inside renderGroups stacked a fresh copy on
+     every scope change, and a group header then toggled twice per click and
+     appeared not to respond. */
+  var todayForm = document.getElementById("todayForm");
+  var newNav = document.getElementById("newNav"), newForm = document.getElementById("newForm");
+
+  /* Today: no rail, and mform's collapsible headers with its own defaults, so
+     General, Availability and Submission types arrive open
+     (mod_form.php:79, locallib.php:1795). This is a reproduction of main. */
+  renderGroups(null, todayForm, {collapsible:true});
+  todayForm.addEventListener("click", function(e){
+    var b = e.target.closest(".hbtn"); if(!b) return;
+    var collapsed = b.closest(".set-section").classList.toggle("collapsed");
+    b.setAttribute("aria-expanded", String(!collapsed));
+  });
+
+  /* Proposed: every group present and fully open; the rail is the only
+     navigation, so there is exactly one mechanism and one source of truth for
+     where you are. */
+  function renderProposed(){
+    renderGroups(newNav, newForm, { lift: body.classList.contains("scope-module") });
+    bindNameField();
+    markActive(GROUPS[0].key);
+  }
+
+  /* ---- rail: anchor navigation + scrollspy ---- */
+  function markActive(key){
+    newNav.querySelectorAll("a").forEach(function(a){
+      var on = a.dataset.target === key;
+      a.classList.toggle("active", on);
+      if(on) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current");
+    });
+  }
+  newNav.addEventListener("click", function(e){
+    var a = e.target.closest("a[data-target]"); if(!a) return;
+    e.preventDefault();
+    var sec = newForm.querySelector('[data-grp="' + a.dataset.target + '"]');
+    if(!sec) return;
+    markActive(a.dataset.target);
+    railLock = true;                 /* stop the spy fighting the smooth scroll */
+    clearTimeout(railTimer);
+    railTimer = setTimeout(function(){ railLock = false; }, 700);
+    sec.scrollIntoView({behavior:"smooth", block:"start"});
+    /* move focus with the eye, or a keyboard user lands back at the top */
+    var first = sec.querySelector("input, select, [contenteditable]");
+    if(first) first.focus({preventScroll:true});
+  });
+
+  /* The rail is now the only indicator of where you are in the form, so it has
+     to follow the scroll rather than only respond to clicks. */
+  var railLock = false, railTimer;
+  function spy(){
+    if(railLock || !body.classList.contains("flow-proposed") || !body.classList.contains("step-create")) return;
+    var line = window.innerHeight * 0.28;    /* just under the fixed top bar */
+    var current = null;
+    newForm.querySelectorAll(".set-section").forEach(function(sec){
+      if(sec.getBoundingClientRect().top <= line) current = sec.dataset.grp;
+    });
+    markActive(current || GROUPS[0].key);
+  }
+  window.addEventListener("scroll", spy, {passive:true});
+
+  /* live-title the create screen from the name field, so the h1 stops being a
+     placeholder as soon as there is something to call it. Re-bound after every
+     re-render, since the input is replaced. */
+  function bindNameField(){
+    var input = newForm.querySelector('[data-grp="general"] .field input.input');
+    if(!input) return;
+    input.placeholder = "Cell structure fieldwork report";
+    input.addEventListener("input", function(){
+      document.getElementById("newTitle").textContent = input.value.trim() || "New assignment";
+    });
+  }
+
+  /* ============================================================
+     STATE
+     ============================================================ */
+
+  function setOne(rowId, attr, value, prefix){
+    var row = document.getElementById(rowId);
+    row.querySelectorAll(".devbtn").forEach(function(b){
+      b.classList.toggle("on", b.dataset[attr] === value);
+    });
+    body.className = body.className.split(/\s+/).filter(function(c){
+      return c.indexOf(prefix) !== 0;
+    }).join(" ") + " " + prefix + value;
+  }
+
+  var step = "create";
+  function setStep(v){
+    step = v;
+    setOne("devStep", "step", v, "step-");
+    if(v === "create"){
+      /* arriving at create always means an activity that does not exist yet,
+         so the course index gets its ghost row back and the form resets to
+         General open */
+      var row = document.querySelector('#sections .ci-activity[data-ghost]');
+      if(row){
+        row.classList.add("ghost");
+        row.classList.remove("pageitem");
+        row.querySelector(".txt").textContent = "New assignment";
+      }
+      document.getElementById("newTitle").textContent = "New assignment";
+      renderProposed();
+    }
+    /* Buttons and footer context follow the flow, not the step, but the
+       footer only exists on the create step. */
+    syncFlowUI();
+    window.scrollTo({top:0, behavior:"auto"});
+  }
+  function setFlow(v){
+    setOne("devFlow", "flow", v, "flow-");
+    syncFlowUI();
+  }
+  function syncFlowUI(){
+    var today = body.classList.contains("flow-today");
+    document.getElementById("todayButtons").style.display = today ? "inline-flex" : "none";
+    document.getElementById("newButtons").style.display   = today ? "none" : "inline-flex";
+    /* Today has no essentials scope to choose: the whole form is always shown. */
+    document.querySelectorAll("#devScope .devbtn").forEach(function(b){ b.disabled = today; });
+    document.getElementById("sbContext").textContent = today
+      ? "Biology 101"                     /* today's footer has no section context at all */
+      : "Week 3 — Cell biology";
+  }
+
+  document.getElementById("devFlow").addEventListener("click", function(e){
+    var b = e.target.closest(".devbtn"); if(!b) return; setFlow(b.dataset.flow);
+  });
+  document.getElementById("devStep").addEventListener("click", function(e){
+    var b = e.target.closest(".devbtn"); if(!b) return; setStep(b.dataset.step);
+  });
+  document.getElementById("devScope").addEventListener("click", function(e){
+    var b = e.target.closest(".devbtn"); if(!b || b.disabled) return;
+    setOne("devScope", "scope", b.dataset.scope, "scope-");
+    renderProposed();
+  });
+
+  /* ============================================================
+     INTERACTIONS
+     ============================================================ */
+
+  document.getElementById("addActivityBtn").addEventListener("click", function(){ setStep("chooser"); });
+  document.getElementById("chooserClose").addEventListener("click", function(){ setStep("course"); });
+  document.getElementById("cancelBtn").addEventListener("click", function(){ setStep("course"); });
+
+  /* split menu */
+  var splitWrap = document.getElementById("newButtons");
+  document.getElementById("createCaret").addEventListener("click", function(e){
+    e.stopPropagation();
+    var open = splitWrap.classList.toggle("open");
+    this.setAttribute("aria-expanded", String(open));
+  });
+  document.addEventListener("click", function(){ splitWrap.classList.remove("open"); });
+  document.getElementById("createMenu").addEventListener("click", function(e){ e.stopPropagation(); });
+
+  function created(dest){
+    document.getElementById("madeCard").hidden = false;
+    /* the ghost row in the course index becomes a real one, which is the
+       clearest signal available that the thing now exists */
+    var ghost = document.querySelector(".ci-activity.ghost");
+    if(ghost){
+      ghost.classList.remove("ghost");
+      ghost.classList.add("pageitem");
+      ghost.querySelector(".txt").textContent = "Cell structure fieldwork report";
+    }
+    splitWrap.classList.remove("open");
+    setStep(dest);
+  }
+  document.getElementById("createBtn").addEventListener("click", function(){ created("done"); });
+  document.getElementById("menuCreateOpen").addEventListener("click", function(){ created("done"); });
+  document.getElementById("menuCreateReturn").addEventListener("click", function(){ created("course"); });
+  document.getElementById("createReturnBtn").addEventListener("click", function(){ created("course"); });
+  /* "Create and add another" is the one genuinely new exit: it saves and
+     reopens the chooser on the same section, which is what course building
+     actually looks like. */
+  document.getElementById("menuCreateAnother").addEventListener("click", function(){ created("chooser"); });
+  document.getElementById("doneAddAnother").addEventListener("click", function(){ setStep("chooser"); });
+  document.getElementById("doneBackToCourse").addEventListener("click", function(){ setStep("course"); });
+
+
+  /* ---- drawers ---- */
+  document.getElementById("openBtn").addEventListener("click", function(){ body.classList.add("ci-open"); });
+  document.getElementById("closeBtn").addEventListener("click", function(){ body.classList.remove("ci-open"); });
+
+  var mq = window.matchMedia("(max-width:991.98px)");
+  var lastOverlay = null;
+  function applyMode(){
+    var overlay = mq.matches;
+    if(overlay === lastOverlay) return;
+    lastOverlay = overlay;
+    body.classList.toggle("ci-overlay", overlay);
+    body.classList.toggle("ci-open", !overlay);
+  }
+  mq.addEventListener("change", applyMode);
+  window.addEventListener("resize", applyMode);
+  applyMode();
+
+  var editSwitch = document.getElementById("editSwitch");
+  editSwitch.addEventListener("click", function(){
+    var on = editSwitch.getAttribute("aria-pressed") === "true";
+    editSwitch.setAttribute("aria-pressed", on ? "false" : "true");
+    body.classList.toggle("edit-on", !on);
+  });
+
+  /* ---- dev panel minimise + notes toggle ---- */
+  var devSwitch = document.getElementById("devSwitch");
+  document.getElementById("devToggle").addEventListener("click", function(){
+    var min = devSwitch.classList.toggle("min");
+    this.setAttribute("aria-expanded", String(!min));
+    document.getElementById("devToggleIcon").className = min ? "fa-solid fa-flask" : "fa-solid fa-minus";
+    document.getElementById("devToggleLabel").textContent = min ? "State" : "";
+  });
+  var annoToggle = document.getElementById("annoToggle");
+  annoToggle.addEventListener("click", function(){
+    var on = body.classList.toggle("annotations-on");
+    annoToggle.innerHTML = on
+      ? '<i class="fa-solid fa-eye"></i> Hide notes'
+      : '<i class="fa-solid fa-eye-slash"></i> Show notes';
+  });
+
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape"){
+      splitWrap.classList.remove("open");
+      if(body.classList.contains("step-chooser")) setStep("course");
+    }
+  });
+
+  /* ============================================================
+     LANDING STATE
+     Opens on the proposed CREATE screen, which is the thing being decided.
+     The chooser, the course page and the Today comparison are one click away
+     in the State panel; the screen the question is about is not.
+     ============================================================ */
+  renderProposed();
+  syncFlowUI();
+})();
+</script>
+
+<!--
+NOTES
+
+Question this prototype answers:
+  When a teacher adds an activity, should the screen they land on be a CREATE
+  screen — its own heading, no course tab bar, and a settings rail as the one
+  way to move through an open form — instead of today's course-shell page
+  where 13 collapsible groups are the only navigation there is?
+
+What is being proposed, in five parts:
+
+  1. The chooser is unchanged. It is already a good picker. The problem starts
+     at what happens after you choose.
+
+  2. The create screen gets its own identity. h1 = "New assignment" with the
+     activity icon, which is the structural rhyme with the edit screen (h1 =
+     activity name, same icon tile). The breadcrumb carries the course and the
+     section, so nothing is lost by dropping the tab bar.
+
+  3. No tab bar on create. Not a single-tab bar, not the course tabs, not fake
+     activity tabs. In its place, one honest line: what is being made and where
+     it is going, with the section changeable inline.
+
+  4. The settings rail is the navigation, and it is the ONLY navigation.
+     All 13 groups are on the rail and open in the form. Nothing collapses,
+     nothing hides. The rail tracks the scroll, so what is highlighted is where
+     you actually are. This is the same rail and the same form as the settings
+     screen — the create screen is not a different design, it is that design.
+
+  5. The submit buttons say what they do. "Create assignment" / "Create and
+     return to course" map 1:1 onto today's submitbutton / submitbutton2, plus
+     one new "Create and add another" that reopens the chooser on the same
+     section. Creating lands on the ACTIVITY, first tab — the activity's own
+     view, not its settings — which is where modedit.php already redirects.
+
+Two mechanisms were tried and dropped, in this order, and both for the same
+reason. First, an "All settings" accordion over a short essentials block: the
+essentials duplicated the General group field for field, and the accordion hid
+how much was behind it. Then, mform's collapsible headers with only General
+open: still a second way to hide and reveal the same content, competing with
+the rail and disagreeing with it about where you are. The rail alone does the
+job. A group's position on a list you can see beats a group you have to
+remember to open.
+
+Note what this does NOT claim. The proposed screen is not shorter than today's
+— it is the same 13 groups and the same fields. What it changes is that the
+form is navigable, that the page says what you are doing, and that the buttons
+say what they will do. If the argument you want is "ask for less at create
+time", that is a separate question and this prototype no longer makes it.
+
+Grounded in code (file:line verified against 5.3dev, version 2026080700):
+
+  - Opening every group needs no new form machinery. MoodleQuickForm::
+    setExpanded() is the switch, and mod_form.php:79 / locallib.php:1795
+    already call it — the proposed screen calls it for every header instead of
+    three. The rail is new UI over an unchanged form.
+
+  - If a stricter subset is ever wanted, that exists too: course/modedit.php:39
+    already accepts a `showonly` param, and lib/formslib.php:491 / :1876
+    already implement filter_shown_headers(). Core uses it today from the
+    activity card: course/format/classes/output/local/content/cm/completion.php:141
+    links with showonly=activitycompletionheader, and .../cm/availability.php:109
+    with showonly=availabilityconditionsheader. Not used by this proposal —
+    the rail wants every group present — but it is the mechanism if the
+    "ask for less" question is ever taken up.
+
+  - The sticky footer is already there. moodleform_mod::add_action_buttons()
+    ends with set_sticky_footer('buttonar') at moodleform_mod.php:1113.
+
+  - The two exits already exist and already do the right things.
+    moodleform_mod.php:1096-1111 creates submitbutton2 ("Save and return to
+    course") before submitbutton ("Save and display"), which is why the return
+    button is the left one on screen. modedit.php:195 redirects the default
+    submit to mod/*/view.php. Only the labels change.
+
+  - The activity tab bar genuinely cannot be shown while creating.
+    secondary.php:709 load_module_navigation() builds every tab as
+    /mod/<name>/view.php?id=<cmid>, and modlib.php:959
+    prepare_new_moduleinfo_data() sets $cm = null on the create path. Even
+    forced, Submissions and Advanced grading would be dead links.
+
+  - THE H1 MECHANISM IS NOW UNDERSTOOD (the earlier context file flagged this
+    as unresolved). theme/boost/classes/output/core_renderer.php:228-248: in a
+    CONTEXT_MODULE page, Boost OVERWRITES $heading with
+    $this->page->cm->get_formatted_name() and injects the activity icon as
+    $imagedata, regardless of what $PAGE->set_heading() was given. That is why
+    edit shows the activity name while modedit.php:217 sets the heading to
+    $course->fullname, and why create — which is in a course context — shows
+    the course name. Implication: putting "New assignment" plus its icon in the
+    h1 is a change to context_header's course-context branch (or a new
+    activityheader path), NOT a set_heading() call.
+
+Decisions baked in (inherited, do not re-litigate here):
+  - Nav cap 1440px, page row shares the nav's cap and inset, limited width
+    830px giving a 784px reading column. From TEMPLATE-shell.html.
+  - Form fields and the 200px sticky settings rail are the design from
+    PROTOTYPE-course-settings.html, unchanged. The create screen IS the
+    settings screen, which is the point: no second dialect to learn.
+  - The rail is not optional, and it is the only navigation. Removing it would
+    leave a create screen whose only route to any group is scrolling past all
+    of them — which is exactly what the Today screen shows.
+  - The Today screen deliberately keeps mform's collapsible headers and has no
+    rail, because that is what main renders. Removing them there would flatter
+    the comparison.
+  - Icon tile colours come from FEATURE_MOD_PURPOSE (lib/moodlelib.php:491-503),
+    the same six categories the chooser's tabs use.
+
+Findings worth carrying into the ticket:
+
+  - The header key is NOT uniformly 'general'. 21 of 23 core modules use
+    addElement('header', 'general', ...); mod/label and mod/qbank use
+    'generalhdr' (label/mod_form.php:39, qbank/mod_form.php:47). Anything that
+    special-cases 'general' silently misses those two. Take the first header
+    element, or have modules declare it.
+
+  - "General" is not the same as "the essentials", and this is the one open
+    design question left. For an assignment the field teachers most often come
+    back for — the due date — is in the Availability group (mod_form.php:
+    78-104), and grade type is added by standard_grading_coursemodule_elements
+    (moodleform_mod.php:964). The State panel's "Lift essentials into General"
+    option moves those into General, labels where each came from, and has the
+    source group say what it gave up. It is the only part of this proposal
+    needing new API: a per-module declaration of which elements are worth
+    asking for first. Everything else here is layout and labels.
+
+  - mod/resource/mod_form.php:191 returns early from definition_after_data()
+    without calling parent when a resource is pending migration, so that hook
+    is unsafe for anything that must always run. moodleform::after_definition()
+    (formslib.php:233) is called unconditionally from the constructor and is
+    overridden nowhere under public/mod/.
+
+  - modedit.php:237 calls heading_with_help($pageheading, '', $module->name)
+    with an empty help identifier, and core_renderer.php:2219 only renders help
+    if ($helpidentifier). It is a plain heading; removing it loses no help.
+
+  - Four behat scenarios assert the heading text "Edit settings":
+    mod/workshop/tests/behat/grade_to_pass.feature:56,66
+    course/format/tests/behat/coursepage_completion.feature:158
+    theme/classic/tests/behat/pageadministrationmenu.feature:28
+    The first three assert the real thing on an adjacent line and can be
+    deleted; the theme_classic one is the only check that navigation arrived
+    and needs a replacement assertion.
+
+Traps already avoided in this file (they cost real time to find):
+  - Both forms render the same 13 groups. Giving each group a bare
+    id="grp-<key>" put two elements on the same id, and document.querySelector
+    then silently returned whichever form came first. They are data-grp now.
+  - renderGroups() re-runs on every scope change, so attaching the header and
+    rail click handlers inside it stacked a new copy each time and a group
+    toggled twice per click. Handlers are attached once, to the containers.
+  - On the Today screen the group headers are real <button>s. Making the h2
+    clickable with CSS alone left every settings group unreachable from the
+    keyboard. On the proposed screen they are plain headings, because nothing
+    collapses and a button that does nothing is worse than no button.
+  - The rail has to follow the scroll, not just respond to clicks. Once it is
+    the only indicator of where you are, a rail that only updates on click is
+    wrong for most of the time the page is on screen. The spy is suppressed for
+    700ms after a click so it does not fight the smooth scroll it triggered.
+
+Deliberately out of scope this pass:
+  - The chooser itself (search, favourites, recommended, the footer hook).
+  - What the essentials set should be for the other 22 modules.
+  - Editing an existing activity. Only the create path is being questioned.
+  - Bulk "add several activities at once", beyond "Create and add another".
+
+Dependencies: Google Fonts (Noto Sans) + Font Awesome 6 via CDN. Needs network
+on first open; degrades to system font and glyph boxes offline.
+
+Answer: <fill in after review>
+-->
+</body>
+</html>
