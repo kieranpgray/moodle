@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTOTYPE — Course page activity cards (Biology 101 mock data)</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+  /*
+    THROWAWAY PROTOTYPE — MDL-87755 LMS uplift phase 1.
+    Applies the Figma activity-card treatment (file rlo17bSNmm9tChVnLgbJa6,
+    node 4020-37900) to a REAL course: "Biology 101 - Mock data" (course 15 on
+    the local instance). Every section title, activity name, description and
+    due date below is pulled from that database, so this shows real density
+    rather than lorem ipsum.
+
+    Chrome (top nav, course-index drawer, blocks drawer, responsive rules) is
+    carried over from PROTOTYPE-courseindex-drawer-resize.html.
+  */
+
+  :root{
+    --sp-xxs:4px; --sp-xs:8px; --sp-sm:12px; --sp-md:16px; --sp-lg:20px;
+    --r-sm:6px; --r-md:8px; --r-lg:12px; --r-pill:800px;
+
+    --text-default:#1d2125; --text-subtle:#495057; --text-muted:#6a737b;
+    --bg-subtle:#f8f9fa; --bg-strong:#e9ecef;
+    --border-subtle:#e9ecef; --border-default:#dee2e6; --border-ring:#8f959e;
+    --primary:#0f6cbf; --primary-dark:#0b5aa0;
+    --surface:#ffffff; --page-bg:#ffffff;
+    --success:#357a32;
+    --ci-row-hover:#e1e4e6;
+
+    /* Activity purpose colours. assessment/collaboration/content are the exact
+       Figma tokens (activity icon/*/icon). communication, interactivecontent
+       and administration have no Figma token yet, so they are the Boost
+       variables ($activity-icon-*-bg) darkened to clear 4.5:1 on white —
+       same treatment Figma applied to the other three. */
+    --p-assessment:#db1a74;     --p-assessment-bg:#fce7f1;
+    --p-collaboration:#6610f2;  --p-collaboration-bg:#eae3fe;
+    --p-content:#008196;        --p-content-bg:#d7ecef;
+    --p-communication:#b04b00;  --p-communication-bg:#fdeadb;
+    --p-interactive:#8d3d1b;    --p-interactive-bg:#f4e5dd;
+    --p-administration:#a626c7; --p-administration-bg:#f6e3fb;
+
+    /* info chip (dates) — Figma bg/feedback/info/subtle + border/feedback/info */
+    --info-bg:#cce6ea; --info-border:#99cdd5; --info-text:#00343c;
+    --warn-bg:#fdf3e7; --warn-border:#f0d9b5; --warn-text:#8a5a00;
+    --danger-bg:#fbe7e9; --danger-border:#f0bec4; --danger-text:#8f2c39;
+
+    --shell-max:1440px; --shell-pad:48px;
+    --nav-h:64px;
+    --ci-width:300px; --ci-min:285px; --ci-max:640px;
+    --cb-width:315px;
+    --sitenav-width:300px;
+    --content-max:873px;
+    --btn:40px;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    font-family:"Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color:var(--text-default);
+    background:var(--page-bg);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{ color:var(--primary); text-decoration:none; }
+  a:hover{ text-decoration:underline; }
+  button{ font-family:inherit; }
+
+  .shell{ max-width:var(--shell-max); margin:0 auto; padding:0 var(--shell-pad); }
+
+  /* =====================  TOP NAV  ===================== */
+  .topbar{ position:sticky; top:0; z-index:40; background:var(--bg-subtle); border-bottom:1px solid var(--border-subtle); }
+  .topbar-inner{ height:var(--nav-h); display:flex; align-items:center; justify-content:space-between; gap:var(--sp-md); }
+  .nav-left{ display:flex; align-items:center; gap:32px; min-width:0; }
+  .brand{ display:flex; align-items:center; gap:8px; height:40px; }
+  .brand .mark{ font-size:26px; color:var(--text-default); }
+  .brand .word{ line-height:1; }
+  .brand .word b{ display:block; font-weight:800; font-size:17px; letter-spacing:.2px; }
+  .brand .word span{ display:block; font-size:11px; letter-spacing:2px; color:var(--text-subtle); }
+
+  .nav-pills{ display:flex; align-items:center; gap:var(--sp-xxs); }
+  .nav-pill{
+    display:flex; align-items:center; gap:var(--sp-xxs); padding:var(--sp-xs) var(--sp-sm);
+    border-radius:var(--r-md); border:none; background:transparent;
+    font-size:14px; font-weight:500; color:var(--text-subtle); cursor:pointer; white-space:nowrap;
+  }
+  .nav-pill .dot{ width:4px; height:4px; border-radius:50%; background:var(--primary); }
+  .nav-pill.selected{ background:var(--bg-strong); color:var(--text-default); }
+
+  .burger{
+    display:none; width:var(--btn); height:var(--btn); border:none; background:transparent;
+    border-radius:var(--r-sm); cursor:pointer; color:var(--text-default); font-size:20px;
+    align-items:center; justify-content:center;
+  }
+  .burger:hover{ background:var(--bg-strong); }
+
+  .nav-right{ display:flex; align-items:center; gap:var(--sp-xs); }
+  .nav-right-group{ display:flex; align-items:center; gap:var(--sp-md); }
+  .search{
+    display:flex; align-items:center; gap:var(--sp-xs); width:256px; height:36px; padding:0 var(--sp-sm);
+    background:var(--bg-strong); border-radius:var(--r-md); color:var(--text-subtle); font-size:14px;
+  }
+  .search i{ font-size:12px; }
+  .search-icon-btn{
+    display:none; width:36px; height:36px; border:none; background:transparent; border-radius:var(--r-md);
+    color:var(--text-subtle); cursor:pointer; align-items:center; justify-content:center;
+  }
+  .editmode{ display:flex; align-items:center; gap:var(--sp-xs); }
+  .editmode .label{ font-size:14px; color:var(--text-subtle); white-space:nowrap; }
+  .switch{ width:32px; height:16px; border-radius:var(--r-pill); background:var(--primary); position:relative; border:none; cursor:pointer; flex:0 0 auto; }
+  .switch::after{ content:""; position:absolute; top:2px; left:18px; width:12px; height:12px; border-radius:50%; background:#fff; transition:left .15s ease; }
+  .switch[aria-pressed="false"]{ background:var(--border-ring); }
+  .switch[aria-pressed="false"]::after{ left:2px; }
+
+  .icon-btn{
+    width:28px; height:28px; border:none; background:transparent; border-radius:var(--r-sm);
+    color:var(--text-subtle); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .icon-btn:hover{ background:var(--bg-strong); }
+  .nav-icons{ display:flex; align-items:center; gap:var(--sp-xs); }
+  .nav-divider{ width:1px; height:24px; background:var(--bg-strong); }
+  .profile{ display:flex; align-items:center; gap:var(--sp-xs); padding:0 var(--sp-xs); border-radius:var(--r-pill); cursor:pointer; }
+  .profile:hover{ background:var(--bg-strong); }
+  .avatar{
+    width:32px; height:32px; border-radius:50%; flex:0 0 auto; border:1px solid var(--border-default);
+    background:linear-gradient(135deg,#7fb3d5,#4a7fa5);
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:600;
+  }
+  .profile .pname{ font-size:14px; font-weight:500; color:var(--text-default); }
+  .profile .fa-chevron-down{ font-size:8px; color:var(--text-subtle); }
+
+  /* =====================  PAGE LAYOUT  ===================== */
+  .layout{ display:flex; align-items:flex-start; padding-top:var(--sp-lg); padding-bottom:64px; min-height:calc(100vh - var(--nav-h)); position:relative; }
+  .toggle-col{ flex:0 0 auto; width:var(--btn); margin-right:12px; align-self:stretch; display:flex; justify-content:center; }
+  body.ci-open .toggle-col{ width:0; margin-right:0; overflow:hidden; }
+  .ci-toggle{
+    width:var(--btn); height:var(--btn); border:none; cursor:pointer; border-radius:var(--r-sm);
+    background:var(--bg-strong); display:flex; align-items:center; justify-content:center;
+  }
+  .ci-toggle:hover{ background:var(--border-default); }
+  .ci-toggle.sticky{ position:sticky; top:calc(var(--nav-h) + var(--sp-lg)); }
+  .ci-toggle.contained{ background:transparent; }
+  .ci-toggle.contained:hover{ background:rgba(0,0,0,.06); }
+  .sidebar-icon{ width:20px; height:16px; display:block; }
+
+  .drawer{
+    flex:0 0 auto; width:0; overflow:hidden;
+    position:sticky; top:calc(var(--nav-h) + var(--sp-lg)); align-self:flex-start;
+    transition:width .32s cubic-bezier(.4,0,.2,1);
+  }
+  body.ci-open #drawer{ width:var(--ci-width); }
+  body.dragging #drawer{ transition:none; }
+  .ci-card{
+    width:var(--ci-width); background:var(--bg-strong); border-radius:var(--r-md);
+    padding:0 var(--sp-sm) var(--sp-md);
+    max-height:calc(100vh - var(--nav-h) - 2 * var(--sp-lg)); overflow-x:hidden; overflow-y:auto;
+    transform:translateX(-100%); transition:transform .32s cubic-bezier(.4,0,.2,1);
+  }
+  body.ci-open .ci-card{ transform:translateX(0); }
+  .ci-header{ display:flex; align-items:center; justify-content:space-between; height:53px; padding-left:var(--sp-md); padding-top:var(--sp-xs); }
+  .ci-title{ font-size:16px; font-weight:600; color:var(--text-default); }
+  .ci-divider{ height:1px; background:var(--border-default); }
+  .ci-collapseall{
+    display:flex; align-items:center; gap:var(--sp-xs); padding:var(--sp-xs) var(--sp-sm); margin-top:var(--sp-xs);
+    background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:14px;
+  }
+  .ci-collapseall i{ font-size:12px; }
+
+  .ci-sec-head{
+    display:flex; align-items:center; gap:var(--sp-xs); padding:var(--sp-sm); border:none; background:none;
+    width:100%; cursor:pointer; text-align:left; border-radius:var(--r-sm);
+  }
+  .ci-sec-head:hover{ background:rgba(0,0,0,.04); }
+  .ci-sec-head .chev{ width:10px; font-size:8px; color:var(--text-muted); flex:0 0 auto; text-align:center; transition:transform .15s ease; }
+  .ci-sec-head .txt{ font-size:14px; font-weight:500; color:var(--text-default); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ci-sec-head .lock{ font-size:10px; color:var(--text-muted); margin-left:auto; flex:0 0 auto; }
+  .ci-section.collapsed .chev{ transform:rotate(-90deg); }
+  .ci-section.collapsed > .ci-activities{ display:none; }
+
+  .ci-activities{ padding-left:var(--sp-md); display:flex; flex-direction:column; gap:2px; }
+  .ci-activity{
+    display:flex; align-items:center; gap:var(--sp-sm); padding:9px var(--sp-sm);
+    border-radius:var(--r-sm); cursor:pointer; min-width:0;
+  }
+  .ci-activity:hover{ background:rgba(0,0,0,.04); }
+  .ci-check{
+    width:15px; height:15px; border-radius:50%; flex:0 0 auto; border:1px solid var(--border-ring);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .ci-check.done{ background:var(--primary); border-color:var(--primary); color:#fff; font-size:8px; }
+  .ci-acticon{ font-size:13px; flex:0 0 auto; width:14px; text-align:center; }
+  .ci-activity .txt{
+    font-size:14px; font-weight:500; color:var(--text-subtle);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
+  }
+  .ci-activity.pageitem{ background:var(--primary); border-radius:var(--r-sm); }
+  .ci-activity.pageitem .txt, .ci-activity.pageitem .ci-acticon{ color:#fff; }
+  .ci-activity.pageitem .ci-check{ border-color:rgba(255,255,255,.75); }
+  .ci-activity.pageitem .ci-check.done{ background:#fff; border-color:#fff; color:var(--primary); }
+  .ci-activity.hiddenrow .txt{ font-style:italic; color:var(--text-muted); }
+
+  /* resize handle */
+  .resize-handle{ position:absolute; top:0; right:0; width:8px; height:100%; cursor:col-resize; z-index:5; }
+  body:not(.ci-open) .resize-handle, body.ci-overlay .resize-handle{ display:none; }
+  .resize-handle::after{ content:""; position:absolute; top:0; bottom:0; left:3px; width:2px; background:transparent; transition:background .12s ease; }
+  .resize-handle:hover::after, .resize-handle.dragging::after, .resize-handle:focus-visible::after{ background:var(--primary); }
+  body.dragging{ cursor:col-resize !important; user-select:none; }
+
+  /* =====================  COURSE CONTENT  ===================== */
+  .content-col{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:center; padding:0 40px; }
+  .content-col > *{ width:100%; max-width:var(--content-max); }
+
+  .course-header{ margin-bottom:var(--sp-md); }
+  .title-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+  .title-row h1{ margin:0; font-size:34px; font-weight:600; letter-spacing:-.4px; line-height:1.2; }
+
+  .course-nav{ display:flex; align-items:center; gap:8px; margin-top:20px; }
+  .course-tabs-scroll{ position:relative; flex:1 1 auto; min-width:0; }
+  .course-tabs{ display:flex; align-items:center; gap:4px; overflow-x:auto; scrollbar-width:none; }
+  .course-tabs::-webkit-scrollbar{ display:none; }
+  .course-tabs .tab{
+    display:flex; align-items:center; gap:4px; flex:0 0 auto; padding:8px 12px; border-radius:var(--r-md);
+    font-size:14px; font-weight:500; color:var(--text-subtle); background:none; border:none; cursor:pointer; white-space:nowrap;
+  }
+  .course-tabs .tab:hover{ background:var(--bg-subtle); }
+  .course-tabs .tab.active{ background:var(--bg-strong); color:var(--text-default); }
+  .course-tabs .tab .dot{ width:4px; height:4px; border-radius:50%; background:var(--primary); flex:0 0 auto; }
+
+  .course-toolbar{ display:flex; align-items:center; gap:12px; margin-top:16px; }
+  .course-search{
+    flex:1 1 auto; display:flex; align-items:center; gap:8px; height:38px; padding:0 12px;
+    border:1px solid var(--border-default); border-radius:var(--r-md); color:var(--text-muted); font-size:14px; background:#fff;
+  }
+  .course-search i{ font-size:12px; }
+  .collapse-all{
+    flex:0 0 auto; display:flex; align-items:center; gap:6px; color:var(--text-subtle);
+    font-size:14px; background:none; border:none; cursor:pointer; padding:8px 4px;
+  }
+  .collapse-all i{ font-size:12px; }
+
+  /* ---------- SECTION CARD ---------- */
+  .scard{
+    background:var(--surface); border:1px solid var(--border-default); border-radius:var(--r-lg);
+    margin-top:16px; overflow:hidden;
+  }
+  .shead{ display:flex; align-items:center; gap:12px; padding:16px 20px; cursor:pointer; }
+  .schev{
+    width:32px; height:32px; flex:0 0 auto; border:none; border-radius:var(--r-md);
+    background:var(--bg-strong); color:var(--text-subtle); font-size:12px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; transition:transform .18s ease;
+  }
+  .shead:hover .schev{ background:var(--border-default); }
+  .scard.collapsed .schev{ transform:rotate(-90deg); }
+  .shead .stitle{ margin:0; font-size:20px; font-weight:600; letter-spacing:-.1px; min-width:0; }
+  .shead .slock{ font-size:12px; color:var(--text-muted); flex:0 0 auto; }
+  .shead .sstatus{
+    margin-left:auto; flex:0 0 auto; display:flex; align-items:center; gap:6px;
+    font-size:14px; color:var(--text-subtle); white-space:nowrap;
+  }
+  .shead .sstatus .fa-check{ color:var(--success); }
+
+  .sbar{ height:4px; margin:0 20px; border-radius:var(--r-pill); background:var(--bg-strong); overflow:hidden; }
+  .sbar > span{ display:block; height:100%; border-radius:var(--r-pill); background:var(--primary); transition:width .3s ease; }
+  .sbar.full > span{ background:var(--success); }
+
+  .sbody{ padding:16px 20px 20px; }
+  .scard.collapsed .sbody{ display:none; }
+  .scard.collapsed .sbar{ margin-bottom:16px; }
+  .ssummary{ margin:0 0 16px; font-size:15px; line-height:1.6; color:var(--text-subtle); }
+  .acards{ display:flex; flex-direction:column; gap:12px; }
+
+  /* ---------- ACTIVITY CARD (Figma 4020-37900) ---------- */
+  .acard{
+    background:var(--surface); border:1px solid var(--border-default); border-radius:var(--r-md);
+    padding:16px 20px; transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .acard:hover{ border-color:var(--border-ring); box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  .acard.dimmed{ opacity:.72; }
+
+  .acard-top{ display:flex; align-items:flex-start; gap:12px; margin-bottom:6px; }
+  .atype{
+    display:inline-flex; align-items:center; gap:7px; flex:0 0 auto;
+    font-size:14px; font-weight:600; line-height:1.2;
+  }
+  .atype i{ font-size:14px; width:16px; text-align:center; }
+  .achips{ margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+
+  .chip{
+    display:inline-flex; align-items:center; gap:6px; padding:3px 8px;
+    border-radius:var(--r-sm); font-size:12px; font-weight:500; white-space:nowrap; border:1px solid transparent;
+  }
+  .chip i{ font-size:11px; }
+  .chip.date{ background:var(--info-bg); border-color:var(--info-border); color:var(--info-text); }
+  .chip.date.warn{ background:var(--warn-bg); border-color:var(--warn-border); color:var(--warn-text); }
+  .chip.date.late{ background:var(--danger-bg); border-color:var(--danger-border); color:var(--danger-text); }
+  .chip.meta{ background:var(--bg-strong); border-color:var(--border-default); color:var(--text-subtle); }
+
+  .atitle{ margin:0; font-size:17px; font-weight:600; line-height:1.35; letter-spacing:-.1px; }
+  .atitle a{ color:var(--text-default); }
+  .adesc{ margin:6px 0 0; font-size:14px; line-height:1.55; color:var(--text-subtle); }
+
+  .arestrict{
+    display:flex; align-items:center; gap:10px; margin-top:12px; padding:10px 12px;
+    background:var(--bg-subtle); border:1px solid var(--border-subtle); border-radius:var(--r-md);
+    font-size:13px; color:var(--text-subtle);
+  }
+  .arestrict > i{ font-size:12px; flex:0 0 auto; color:var(--text-muted); }
+  .arestrict .txt{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .arestrict .showmore{ flex:0 0 auto; color:var(--primary); cursor:pointer; white-space:nowrap; }
+  .arestrict.open .txt{ white-space:normal; }
+
+  .afoot{
+    display:flex; align-items:center; gap:10px; margin:14px -20px 0; padding:12px 20px 0;
+    border-top:1px solid var(--border-subtle); font-size:14px; color:var(--text-subtle); min-height:38px;
+  }
+  .afoot .fa-circle-check{ color:var(--success); font-size:15px; }
+  .afoot .fa-circle-exclamation{ color:var(--warn-text); font-size:15px; }
+  .afoot .fa-circle-xmark{ color:var(--danger-text); font-size:15px; }
+  .afoot .grade{ margin-left:auto; font-weight:600; color:var(--text-default); white-space:nowrap; }
+
+  .todo-btn{
+    margin-left:auto; display:inline-flex; align-items:center; gap:8px; padding:6px 12px;
+    background:var(--surface); border:1px solid var(--border-default); border-radius:var(--r-md);
+    font-size:13px; font-weight:500; color:var(--text-subtle); cursor:pointer; white-space:nowrap;
+  }
+  .todo-btn:hover{ background:var(--bg-subtle); }
+  .todo-btn.done{ border-color:var(--success); color:var(--success); }
+  .todo-btn .fa-chevron-down{ font-size:9px; }
+
+  /* label / text-and-media: content, not an activity — no card chrome */
+  .ablock{ padding:4px 2px; font-size:14px; line-height:1.6; color:var(--text-subtle); }
+  .ablock h4{ margin:0 0 8px; font-size:16px; font-weight:600; color:var(--text-default); }
+  .ablock table{ border-collapse:collapse; width:100%; font-size:13px; margin:8px 0 0; }
+  .ablock th, .ablock td{ border:1px solid var(--border-default); padding:7px 10px; text-align:left; }
+  .ablock th{ background:var(--bg-subtle); font-weight:600; color:var(--text-default); }
+  .ablock p{ margin:0; }
+
+  /* subsection = nested collapsible card */
+  .subcard{ border:1px solid var(--border-default); border-radius:var(--r-md); background:var(--surface); overflow:hidden; }
+  .subhead{ display:flex; align-items:center; gap:12px; padding:14px 20px; cursor:pointer; }
+  .subhead:hover .schev{ background:var(--border-default); }
+  .subhead .stitle{ margin:0; font-size:16px; font-weight:600; }
+  .subhead .sstatus{ margin-left:auto; font-size:13px; color:var(--text-muted); white-space:nowrap; }
+  .subcard.collapsed .subbody, .subcard.collapsed .subempty{ display:none; }
+  .subcard.collapsed .schev{ transform:rotate(-90deg); }
+  .subbody{ padding:0 20px 18px; display:flex; flex-direction:column; gap:12px; }
+  .subbody .acard{ background:var(--bg-subtle); }
+  .subempty{ font-size:14px; color:var(--text-muted); font-style:italic; padding:0 20px 18px; }
+
+  /* ---- right blocks drawer ---- */
+  .toggle-col-right{ flex:0 0 auto; width:var(--btn); margin-left:12px; align-self:stretch; display:flex; justify-content:center; }
+  body.cb-open .toggle-col-right{ width:0; margin-left:0; overflow:hidden; }
+  .blocks-btn{
+    position:sticky; top:calc(var(--nav-h) + var(--sp-lg));
+    width:var(--btn); height:var(--btn); border:none; border-radius:var(--r-sm);
+    background:var(--bg-strong); color:var(--text-subtle); display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .drawer-right{
+    flex:0 0 auto; width:0; overflow:hidden;
+    position:sticky; top:calc(var(--nav-h) + var(--sp-lg)); align-self:flex-start;
+    transition:width .32s cubic-bezier(.4,0,.2,1);
+  }
+  body.cb-open .drawer-right{ width:var(--cb-width); }
+  .cb-card{
+    width:var(--cb-width); padding:0 var(--sp-sm) var(--sp-md); background:var(--bg-subtle); border-radius:var(--r-md);
+    max-height:calc(100vh - var(--nav-h) - 2 * var(--sp-lg)); overflow-x:hidden; overflow-y:auto;
+    transform:translateX(100%); transition:transform .32s cubic-bezier(.4,0,.2,1);
+  }
+  body.cb-open .cb-card{ transform:translateX(0); }
+  .cb-header{ display:flex; align-items:center; gap:var(--sp-sm); padding:var(--sp-sm) 0; }
+  .cb-close{
+    width:40px; height:40px; border:none; cursor:pointer; border-radius:var(--r-md);
+    background:var(--bg-strong); display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+  }
+  .cb-title{ font-size:16px; font-weight:600; }
+  .cb-block{ background:var(--surface); border:1px solid var(--border-subtle); border-radius:var(--r-sm); padding:var(--sp-sm) var(--sp-md); margin-bottom:var(--sp-xs); }
+  .cb-block h3{ margin:0 0 10px; font-size:15px; font-weight:600; }
+  .cb-block .row{ display:flex; justify-content:space-between; font-size:13px; color:var(--text-subtle); margin-bottom:6px; }
+  .cb-track{ height:8px; border-radius:var(--r-pill); background:var(--bg-strong); overflow:hidden; margin-bottom:10px; }
+  .cb-track > span{ display:block; height:100%; background:var(--primary); border-radius:var(--r-pill); }
+  .cb-block a{ font-size:13px; }
+  .cb-legend{ display:flex; flex-direction:column; gap:7px; margin-top:4px; }
+  .cb-legend .li{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-subtle); }
+  .cb-legend .sw{ width:11px; height:11px; border-radius:3px; flex:0 0 auto; }
+
+  .backdrop{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:46; }
+  body.ci-overlay.ci-open .backdrop, body.cb-overlay.cb-open .backdrop{ display:block; }
+
+  /* dev aids */
+  .devbar{
+    position:fixed; bottom:14px; right:14px; z-index:60; display:flex; gap:0;
+    background:#fff; border:1px solid var(--border-default); border-radius:8px;
+    overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,.14);
+  }
+  .devbar button{ border:none; background:#fff; cursor:pointer; font-size:11px; font-weight:600; color:var(--text-subtle); padding:8px 11px; }
+  .devbar button + button{ border-left:1px solid var(--border-default); }
+  .devbar button.active{ background:var(--primary); color:#fff; }
+  .devnote{
+    position:fixed; bottom:14px; left:14px; z-index:60; max-width:290px; cursor:pointer;
+    background:rgba(255,255,255,.95); border:1px solid var(--border-default); border-radius:8px;
+    padding:8px 11px; font-size:11px; line-height:1.5; color:var(--text-muted);
+  }
+  body.hide-dev .devbar, body.hide-dev .devnote{ display:none; }
+
+  /* teacher-only rows are hidden in student view */
+  body.role-student .teacheronly{ display:none; }
+
+  @media (max-width:1024px){
+    :root{ --shell-pad:24px; }
+    .burger{ display:flex; }
+    .nav-left .brand, .nav-left .nav-pills{ display:none; }
+    .content-col{ padding:0 24px; }
+  }
+  @media (max-width:768px){
+    body.ci-overlay #drawer{
+      position:fixed; left:0; top:var(--nav-h); height:calc(100vh - var(--nav-h));
+      width:auto !important; z-index:47; padding:16px; margin:0;
+      transform:translateX(-110%); transition:transform .3s cubic-bezier(.4,0,.2,1);
+    }
+    body.ci-overlay.ci-open #drawer{ transform:translateX(0); }
+    body.ci-overlay .ci-card{ width:300px; max-width:85vw; height:100%; max-height:none; transform:none; }
+    body.ci-overlay .toggle-col{ width:var(--btn); margin-right:12px; overflow:visible; }
+    body.cb-overlay .drawer-right{
+      position:fixed; right:0; top:var(--nav-h); height:calc(100vh - var(--nav-h));
+      width:auto !important; z-index:47; padding:16px; margin:0;
+      transform:translateX(110%); transition:transform .3s cubic-bezier(.4,0,.2,1);
+    }
+    body.cb-overlay.cb-open .drawer-right{ transform:translateX(0); }
+    body.cb-overlay .cb-card{ width:300px; max-width:85vw; height:100%; max-height:none; transform:none; }
+    body.cb-overlay .toggle-col-right{ width:var(--btn); margin-left:12px; overflow:visible; }
+  }
+  @media (max-width:767px){
+    :root{ --shell-pad:16px; }
+    .search{ display:none; }
+    .search-icon-btn{ display:flex; }
+    .editmode .label{ display:none; }
+    .profile .pname, .profile .fa-chevron-down{ display:none; }
+    .content-col{ padding:0 16px; }
+    .title-row h1{ font-size:26px; }
+    .acard{ padding:14px 16px; }
+    .afoot{ margin-left:-16px; margin-right:-16px; padding-left:16px; padding-right:16px; }
+    .achips{ margin-left:0; width:100%; justify-content:flex-start; }
+    .acard-top{ flex-wrap:wrap; }
+  }
+</style>
+</head>
+<body class="ci-open cb-open role-student">
+
+  <header class="topbar">
+    <div class="topbar-inner shell">
+      <div class="nav-left">
+        <button class="burger" aria-label="Open site navigation"><i class="fa-solid fa-bars"></i></button>
+        <div class="brand">
+          <span class="mark"><i class="fa-solid fa-leaf"></i></span>
+          <span class="word"><b>Fleetwood</b><span>UNIVERSITY</span></span>
+        </div>
+        <nav class="nav-pills">
+          <button class="nav-pill selected"><span class="dot"></span>Dashboard</button>
+          <button class="nav-pill">Site Administration</button>
+        </nav>
+      </div>
+      <div class="nav-right">
+        <div class="nav-right-group">
+          <div class="search"><i class="fa-solid fa-magnifying-glass"></i><span>Search…</span></div>
+          <button class="search-icon-btn" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+          <div class="editmode">
+            <span class="label">Edit mode</span>
+            <button class="switch" id="editSwitch" aria-pressed="false" aria-label="Edit mode"></button>
+          </div>
+          <div class="nav-icons">
+            <button class="icon-btn" aria-label="Notifications"><i class="fa-regular fa-bell"></i></button>
+            <button class="icon-btn" aria-label="Messages"><i class="fa-regular fa-comment"></i></button>
+          </div>
+        </div>
+        <div class="nav-divider"></div>
+        <div class="profile">
+          <span class="avatar" id="avatarInitial">A</span>
+          <span class="pname" id="profileName">Ava</span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout shell">
+    <div class="toggle-col">
+      <button class="ci-toggle sticky" id="openBtn" title="Open course index" aria-label="Open course index">
+        <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer" id="drawer">
+      <div class="ci-card">
+        <div class="ci-header">
+          <span class="ci-title">Course Index</span>
+          <button class="ci-toggle contained" id="closeBtn" title="Close course index" aria-label="Close course index">
+            <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+          </button>
+        </div>
+        <div class="ci-divider"></div>
+        <button class="ci-collapseall" id="ciCollapseAll"><i class="fa-solid fa-down-left-and-up-right-to-center"></i>Collapse all</button>
+        <div id="ciSections"></div>
+      </div>
+      <div class="resize-handle" id="resizeHandle" tabindex="0" role="separator" aria-orientation="vertical" aria-label="Resize course index"></div>
+    </div>
+
+    <main class="content-col">
+      <div class="course-header">
+        <div class="title-row"><h1>Biology 101 - Mock data</h1></div>
+        <div class="course-nav">
+          <div class="course-tabs-scroll">
+            <div class="course-tabs">
+              <button class="tab active"><span class="dot"></span>Course</button>
+              <button class="tab">Settings</button>
+              <button class="tab">Participants</button>
+              <button class="tab">Grades</button>
+              <button class="tab">Reports</button>
+              <button class="tab">More <i class="fa-solid fa-chevron-down"></i></button>
+            </div>
+          </div>
+        </div>
+        <div class="course-toolbar">
+          <div class="course-search"><i class="fa-solid fa-magnifying-glass"></i><span>Search this course</span></div>
+          <button class="collapse-all" id="collapseAll"><i class="fa-solid fa-down-left-and-up-right-to-center"></i><span class="ca-label">Collapse all</span></button>
+        </div>
+      </div>
+      <div id="sectionsMount"></div>
+    </main>
+
+    <div class="drawer drawer-right" id="drawerRight">
+      <div class="cb-card">
+        <div class="cb-header">
+          <button class="cb-close" id="cbCloseBtn" aria-label="Close blocks drawer">
+            <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+          </button>
+          <span class="cb-title">Course Blocks</span>
+        </div>
+        <div class="cb-block">
+          <h3>Course completion status</h3>
+          <div class="row"><span>Your progress</span><span id="cbProgressCount">—</span></div>
+          <div class="cb-track"><span id="cbProgressFill" style="width:0%"></span></div>
+          <a href="#">More details <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></a>
+        </div>
+        <div class="cb-block">
+          <h3>Activity types in this course</h3>
+          <div class="cb-legend" id="cbLegend"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toggle-col-right">
+      <button class="blocks-btn" id="cbOpenBtn" title="Open course blocks" aria-label="Open course blocks">
+        <svg class="sidebar-icon" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.2296 0C16.8642 0.000258968 19 2.13126 19 4.76041V11.2396C18.9997 13.8685 16.864 15.9997 14.2296 16H5.77137C3.1367 16 1.00026 13.8687 1 11.2396V4.76041C1 2.1311 3.13654 0 5.77137 0H14.2296ZM7.67243 14.3311H14.2296C15.9405 14.3308 17.3283 12.9469 17.3285 11.2396V4.76041C17.3285 3.05287 15.9407 1.66822 14.2296 1.66796H7.67243V14.3311ZM5.77137 1.66796C4.06009 1.66796 2.67243 3.05271 2.67243 4.76041V11.2396C2.67269 12.9471 4.06025 14.3311 5.77137 14.3311H6V1.66796H5.77137Z" fill="#495057"/></svg>
+      </button>
+    </div>
+
+    <div class="backdrop" id="backdrop"></div>
+  </div>
+
+  <div class="devnote" title="Click to hide dev controls">
+    <b>Prototype.</b> Content is real data from “Biology 101 - Mock data”
+    (course 15) on the local instance — section titles, activity names,
+    descriptions and due dates. Card design from Figma 4020-37900.
+    Click to hide these controls.
+  </div>
+  <div class="devbar">
+    <button data-role="student" class="active">Student</button>
+    <button data-role="teacher">Teacher</button>
+    <button id="expandAllBtn">Expand all</button>
+  </div>
+
+<script id="course-data">
+/* ============================================================================
+   MODULE REGISTRY
+   label   = the string shown in the card's type row (Moodle's modulename)
+   icon    = Font Awesome stand-in for the Moodle activity icon
+   purpose = MOD_PURPOSE_* from each module's lib.php, which drives the colour
+   ==========================================================================*/
+var MODS = {
+  assign:      { label:"Assignment",         icon:"fa-solid fa-file-pen",            purpose:"assessment" },
+  quiz:        { label:"Quiz",               icon:"fa-solid fa-clipboard-question",  purpose:"assessment" },
+  workshop:    { label:"Workshop",           icon:"fa-solid fa-people-arrows",       purpose:"assessment" },
+  forum:       { label:"Forum",              icon:"fa-solid fa-comments",            purpose:"collaboration" },
+  wiki:        { label:"Wiki",               icon:"fa-solid fa-pen-nib",             purpose:"collaboration" },
+  glossary:    { label:"Glossary",           icon:"fa-solid fa-book-atlas",          purpose:"collaboration" },
+  data:        { label:"Database",           icon:"fa-solid fa-table-list",          purpose:"collaboration" },
+  page:        { label:"Page",               icon:"fa-solid fa-file-lines",          purpose:"content" },
+  book:        { label:"Book",               icon:"fa-solid fa-book",                purpose:"content" },
+  url:         { label:"URL",                icon:"fa-solid fa-link",                purpose:"content" },
+  resource:    { label:"File",               icon:"fa-solid fa-file-arrow-down",     purpose:"content" },
+  folder:      { label:"Folder",             icon:"fa-solid fa-folder",              purpose:"content" },
+  choice:      { label:"Choice",             icon:"fa-solid fa-square-poll-vertical",purpose:"communication" },
+  feedback:    { label:"Feedback",           icon:"fa-solid fa-comment-dots",        purpose:"communication" },
+  lesson:      { label:"Lesson",             icon:"fa-solid fa-diagram-project",     purpose:"interactive" },
+  h5pactivity: { label:"Interactive content",icon:"fa-solid fa-puzzle-piece",        purpose:"interactive" },
+  scorm:       { label:"SCORM package",      icon:"fa-solid fa-cubes",               purpose:"interactive" }
+};
+
+var PURPOSE_LABEL = {
+  assessment:"Assessment", collaboration:"Collaboration", content:"Content",
+  communication:"Communication", interactive:"Interactive content"
+};
+
+/* ============================================================================
+   COURSE DATA — "Biology 101 - Mock data" (course id 15).
+   Names, descriptions, section summaries and due dates are verbatim from the
+   local database. Completion ticks for sections 0-5 are the real recorded
+   completions for user bio_ava; states further down the course are projected
+   forward from that point so the page reads as a genuine mid-course snapshot.
+   "Today" is 27 July 2026.
+   ==========================================================================*/
+var SECTIONS = [];
+
+SECTIONS.push({
+  title:"General",
+  items:[
+    { mod:"page", name:"Start Here: How this course works", desc:"Read this first.", done:true },
+    { mod:"forum", name:"Course Q&amp;A",
+      desc:"Ask anything about the course here. This is a Q&amp;A forum: you must post your own answer before you can see other students' replies.",
+      chips:[{cls:"meta", icon:"fa-solid fa-reply", text:"12 replies"}] },
+    { mod:"book", name:"Course Syllabus &amp; Study Guide",
+      desc:"Everything you need to know about how this course is run and assessed.",
+      chips:[{cls:"meta", icon:"fa-solid fa-list-ol", text:"5 chapters"}], manual:true },
+    { mod:"glossary", name:"Biology Glossary",
+      desc:"Key terms used throughout Biology 101. Terms are auto-linked wherever they appear in the course.",
+      chips:[{cls:"meta", icon:"fa-solid fa-a", text:"48 entries"}] },
+    { mod:"url", name:"Recommended channel: Crash Course Biology",
+      desc:"An optional but excellent video series covering the whole course." },
+    { mod:"resource", name:"Printable syllabus (file)", desc:"Download and keep a copy of the syllabus.",
+      chips:[{cls:"meta", icon:"fa-regular fa-file-pdf", text:"PDF · 420 KB"}] }
+  ]
+});
+
+SECTIONS.push({
+  title:"Introduction to Biology &amp; the Scientific Method",
+  summary:"What is life? Characteristics of living things, levels of biological organisation, and how scientists ask and answer questions.",
+  items:[
+    { mod:"page", name:"Reading: What is Life?", desc:"Core reading for Topic 1.", done:true },
+    { mod:"choice", name:"Poll: Which topic are you most excited about?", desc:"Help shape optional extra sessions.",
+      foot:{icon:"fa-solid fa-circle-check", cls:"done", text:"Done. You answered “Genetics”."} , done:true },
+    { mod:"forum", name:"Introduce yourself", desc:"Tell the class who you are and why you are taking Biology 101.",
+      chips:[{cls:"meta", icon:"fa-solid fa-reply", text:"31 replies"}],
+      foot:{icon:"fa-solid fa-circle-check", cls:"done", text:"Done. Posted 6 July 2026."}, done:true }
+  ]
+});
+
+SECTIONS.push({
+  title:"The Chemistry of Life",
+  summary:"Atoms, bonds, water, pH, and the four classes of biological macromolecules: carbohydrates, lipids, proteins and nucleic acids.",
+  items:[
+    { mod:"book", name:"Textbook: The Chemistry of Life",
+      desc:"A short textbook chapter with sub-chapters — use the table of contents to navigate.",
+      chips:[{cls:"meta", icon:"fa-solid fa-list-ol", text:"4 chapters"}], done:true },
+    { mod:"url", name:"Video: The properties of water", desc:"A 10-minute primer on why water is so important to life.",
+      chips:[{cls:"meta", icon:"fa-regular fa-clock", text:"10 min"}], manual:true },
+    { block:'<h4>Quick reference: the four macromolecules</h4>'
+      + '<table><tr><th>Class</th><th>Monomer</th><th>Function</th></tr>'
+      + '<tr><td>Carbohydrate</td><td>Monosaccharide</td><td>Energy, structure</td></tr>'
+      + '<tr><td>Lipid</td><td>(none / glycerol + fatty acids)</td><td>Energy store, membranes</td></tr>'
+      + '<tr><td>Protein</td><td>Amino acid</td><td>Enzymes, structure, transport</td></tr>'
+      + '<tr><td>Nucleic acid</td><td>Nucleotide</td><td>Information storage</td></tr></table>' }
+  ]
+});
+
+SECTIONS.push({
+  title:"Cell Structure &amp; Function",
+  summary:"Prokaryotic vs eukaryotic cells, organelles, and the endomembrane system. The cell as the basic unit of life.",
+  items:[
+    { mod:"lesson", name:"Interactive: A Tour of the Cell",
+      desc:"A self-paced lesson. Move through the pages using the navigation buttons.",
+      chips:[{cls:"meta", icon:"fa-solid fa-layer-group", text:"14 pages"}], done:true },
+    { mod:"h5pactivity", name:"Interactive: Identify the organelle", desc:"A short interactive multiple-choice activity.",
+      foot:{icon:"fa-solid fa-circle-check", cls:"done", text:"Done. Best attempt 8/10."}, grade:"80%", done:true },
+    { mod:"folder", name:"Lab resources: Microscopy",
+      desc:"Slides, worksheets and a microscopy checklist for this week's lab.",
+      chips:[{cls:"meta", icon:"fa-regular fa-folder-open", text:"6 files"}] }
+  ]
+});
+
+SECTIONS.push({
+  title:"Membranes &amp; Transport",
+  summary:"The fluid-mosaic membrane, diffusion, osmosis, and active vs passive transport.",
+  items:[
+    { mod:"page", name:"Reading: The Fluid Mosaic Model", desc:"Core reading for Topic 4.", done:true },
+    { sub:{ title:"Transport mechanisms (nested)", items:[
+        { mod:"page", name:"Passive transport (diffusion &amp; osmosis)", desc:"Nested reading." },
+        { mod:"page", name:"Active transport &amp; bulk transport", desc:"Nested reading." }
+      ]}}
+  ]
+});
+
+SECTIONS.push({
+  title:"Enzymes &amp; Metabolism",
+  summary:"Energy, ATP, activation energy and how enzymes catalyse the reactions of life.",
+  items:[
+    { mod:"page", name:"Reading: How enzymes work", desc:"Core reading for Topic 5." },
+    { mod:"assign", name:"Assignment 1: Enzyme lab report",
+      desc:"Submit your write-up of the catalase enzyme practical. Include a hypothesis, method, results table and discussion. Online text and a file attachment are both accepted.",
+      chips:[{cls:"date", icon:"fa-regular fa-calendar", text:"Due 23 Jul 2026"}],
+      foot:{icon:"fa-solid fa-circle-check", cls:"done", text:"Done. Submitted 22 July 2026 — graded."}, grade:"78 / 100", done:true }
+  ]
+});
+
+SECTIONS.push({
+  title:"Cellular Respiration",
+  summary:"Glycolysis, the Krebs cycle and oxidative phosphorylation — how cells harvest energy from glucose.",
+  items:[
+    { mod:"page", name:"Reading: From glucose to ATP", desc:"Core reading for Topic 6." },
+    { mod:"quiz", name:"Quiz 1: Cellular Respiration",
+      desc:"Ten-minute check on respiration. You may attempt it twice; your highest score counts.",
+      chips:[{cls:"meta", icon:"fa-regular fa-clock", text:"10 min"},{cls:"meta", icon:"fa-solid fa-rotate-right", text:"2 attempts"}],
+      restrict:"Not available unless: The activity <b>Assignment 1: Enzyme lab report</b> is marked complete." },
+    { sub:{ title:"Respiration pathways (nested)", items:[
+        { mod:"page", name:"Glycolysis explained", desc:"Test page 1" },
+        { mod:"page", name:"The Krebs cycle", desc:"Description shown on the course page, to show the altcontent surface." },
+        { mod:"forum", name:"Respiration Q&amp;A", desc:"Test forum 1",
+          chips:[{cls:"meta", icon:"fa-solid fa-reply", text:"4 replies"}] },
+        { block:'<p>Inline label inside a subsection — renders without its own card in non-editing view.</p>' }
+      ]}},
+    { sub:{ title:"Empty subsection (no activities)", items:[] }}
+  ]
+});
+
+SECTIONS.push({
+  title:"Photosynthesis",
+  summary:"Light-dependent reactions and the Calvin cycle — how producers capture light energy.",
+  items:[
+    { mod:"wiki", name:"Class Wiki: Photosynthesis notes", desc:"Build a shared set of notes on photosynthesis. Everyone can edit.",
+      chips:[{cls:"meta", icon:"fa-solid fa-file-lines", text:"9 pages"}] },
+    { mod:"forum", name:"Discussion: C3, C4 and CAM plants",
+      desc:"Why did different photosynthetic strategies evolve? Share an example plant.",
+      chips:[{cls:"meta", icon:"fa-solid fa-reply", text:"7 replies"}], manual:true },
+    { sub:{ title:"Hidden subsection (teacher only)", hidden:true, items:[
+        { mod:"page", name:"Draft notes (inside hidden subsection)", desc:"Test page 3" }
+      ]}},
+    { sub:{ title:"Restricted contents (nested)", items:[
+        { mod:"page", name:"Unlocks in 30 days (greyed out with info)", desc:"Test page 4",
+          dimmed:true, restrict:"Not available until: <b>26 August 2026</b>." },
+        { mod:"page", name:"Completely hidden until unlocked", desc:"Test page 5",
+          teacheronly:true, restrict:"Hidden entirely from students until <b>26 August 2026</b>." }
+      ]}}
+  ]
+});
+
+SECTIONS.push({
+  title:"Cell Division: Mitosis &amp; Meiosis",
+  summary:"The cell cycle, mitosis, meiosis, and the origin of genetic variation.",
+  items:[
+    { mod:"data", name:"Database: Cell-cycle stage catalogue",
+      desc:"Add a card for each stage of the cell cycle with a description and what happens to the DNA.",
+      chips:[{cls:"meta", icon:"fa-solid fa-table-cells", text:"23 entries"}] },
+    { mod:"assign", name:"Assignment 2: Mitosis vs Meiosis diagram",
+      desc:"Upload a labelled diagram (image or PDF) comparing mitosis and meiosis.",
+      chips:[{cls:"date warn", icon:"fa-regular fa-calendar", text:"Due in 3 days · 30 Jul 2026"}],
+      foot:{icon:"fa-solid fa-circle-exclamation", cls:"todo", text:"No submission yet."} }
+  ]
+});
+
+SECTIONS.push({
+  title:"Genetics &amp; Mendelian Inheritance",
+  summary:"Mendel's laws, Punnett squares, dominance, and patterns of inheritance.",
+  items:[
+    { mod:"url", name:"Simulation: Natural selection &amp; genetics (PhET)",
+      desc:"Interactive simulation — experiment with alleles and selection pressures." },
+    { mod:"lesson", name:"Interactive: Monohybrid crosses", desc:"Work through a monohybrid cross step by step.",
+      chips:[{cls:"meta", icon:"fa-solid fa-layer-group", text:"9 pages"}] },
+    { mod:"quiz", name:"Quiz 2: Mendelian genetics", desc:"Apply Punnett squares and Mendel's laws.",
+      chips:[{cls:"date", icon:"fa-regular fa-calendar", text:"10 Jul – 15 Jul 2026"}],
+      foot:{icon:"fa-solid fa-circle-xmark", cls:"missed", text:"Closed 15 July 2026 — no attempt submitted."} }
+  ]
+});
+
+SECTIONS.push({
+  title:"DNA &amp; Protein Synthesis",
+  summary:"DNA structure, replication, transcription and translation — the central dogma.",
+  items:[
+    { mod:"book", name:"Textbook: DNA &amp; Protein Synthesis", desc:"The central dogma, chapter by chapter.",
+      chips:[{cls:"meta", icon:"fa-solid fa-list-ol", text:"6 chapters"}] },
+    { mod:"page", name:"Reference: The genetic code", desc:"Codon reference." }
+  ]
+});
+
+SECTIONS.push({
+  title:"Evolution &amp; Natural Selection",
+  summary:"Descent with modification, evidence for evolution, and the mechanisms of change.",
+  items:[
+    { mod:"workshop", name:"Peer review: Evolution essay",
+      desc:"Write a 500-word essay: “Describe two lines of evidence for evolution by natural selection.” You will then peer-assess two classmates' essays against a rubric.",
+      chips:[{cls:"meta", icon:"fa-solid fa-diagram-predecessor", text:"Submission phase"}],
+      foot:{icon:"fa-solid fa-circle-exclamation", cls:"todo", text:"Submission phase open — you have not submitted."} },
+    { mod:"forum", name:"Debate: Is the peppered moth the best example of natural selection?",
+      desc:"Take a side and back it with evidence.",
+      chips:[{cls:"meta", icon:"fa-solid fa-reply", text:"18 replies"}] }
+  ]
+});
+
+SECTIONS.push({
+  title:"Ecology &amp; Ecosystems",
+  summary:"Populations, communities, energy flow, biogeochemical cycles and biodiversity.",
+  items:[
+    { mod:"data", name:"Database: Local species catalogue",
+      desc:"Contribute a species you have observed locally: common name, trophic level and a note.",
+      chips:[{cls:"meta", icon:"fa-solid fa-table-cells", text:"41 entries"}] },
+    { mod:"choice", name:"Vote: Field-trip destination", desc:"Where should our ecology field trip go?" },
+    { mod:"assign", name:"Capstone: Ecosystem case study",
+      desc:"Choose a local ecosystem and analyse its energy flow, key species interactions and one human impact. 1000 words plus a food-web diagram.",
+      chips:[{cls:"date", icon:"fa-regular fa-calendar", text:"Due 13 Aug 2026"},{cls:"meta", icon:"fa-solid fa-percent", text:"Worth 30%"}] },
+    { mod:"feedback", name:"End-of-course feedback", desc:"Your anonymous feedback helps improve Biology 101.",
+      chips:[{cls:"meta", icon:"fa-solid fa-user-secret", text:"Anonymous"}] }
+  ]
+});
+</script>
+<script id="course-data-stress">
+/* ============================================================================
+   Sections 13-15 of the same course are deliberate stress-test sandboxes: one
+   activity per date/behaviour permutation. They are collapsed by default (as
+   they read on the real course) but fully populated, so expanding one shows
+   what the card treatment does under maximum density and repetition.
+   ==========================================================================*/
+
+/* terse builder: [mod, name, desc, chips[], footState] */
+function s(mod, name, desc, chips, foot){
+  return { mod:mod, name:name, desc:desc||"", chips:chips||[], foot:foot||null };
+}
+var C = {
+  soon:  function(t){ return {cls:"date warn", icon:"fa-regular fa-calendar", text:t}; },
+  past:  function(t){ return {cls:"date late", icon:"fa-regular fa-calendar", text:t}; },
+  open:  function(t){ return {cls:"date", icon:"fa-regular fa-calendar", text:t}; },
+  timed: function(t){ return {cls:"meta", icon:"fa-regular fa-clock", text:t}; },
+  info:  function(t, i){ return {cls:"meta", icon:i||"fa-solid fa-circle-info", text:t}; }
+};
+var F = {
+  notopen: {icon:"fa-solid fa-circle-exclamation", cls:"todo", text:"Not open yet."},
+  todo:    {icon:"fa-solid fa-circle-exclamation", cls:"todo", text:"Not submitted."},
+  closed:  {icon:"fa-solid fa-circle-xmark", cls:"missed", text:"Closed — no further submissions."},
+  overdue: {icon:"fa-solid fa-circle-xmark", cls:"missed", text:"Overdue — late submissions still accepted."},
+  done:    {icon:"fa-solid fa-circle-check", cls:"done", text:"Done."}
+};
+
+SECTIONS.push({
+  title:"Quiz stress-test sandbox",
+  summary:"Each quiz below demonstrates a different Moodle quiz behaviour, navigation, layout or grading configuration.",
+  collapsed:true,
+  items:[
+    s("quiz","Variant: Kitchen sink (every question type)","One of every supported question type. Deferred feedback, one question per page, free navigation.",[C.info("16 questions","fa-solid fa-list-ol")]),
+    s("quiz","Variant: Adaptive mode (penalties, retry within attempt)","Adaptive behaviour — students may try again within the same attempt (with penalty).",[C.info("Adaptive","fa-solid fa-arrows-rotate")]),
+    s("quiz","Variant: Immediate feedback","Immediate feedback behaviour — check each question and see the result straight away.",[C.info("Immediate feedback","fa-solid fa-bolt")]),
+    s("quiz","Variant: Interactive with multiple tries","Interactive behaviour — multiple tries per question with hints between tries.",[C.info("Hints enabled","fa-regular fa-lightbulb")]),
+    s("quiz","Variant: Certainty-based marking (deferred CBM)","Deferred CBM — students also rate how certain they are of each answer.",[C.info("CBM","fa-solid fa-scale-balanced")]),
+    s("quiz","Variant: Sequential navigation (no going back)","Sequential navigation — you cannot return to a previous question. One per page.",[C.info("Sequential","fa-solid fa-forward-step")]),
+    s("quiz","Variant: All on one page, shuffled, unlimited attempts (avg)","Every question on a single page, answers shuffled, unlimited attempts, average grading.",[C.info("Unlimited attempts","fa-solid fa-infinity")]),
+    s("quiz","Variant: Timed (5 min limit, open/close window, auto-submit)","A 5-minute time limit with an open/close window; unanswered work is auto-submitted when time runs out.",[C.past("Closed 23 Jul 2026"), C.timed("5 min")], F.closed)
+  ]
+});
+
+SECTIONS.push({
+  title:"Deadline &amp; date states",
+  summary:"Every date-driven state, with the course treated as in progress. Log in as <b>student_busy</b> to see the learner states; as <b>educator_busy</b> for grading-due and override management.",
+  collapsed:true,
+  items:[
+    { block:'<h4>📝 Assignments — open / due / cut-off / overrides / extensions</h4>' },
+    s("assign","A1 · Not yet open (opens in 3 days)","Submissions have not opened yet.",[C.open("Opens 30 Jul 2026")], F.notopen),
+    s("assign","A2 · Open now, due in 10 days","Open and accepting submissions; due date comfortably in the future.",[C.open("Due 6 Aug 2026")], F.todo),
+    s("assign","A3 · Open now, due TOMORROW","Open, but the due date is imminent.",[C.soon("Due tomorrow · 28 Jul 2026")], F.todo),
+    s("assign","A4 · Overdue, not submitted (past due, before cut-off)","Past the due date but before the cut-off — late submissions still allowed. Focus student has NOT submitted.",[C.past("Due 25 Jul 2026"), C.info("Cut-off 1 Aug","fa-solid fa-hand")], F.overdue),
+    s("assign","A5 · Closed (past cut-off — no more submissions)","The cut-off date has passed; submissions are locked.",[C.past("Cut-off passed 18 Jul 2026")], F.closed),
+    s("assign","A6 · Submitted on time + graded","Due date in the future; focus student submitted before it and has been graded.",[C.open("Due 3 Aug 2026")], {icon:"fa-solid fa-circle-check", cls:"done", text:"Submitted 20 July 2026 — graded.", grade:"85 / 100"}),
+    s("assign","A7 · Submitted LATE (after due, before cut-off)","Due date has passed; focus student submitted late (flagged as X days late).",[C.past("Due 22 Jul 2026")], {icon:"fa-solid fa-circle-exclamation", cls:"todo", text:"Submitted 4 days late — awaiting grade."}),
+    s("assign","A8 · Closed for the class, but USER override extends it","Base dates are in the past (closed for everyone), but student_busy has a personal override keeping it open.",[C.open("Your extension: 3 Aug 2026"), C.info("User override","fa-solid fa-user-pen")], F.todo),
+    s("assign","A9 · GROUP override (Lab Group A gets extra time)","Base due date has just passed, but Lab Group A has a group override extending the deadline.",[C.open("Lab Group A: 2 Aug 2026"), C.info("Group override","fa-solid fa-users")], F.todo),
+    s("assign","A10 · Individual EXTENSION granted","Closed for the class, but the teacher granted student_busy an individual extension.",[C.open("Extension to 1 Aug 2026"), C.info("Extension","fa-solid fa-hourglass-half")], F.todo),
+    s("assign","A11 · Grading due (teacher-facing) — submissions awaiting marking","Due date passed; a grading-due date is set and submissions are waiting to be marked.",[C.past("Due 22 Jul 2026"), C.info("Grading due 29 Jul","fa-solid fa-pen-to-square")], {icon:"fa-solid fa-circle-exclamation", cls:"todo", text:"14 submissions awaiting grading.", teacher:true}),
+    s("assign","A12 · Completion expected date has passed (overdue completion)","Activity completion was expected 2 days ago; the focus student has not completed it.",[C.past("Completion expected 25 Jul 2026")], F.todo),
+
+    { block:'<h4>❓ Quizzes — open / close windows, time limit, overrides</h4>' },
+    s("quiz","Q1 · Not yet open (opens in 3 days)","This quiz has not opened yet.",[C.open("Opens 30 Jul 2026")], F.notopen),
+    s("quiz","Q2 · Open now (closes in 10 days)","Open and available.",[C.open("Closes 6 Aug 2026")], F.todo),
+    s("quiz","Q3 · Closed (closed 2 days ago)","The close date has passed.",[C.past("Closed 25 Jul 2026")], F.closed),
+    s("quiz","Q4 · Open now, 30-minute time limit, auto-submit","Open with a time limit; unfinished attempts are auto-submitted.",[C.open("Closes 4 Aug 2026"), C.timed("30 min")], F.todo),
+    s("quiz","Q5 · Closed for the class, USER override reopens it","Base close date has passed, but student_busy has a personal override.",[C.open("Your window: to 2 Aug 2026"), C.info("User override","fa-solid fa-user-pen")], F.todo),
+    s("quiz","Q6 · GROUP override (Lab Group A window extended)","Base close date has passed, but Lab Group A has an extended window.",[C.open("Lab Group A: to 2 Aug 2026"), C.info("Group override","fa-solid fa-users")], F.todo),
+
+    { block:'<h4>⏳ Other activities with open/close windows</h4>' },
+    s("choice","Choice · Open now (closes in 5 days)","A poll that is currently open.",[C.open("Closes 1 Aug 2026")]),
+    s("choice","Choice · Closed (closed 2 days ago)","A poll whose window has closed.",[C.past("Closed 25 Jul 2026")], F.closed),
+    s("feedback","Feedback · Open window (now → +10 days)","A feedback survey open for a limited window.",[C.open("27 Jul – 6 Aug 2026")]),
+    s("lesson","Lesson · Available now, deadline in 7 days","A lesson with an availability window and a deadline.",[C.open("Deadline 3 Aug 2026")]),
+    s("lesson","Lesson · Deadline passed","A lesson whose deadline is in the past.",[C.past("Deadline was 25 Jul 2026")], F.closed),
+    s("data","Database · Available + view windows set","A database with availability and view windows.",[C.open("Entries to 3 Aug"), C.info("Viewable to 10 Aug","fa-regular fa-eye")]),
+    s("workshop","Workshop · In submission phase (assessment opens later)","Submission phase is open now; the assessment phase opens after it closes.",[C.open("Submissions to 2 Aug"), C.info("Assessment from 3 Aug","fa-solid fa-diagram-predecessor")]),
+    s("forum","Forum · Posting due in 5 days (cut-off +12)","A forum with a due date and a later cut-off for posts.",[C.open("Due 1 Aug 2026"), C.info("Cut-off 8 Aug","fa-solid fa-hand")]),
+    s("forum","Forum · Posting overdue (due passed, cut-off in 4 days)","Past the posting due date but before the cut-off.",[C.past("Due 24 Jul 2026"), C.info("Cut-off 31 Jul","fa-solid fa-hand")], F.overdue),
+
+    { block:'<h4>✅ Completion states &amp; 🔒 date-based access restrictions</h4>' },
+    s("page","Page · Completed (green tick)","The focus student has completed this by viewing it.",[], {icon:"fa-solid fa-circle-check", cls:"done", text:"Done. Viewed 21 July 2026."}),
+    s("page","Page · Completion expected in 5 days (not done)","Completion is expected soon; not completed yet.",[C.soon("Completion expected 1 Aug 2026")]),
+    { mod:"page", name:"Page · Restricted — available from a future date", desc:"Locked until a future date.",
+      dimmed:true, restrict:"Not available until: <b>1 August 2026</b>." },
+    { mod:"page", name:"Page · Was restricted until a past date (now open)", desc:"Became available a few days ago.",
+      chips:[C.info("Available since 24 Jul","fa-solid fa-lock-open")] },
+    { mod:"page", name:"Page · Available UNTIL a future date", desc:"Accessible now but only until a future date.",
+      chips:[C.open("Available until 1 Aug 2026")] }
+  ]
+});
+
+SECTIONS.push({
+  title:"Date matrix — every date field, every state",
+  summary:"One activity per module type per date state — the widest sweep of date chips the card has to absorb.",
+  collapsed:true,
+  items:[
+    s("assign","ASSIGN · Not yet open (opens in 7 days)","",[C.open("Opens 3 Aug 2026")], F.notopen),
+    s("assign","ASSIGN · Open now, due TOMORROW","",[C.soon("Due 28 Jul 2026")], F.todo),
+    s("assign","ASSIGN · Overdue (2 days) — still accepting until cut-off","",[C.past("Due 25 Jul 2026"), C.info("Cut-off 1 Aug","fa-solid fa-hand")], F.overdue),
+    s("assign","ASSIGN · Closed — past cut-off, no more submissions","",[C.past("Cut-off passed 25 Jul 2026")], F.closed),
+    s("assign","ASSIGN · MAXIMUM — from + due + cut-off + grading due + 90min time limit","",[C.open("From 20 Jul"), C.soon("Due 28 Jul"), C.info("Cut-off 4 Aug","fa-solid fa-hand"), C.info("Grading due 11 Aug","fa-solid fa-pen-to-square"), C.timed("90 min")], F.todo),
+    s("quiz","QUIZ · Not yet open (opens in 7 days)","",[C.open("Opens 3 Aug 2026")], F.notopen),
+    s("quiz","QUIZ · Open now, closes TOMORROW","",[C.soon("Closes 28 Jul 2026")], F.todo),
+    s("quiz","QUIZ · Closed (closed 2 days ago)","",[C.past("Closed 25 Jul 2026")], F.closed),
+    s("quiz","QUIZ · MAXIMUM — open + close + 45min time limit","",[C.open("27 Jul – 3 Aug 2026"), C.timed("45 min")], F.todo),
+    s("choice","CHOICE · Not yet open (opens in 7 days)","",[C.open("Opens 3 Aug 2026")], F.notopen),
+    s("choice","CHOICE · MAXIMUM — open now, closes in 7 days","",[C.open("27 Jul – 3 Aug 2026")]),
+    s("choice","CHOICE · Closed (closed 2 days ago)","",[C.past("Closed 25 Jul 2026")], F.closed),
+    s("feedback","FEEDBACK · Not yet open (opens in 7 days)","",[C.open("Opens 3 Aug 2026")], F.notopen),
+    s("feedback","FEEDBACK · MAXIMUM — open now, closes in 7 days","",[C.open("27 Jul – 3 Aug 2026")]),
+    s("feedback","FEEDBACK · Closed (closed 2 days ago)","",[C.past("Closed 25 Jul 2026")], F.closed),
+    s("lesson","LESSON · Not yet available (opens in 7 days)","",[C.open("Opens 3 Aug 2026")], F.notopen),
+    s("lesson","LESSON · MAXIMUM — available + deadline + 30min time limit","",[C.open("27 Jul – 3 Aug 2026"), C.timed("30 min")]),
+    s("lesson","LESSON · Past deadline (closed 2 days ago)","",[C.past("Deadline was 25 Jul 2026")], F.closed),
+    s("data","DATABASE · MAXIMUM — entry window + view window + rating window","",[C.open("Entries 27 Jul – 3 Aug"), C.info("Viewable to 10 Aug","fa-regular fa-eye"), C.info("Ratings to 10 Aug","fa-regular fa-star")]),
+    s("data","DATABASE · Entry window closed, viewing still open","",[C.past("Entries closed 25 Jul"), C.info("Viewable to 10 Aug","fa-regular fa-eye")]),
+    s("forum","FORUM · MAXIMUM — due + cut-off + rating window","",[C.soon("Due 28 Jul"), C.info("Cut-off 4 Aug","fa-solid fa-hand"), C.info("Ratings to 11 Aug","fa-regular fa-star")]),
+    s("forum","FORUM · Past cut-off (no further posts)","",[C.past("Cut-off passed 25 Jul 2026")], F.closed),
+    s("glossary","GLOSSARY · Rating window OPEN (closes in 7 days)","",[C.info("Ratings to 3 Aug","fa-regular fa-star")]),
+    s("glossary","GLOSSARY · Rating window CLOSED (closed 2 days ago)","",[C.past("Ratings closed 25 Jul 2026")]),
+    s("workshop","WORKSHOP · Submission phase OPEN (assessment later)","",[C.open("Submissions to 3 Aug"), C.info("Assessment from 4 Aug","fa-solid fa-diagram-predecessor")]),
+    s("workshop","WORKSHOP · Assessment phase OPEN (submissions closed)","",[C.past("Submissions closed 25 Jul"), C.open("Assessment to 3 Aug")]),
+    s("workshop","WORKSHOP · MAXIMUM — all four phase dates, all in the past","",[C.past("All phases closed 25 Jul 2026")], F.closed),
+    s("scorm","SCORM · MAXIMUM — open now, closes in 7 days","",[C.open("27 Jul – 3 Aug 2026")]),
+    s("scorm","SCORM · Closed (closed 2 days ago)","",[C.past("Closed 25 Jul 2026")], F.closed),
+    s("wiki","WIKI · Editing closes in 7 days","",[C.open("Editing to 3 Aug 2026")]),
+    s("wiki","WIKI · Editing closed (2 days ago)","",[C.past("Editing closed 25 Jul 2026")]),
+    s("page","PAGE · Expected completion was 2 days ago (overdue)","",[C.past("Completion expected 25 Jul 2026")]),
+    s("page","PAGE · Expected completion in 7 days","",[C.soon("Completion expected 3 Aug 2026")])
+  ]
+});
+</script>
+<script id="renderers">
+(function(){
+  "use strict";
+
+  function esc(s){ return String(s == null ? "" : s); }
+
+  /* ---------- ACTIVITY CARD ---------- */
+  function chipHTML(c){
+    return '<span class="chip ' + c.cls + '"><i class="' + c.icon + '"></i>' + esc(c.text) + '</span>';
+  }
+
+  function footHTML(it){
+    var f = it.foot;
+    // an item with manual completion and no explicit footer gets the To do control
+    if(!f && it.manual){
+      return '<div class="afoot"><button class="todo-btn" data-todo>'
+        + '<i class="fa-regular fa-circle"></i>To do<i class="fa-solid fa-chevron-down"></i></button></div>';
+    }
+    if(!f && it.done){
+      f = { icon:"fa-solid fa-circle-check", cls:"done", text:"Done." };
+    }
+    if(!f && !it.grade) return '';
+    var grade = (f && f.grade) || it.grade;
+    var html = '<div class="afoot' + (f && f.teacher ? ' teacheronly' : '') + '">';
+    if(f) html += '<i class="' + f.icon + '"></i><span>' + esc(f.text) + '</span>';
+    if(grade) html += '<span class="grade">' + esc(grade) + '</span>';
+    return html + '</div>';
+  }
+
+  function activityHTML(it){
+    if(it.block) return '<div class="ablock">' + it.block + '</div>';
+    if(it.sub)   return subsectionHTML(it.sub);
+
+    var m = MODS[it.mod] || { label:it.mod, icon:"fa-solid fa-cube", purpose:"content" };
+    var cls = 'acard'
+      + (it.dimmed ? ' dimmed' : '')
+      + (it.teacheronly ? ' teacheronly' : '');
+
+    var chips = (it.chips || []).map(chipHTML).join('');
+    if(it.teacheronly) chips += chipHTML({cls:"meta", icon:"fa-regular fa-eye-slash", text:"Hidden from students"});
+
+    var html = '<article class="' + cls + '" data-purpose="' + m.purpose + '">'
+      + '<div class="acard-top">'
+        + '<span class="atype" style="color:var(--p-' + m.purpose + ')">'
+          + '<i class="' + m.icon + '"></i>' + m.label
+        + '</span>'
+        + (chips ? '<span class="achips">' + chips + '</span>' : '')
+      + '</div>'
+      + '<h4 class="atitle"><a href="#">' + esc(it.name) + '</a></h4>';
+
+    if(it.desc) html += '<p class="adesc">' + esc(it.desc) + '</p>';
+    if(it.restrict){
+      html += '<div class="arestrict"><i class="fa-solid fa-lock"></i>'
+        + '<span class="txt">' + it.restrict + '</span>'
+        + '<span class="showmore" data-showmore>Show more <i class="fa-solid fa-chevron-down" style="font-size:9px"></i></span>'
+        + '</div>';
+    }
+    html += footHTML(it) + '</article>';
+    return html;
+  }
+
+  /* ---------- SUBSECTION ---------- */
+  function subsectionHTML(sub){
+    var real = (sub.items || []).filter(function(i){ return i.mod; });
+    var body = (sub.items || []).length
+      ? '<div class="subbody">' + sub.items.map(activityHTML).join('') + '</div>'
+      : '<div class="subempty">No activities in this subsection yet.</div>';
+    return '<section class="subcard collapsed' + (sub.hidden ? ' teacheronly' : '') + '">'
+      + '<div class="subhead" data-toggle="sub">'
+        + '<button class="schev" tabindex="-1"><i class="fa-solid fa-chevron-down"></i></button>'
+        + '<h3 class="stitle">' + esc(sub.title) + '</h3>'
+        + (sub.hidden ? '<span class="chip meta" style="margin-left:8px"><i class="fa-regular fa-eye-slash"></i>Hidden from students</span>' : '')
+        + '<span class="sstatus">' + (real.length ? real.length + ' ' + (real.length === 1 ? 'activity' : 'activities') : 'Empty') + '</span>'
+      + '</div>' + body + '</section>';
+  }
+
+  /* ---------- SECTION ---------- */
+  function countSection(sec){
+    var total = 0, done = 0;
+    (sec.items || []).forEach(function(it){
+      if(it.block) return;
+      if(it.sub){
+        (it.sub.items || []).forEach(function(si){ if(si.mod){ total++; if(si.done) done++; } });
+        return;
+      }
+      total++; if(it.done) done++;
+    });
+    return { total:total, done:done };
+  }
+
+  function sectionHTML(sec, i){
+    var c = countSection(sec);
+    var pct = c.total ? Math.round(c.done / c.total * 100) : 0;
+    var status = c.total === 0 ? '' :
+      (c.done === c.total ? 'All done <i class="fa-solid fa-check"></i>'
+        : c.done === 0 ? 'Not started'
+        : c.done + ' of ' + c.total + ' activities done');
+
+    return '<section class="scard' + (sec.collapsed ? ' collapsed' : '') + '" id="sec-' + i + '">'
+      + '<div class="shead" data-toggle="sec">'
+        + '<button class="schev" tabindex="-1"><i class="fa-solid fa-chevron-down"></i></button>'
+        + '<h2 class="stitle">' + sec.title + '</h2>'
+        + (status ? '<span class="sstatus">' + status + '</span>' : '')
+      + '</div>'
+      + '<div class="sbar' + (pct === 100 ? ' full' : '') + '"><span style="width:' + pct + '%"></span></div>'
+      + '<div class="sbody">'
+        + (sec.summary ? '<p class="ssummary">' + sec.summary + '</p>' : '')
+        + '<div class="acards">' + (sec.items || []).map(activityHTML).join('') + '</div>'
+      + '</div></section>';
+  }
+
+  document.getElementById('sectionsMount').innerHTML =
+    SECTIONS.map(sectionHTML).join('');
+
+  /* ---------- COURSE INDEX (same data) ---------- */
+  function ciActivity(it, current){
+    if(it.block) return '';
+    var m = MODS[it.mod] || { icon:"fa-solid fa-cube", purpose:"content" };
+    var check = it.done
+      ? '<span class="ci-check done"><i class="fa-solid fa-check"></i></span>'
+      : '<span class="ci-check"></span>';
+    return '<div class="ci-activity' + (current ? ' pageitem' : '') + (it.teacheronly ? ' hiddenrow teacheronly' : '') + '">'
+      + check
+      + '<i class="' + m.icon + ' ci-acticon" style="color:var(--p-' + m.purpose + ')"></i>'
+      + '<span class="txt" title="' + esc(it.name).replace(/"/g,'') + '">' + esc(it.name) + '</span>'
+      + '</div>';
+  }
+
+  function ciSection(sec, i){
+    var rows = '';
+    (sec.items || []).forEach(function(it){
+      if(it.sub){
+        rows += '<div class="ci-section' + (it.sub.hidden ? ' teacheronly' : '') + '">'
+          + '<button class="ci-sec-head"><span class="chev"><i class="fa-solid fa-chevron-down"></i></span>'
+          + '<span class="txt">' + esc(it.sub.title) + '</span>'
+          + (it.sub.hidden ? '<i class="fa-solid fa-eye-slash lock"></i>' : '') + '</button>'
+          + '<div class="ci-activities">' + (it.sub.items || []).map(function(si){ return ciActivity(si); }).join('') + '</div>'
+          + '</div>';
+        return;
+      }
+      rows += ciActivity(it);
+    });
+    return '<div class="ci-section' + (sec.collapsed ? ' collapsed' : '') + '">'
+      + '<button class="ci-sec-head"><span class="chev"><i class="fa-solid fa-chevron-down"></i></span>'
+      + '<span class="txt">' + sec.title + '</span></button>'
+      + '<div class="ci-activities">' + rows + '</div></div>';
+  }
+
+  document.getElementById('ciSections').innerHTML = SECTIONS.map(ciSection).join('');
+
+  /* ---------- completion block + legend ---------- */
+  var totals = SECTIONS.reduce(function(a, sec){
+    var c = countSection(sec); a.total += c.total; a.done += c.done; return a;
+  }, { total:0, done:0 });
+  document.getElementById('cbProgressCount').textContent = totals.done + ' of ' + totals.total + ' activities';
+  document.getElementById('cbProgressFill').style.width =
+    (totals.total ? (totals.done / totals.total * 100) : 0) + '%';
+
+  var used = {};
+  SECTIONS.forEach(function(sec){
+    (sec.items || []).forEach(function(it){
+      var list = it.sub ? (it.sub.items || []) : [it];
+      list.forEach(function(x){
+        if(!x.mod || !MODS[x.mod]) return;
+        var p = MODS[x.mod].purpose;
+        (used[p] = used[p] || {})[x.mod] = (used[p][x.mod] || 0) + 1;
+      });
+    });
+  });
+  document.getElementById('cbLegend').innerHTML = Object.keys(used).map(function(p){
+    var mods = Object.keys(used[p]).map(function(m){ return MODS[m].label; }).join(', ');
+    return '<div class="li"><span class="sw" style="background:var(--p-' + p + ')"></span>'
+      + '<span><b>' + (PURPOSE_LABEL[p] || p) + '</b> — ' + mods + '</span></div>';
+  }).join('');
+
+  /* ---------- interactions ---------- */
+  document.addEventListener('click', function(e){
+    var secHead = e.target.closest('[data-toggle="sec"]');
+    if(secHead){ secHead.closest('.scard').classList.toggle('collapsed'); return; }
+
+    var subHead = e.target.closest('[data-toggle="sub"]');
+    if(subHead){ subHead.closest('.subcard').classList.toggle('collapsed'); return; }
+
+    var more = e.target.closest('[data-showmore]');
+    if(more){
+      var box = more.closest('.arestrict');
+      box.classList.toggle('open');
+      more.innerHTML = box.classList.contains('open')
+        ? 'Show less <i class="fa-solid fa-chevron-up" style="font-size:9px"></i>'
+        : 'Show more <i class="fa-solid fa-chevron-down" style="font-size:9px"></i>';
+      return;
+    }
+
+    var todo = e.target.closest('[data-todo]');
+    if(todo){
+      var on = todo.classList.toggle('done');
+      todo.innerHTML = on
+        ? '<i class="fa-solid fa-circle-check"></i>Done<i class="fa-solid fa-chevron-down"></i>'
+        : '<i class="fa-regular fa-circle"></i>To do<i class="fa-solid fa-chevron-down"></i>';
+      return;
+    }
+
+    var ciHead = e.target.closest('.ci-sec-head');
+    if(ciHead){ ciHead.closest('.ci-section').classList.toggle('collapsed'); return; }
+  });
+
+  // collapse / expand all (course content)
+  var allCollapsed = false;
+  document.getElementById('collapseAll').addEventListener('click', function(){
+    allCollapsed = !allCollapsed;
+    document.querySelectorAll('.scard').forEach(function(s){ s.classList.toggle('collapsed', allCollapsed); });
+    this.querySelector('.ca-label').textContent = allCollapsed ? 'Expand all' : 'Collapse all';
+  });
+  document.getElementById('ciCollapseAll').addEventListener('click', function(){
+    var any = document.querySelector('#ciSections .ci-section:not(.collapsed)');
+    document.querySelectorAll('#ciSections > .ci-section').forEach(function(s){ s.classList.toggle('collapsed', !!any); });
+  });
+  document.getElementById('expandAllBtn').addEventListener('click', function(){
+    document.querySelectorAll('.scard, .subcard').forEach(function(s){ s.classList.remove('collapsed'); });
+  });
+
+  // role switch (student hides teacher-only rows)
+  document.querySelectorAll('.devbar [data-role]').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.devbar [data-role]').forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+      var student = b.dataset.role === 'student';
+      document.body.classList.toggle('role-student', student);
+      document.getElementById('profileName').textContent = student ? 'Ava' : 'Dr Chen';
+      document.getElementById('avatarInitial').textContent = student ? 'A' : 'C';
+      document.getElementById('editSwitch').setAttribute('aria-pressed', student ? 'false' : 'false');
+    });
+  });
+
+  document.querySelector('.devnote').addEventListener('click', function(){
+    document.body.classList.add('hide-dev');
+  });
+
+  /* ---------- drawers ---------- */
+  var body = document.body;
+  document.getElementById('openBtn').addEventListener('click', function(){ body.classList.add('ci-open'); });
+  document.getElementById('closeBtn').addEventListener('click', function(){ body.classList.remove('ci-open'); });
+  document.getElementById('cbOpenBtn').addEventListener('click', function(){ body.classList.add('cb-open'); });
+  document.getElementById('cbCloseBtn').addEventListener('click', function(){ body.classList.remove('cb-open'); });
+  document.getElementById('backdrop').addEventListener('click', function(){
+    body.classList.remove('ci-open'); body.classList.remove('cb-open');
+  });
+
+  /* Drawer open/closed is a user preference that survives viewport changes
+     (as it does in Moodle). Narrow viewports force the drawers shut, but the
+     preference is remembered so widening the window restores them — otherwise
+     the drawers vanish for good after one narrow resize. */
+  var wantCI = true, wantCB = true;
+  document.getElementById('openBtn').addEventListener('click', function(){ wantCI = true; });
+  document.getElementById('closeBtn').addEventListener('click', function(){ wantCI = false; });
+  document.getElementById('cbOpenBtn').addEventListener('click', function(){ wantCB = true; });
+  document.getElementById('cbCloseBtn').addEventListener('click', function(){ wantCB = false; });
+
+  function applyMode(){
+    var w = window.innerWidth;
+    var overlay = w <= 768;
+    body.classList.toggle('ci-overlay', overlay);
+    body.classList.toggle('cb-overlay', overlay);
+    // overlay drawers start shut; the blocks drawer needs room the mid widths
+    // don't have, so it only auto-shows above 1200.
+    body.classList.toggle('ci-open', wantCI && !overlay);
+    body.classList.toggle('cb-open', wantCB && !overlay && w > 1200);
+  }
+  applyMode();
+  window.addEventListener('resize', applyMode);
+
+  /* ---------- course-index drag resize ---------- */
+  (function(){
+    var handle = document.getElementById('resizeHandle');
+    var drawer = document.getElementById('drawer');
+    var root = document.documentElement;
+    var MIN = 285, MAX = 640;
+    var startX = 0, startW = 0;
+
+    function onMove(e){
+      var w = Math.min(MAX, Math.max(MIN, startW + (e.clientX - startX)));
+      root.style.setProperty('--ci-width', w + 'px');
+    }
+    function onUp(){
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      body.classList.remove('dragging');
+      handle.classList.remove('dragging');
+    }
+    handle.addEventListener('mousedown', function(e){
+      e.preventDefault();
+      startX = e.clientX;
+      startW = drawer.getBoundingClientRect().width;
+      body.classList.add('dragging');
+      handle.classList.add('dragging');
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+    handle.addEventListener('keydown', function(e){
+      var step = e.shiftKey ? 40 : 12;
+      var cur = drawer.getBoundingClientRect().width;
+      if(e.key === 'ArrowLeft'){ e.preventDefault(); root.style.setProperty('--ci-width', Math.max(MIN, cur - step) + 'px'); }
+      if(e.key === 'ArrowRight'){ e.preventDefault(); root.style.setProperty('--ci-width', Math.min(MAX, cur + step) + 'px'); }
+    });
+  })();
+})();
+</script>
+</body>
+</html>

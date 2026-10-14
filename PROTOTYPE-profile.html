@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTOTYPE — User profile (/user/profile.php), MDS-grounded (throwaway)</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+  /*
+    ============================================================================
+    THROWAWAY PROTOTYPE — public user profile, /user/profile.php
+    ============================================================================
+
+    THE QUESTION THIS ANSWERS
+    Can the profile page stop being a link farm — leading with who the person is
+    and what they do here, and collecting staff tooling into one labelled panel —
+    without dropping a single capability-gated field or link that core renders
+    today?
+
+    GROUNDED IN, NOT IMAGINED FROM
+    - public/user/profile.php                    page assembly, edit/reset, gates
+    - public/lib/myprofilelib.php                every core node + its condition
+    - public/user/classes/output/myprofile/*     tree / category / node / renderer
+    - public/lib/classes/output/core_renderer.php::context_header  avatar+buttons
+    - public/user/classes/fields.php             get_identity_fields()
+    - public/lib/classes/user.php::can_view_profile()
+    - a live tree dump on the Docker site for four viewers of the same student
+      (see "WHAT CORE ACTUALLY RENDERS" below — those node lists are measured,
+      not guessed).
+
+    Shell (top nav, shell cap, inset, breakpoints) lifted from
+    TEMPLATE-shell.html. The course-index drawer is deliberately absent: a site
+    profile is the `mypublic` layout with no course context, so there is no
+    course index to draw.
+
+    WHAT CORE ACTUALLY RENDERS TODAY (measured, student "Ava", site profile)
+      Ava viewing herself     19 nodes / 8 cards — 3 are facts, 16 are links
+      Peer viewing Ava        10 nodes / 5 cards
+      Teacher viewing Ava     20 nodes / 7 cards
+      Admin viewing Ava       23 nodes / 8 cards
+    The "User details" card, on a stock site, holds exactly: Edit profile (a
+    link), Email address, Timezone. Everything a person would recognise as
+    "their profile" — bio, interests, city, institution, custom fields — is
+    either off by default or scattered into the same card as the links.
+
+    Use the State panel (bottom-left) to switch viewer, and to flip between
+    TODAY (a faithful rebuild of the current markup and the measured node list
+    for that viewer) and NEW.
+  */
+
+  /* ==========================================================================
+     MDS TOKENS — verbatim subset of @moodlehq/design-system@5.2.0
+     dist/tokens/css/light.css. Prefer adding a token here over inlining a hex.
+     ========================================================================== */
+  :root{
+    /* primitives: colour ramp */
+    --mds-color-blue-50:#e7f0f9;  --mds-color-blue-100:#cfe2f2; --mds-color-blue-200:#9fc4e5;
+    --mds-color-blue-300:#6fa7d9; --mds-color-blue-400:#3f89cc; --mds-color-blue-500:#0f6cbf;
+    --mds-color-blue-600:#0c5699; --mds-color-blue-700:#094173; --mds-color-blue-800:#062b4c;
+    --mds-color-gray-100:#f8f9fa; --mds-color-gray-200:#e9ecef; --mds-color-gray-300:#dee2e6;
+    --mds-color-gray-400:#ced4da; --mds-color-gray-500:#8f959e; --mds-color-gray-600:#6a737b;
+    --mds-color-gray-700:#495057; --mds-color-gray-800:#343a40; --mds-color-gray-900:#1d2125;
+    --mds-color-gray-black:#000;  --mds-color-gray-white:#fff;
+    --mds-color-green-50:#ebf2ea; --mds-color-green-100:#d7e4d6; --mds-color-green-200:#aecaad;
+    --mds-color-green-500:#357a32; --mds-color-green-800:#153114;
+    --mds-color-red-50:#faeae9;   --mds-color-red-100:#f4d6d2; --mds-color-red-200:#eaada6;
+    --mds-color-red-500:#ca3120;  --mds-color-red-600:#a2271a; --mds-color-red-800:#51140d;
+    --mds-color-yellow-50:#fdf7ed; --mds-color-yellow-100:#fcefdc; --mds-color-yellow-200:#f9deb8;
+    --mds-color-yellow-500:#f0ad4e; --mds-color-yellow-800:#60451f;
+    --mds-color-cyan-50:#e5f2f4;  --mds-color-cyan-100:#cce6ea; --mds-color-cyan-200:#99cdd5;
+    --mds-color-cyan-500:#008196; --mds-color-cyan-800:#00343c;
+
+    /* primitives: type */
+    --mds-typography-font-family-sans-serif:"Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --mds-typography-font-size-0-875:.875rem; --mds-typography-font-size-1:1rem;
+    --mds-typography-font-size-1-25:1.25rem;  --mds-typography-font-size-1-5:1.5rem;
+    --mds-typography-font-size-1-75:1.75rem;  --mds-typography-font-size-2:2rem;
+    --mds-typography-font-weight-regular:400; --mds-typography-font-weight-medium:500;
+    --mds-typography-font-weight-semibold:600; --mds-typography-font-weight-bold:700;
+    --mds-typography-line-height-headings-h1:3rem;   --mds-typography-line-height-headings-h2:2.4rem;
+    --mds-typography-line-height-headings-h3:2.1rem; --mds-typography-line-height-headings-h4:1.8rem;
+    --mds-typography-line-height-headings-h5:1.5rem; --mds-typography-line-height-headings-h6:1.2rem;
+    --mds-typography-line-height-paragraph-base:1.5rem;
+
+    /* primitives: scale */
+    --mds-scale-0:0rem;   --mds-scale-100:.25rem; --mds-scale-200:.375rem; --mds-scale-300:.5rem;
+    --mds-scale-400:.75rem; --mds-scale-500:.875rem; --mds-scale-600:1rem; --mds-scale-700:1.25rem;
+    --mds-scale-800:1.5rem; --mds-scale-1000:2rem; --mds-scale-1200:3rem; --mds-scale-1400:4rem;
+    --mds-scale-1700:6rem; --mds-scale-1800:50rem;
+
+    /* semantic: spacing / radius / avatars */
+    --mds-spacing-xxs:var(--mds-scale-100); --mds-spacing-xs:var(--mds-scale-300);
+    --mds-spacing-sm:var(--mds-scale-400);  --mds-spacing-md:var(--mds-scale-600);
+    --mds-spacing-lg:var(--mds-scale-700);  --mds-spacing-xl:var(--mds-scale-1000);
+    --mds-spacing-xxl:var(--mds-scale-1200);
+    --mds-border-radius-sm:var(--mds-scale-200); --mds-border-radius-md:var(--mds-scale-300);
+    --mds-border-radius-lg:var(--mds-scale-400); --mds-border-radius-xl:var(--mds-scale-600);
+    --mds-border-radius-pill:var(--mds-scale-1800);
+    --mds-avatars-sm:var(--mds-scale-800);  --mds-avatars-md:var(--mds-scale-1000);
+    --mds-avatars-lg:var(--mds-scale-1200); --mds-avatars-xl:var(--mds-scale-1400);
+    --mds-avatars-xxl:var(--mds-scale-1700);
+
+    /* semantic: colour */
+    --mds-text-default:var(--mds-color-gray-900);  --mds-text-subtle:var(--mds-color-gray-700);
+    --mds-text-muted:var(--mds-color-gray-600);    --mds-text-inverse:var(--mds-color-gray-100);
+    --mds-text-danger:var(--mds-color-red-500);
+    --mds-text-feedback-info:var(--mds-color-cyan-800);
+    --mds-text-feedback-success:var(--mds-color-green-800);
+    --mds-text-feedback-warning:var(--mds-color-yellow-800);
+    --mds-text-feedback-primary:var(--mds-color-blue-800);
+    --mds-text-feedback-secondary:var(--mds-color-gray-800);
+    --mds-bg-surface-default:var(--mds-color-gray-white);
+    --mds-bg-surface-subtle:var(--mds-color-gray-100);
+    --mds-bg-surface-strong:var(--mds-color-gray-200);
+    --mds-bg-interactive-primary-default:var(--mds-color-blue-500);
+    --mds-bg-interactive-primary-hover:var(--mds-color-blue-600);
+    --mds-bg-interactive-primary-active:var(--mds-color-blue-700);
+    --mds-bg-interactive-primary-default-light:var(--mds-color-blue-50);
+    --mds-bg-interactive-secondary-default:var(--mds-color-gray-300);
+    --mds-bg-interactive-secondary-hover:var(--mds-color-gray-400);
+    --mds-bg-feedback-info-light:var(--mds-color-cyan-50);
+    --mds-bg-feedback-info-subtle:var(--mds-color-cyan-100);
+    --mds-bg-feedback-success-light:var(--mds-color-green-50);
+    --mds-bg-feedback-warning-light:var(--mds-color-yellow-50);
+    --mds-bg-feedback-secondary-subtle:var(--mds-color-gray-100);
+    --mds-border-subtle:var(--mds-color-gray-200);
+    --mds-border-default:var(--mds-color-gray-300);
+    --mds-border-ring:var(--mds-color-gray-500);
+    --mds-border-feedback-info:var(--mds-color-cyan-200);
+    --mds-border-feedback-warning:var(--mds-color-yellow-200);
+    --mds-border-feedback-success:var(--mds-color-green-200);
+
+    /* prototype-local aliases (shorter names, same values) */
+    --text-default:var(--mds-text-default); --text-subtle:var(--mds-text-subtle);
+    --text-muted:var(--mds-text-muted);
+    --bg-subtle:var(--mds-bg-surface-subtle); --bg-strong:var(--mds-bg-surface-strong);
+    --surface:var(--mds-bg-surface-default); --page-bg:var(--mds-bg-surface-default);
+    --border-subtle:var(--mds-border-subtle); --border-default:var(--mds-border-default);
+    --border-ring:var(--mds-border-ring);
+    --primary:var(--mds-bg-interactive-primary-default);
+    --primary-dark:var(--mds-bg-interactive-primary-hover);
+    --sp-xxs:var(--mds-spacing-xxs); --sp-xs:var(--mds-spacing-xs); --sp-sm:var(--mds-spacing-sm);
+    --sp-md:var(--mds-spacing-md);   --sp-lg:var(--mds-spacing-lg); --sp-xl:var(--mds-spacing-xl);
+    --r-sm:var(--mds-border-radius-sm); --r-md:var(--mds-border-radius-md);
+    --r-lg:var(--mds-border-radius-lg); --r-xl:var(--mds-border-radius-xl);
+    --r-pill:var(--mds-border-radius-pill);
+
+    /* layout: identical to TEMPLATE-shell.html, do not re-litigate here */
+    --shell-max:1440px; --shell-pad:20px; --nav-h:64px;
+    --content-max:830px;   /* $course-content-maxwidth — the CURRENT profile cap */
+    --rail:320px;          /* proposed right rail on the new layout */
+    --btn:40px;
+  }
+
+  *{ box-sizing:border-box; }
+  /* Gate elements are toggled with the `hidden` attribute; several of them are
+     display:flex/inline-flex, which beats the UA's [hidden]{display:none}. */
+  [hidden]{ display:none !important; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    font-family:var(--mds-typography-font-family-sans-serif);
+    color:var(--text-default); background:var(--page-bg);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{ color:var(--primary); text-decoration:none; }
+  a:hover{ text-decoration:underline; }
+  button{ font-family:inherit; }
+
+  .shell{ max-width:var(--shell-max); margin:0 auto; padding:0 var(--shell-pad); }
+
+  /* =====================  TOP NAV (from TEMPLATE-shell)  ===================== */
+  .topbar{ position:sticky; top:0; z-index:40; background:var(--bg-subtle); border-bottom:1px solid var(--border-subtle); }
+  .topbar-inner{ height:var(--nav-h); display:flex; align-items:center; justify-content:space-between; gap:var(--sp-md); }
+  .nav-left{ display:flex; align-items:center; gap:32px; min-width:0; }
+  .brand{ display:flex; align-items:center; gap:8px; height:40px; }
+  .brand .mark{ font-size:26px; color:var(--text-default); }
+  .brand .word b{ display:block; font-weight:800; font-size:17px; letter-spacing:.2px; line-height:1; }
+  .brand .word span{ display:block; font-size:11px; letter-spacing:2px; color:var(--text-subtle); }
+  .nav-pills{ display:flex; align-items:center; gap:var(--sp-xxs); }
+  .nav-pill{
+    display:flex; align-items:center; gap:var(--sp-xxs); height:28px; padding:0 var(--sp-sm);
+    border-radius:var(--r-md); border:none; background:transparent;
+    font-size:14px; font-weight:500; color:var(--text-subtle); cursor:pointer; white-space:nowrap;
+  }
+  .nav-pill .dot{ width:4px; height:4px; border-radius:50%; background:var(--primary); }
+  .nav-pill.selected{ background:var(--bg-strong); color:var(--text-default); }
+  .burger{
+    display:none; width:var(--btn); height:var(--btn); border:none; background:transparent;
+    border-radius:var(--r-sm); cursor:pointer; color:var(--text-default); font-size:20px;
+    align-items:center; justify-content:center;
+  }
+  .nav-right{ display:flex; align-items:center; gap:var(--sp-xs); }
+  .nav-right-group{ display:flex; align-items:center; gap:var(--sp-md); }
+  .search{
+    display:flex; align-items:center; gap:var(--sp-xs); width:256px; height:36px; padding:0 var(--sp-sm);
+    background:var(--bg-strong); border-radius:var(--r-md); color:var(--text-subtle); font-size:14px;
+  }
+  .search i{ font-size:12px; }
+  .search-icon-btn{
+    display:none; width:28px; height:28px; border:none; background:transparent; border-radius:var(--r-sm);
+    color:var(--text-subtle); font-size:12px; cursor:pointer; align-items:center; justify-content:center;
+  }
+  .editmode{ display:flex; align-items:center; gap:var(--sp-xs); }
+  .editmode .label{ font-size:16px; color:var(--text-default); white-space:nowrap; }
+  .switch{ width:32px; height:18px; border-radius:var(--r-pill); background:var(--border-ring); position:relative; border:none; cursor:pointer; flex:0 0 auto; }
+  .switch::after{ content:""; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; transition:left .15s ease; }
+  .switch[aria-pressed="true"]{ background:var(--primary); }
+  .switch[aria-pressed="true"]::after{ left:16px; }
+  .icon-btn{
+    width:28px; height:28px; border:none; background:transparent; border-radius:var(--r-sm);
+    color:var(--text-subtle); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .icon-btn:hover{ background:var(--bg-strong); }
+  .nav-icons{ display:flex; align-items:center; gap:var(--sp-xs); }
+  .nav-divider{ width:1px; height:24px; background:var(--bg-strong); }
+  .profile-menu{ display:flex; align-items:center; gap:var(--sp-xs); padding:0 var(--sp-xs); border-radius:var(--r-pill); cursor:pointer; }
+  .profile-menu:hover{ background:var(--bg-strong); }
+  .nav-avatar{
+    width:32px; height:32px; border-radius:50%; flex:0 0 auto; border:1px solid var(--border-default);
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:600;
+  }
+  .profile-menu .pname{ font-size:14px; font-weight:500; color:var(--text-default); }
+  .profile-menu .fa-chevron-down{ font-size:8px; color:var(--text-subtle); width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center; }
+
+  /* =====================  PAGE  ===================== */
+  .layout{
+    max-width:var(--shell-max); margin:0 auto;
+    padding:var(--sp-lg) var(--shell-pad) 96px;
+    min-height:calc(100vh - var(--nav-h));
+  }
+  .content-col{ margin:0 auto; padding:0 23px; }   /* core's main-inner 8 + role=main 15 */
+  body.limitedwidth .content-col{ max-width:var(--content-max); }
+
+  /* ==========================================================================
+     SHARED ATOMS
+     Card, button, chip, avatar, badge. MDS has button/avatar/badge as real
+     components; CARD IS A KNOWN MDS GAP (see MDS-component-scope.html §5.1),
+     so the card here is invented — that is exactly the gap this page runs into.
+     ========================================================================== */
+  .card{
+    background:var(--surface); border:1px solid var(--border-subtle);
+    border-radius:var(--r-xl); padding:var(--sp-md);
+  }
+  .card + .card{ margin-top:var(--sp-md); }
+  .card-head{ display:flex; align-items:center; justify-content:space-between; gap:var(--sp-sm); margin-bottom:var(--sp-sm); }
+  .card-head h2{
+    margin:0; font-size:var(--mds-typography-font-size-1); line-height:var(--mds-typography-line-height-headings-h6);
+    font-weight:var(--mds-typography-font-weight-semibold); color:var(--text-default);
+  }
+  .card-head .count{ font-size:.8125rem; color:var(--text-muted); font-weight:400; }
+  .card-link{ font-size:.875rem; font-weight:500; }
+  .card-sub{ margin:calc(var(--sp-sm) * -1) 0 var(--sp-sm); font-size:.8125rem; color:var(--text-muted); }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:var(--sp-xs);
+    height:40px; padding:0 var(--sp-md); border-radius:var(--r-md); border:1px solid transparent;
+    font-size:.875rem; font-weight:600; cursor:pointer; white-space:nowrap;
+  }
+  .btn i{ font-size:.8125rem; }
+  .btn-primary{ background:var(--mds-bg-interactive-primary-default); color:#fff; }
+  .btn-primary:hover{ background:var(--mds-bg-interactive-primary-hover); text-decoration:none; color:#fff; }
+  .btn-secondary{ background:var(--surface); color:var(--text-subtle); border-color:var(--mds-color-gray-400); }
+  .btn-secondary:hover{ background:var(--bg-subtle); text-decoration:none; }
+  .btn-ghost{ background:transparent; color:var(--text-subtle); }
+  .btn-ghost:hover{ background:var(--bg-strong); }
+  .btn-icon{ width:40px; padding:0; }
+
+  .chip{
+    display:inline-flex; align-items:center; gap:var(--sp-xxs);
+    height:28px; padding:0 var(--sp-sm); border-radius:var(--r-pill);
+    background:var(--bg-subtle); border:1px solid var(--border-subtle);
+    font-size:.8125rem; color:var(--text-subtle); white-space:nowrap;
+  }
+  .chip i{ font-size:.6875rem; color:var(--text-muted); }
+  .chip.interest{ background:var(--mds-bg-interactive-primary-default-light); border-color:var(--mds-color-blue-100); color:var(--mds-text-feedback-primary); }
+
+  .badge{
+    display:inline-flex; align-items:center; gap:4px; padding:2px 8px;
+    border-radius:var(--r-pill); font-size:.6875rem; font-weight:600; letter-spacing:.2px;
+  }
+  .badge i{ font-size:.5625rem; }
+  .badge-info{ background:var(--mds-bg-feedback-info-subtle); color:var(--mds-text-feedback-info); }
+  .badge-success{ background:var(--mds-bg-feedback-success-light); color:var(--mds-text-feedback-success); }
+  .badge-warning{ background:var(--mds-bg-feedback-warning-light); color:var(--mds-text-feedback-warning); }
+  .badge-secondary{ background:var(--mds-bg-feedback-secondary-subtle); color:var(--mds-text-feedback-secondary); }
+
+  .mds-avatar{
+    position:relative; display:inline-flex; align-items:center; justify-content:center;
+    overflow:hidden; border-radius:var(--mds-border-radius-pill);
+    background:linear-gradient(135deg,#f0a878,#c9805a); color:#fff; flex-shrink:0;
+    font-weight:var(--mds-typography-font-weight-semibold);
+  }
+  .mds-avatar--sm{ width:var(--mds-avatars-sm); height:var(--mds-avatars-sm); font-size:.6875rem; }
+  .mds-avatar--md{ width:var(--mds-avatars-md); height:var(--mds-avatars-md); font-size:.8125rem; }
+  .mds-avatar--xxl{ width:var(--mds-avatars-xxl); height:var(--mds-avatars-xxl); font-size:2rem; }
+
+  /* ==========================================================================
+     NEW DESIGN
+     ========================================================================== */
+  #new{ display:none; }
+  body.view-new #new{ display:block; }
+
+  /* ---- 1. Identity header -------------------------------------------------
+     Replaces core/context_header. Core gives you a 100px avatar, the full name,
+     and up to two icon-only buttons (message, add contact). Everything else a
+     stranger needs to place this person — role, courses, institution, local
+     time — is currently 400px further down inside "User details". */
+  .idhead{
+    display:flex; gap:var(--sp-lg); align-items:flex-start;
+    padding:var(--sp-lg); border:1px solid var(--border-subtle);
+    border-radius:var(--r-xl); background:var(--bg-subtle);
+  }
+  .idhead-avatar{ flex:0 0 auto; }
+  .idhead-main{ flex:1 1 auto; min-width:0; }
+  .idhead-main h1{
+    margin:0; font-size:var(--mds-typography-font-size-1-75);
+    line-height:var(--mds-typography-line-height-headings-h2);
+    font-weight:var(--mds-typography-font-weight-bold);
+  }
+  .idhead-role{ margin:2px 0 0; font-size:var(--mds-typography-font-size-1); color:var(--text-subtle); }
+  .idhead-chips{ display:flex; flex-wrap:wrap; gap:var(--sp-xs); margin-top:var(--sp-sm); }
+  .idhead-actions{ display:flex; flex-wrap:wrap; gap:var(--sp-xs); margin-top:var(--sp-md); }
+
+  /* ---- 2. Own-profile privacy strip --------------------------------------
+     Net-new. Today nothing on the page tells you what other people can see, yet
+     maildisplay, $CFG->hiddenuserfields and per-custom-field visibility all
+     silently change it. */
+  .privacy-strip{
+    display:flex; align-items:center; flex-wrap:wrap; gap:var(--sp-sm);
+    margin-top:var(--sp-md); padding:var(--sp-sm) var(--sp-md);
+    background:var(--mds-bg-feedback-info-light); border:1px solid var(--mds-border-feedback-info);
+    border-radius:var(--r-lg); font-size:.875rem; color:var(--mds-text-feedback-info);
+  }
+  .privacy-strip i{ font-size:.875rem; }
+  .privacy-strip .grow{ flex:1 1 220px; }
+  .privacy-strip select{
+    font-family:inherit; font-size:.8125rem; height:32px; padding:0 var(--sp-xs);
+    border:1px solid var(--mds-border-feedback-info); border-radius:var(--r-sm);
+    background:var(--surface); color:var(--text-default);
+  }
+
+  /* ---- 3. Two-column body ------------------------------------------------ */
+  .profile-grid{ display:grid; grid-template-columns:minmax(0,1fr) var(--rail); gap:var(--sp-md); margin-top:var(--sp-md); align-items:start; }
+  body.single-col .profile-grid{ grid-template-columns:minmax(0,1fr); }
+  .rail{ display:flex; flex-direction:column; gap:var(--sp-md); }
+  .rail .card + .card{ margin-top:0; }
+
+  /* ---- About -------------------------------------------------------------- */
+  .about-body{ font-size:.9375rem; line-height:1.65; color:var(--text-subtle); }
+  .about-body p{ margin:0 0 var(--sp-sm); }
+  .about-body p:last-child{ margin-bottom:0; }
+  .interests{ display:flex; flex-wrap:wrap; gap:var(--sp-xxs); margin-top:var(--sp-md); }
+
+  /* ---- Detail grid --------------------------------------------------------
+     Core emits one <dl> PER NODE inside an <li>. One <dl> with many <div>
+     rows is both less markup and correct semantics for a set of properties. */
+  .detail-grid{ display:grid; grid-template-columns:1fr; gap:var(--sp-sm); margin:0; }
+  .detail-grid > div{ display:grid; grid-template-columns:9.5rem minmax(0,1fr); gap:var(--sp-sm); align-items:start; }
+  .detail-grid dt{ font-size:.8125rem; color:var(--text-muted); font-weight:500; }
+  .detail-grid dd{ margin:0; font-size:.875rem; color:var(--text-default); min-width:0; overflow-wrap:anywhere; }
+  .detail-grid dd .vis{ margin-left:var(--sp-xs); }
+  .maincol .detail-grid, body.single-col .detail-grid{ grid-template-columns:1fr 1fr; column-gap:var(--sp-xl); }
+  .rail .detail-grid > div{ grid-template-columns:1fr; gap:0; }
+  .rail .detail-grid dt{ margin-bottom:1px; }
+
+  /* ---- Course list -------------------------------------------------------- */
+  .courselist{ list-style:none; margin:0; padding:0; }
+  .courselist li + li{ border-top:1px solid var(--border-subtle); }
+  .courserow{ display:flex; align-items:center; gap:var(--sp-sm); padding:var(--sp-xs) 0; }
+  .courserow .cname{ flex:1 1 auto; min-width:0; font-size:.9375rem; color:var(--primary); }
+  /* core marks a hidden course with class "dimmed" on the link */
+  .courserow .cname.dimmed{ color:var(--text-muted); }
+  .viewmore{ display:inline-block; margin-top:var(--sp-sm); font-size:.875rem; }
+
+  /* ---- Badges ------------------------------------------------------------- */
+  .badgegrid{ display:flex; flex-wrap:wrap; gap:var(--sp-sm); }
+  .badgetile{ width:60px; text-align:center; }
+  .badgetile .disc{
+    width:52px; height:52px; margin:0 auto 4px; border-radius:50%;
+    background:linear-gradient(135deg,var(--mds-color-blue-300),var(--mds-color-blue-600));
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.125rem;
+  }
+  .badgetile span{ font-size:.6875rem; color:var(--text-muted); line-height:1.25; display:block; }
+
+  /* ---- Links list (what used to be "Miscellaneous") ----------------------- */
+  .linklist{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; }
+  .linklist a{
+    display:flex; align-items:center; gap:var(--sp-sm); padding:var(--sp-xs) var(--sp-xs);
+    margin:0 calc(var(--sp-xs) * -1); border-radius:var(--r-sm);
+    font-size:.875rem; color:var(--text-subtle); font-weight:500;
+  }
+  .linklist a:hover{ background:var(--bg-subtle); color:var(--text-default); text-decoration:none; }
+  .linklist a i{ width:16px; text-align:center; color:var(--text-muted); font-size:.8125rem; }
+
+  /* ---- 4. Staff panel -----------------------------------------------------
+     Today "Reports", "Administration", "Notes" and "Log in as" are rendered as
+     plain cards indistinguishable from the student's own bio, so a teacher has
+     no signal about which parts of the page the student can also see. */
+  .staff-panel{
+    margin-top:var(--sp-md); border:1px solid var(--mds-border-feedback-warning);
+    border-radius:var(--r-xl); background:var(--mds-bg-feedback-warning-light); overflow:hidden;
+  }
+  .staff-head{ display:flex; align-items:center; gap:var(--sp-sm); padding:var(--sp-sm) var(--sp-md); border-bottom:1px solid var(--mds-border-feedback-warning); }
+  .staff-head i{ color:var(--mds-text-feedback-warning); }
+  .staff-head h2{ margin:0; font-size:var(--mds-typography-font-size-1); font-weight:600; flex:1 1 auto; }
+  .staff-head .note{ font-size:.75rem; color:var(--mds-text-feedback-warning); }
+  .staff-body{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:var(--sp-md); padding:var(--sp-md); }
+  .staff-group h3{ margin:0 0 var(--sp-xs); font-size:.6875rem; text-transform:uppercase; letter-spacing:.5px; color:var(--mds-text-feedback-warning); font-weight:700; }
+  .staff-group .linklist a:hover{ background:rgba(0,0,0,.04); }
+
+  /* ---- 5. No-access state ------------------------------------------------- */
+  .noaccess{
+    text-align:center; padding:var(--sp-xxl) var(--sp-lg);
+    border:1px solid var(--border-subtle); border-radius:var(--r-xl); background:var(--bg-subtle);
+  }
+  .noaccess .lock{
+    width:64px; height:64px; margin:0 auto var(--sp-md); border-radius:50%;
+    background:var(--bg-strong); color:var(--text-muted);
+    display:flex; align-items:center; justify-content:center; font-size:1.5rem;
+  }
+  .noaccess h1{ margin:0 0 var(--sp-xs); font-size:var(--mds-typography-font-size-1-25); }
+  .noaccess p{ margin:0 auto; max-width:46ch; font-size:.9375rem; color:var(--text-muted); line-height:1.6; }
+
+  /* ---- Suspended banner (core renders this above everything) -------------- */
+  .alert-warning{
+    padding:var(--sp-md); border-radius:var(--r-lg); margin-bottom:var(--sp-md);
+    background:var(--mds-bg-feedback-warning-light); border:1px solid var(--mds-border-feedback-warning);
+    color:var(--mds-text-feedback-warning); font-size:.875rem;
+  }
+
+  /* ---- "Rules" overlay: shows the capability gate on each element ---------- */
+  .rule{
+    display:none; margin-top:2px; font-size:.6875rem; line-height:1.35;
+    color:var(--mds-color-red-600); font-family:ui-monospace,Menlo,monospace;
+  }
+  body.rules-on .rule{ display:block; }
+  body.rules-on [data-rule]{ outline:1px dashed var(--mds-color-red-200); outline-offset:3px; }
+
+  /* ==========================================================================
+     TODAY — faithful rebuild of the current page's markup and node lists.
+     Classes mirror core: .userprofile > .description + .profile_tree >
+     section.node_category.card > .card-body > h3.lead > ul > li.contentnode >
+     dl > dt/dd. Bootstrap 5 values inlined so it looks like Boost, not like
+     the new design.
+     ========================================================================== */
+  #today{ display:none; }
+  body.view-today #today{ display:block; }
+  .page-context-header{ display:flex; flex-wrap:wrap; align-items:center; margin-bottom:.5rem; }
+  .page-header-image{ margin-right:1rem; }
+  .page-header-headings h1{ margin:0; font-size:2.25rem; font-weight:300; line-height:1.2; }
+  .header-button-group{ margin-left:1rem; display:flex; gap:.25rem; }
+  .header-button-group a{
+    width:36px; height:36px; border-radius:50%; background:var(--mds-color-gray-200);
+    display:flex; align-items:center; justify-content:center; color:var(--mds-color-gray-700); font-size:.875rem;
+  }
+  .userprofile .description{ margin-bottom:1rem; font-size:.9375rem; color:var(--mds-color-gray-700); }
+  .node_category{
+    display:block; width:100%; margin-bottom:1rem;
+    background:#fff; border:1px solid rgba(0,0,0,.125); border-radius:.5rem;
+  }
+  .node_category .card-body{ padding:1.25rem; }
+  .node_category h3.lead{ font-size:1.25rem; font-weight:300; margin:0 0 .5rem; }
+  .node_category ul{ list-style:none; margin:0; padding:0; }
+  .node_category li.contentnode{ margin-bottom:.25rem; }
+  .node_category dl{ margin:0; }
+  .node_category dt{ font-weight:700; font-size:.9375rem; }
+  .node_category dd{ margin:0 0 .5rem; font-size:.9375rem; }
+  .node_category li > span > a, .node_category li > a{ font-size:.9375rem; }
+
+  /* ==========================================================================
+     DEV AIDS (prototype scaffolding — from TEMPLATE-shell)
+     ========================================================================== */
+  .devpanel{
+    position:fixed; bottom:16px; z-index:60; width:214px;
+    left:max(12px, calc((100% - var(--shell-max)) / 2));
+    background:#fff; border:1px solid var(--border-default); border-radius:var(--r-md);
+    box-shadow:0 8px 28px rgba(0,0,0,.16); padding:var(--sp-sm);
+  }
+  .devpanel h5{ margin:0 0 6px; font-size:.625rem; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); padding-right:26px; }
+  .devpanel h5 + .devrow{ margin-bottom:10px; }
+  .devrow{ display:flex; flex-wrap:wrap; gap:4px; }
+  .devbtn{
+    border:1px solid var(--border-default); background:var(--bg-subtle); border-radius:var(--r-sm);
+    padding:4px 8px; cursor:pointer; font-size:.6875rem; color:var(--text-subtle); font-weight:500;
+  }
+  .devbtn:hover{ background:var(--bg-strong); }
+  .devbtn.on{ background:var(--primary); color:#fff; border-color:transparent; }
+  .devmin{
+    position:absolute; top:6px; right:6px; width:22px; height:22px;
+    border:1px solid var(--border-default); background:var(--bg-subtle); border-radius:var(--r-sm);
+    cursor:pointer; color:var(--text-subtle); display:flex; align-items:center; justify-content:center; gap:6px; font-size:10px;
+  }
+  .devmin:hover{ background:var(--bg-strong); color:var(--text-default); }
+  .devpanel.min{ width:auto; padding:4px; }
+  .devpanel.min > *:not(.devmin){ display:none; }
+  .devpanel.min .devmin{ position:static; width:auto; height:26px; padding:0 var(--sp-xs); border-color:transparent; background:var(--primary); color:#fff; font-size:.6875rem; font-weight:500; }
+  .debug{
+    position:fixed; bottom:16px; right:14px; z-index:60;
+    background:rgba(29,33,37,.92); color:#fff; font-size:11px; line-height:1.6;
+    padding:8px 10px; border-radius:8px; font-variant-numeric:tabular-nums; max-width:300px;
+  }
+  .debug b{ color:#8fd0ff; }
+
+  /* =====================  RESPONSIVE  ===================== */
+  @media (max-width:1024px){
+    .burger{ display:flex; }
+    .nav-left .brand, .nav-left .nav-pills{ display:none; }
+  }
+  @media (max-width:991px){
+    .search{ width:184px; }
+    .profile-grid{ grid-template-columns:minmax(0,1fr); }
+    body.single-col .detail-grid{ grid-template-columns:1fr; }
+  }
+  @media (max-width:767px){
+    :root{ --shell-pad:16px; }
+    .search{ display:none; }
+    .search-icon-btn{ display:flex; }
+    .editmode .label{ display:none; }
+    .profile-menu .pname{ display:none; }
+    .content-col{ padding:0 16px; }
+    .idhead{ flex-direction:column; align-items:flex-start; gap:var(--sp-md); }
+    .mds-avatar--xxl{ width:var(--mds-avatars-xl); height:var(--mds-avatars-xl); font-size:1.5rem; }
+    .detail-grid > div{ grid-template-columns:1fr; gap:0; }
+    .idhead-actions .btn{ flex:1 1 auto; }
+  }
+</style>
+</head>
+<body class="view-new viewer-own">
+
+  <!-- ===== TOP NAV ===== -->
+  <header class="topbar">
+    <div class="topbar-inner shell">
+      <div class="nav-left">
+        <button class="burger" aria-label="Open site navigation"><i class="fa-solid fa-bars"></i></button>
+        <div class="brand">
+          <span class="mark"><i class="fa-solid fa-leaf"></i></span>
+          <span class="word"><b>Fleetwood</b><span>UNIVERSITY</span></span>
+        </div>
+        <nav class="nav-pills">
+          <button class="nav-pill selected"><span class="dot"></span>Dashboard</button>
+          <button class="nav-pill">My courses</button>
+        </nav>
+      </div>
+      <div class="nav-right">
+        <div class="nav-right-group">
+          <div class="search"><i class="fa-solid fa-magnifying-glass"></i><span>Search…</span></div>
+          <button class="search-icon-btn" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+          <div class="editmode">
+            <span class="label">Edit mode</span>
+            <button class="switch" id="editSwitch" aria-pressed="false" aria-label="Edit mode"></button>
+          </div>
+          <div class="nav-icons">
+            <button class="icon-btn" aria-label="Notifications"><i class="fa-regular fa-bell"></i></button>
+            <button class="icon-btn" aria-label="Messages"><i class="fa-regular fa-comment"></i></button>
+          </div>
+        </div>
+        <div class="nav-divider"></div>
+        <div class="profile-menu">
+          <span class="nav-avatar" id="navAvatar">AN</span>
+          <span class="pname" id="navName">Ava</span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== PAGE ===== -->
+  <div class="layout">
+    <main class="content-col">
+
+      <!-- ==================================================================
+           NEW DESIGN
+           ================================================================== -->
+      <div id="new">
+
+        <!-- No-access state: \core\user::can_view_profile() === false.
+             Core renders a bare notification with the heading "User" so the
+             name is not leaked. Keep that rule; give it a real empty state. -->
+        <div class="noaccess" data-when="noaccess" hidden>
+          <div class="lock"><i class="fa-solid fa-lock"></i></div>
+          <h1>This profile isn't available to you</h1>
+          <p>You can only see the profile of someone you share a course with, or
+             of a course contact. Ask your teacher if you need to get in touch.</p>
+          <p class="rule" data-rule>\core\user::can_view_profile($user, null, $context) — heading forced to get_string('user') so the name never leaks</p>
+        </div>
+
+        <div data-when="visible">
+
+          <!-- Suspended banner: profile.php lines ~220, NOTIFY_WARNING -->
+          <div class="alert-warning" data-when="suspended" hidden>
+            <strong>Suspended account.</strong> This user can't sign in, and doesn't appear in
+            participant lists or the gradebook.
+          </div>
+
+          <!-- ---- 1. IDENTITY HEADER ---- -->
+          <section class="idhead">
+            <div class="idhead-avatar">
+              <span class="mds-avatar mds-avatar--xxl">AN</span>
+            </div>
+            <div class="idhead-main">
+              <h1>Ava Nguyen</h1>
+              <!-- NOTE: the site profile has NO role information. get_user_roles_in_course()
+                   and the groups node are both inside `if (!empty($course))`, so they only
+                   ever render on the in-course profile (/user/view.php). The subtitle is
+                   therefore just the course count, which comes from the mycourses node. -->
+              <p class="idhead-role" id="roleLine" data-when="nothidden-mycourses">3 courses</p>
+
+              <div class="idhead-chips">
+                <span class="chip" data-when="identity"><i class="fa-solid fa-building-columns"></i>Fleetwood University</span>
+                <span class="chip" data-when="identity"><i class="fa-solid fa-sitemap"></i>Life Sciences</span>
+                <span class="chip" data-when="nothidden-city"><i class="fa-solid fa-location-dot"></i>Bristol, United Kingdom</span>
+                <span class="chip" data-when="nothidden-timezone"><i class="fa-regular fa-clock"></i>Europe/London</span>
+              </div>
+              <p class="rule" data-rule>institution/department: core_user\fields::get_identity_fields() · city + country + timezone: $CFG-&gt;hiddenuserfields unless moodle/user:viewhiddendetails. Each of these is one $user column, shown once on the page.</p>
+
+              <div class="idhead-actions">
+                <a class="btn btn-primary" href="#" data-when="notself"><i class="fa-regular fa-comment"></i>Message</a>
+                <a class="btn btn-secondary" href="#" data-when="notself"><i class="fa-solid fa-user-plus"></i>Add to contacts</a>
+                <a class="btn btn-primary" href="#" data-when="canedit"><i class="fa-solid fa-pen"></i>Edit profile</a>
+                <a class="btn btn-secondary" href="#" data-when="own"><i class="fa-solid fa-table-cells-large"></i>Customise this page</a>
+                <button class="btn btn-ghost btn-icon" aria-label="More actions"><i class="fa-solid fa-ellipsis"></i></button>
+              </div>
+              <p class="rule" data-rule>Message/Add contact: !empty($CFG-&gt;messaging) &amp;&amp; moodle/site:sendmessage · Edit profile: moodle/user:update | moodle/user:editprofile | (self &amp;&amp; moodle/user:editownprofile) · Customise: $PAGE-&gt;user_allowed_editing() + moodle/user:manageownblocks. Core adds a Preferences node only when !$iscurrentuser, so there is no Preferences button on your own profile.</p>
+            </div>
+          </section>
+
+          <!-- ---- 2. OWN-PROFILE PRIVACY STRIP (net-new) ---- -->
+          <div class="privacy-strip" data-when="own">
+            <i class="fa-solid fa-eye"></i>
+            <span class="grow"><strong>This is your profile as you see it.</strong>
+              Some details are only shown to people you share a course with.</span>
+            <label>
+              View as
+              <select id="viewAs">
+                <option value="own">Me</option>
+                <option value="peer">Someone in my course</option>
+                <option value="stranger">Someone outside my courses</option>
+              </select>
+            </label>
+          </div>
+
+          <!-- ---- 3. TWO-COLUMN BODY ---- -->
+          <div class="profile-grid">
+
+            <!-- ===== main column ===== -->
+            <div class="maincol">
+
+              <!-- About: description + interests + custom fields.
+                   Core renders the description in a bare <div class="description">
+                   ABOVE everything, with no heading and no container. -->
+              <section class="card">
+                <div class="card-head">
+                  <h2>About</h2>
+                  <a class="card-link" href="#" data-when="canedit">Edit</a>
+                </div>
+                <div class="about-body">
+                  <p>Second-year biology student, mostly interested in evolutionary genetics
+                     and how selection shows up in ordinary places. I run the Thursday field
+                     ecology group and I'm slowly getting better at R.</p>
+                  <p>Happy to be messaged about study groups or lab swaps.</p>
+                </div>
+                <p class="rule" data-rule>$user-&gt;description, gated on !isset($hiddenfields['description']); replaced by get_string('profilenotshown') when $CFG-&gt;profilesforenrolledusersonly and the user has no role assignment</p>
+
+                <div class="interests" data-when="interests">
+                  <span class="chip interest">Genetics</span>
+                  <span class="chip interest">Field ecology</span>
+                  <span class="chip interest">Statistics</span>
+                  <span class="chip interest">Science communication</span>
+                </div>
+                <p class="rule" data-rule>core_tag_tag::get_item_tags('core','user',$user-&gt;id) — site profile only, never the in-course profile</p>
+              </section>
+
+              <!-- Courses. Core: a bare <ul> of links inside "Course details",
+                   truncated at $CFG->navcourselimit with a "View more" li. -->
+              <!-- Details: only fields that (a) exist and (b) pass their gate.
+                   On your own profile each row carries its visibility. -->
+              <section class="card">
+                <div class="card-head"><h2>Details</h2></div>
+                <dl class="detail-grid">
+                  <div data-when="canseeemail">
+                    <dt>Email</dt>
+                    <dd>ava.nguyen@fleetwood.ac.uk
+                      <span class="badge badge-secondary vis" data-when="own"><i class="fa-solid fa-users"></i>Course members</span>
+                    </dd>
+                  </div>
+                  <div data-when="identity">
+                    <dt>ID number</dt><dd>FU-2024-0917</dd>
+                  </div>
+                  <div data-when="identity">
+                    <dt>Phone</dt><dd>+44 117 496 0182</dd>
+                  </div>
+                  <div data-when="identity">
+                    <dt>Mobile phone</dt><dd>+44 7700 900 118</dd>
+                  </div>
+                  <div data-when="identity">
+                    <dt>Address</dt><dd>14 Cotham Hill, Bristol BS6 6LF</dd>
+                  </div>
+                  <div data-when="customfield-all">
+                    <dt>Pronouns</dt>
+                    <dd>she/her
+                      <span class="badge badge-success vis" data-when="own"><i class="fa-solid fa-globe"></i>Everyone</span>
+                    </dd>
+                  </div>
+                  <div data-when="customfield-teachers">
+                    <dt>Access arrangements</dt>
+                    <dd>Extra time (25%)
+                      <span class="badge badge-warning vis"><i class="fa-solid fa-lock"></i>Teachers only</span>
+                    </dd>
+                  </div>
+                </dl>
+                <p class="rule" data-rule>Every row is one $user column or one custom field, and appears once on the page: institution, department, city, country and timezone are the chips in the header.<br>email: $iscurrentuser || maildisplay=MAILDISPLAY_EVERYONE || (MAILDISPLAY_COURSE_MEMBERS_ONLY &amp;&amp; enrol_sharing_course) || moodle/course:useremail || identity field · idnumber/phone1/phone2/address: identity fields (moodle/site:viewuseridentity + $CFG-&gt;showuseridentity) · custom fields: $formfield-&gt;show_field_content() — PROFILE_VISIBLE_ALL / _TEACHERS / _PRIVATE / _NONE</p>
+              </section>
+
+              <!-- The mycourses node is a bare <ul> of course full names, nothing else.
+                   No role, no last-access, no progress: those exist on the in-course
+                   profile, not here. Only the link, the .dimmed state for a hidden
+                   course, and the "View more" cut-off are real. -->
+              <section class="card" data-when="nothidden-mycourses">
+                <div class="card-head"><h2>Course profiles</h2></div>
+                <ul class="courselist">
+                  <li><div class="courserow"><a class="cname" href="#">Biology 101</a></div></li>
+                  <li><div class="courserow"><a class="cname" href="#">Surface &amp; depth showcase</a></div></li>
+                  <li data-when="staff"><div class="courserow">
+                    <a class="cname dimmed" href="#">Biology Duplicate Mock Data</a>
+                    <span class="badge badge-secondary"><i class="fa-solid fa-eye-slash"></i>Hidden</span>
+                  </div></li>
+                </ul>
+                <a class="viewmore" href="#">View more</a>
+                <p class="rule" data-rule>enrol_get_all_users_courses() · a hidden course is skipped unless moodle/course:viewhiddencourses, then rendered with class "dimmed" · truncated at $CFG-&gt;navcourselimit · card gated on $iscurrentuser || !isset($hiddenfields['mycourses'])</p>
+              </section>
+
+            </div>
+
+            <!-- ===== rail ===== -->
+            <aside class="rail">
+
+              <!-- Badges: today a whole card with a heading that renders
+                   nothing at all when the user has none (empty categories are
+                   dropped, so the page silently reflows between viewers). -->
+              <section class="card" data-when="badges">
+                <div class="card-head"><h2>Badges</h2></div>
+                <p class="card-sub">Badges from Fleetwood University</p>
+                <div class="badgegrid">
+                  <div class="badgetile"><span class="disc"><i class="fa-solid fa-flask"></i></span><span>Lab safety</span></div>
+                  <div class="badgetile"><span class="disc"><i class="fa-solid fa-microscope"></i></span><span>First dissection</span></div>
+                </div>
+                <ul class="linklist" style="margin-top:var(--sp-sm)">
+                  <li><a href="#"><i class="fa-solid fa-certificate"></i>Site badges</a></li>
+                </ul>
+                <p class="rule" data-rule>core_badges_myprofile_navigation: 'sitebadges' link (site profile, moodle/badges:viewbadges or a badge manager) · 'localbadges' = get_string('localbadgesp') with the rendered badge list, needs self or moodle/badges:viewotherbadges · 'externalbadges' when $CFG-&gt;badges_allowexternalbackpack and the backpack has any</p>
+              </section>
+
+              <!-- The old "Miscellaneous" category, named for what it is. -->
+              <section class="card">
+                <div class="card-head"><h2>More from Ava</h2></div>
+                <ul class="linklist">
+                  <li><a href="#"><i class="fa-regular fa-comments"></i>Forum posts</a></li>
+                  <li><a href="#"><i class="fa-solid fa-comment-dots"></i>Forum discussions</a></li>
+                  <li><a href="#"><i class="fa-solid fa-pen-nib"></i><span data-own-label="View my blog entries">View blog entries</span></a></li>
+                  <li><a href="#"><i class="fa-solid fa-globe"></i>View site blog entries</a></li>
+                  <li><a href="#"><i class="fa-solid fa-tags"></i>Tags</a></li>
+                  <li><a href="#" data-when="learningplans"><i class="fa-solid fa-list-check"></i>Learning plans</a></li>
+                </ul>
+                <p class="rule" data-rule>the 'miscellaneous' category verbatim: mod_forum forumposts/forumdiscussions · core_blog blogs (title flips to "View my blog entries" on your own profile) + siteblogs · core tags ($CFG-&gt;usetags, any logged-in non-guest) · tool_lp learningplans</p>
+              </section>
+
+              <!-- Own-profile-only: things that are about your account rather
+                   than about you. Today these sit in "Reports",
+                   "Privacy and policies" and "Mobile app" — three cards for
+                   five links. -->
+              <section class="card" data-when="own">
+                <div class="card-head"><h2>Your account</h2></div>
+                <ul class="linklist">
+                  <li><a href="#"><i class="fa-solid fa-chart-simple"></i>Grades overview</a></li>
+                  <li><a href="#"><i class="fa-solid fa-desktop"></i>Browser sessions</a></li>
+                  <li><a href="#"><i class="fa-solid fa-file-contract"></i>Policies and agreements</a></li>
+                  <li><a href="#"><i class="fa-solid fa-inbox"></i>Data requests</a></li>
+                  <li><a href="#"><i class="fa-solid fa-shield-halved"></i>Data retention summary</a></li>
+                  <li><a href="#"><i class="fa-regular fa-envelope"></i>Contact the privacy officer</a></li>
+                  <li><a href="#"><i class="fa-solid fa-qrcode"></i>QR code for mobile app access</a></li>
+                  <li><a href="#"><i class="fa-solid fa-mobile-screen"></i>Download the mobile app</a></li>
+                </ul>
+                <p class="rule" data-rule>three separate top-level categories today: Reports (gradereport_overview 'grades', report_usersessions 'usersessions') · Privacy and policies (tool_policy 'tool_policy', tool_dataprivacy 'datarequests'/'retentionsummary'/'contactdpo', plus 'requestdataexport'/'requestdatadeletion' when no request is pending) · Mobile app (tool_mobile 'mobileappqr'/'mobileappnode'). All of them are $iscurrentuser-only.</p>
+              </section>
+
+              <!-- Login activity — kept, because support and teachers use it,
+                   but demoted to the rail and only where the gates allow. -->
+              <section class="card" data-when="loginactivity">
+                <div class="card-head"><h2>Login activity</h2></div>
+                <dl class="detail-grid">
+                  <div data-when="nothidden-firstaccess"><dt>First access</dt><dd>12 September 2024</dd></div>
+                  <div data-when="nothidden-lastaccess"><dt>Last access</dt><dd>Today, 09:12 <span class="cmeta">(30 mins)</span></dd></div>
+                  <div data-when="lastip"><dt>Last IP</dt><dd><a href="#">86.11.204.7</a></dd></div>
+                </dl>
+                <p class="rule" data-rule>firstaccess/lastaccess: $CFG-&gt;hiddenuserfields · lastip additionally needs moodle/user:viewlastip</p>
+              </section>
+
+              <!-- Blocks the user has added to their own profile page.
+                   profile.php adds a 'content' block region and renders it
+                   inline via custom_block_region('content'). -->
+              <section class="card" data-when="hasblocks">
+                <div class="card-head">
+                  <h2>Latest announcements</h2>
+                  <span class="count">Block</span>
+                </div>
+                <p class="about-body">Added by Ava with <em>Customise this page</em>.</p>
+                <p class="rule" data-rule>$PAGE-&gt;blocks-&gt;add_region('content') + $OUTPUT-&gt;custom_block_region('content')</p>
+              </section>
+            </aside>
+          </div>
+
+          <!-- ---- 4. STAFF PANEL ---- -->
+          <section class="staff-panel" data-when="staff">
+            <div class="staff-head">
+              <i class="fa-solid fa-user-shield"></i>
+              <h2>Manage this user</h2>
+              <span class="note">Staff only — Ava can't see this section</span>
+            </div>
+            <div class="staff-body">
+              <div class="staff-group">
+                <h3>Reports</h3>
+                <ul class="linklist">
+                  <li><a href="#"><i class="fa-solid fa-list"></i>Today's logs</a></li>
+                  <li><a href="#"><i class="fa-solid fa-clock-rotate-left"></i>All logs</a></li>
+                  <li><a href="#"><i class="fa-solid fa-chart-line"></i>Outline report</a></li>
+                  <li><a href="#"><i class="fa-solid fa-file-lines"></i>Complete report</a></li>
+                  <li><a href="#"><i class="fa-solid fa-chart-area"></i>Statistics</a></li>
+                  <li><a href="#"><i class="fa-solid fa-lightbulb"></i>Insights</a></li>
+                  <li><a href="#"><i class="fa-solid fa-chart-simple"></i>Grades overview</a></li>
+                  <li><a href="#" data-when="admin"><i class="fa-solid fa-table"></i>Grades</a></li>
+                </ul>
+              </div>
+              <div class="staff-group">
+                <h3>Administration</h3>
+                <ul class="linklist">
+                  <li><a href="#"><i class="fa-solid fa-note-sticky"></i>Notes</a></li>
+                  <li><a href="#"><i class="fa-solid fa-right-to-bracket"></i>Log in as</a></li>
+                  <li><a href="#" data-when="admin"><i class="fa-solid fa-sliders"></i>Preferences</a></li>
+                </ul>
+              </div>
+            </div>
+            <p class="rule" data-rule style="padding:0 var(--sp-md) var(--sp-md)">exactly core's 'reports' + 'administration' categories: report_log (report/log:viewtoday | report/log:view) · report_outline · report_stats · report_insights · gradereport_overview · gradereport_user · core_notes (moodle/notes:view) · loginas_helper::get_context_user_can_login_as() · preferences via $PAGE-&gt;settingsnav-&gt;can_view_user_preferences(). Notes is in 'miscellaneous' today, not 'administration'. Every gate is unchanged — this panel only changes WHERE they render and makes the staff-only boundary visible.</p>
+          </section>
+
+        </div><!-- /visible -->
+      </div><!-- /#new -->
+
+      <!-- ==================================================================
+           TODAY — rebuilt from the real renderer output. Node lists are the
+           measured ones for each viewer; the markup mirrors
+           core_user\output\myprofile\renderer.
+           ================================================================== -->
+      <div id="today">
+        <div class="page-context-header">
+          <div class="page-header-image"><span class="mds-avatar" style="width:100px;height:100px;font-size:2rem">AN</span></div>
+          <div class="page-header-headings"><h1>Ava Nguyen</h1></div>
+          <div class="btn-group header-button-group" data-when="notself">
+            <a href="#" title="Message"><i class="fa-regular fa-comment"></i></a>
+            <a href="#" title="Add to contacts"><i class="fa-solid fa-user-plus"></i></a>
+          </div>
+        </div>
+        <div class="userprofile">
+          <div class="description">
+            Second-year biology student, mostly interested in evolutionary genetics and how
+            selection shows up in ordinary places. I run the Thursday field ecology group and
+            I'm slowly getting better at R.
+          </div>
+          <div class="profile_tree" id="todayTree"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ===== DEV STATE SWITCHER (prototype only) ===== -->
+  <div class="devpanel" id="devPanel">
+    <button class="devmin" id="devMin" aria-expanded="true" title="Minimise the state switcher">
+      <i class="fa-solid fa-minus" id="devMinIcon"></i><span id="devMinLabel"></span>
+    </button>
+    <h5>Viewer</h5>
+    <div class="devrow" id="viewerSwitch">
+      <button class="devbtn on" data-viewer="own">Own</button>
+      <button class="devbtn" data-viewer="peer">Peer</button>
+      <button class="devbtn" data-viewer="teacher">Teacher</button>
+      <button class="devbtn" data-viewer="admin">Admin</button>
+      <button class="devbtn" data-viewer="noaccess">No access</button>
+    </div>
+    <h5>Design</h5>
+    <div class="devrow" id="designSwitch">
+      <button class="devbtn on" data-design="new">New</button>
+      <button class="devbtn" data-design="today">Today</button>
+    </div>
+    <h5>Site config</h5>
+    <div class="devrow" id="configSwitch">
+      <button class="devbtn on" data-config="rich">Identity fields on</button>
+      <button class="devbtn" data-config="stock">Stock defaults</button>
+    </div>
+    <h5>Layout</h5>
+    <div class="devrow" id="layoutSwitch">
+      <button class="devbtn on" data-layout="two">Two column</button>
+      <button class="devbtn" data-layout="one">830px single</button>
+    </div>
+    <h5>Overlay</h5>
+    <div class="devrow">
+      <button class="devbtn" id="rulesBtn">Capability rules</button>
+      <button class="devbtn" id="suspBtn">Suspended user</button>
+    </div>
+  </div>
+
+  <div class="debug" id="debug"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ==========================================================================
+     VIEWER MODEL
+     Each viewer is the set of capability answers that actually change this
+     page. Names match the real capability / config keys so the prototype and
+     the code stay legible against each other.
+     ========================================================================== */
+  var VIEWERS = {
+    own: {
+      label: "Ava viewing her own profile", nav: ["AN","Ava"],
+      self:true, canview:true,
+      caps:{ canedit:true, sendmessage:true, viewhiddendetails:true, viewuseridentity:true,
+             viewlastip:false, staff:false, admin:false, notes:false, loginas:false,
+             learningplans:true, viewhiddencourses:false }
+    },
+    peer: {
+      label: "Liam (student, shares Biology 101) viewing Ava", nav: ["LO","Liam"],
+      self:false, canview:true,
+      caps:{ canedit:false, sendmessage:true, viewhiddendetails:false, viewuseridentity:false,
+             viewlastip:false, staff:false, admin:false, notes:false, loginas:false,
+             learningplans:false, viewhiddencourses:false }
+    },
+    teacher: {
+      label: "Moodler (editing teacher in Biology 101) viewing Ava", nav: ["MB","Moodler"],
+      self:false, canview:true,
+      caps:{ canedit:true, sendmessage:true, viewhiddendetails:true, viewuseridentity:true,
+             viewlastip:true, staff:true, admin:false, notes:true, loginas:true,
+             learningplans:true, viewhiddencourses:true }
+    },
+    admin: {
+      label: "Site administrator viewing Ava", nav: ["SA","Admin"],
+      self:false, canview:true,
+      caps:{ canedit:true, sendmessage:true, viewhiddendetails:true, viewuseridentity:true,
+             viewlastip:true, staff:true, admin:true, notes:true, loginas:true,
+             learningplans:true, viewhiddencourses:true }
+    },
+    noaccess: {
+      label: "Someone with no shared course (can_view_profile false)", nav: ["??","Guest"],
+      self:false, canview:false, caps:{}
+    }
+  };
+
+  /* Site config presets.
+     "stock"  = a fresh Moodle: hiddenuserfields empty, showuseridentity=email.
+                Almost nothing about the person is on the page.
+     "rich"   = the identity fields a real institution turns on. */
+  var CONFIG = {
+    stock: { identity:false, interests:false, badges:false, customall:false, customteachers:false, blocks:false },
+    rich:  { identity:true,  interests:true,  badges:true,  customall:true,  customteachers:true,  blocks:true  }
+  };
+
+  var state = { viewer:"own", design:"new", config:"rich", layout:"two", rules:false, suspended:false };
+
+  /* ==========================================================================
+     TODAY: the measured node lists, per viewer, straight off the running site.
+     Order and category titles are exactly what tree->sort_categories() emits.
+     ========================================================================== */
+  var TODAY = {
+    own: [
+      ["User details", [["Edit profile",null],["Email address","ava.nguyen@fleetwood.ac.uk (visible to course participants)"],["Timezone","Europe/London"]]],
+      ["Privacy and policies", [["Data retention summary",null]]],
+      ["Course details", [["Course profiles","Surface &amp; depth showcase<br>Biology Duplicate Mock Data<br>Biology 101"]]],
+      ["Miscellaneous", [["Tags",null],["View my blog entries",null],["View site blog entries",null],["Forum posts",null],["Forum discussions",null],["Learning plans",null]]],
+      ["Reports", [["Browser sessions",null],["Grades overview",null]]],
+      ["Login activity", [["First access to site","12 September 2024 (11 months 21 days)"],["Last access to site","Today, 09:12 (30 mins)"]]],
+      ["Mobile app", [["QR code for mobile app access","Scan the QR code with your mobile app and you will be automatically logged in."],["Mobile app","This site has mobile app access enabled. Download the mobile app."]]]
+    ],
+    peer: [
+      ["User details", [["Email address","ava.nguyen@fleetwood.ac.uk"],["Timezone","Europe/London"]]],
+      ["Course details", [["Course profiles","Surface &amp; depth showcase<br>Biology 101"]]],
+      ["Miscellaneous", [["Tags",null],["View blog entries",null],["View site blog entries",null],["Forum posts",null],["Forum discussions",null]]],
+      ["Login activity", [["First access to site","12 September 2024 (11 months 21 days)"],["Last access to site","Today, 09:12 (30 mins)"]]]
+    ],
+    teacher: [
+      ["User details", [["Edit profile",null],["Email address","ava.nguyen@fleetwood.ac.uk"],["Timezone","Europe/London"]]],
+      ["Course details", [["Course profiles","Surface &amp; depth showcase<br>Biology Duplicate Mock Data<br>Biology 101"]]],
+      ["Miscellaneous", [["Tags",null],["View blog entries",null],["View site blog entries",null],["Notes",null],["Forum posts",null],["Forum discussions",null],["Learning plans",null]]],
+      ["Reports", [["Today's logs",null],["All logs",null],["Outline report",null],["Complete report",null],["Grades overview",null]]],
+      ["Administration", [["Log in as",null]]],
+      ["Login activity", [["First access to site","12 September 2024 (11 months 21 days)"],["Last access to site","Today, 09:12 (30 mins)"],["Last IP address","86.11.204.7"]]]
+    ],
+    admin: [
+      ["User details", [["Edit profile",null],["Email address","ava.nguyen@fleetwood.ac.uk"],["Timezone","Europe/London"]]],
+      ["Course details", [["Course profiles","Surface &amp; depth showcase<br>Biology Duplicate Mock Data<br>Biology 101"]]],
+      ["Miscellaneous", [["Tags",null],["View blog entries",null],["View site blog entries",null],["Notes",null],["Forum posts",null],["Forum discussions",null],["Learning plans",null]]],
+      ["Reports", [["Today's logs",null],["All logs",null],["Outline report",null],["Complete report",null],["Grades overview",null],["Grades",null]]],
+      ["Administration", [["Preferences",null],["Log in as",null]]],
+      ["Login activity", [["First access to site","12 September 2024 (11 months 21 days)"],["Last access to site","Today, 09:12 (30 mins)"],["Last IP address","86.11.204.7"]]],
+      ["Mobile app", [["Mobile app","This site has mobile app access enabled. Download the mobile app."]]]
+    ],
+    noaccess: []
+  };
+
+  function renderToday(){
+    var tree = document.getElementById("todayTree");
+    var cats = TODAY[state.viewer] || [];
+    if (!VIEWERS[state.viewer].canview){
+      tree.innerHTML = '<div class="alert-warning">This user profile is not available to you.</div>';
+      document.querySelector("#today .userprofile .description").hidden = true;
+      document.querySelector("#today .page-header-headings h1").textContent = "User";
+      return;
+    }
+    document.querySelector("#today .userprofile .description").hidden = false;
+    document.querySelector("#today .page-header-headings h1").textContent = "Ava Nguyen";
+    tree.innerHTML = cats.map(function(cat){
+      var lis = cat[1].map(function(n){
+        if (n[1] === null){
+          return '<li class="contentnode"><span><a href="#">' + n[0] + '</a></span></li>';
+        }
+        return '<li class="contentnode"><dl><dt>' + n[0] + '</dt><dd>' + n[1] + '</dd></dl></li>';
+      }).join("");
+      return '<section class="node_category card"><div class="card-body">' +
+             '<h3 class="lead">' + cat[0] + '</h3><ul>' + lis + '</ul></div></section>';
+    }).join("");
+  }
+
+  /* ==========================================================================
+     GATE EVALUATION — one function, so every data-when in the markup resolves
+     against the same model.
+     ========================================================================== */
+  function allows(when){
+    var v = VIEWERS[state.viewer], c = v.caps || {}, cfg = CONFIG[state.config];
+    switch (when){
+      case "visible":                return v.canview;
+      case "noaccess":               return !v.canview;
+      case "own":                    return v.self;
+      case "notself":                return !v.self && c.sendmessage;
+      case "canedit":                return !!c.canedit;
+      case "staff":                  return !!c.staff;
+      /* profile.php renders the suspended notice above everything, for anyone
+         who can see the profile at all — not only staff. */
+      case "suspended":              return state.suspended;
+      case "admin":                  return !!c.admin;
+      case "identity":               return cfg.identity && (v.self || c.viewuseridentity);
+      case "interests":              return cfg.interests;
+      case "badges":                 return cfg.badges;
+      case "hasblocks":              return cfg.blocks && v.self;
+      case "learningplans":          return !!c.learningplans;
+      case "customfield-all":        return cfg.customall;
+      case "customfield-teachers":   return cfg.customteachers && (c.staff || v.self);
+      case "canseeemail":            return v.self || c.viewuseridentity || true; /* maildisplay=course members, viewer shares a course */
+      case "lastip":                 return !!c.viewlastip;
+      case "loginactivity":          return v.self || c.viewhiddendetails || true;
+      /* $CFG->hiddenuserfields entries: on "stock" nothing is hidden, so these
+         are all true; a site that hides them needs viewhiddendetails. */
+      case "nothidden-city":
+      case "nothidden-country":
+      case "nothidden-timezone":
+      case "nothidden-mycourses":
+      case "nothidden-firstaccess":
+      case "nothidden-lastaccess":   return true;
+      default:                       return true;
+    }
+  }
+
+  function applyGates(){
+    document.querySelectorAll("[data-when]").forEach(function(el){
+      el.hidden = !allows(el.getAttribute("data-when"));
+    });
+    /* Role line varies by who is asking: staff see the enrolment picture,
+       a peer sees only the course they share. */
+    /* The site profile carries no role and no group information — both nodes are
+       inside `if (!empty($course))`. The only thing the header can say about
+       enrolment is the number of courses the mycourses node would list, and a
+       peer only sees the courses they can see. */
+    var rl = document.getElementById("roleLine");
+    rl.textContent = (VIEWERS[state.viewer].caps.viewhiddencourses ? "3 courses" : "2 courses");
+    /* Blog node title flips on your own profile (core_blog_myprofile_navigation). */
+    var blog = document.querySelector("[data-own-label]");
+    if (blog){ blog.textContent = VIEWERS[state.viewer].self ? blog.dataset.ownLabel : "View blog entries"; }
+    /* "Manage this user" only exists when it has something in it. */
+    var sp = document.querySelector(".staff-panel");
+    if (sp) { sp.hidden = !allows("staff"); }
+  }
+
+  function apply(){
+    var b = document.body;
+    b.className = "view-" + state.design + " viewer-" + state.viewer +
+                  (state.layout === "one" ? " single-col limitedwidth" : "") +
+                  (state.rules ? " rules-on" : "") +
+                  (state.design === "today" ? " limitedwidth" : "");
+    var v = VIEWERS[state.viewer];
+    document.getElementById("navAvatar").textContent = v.nav[0];
+    document.getElementById("navName").textContent = v.nav[1];
+    applyGates();
+    renderToday();
+    updateDebug();
+  }
+
+  function updateDebug(){
+    var v = VIEWERS[state.viewer];
+    var cards = (TODAY[state.viewer] || []).length;
+    var nodes = (TODAY[state.viewer] || []).reduce(function(a, c){ return a + c[1].length; }, 0);
+    var line;
+    if (state.design === "today"){
+      line = "TODAY · " + cards + " cards / " + nodes + " nodes, stacked in 830px";
+    } else {
+      var shown = 0;
+      document.querySelectorAll("#new section, #new .privacy-strip").forEach(function(el){
+        if (el.offsetParent !== null) { shown++; }
+      });
+      line = "NEW · " + shown + " sections · " +
+             (state.layout === "one" ? "830px single" : "two column") +
+             " · " + state.config + "<br>" +
+             "(today would be " + cards + " cards / " + nodes + " nodes)";
+    }
+    document.getElementById("debug").innerHTML = "<b>" + v.label + "</b><br>" + line;
+  }
+
+  function wire(id, key){
+    document.getElementById(id).addEventListener("click", function(e){
+      var btn = e.target.closest(".devbtn");
+      if (!btn) { return; }
+      this.querySelectorAll(".devbtn").forEach(function(b){ b.classList.remove("on"); });
+      btn.classList.add("on");
+      state[key] = btn.dataset[key];
+      apply();
+    });
+  }
+  wire("viewerSwitch","viewer");
+  wire("designSwitch","design");
+  wire("configSwitch","config");
+  wire("layoutSwitch","layout");
+
+  document.getElementById("rulesBtn").addEventListener("click", function(){
+    state.rules = !state.rules;
+    this.classList.toggle("on", state.rules);
+    apply();
+  });
+
+  document.getElementById("suspBtn").addEventListener("click", function(){
+    state.suspended = !state.suspended;
+    this.classList.toggle("on", state.suspended);
+    apply();
+  });
+
+  document.getElementById("editSwitch").addEventListener("click", function(){
+    this.setAttribute("aria-pressed", this.getAttribute("aria-pressed") === "true" ? "false" : "true");
+  });
+
+  /* "View as" on the privacy strip re-uses the viewer model, which is the
+     point: what you preview is exactly what that viewer's page renders. */
+  document.getElementById("viewAs").addEventListener("change", function(){
+    if (this.value === "own") { return; }
+    state.viewer = (this.value === "peer") ? "peer" : "noaccess";
+    document.querySelectorAll("#viewerSwitch .devbtn").forEach(function(b){
+      b.classList.toggle("on", b.dataset.viewer === state.viewer);
+    });
+    apply();
+  });
+
+  var devPanel = document.getElementById("devPanel");
+  document.getElementById("devMin").addEventListener("click", function(){
+    var min = devPanel.classList.toggle("min");
+    this.setAttribute("aria-expanded", String(!min));
+    document.getElementById("devMinIcon").className = min ? "fa-solid fa-sliders" : "fa-solid fa-minus";
+    document.getElementById("devMinLabel").textContent = min ? "State" : "";
+  });
+
+  /* DEFAULTS: land the reviewer on the new design, own profile, identity
+     fields on, two columns. */
+  apply();
+})();
+</script>
+
+<!--
+NOTES
+
+Question this prototype answers:
+  Can the profile page lead with who the person is and what they do here, and
+  collect staff tooling into one labelled panel, without dropping any
+  capability-gated field or link that core renders today?
+
+What is measured, not invented:
+- The TODAY node lists are a dump of core_user\output\myprofile\manager::build_tree()
+  run as four different users against the same student on the Docker site.
+- Every data-rule string names the real capability, config key or function that
+  gates that element in public/lib/myprofilelib.php, public/user/profile.php,
+  public/user/classes/fields.php or public/lib/classes/user.php.
+
+The five moves this design makes:
+1. IDENTITY FIRST. The header carries name, role, courses, institution,
+   department, place and local time — all of which exist today but sit inside
+   a card called "User details" below the fold. context_header keeps only the
+   avatar, the name and two icon buttons.
+2. THE BIO GETS A HOME. $user->description currently renders in a bare, unlabelled
+   <div class="description"> above the block region. Here it is an "About" card
+   with the interests/tags and the public custom fields that belong with it.
+3. STAFF TOOLING IS VISIBLY STAFF TOOLING. Reports, Notes, Log in as and
+   Preferences move into one "Manage this user" panel marked "Ava can't see
+   this section". No gate changes; only where they render, and whether a
+   teacher can tell what the student also sees.
+4. THE USER CAN SEE THEIR OWN PRIVACY. Net-new. maildisplay, hiddenuserfields
+   and per-field visibility all silently change what others see and nothing on
+   the page says so. The strip plus per-field "Everyone / Course members /
+   Teachers only" markers, and a View-as that renders the real other-viewer page.
+5. TWO COLUMNS INSTEAD OF A 830px STACK. Today every category is a full-width
+   card in a limitedwidth column, so a teacher gets seven near-empty boxes
+   stacked ~2,400px tall. Flip Layout in the State panel to compare.
+
+Open decisions for review (this is what to argue about):
+- a) Dropping .limitedwidth. profile.php sets it explicitly. Two columns needs
+     >=992px; the single-column toggle shows the fallback. Is losing the
+     830px measure acceptable on a page that is mostly short facts?
+- b) The site profile has no role and no group information at all — both nodes
+     are inside `if (!empty($course))` in core_myprofile_navigation. So the
+     header can say "3 courses" and nothing more. Is "Ava Nguyen, 3 courses"
+     enough for a teacher opening this page from a participants list, or does
+     the roles node need to move out of the course-only branch? That is a code
+     change, so it is a question, not something this prototype assumes.
+- c) The staff panel merges categories that plugins extend via
+     <plugin>_myprofile_navigation(). Third-party nodes land in 'reports',
+     'administration' or 'miscellaneous'. Merging is safe for placement, but
+     any plugin that assumed its own top-level category loses it. Needs a
+     mapping rule before this is more than a prototype.
+- d) The privacy strip and the per-field "Everyone / Course members / Teachers
+     only" markers are the only net-new UI here. They invent no data — every
+     marker is just maildisplay, $CFG->hiddenuserfields or the custom field's
+     own PROFILE_VISIBLE_* value, rendered — but they do put a promise on
+     screen that the code then has to keep everywhere else (participants list,
+     message search, web services). Worth agreeing before it ships.
+- e) "Pronouns" and "Access arrangements" are SITE-DEFINED custom profile
+     fields, not core columns. They are here to show PROFILE_VISIBLE_ALL next
+     to PROFILE_VISIBLE_TEACHERS, which is a real distinction the current page
+     renders identically. Any real site will have different ones.
+
+NOTHING ON THIS PAGE IS A FIELD MOODLE DOES NOT HAVE.
+Every value, label and link maps to a real $user column, a real custom profile
+field, or a real myprofile node. Deliberately removed after the first pass,
+because core has no such data on this page:
+- an online/presence dot          (only $user->lastaccess exists, and it is a
+                                   $CFG->hiddenuserfields entry, so a dot would
+                                   leak the same fact past its own gate)
+- a "Recent activity" feed        (core has links to forum posts / blogs /
+                                   badges, not a timeline)
+- per-course role, last access
+  and progress                    (the roles and groups nodes are course-profile
+                                   only; the mycourses node is a bare <ul> of
+                                   course names)
+- "enrolled since <date>"         (not on this page in any form)
+- a Preferences button on your
+  own profile                     (core adds that node only when !$iscurrentuser)
+- "Edit user account" as a
+  separate staff action           (that IS the editprofile node, already in the
+                                   header, pointed at editadvanced.php)
+Node titles are core's own strings ("Course profiles", "View site blog entries",
+"QR code for mobile app access", "Badges from <site>"), not rewrites.
+
+Two conditional nodes are not drawn, and would need a state of their own if the
+prototype grows: the MNet remote-user node (is_mnet_remote_user), and the
+external-backpack badge node ($CFG->badges_allowexternalbackpack).
+
+Known MDS gaps this page runs straight into (see MDS-component-scope.html):
+  card (§5.1) · tabs · chip · empty-state · focus ring · layering.
+  The card, chip, staff-panel and empty-state styles here are all invented,
+  which is the gap, not a preference.
+
+Dependencies: Google Fonts (Noto Sans) + Font Awesome 6 via CDN. Needs network
+on first open; degrades to system font + glyph boxes offline.
+
+Answer: <fill in after review>
+-->
+</body>
+</html>

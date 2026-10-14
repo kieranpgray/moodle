@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTOTYPE — Login experience (core/loginform + core/login_layout), MDS-grounded (throwaway)</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+  /*
+    THROWAWAY PROTOTYPE — modern login experience for Moodle 5.3dev.
+
+    GROUNDED IN THE CURRENT CODEBASE. Every element below maps to something that
+    really renders today:
+      public/theme/boost/templates/core/login_layout.mustache  split-screen shell
+      public/theme/boost/templates/core/login_panel.mustache   left welcome panel
+      public/theme/boost/templates/core/loginform.mustache     the form itself
+      public/theme/boost/scss/moodle/login.scss                all login styling
+      public/theme/boost/lib.php:58-89                         left-panel bg image + AI watermark
+      public/auth/classes/output/login.php                     the renderable (every flag below)
+      public/theme/boost/classes/output/core_renderer.php:293  logourl / sitename / hasauthinstructions
+      public/admin/settings/login.php                          the admin settings that drive the flags
+      public/lang/en/moodle.php:1242-1272                      every visible string (verbatim here)
+
+    Two designs, switched from the State panel (bottom-left):
+      Current 5.3   faithful re-creation of what ships today — translucent copy card
+                    floating mid-image, centre-stacked form, 5rem gaps — plus one
+                    option it does not have: remove the background image.
+      Centred       single column, no panel, no image. Short auth_instructions sit
+                    inline in the box; the long version goes outside and below it.
+
+    Removing the background is a proposal, not a setting: lib.php always injects an
+    image, falling back to a shipped AI-generated photo when loginbackgroundimage is
+    unset, so a site cannot ask for none. Off: white on both sides, the translucent
+    copy box drops away and the copy is ink. On: one of five inline-SVG landscapes,
+    picked at random each time it is switched on — they stand in for the admin's
+    upload, and vary because the layout has to hold up against an image nobody here
+    chose.
+
+    Defaults match a stock site: registerauth is empty out of the box, so there is
+    no "Sign up" link unless Self registration is switched on.
+
+    One thing here is NET-NEW and flagged as such in the panel: the magic link
+    (emailed one-time login URL). Moodle has no passwordless login; the mechanism
+    it would build on — token, expiry, emailed URL — is the forgot-password flow
+    in login/lib.php:84 with user_password_resets.
+
+    State panel + annotation callouts are ported from PROTOTYPE-course-settings
+    (dev switcher with minimise-to-chip; dashed pulsing ring + blue callout with a
+    close button, positioned against live targets and de-overlapped).
+
+    Colour/spacing/type come from the Moodle Design System: the :root block is a
+    VERBATIM subset of @moodlehq/design-system/dist/tokens/css. No eyeballed hex.
+
+    Throwaway — delete when the direction is agreed.
+  */
+
+  /* ============================================================
+     MDS TOKENS — verbatim subset of the design-system CSS build
+     ============================================================ */
+  :root{
+    /* --- primitives: colour ramp (dist/tokens/css/primitives.css) --- */
+    --mds-color-blue-50:#e7f0f9; --mds-color-blue-100:#cfe2f2; --mds-color-blue-200:#9fc4e5;
+    --mds-color-blue-300:#6fa7d9; --mds-color-blue-400:#3f89cc; --mds-color-blue-500:#0f6cbf;
+    --mds-color-blue-600:#0c5699; --mds-color-blue-700:#094173; --mds-color-blue-800:#062b4c;
+    --mds-color-gray-100:#f8f9fa; --mds-color-gray-200:#e9ecef; --mds-color-gray-300:#dee2e6;
+    --mds-color-gray-400:#ced4da; --mds-color-gray-500:#8f959e; --mds-color-gray-600:#6a737b;
+    --mds-color-gray-700:#495057; --mds-color-gray-800:#343a40; --mds-color-gray-900:#1d2125;
+    --mds-color-gray-black:#000; --mds-color-gray-white:#fff;
+    --mds-color-green-100:#d7e4d6; --mds-color-green-500:#357a32; --mds-color-green-800:#153114;
+    --mds-color-red-50:#faeae9; --mds-color-red-100:#f4d6d2; --mds-color-red-200:#eaada6;
+    --mds-color-red-500:#ca3120; --mds-color-red-600:#a2271a; --mds-color-red-700:#791d13;
+    --mds-color-yellow-100:#fcefdc; --mds-color-yellow-500:#f0ad4e; --mds-color-yellow-800:#60451f;
+    --mds-color-cyan-100:#cce6ea; --mds-color-cyan-500:#008196;
+    --mds-color-orange-100:#ffe3d1; --mds-color-orange-600:#cc5e13;
+    --mds-color-pink-100:#f8d1e3; --mds-color-pink-500:#db1a74;
+    --mds-color-indigo-100:#e0cffc; --mds-color-indigo-500:#6610f2;
+
+    /* --- primitives: type (primitives.css) --- */
+    --mds-typography-font-family-sans-serif:"Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --mds-typography-font-size-1:1rem; --mds-typography-font-size-0-875:.875rem;
+    --mds-typography-font-size-1-25:1.25rem; --mds-typography-font-size-1-5:1.5rem;
+    --mds-typography-font-size-1-75:1.75rem; --mds-typography-font-size-2:2rem; --mds-typography-font-size-2-5:2.5rem;
+    --mds-typography-font-weight-regular:400; --mds-typography-font-weight-medium:500;
+    --mds-typography-font-weight-semibold:600; --mds-typography-font-weight-bold:700;
+    --mds-typography-line-height-headings-h1:3rem; --mds-typography-line-height-headings-h2:2.4rem;
+    --mds-typography-line-height-headings-h3:2.1rem; --mds-typography-line-height-headings-h6:1.2rem;
+    --mds-typography-line-height-paragraph-base:1.5rem; --mds-typography-line-height-paragraph-sm:1.0875rem;
+
+    /* --- semantic aliases (colors.css) --- */
+    --mds-text-default:var(--mds-color-gray-900);
+    --mds-text-subtle:var(--mds-color-gray-700);
+    --mds-text-muted:var(--mds-color-gray-600);
+    --mds-text-inverse:var(--mds-color-gray-100);
+    --mds-text-danger:var(--mds-color-red-500);
+    --mds-text-link-primary:var(--mds-color-blue-500);
+    --mds-bg-surface-default:var(--mds-color-gray-white);
+    --mds-bg-surface-subtle:var(--mds-color-gray-100);
+    --mds-bg-surface-strong:var(--mds-color-gray-200);
+    --mds-border-default:var(--mds-color-gray-300);
+    --mds-border-subtle:var(--mds-color-gray-200);
+    --mds-bg-interactive-primary-default:var(--mds-color-blue-500);
+    --mds-bg-interactive-primary-hover:var(--mds-color-blue-600);
+    --mds-bg-interactive-primary-active:var(--mds-color-blue-700);
+    --mds-bg-interactive-primary-light:var(--mds-color-blue-50);
+    --mds-bg-interactive-secondary-default:var(--mds-color-gray-300);
+    --mds-bg-interactive-secondary-hover:var(--mds-color-gray-400);
+    --mds-bg-interactive-danger-light:var(--mds-color-red-50);
+    --mds-bg-feedback-warning-subtle:var(--mds-color-yellow-100);
+    --mds-text-feedback-warning:var(--mds-color-yellow-800);
+
+    /* --- spacing (spacing.css) --- */
+    --mds-spacing-xxs:.25rem; --mds-spacing-xs:.5rem; --mds-spacing-sm:.75rem;
+    --mds-spacing-md:1rem; --mds-spacing-lg:1.25rem; --mds-spacing-xl:2rem; --mds-spacing-xxl:3rem;
+
+    /* --- borders (borders.css) --- */
+    --mds-border-radius-xs:.25rem; --mds-border-radius-sm:.375rem; --mds-border-radius-md:.5rem;
+    --mds-border-radius-lg:.75rem; --mds-border-radius-xl:1rem; --mds-border-radius-pill:50rem;
+    --mds-stroke-weight-sm:.0625rem;
+
+    /* --- typography semantic (typography.css) --- */
+    --mds-font-family-base:var(--mds-typography-font-family-sans-serif);
+    --mds-font-size-heading-2:var(--mds-typography-font-size-2);
+    --mds-font-size-heading-3:var(--mds-typography-font-size-1-75);
+    --mds-font-size-heading-5:var(--mds-typography-font-size-1-25);
+    --mds-font-size-heading-6:var(--mds-typography-font-size-1);
+    --mds-font-size-body:var(--mds-typography-font-size-1);
+    --mds-font-size-small:var(--mds-typography-font-size-0-875);
+    --mds-font-weight-medium:var(--mds-typography-font-weight-medium);
+    --mds-font-weight-semibold:var(--mds-typography-font-weight-semibold);
+
+    /* --- prototype constants --- */
+    --control-h:44px;                 /* touch target for inputs + buttons */
+    --form-max:400px;                 /* proposed form column */
+    --login-bg:url('/theme/boost/pix/login_background.jpg');
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:var(--mds-font-family-base);
+    color:var(--mds-text-default);
+    background:var(--mds-color-gray-200);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--mds-text-link-primary)}
+  button{font:inherit}
+
+  /* ============================================================
+     STAGE — the page under test. Desktop fills the window; the
+     mobile switch drops it into a 390px device frame.
+     ============================================================ */
+  .stage{width:100%; min-height:100vh; background:var(--mds-bg-surface-default); position:relative}
+  body[data-viewport="mobile"]{background:var(--mds-color-gray-300)}
+  body[data-viewport="mobile"] .stage{
+    width:390px; min-height:780px; margin:var(--mds-spacing-xl) auto;
+    border-radius:var(--mds-border-radius-xl); overflow:hidden;
+    box-shadow:0 18px 48px rgba(6,43,76,.28);
+  }
+
+  /* variant + config visibility switching.
+     two designs: today's split screen, and a centred single column. */
+  body[data-variant="current"] .v-centered{display:none}
+  body[data-variant="centered"] :is(.v-current,.v-split){display:none}
+  body:not([data-idp="on"]) .needs-idp{display:none}
+  body[data-idp="on"] .no-idp{display:none}
+  body:not([data-showform="off"]) .needs-noform{display:none}
+  body[data-showform="off"] .needs-form{display:none}
+  body:not([data-guest="on"]) .needs-guest{display:none}
+  body:not([data-error="on"]) .needs-error{display:none}
+  body:not([data-maintenance="on"]) .needs-maintenance{display:none}
+  body:not([data-instructions="on"]) .needs-instructions{display:none}
+  body[data-instructions="on"] .no-instructions{display:none}
+  body:not([data-recaptcha="on"]) .needs-recaptcha{display:none}
+  /* registerauth is empty on a default site, so there is no Sign up link. */
+  body:not([data-signup="on"]) .needs-signup{display:none}
+  body:not([data-magic="on"]) .needs-magic{display:none}
+  body:not([data-bgimage="on"]) .needs-bgimage{display:none}
+  /* short instructions in the box, or the long version below it — not both */
+  body:not([data-longinstr="on"]) .needs-longinstr{display:none}
+  body[data-longinstr="on"] .no-longinstr{display:none}
+
+  /* ============================================================
+     SHARED — the split-screen shell (core/login_layout.mustache)
+     ============================================================ */
+  .login-shell{display:flex; min-height:100vh}
+  body[data-viewport="mobile"] .login-shell{min-height:780px}
+  /* .login-layout-left, verbatim behaviour: sticky, exactly 100vh, so panel
+     content taller than the viewport cannot be scrolled to at all. */
+  .panel-left{
+    flex:0 0 50%; overflow:hidden;
+    position:sticky; top:0; align-self:flex-start; height:100vh;
+    background-color:var(--mds-bg-surface-default);
+  }
+  /* Background image is a choice here. Today it is not: lib.php always injects
+     one, falling back to the shipped photo when loginbackgroundimage is unset.
+     --panel-photo is picked at random by the script at the end of this file;
+     in Moodle it is whatever the admin uploaded. */
+  body[data-bgimage="on"] .panel-left{
+    background-image:var(--panel-photo, var(--login-bg));
+    background-size:cover; background-position:center;
+    background-color:var(--mds-color-gray-800);
+  }
+  /* no image: white on both sides, with a hairline on the shared edge so the
+     two columns still read as two columns */
+  body:not([data-bgimage="on"]) .panel-left{border-right:1px solid var(--mds-border-subtle)}
+  /* lib.php adds this watermark only for the shipped default image — which is
+     what Current 5.3 renders. In the proposals the image stands in for one the
+     admin uploaded, so no watermark. */
+  body[data-variant="current"][data-bgimage="on"] .panel-left::after{
+    content:'AI-generated image';
+    position:absolute; bottom:1rem; right:1rem; color:#fff; font-size:.8rem;
+    text-shadow:0 1px 2px #000; pointer-events:none; z-index:3;
+  }
+  .panel-right{flex:1 1 50%; display:flex; justify-content:center; background:var(--mds-color-gray-white); position:relative}
+  /* .login-layout-left is d-none d-lg-flex — it genuinely disappears under 992px. */
+  body[data-viewport="mobile"] .panel-left{display:none}
+  body[data-viewport="mobile"] .panel-right{flex:1 1 100%}
+
+  /* ============================================================
+     VARIANT A — CURRENT 5.3 (re-creation of the shipped SCSS)
+     ============================================================ */
+  .cur-left-inner{
+    height:100%; display:flex; align-items:center; justify-content:center;
+    padding:3rem;                                   /* $login-layout-panel-padding */
+  }
+  .cur-left-content{
+    max-width:450px;                                /* $login-layout-copy-width */
+    text-align:center;
+    color:#fff;                                     /* color-contrast() on darkened primary */
+    background:rgba(6,43,76,.65);                   /* rgba(darken($primary,25%), .65) */
+    border-radius:var(--mds-border-radius-xs);      /* $border-radius */
+    padding:1rem;                                   /* $spacer */
+    margin-bottom:5rem;
+  }
+  .cur-left-content h2{font-size:var(--mds-font-size-heading-3); margin:0 0 var(--mds-spacing-md); font-weight:var(--mds-font-weight-semibold)}
+  .cur-left-content p{margin:0 0 var(--mds-spacing-md)}
+  .cur-stats{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); justify-items:center}
+  .cur-stat{display:flex; flex-direction:column; gap:.25rem; font-size:var(--mds-font-size-small)}
+  .cur-stat strong{font-size:var(--mds-font-size-heading-5); line-height:1}
+
+  /* ---- background removed ----
+     The translucent box only exists to lift white text off a photo. With the
+     photo gone the panel is white, so the box goes with it and the copy is
+     ink — the layout is otherwise untouched. */
+  body:not([data-bgimage="on"]) .cur-left-content{
+    background:transparent;
+    color:var(--mds-text-default);
+  }
+  body:not([data-bgimage="on"]) .cur-left-content p{color:var(--mds-text-subtle)}
+  body:not([data-bgimage="on"]) .cur-left-content strong{color:var(--mds-text-default)}
+  body:not([data-bgimage="on"]) .cur-left-content a{color:var(--mds-text-link-primary)}
+
+  .cur-right-inner{width:100%; max-width:576px; margin:auto 0; padding:3rem}
+  body[data-viewport="mobile"] .cur-right-inner{padding:1.5rem 1rem; max-width:100%; margin:0}
+  .cur-right-inner h2{font-size:var(--mds-font-size-heading-3); margin:0 0 var(--mds-spacing-xs); font-weight:var(--mds-font-weight-semibold)}
+  .cur-sub{color:var(--mds-text-muted); margin:0 0 var(--mds-spacing-md)}
+  .cur-field{margin-bottom:var(--mds-spacing-md)}
+  .cur-field label{display:block; margin-bottom:var(--mds-spacing-xxs); font-size:var(--mds-font-size-small)}
+  .cur-input{
+    width:100%; height:38px; padding:.375rem .75rem; font-size:var(--mds-font-size-body);
+    background:var(--mds-color-gray-100);            /* $login-input-bg */
+    border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-xs);
+    color:var(--mds-text-default);
+  }
+  .cur-input::placeholder{color:var(--mds-color-gray-500)}
+  .cur-toggle-group{display:flex}
+  .cur-toggle-group .cur-input{border-top-right-radius:0; border-bottom-right-radius:0}
+  .cur-toggle-btn{
+    background:var(--mds-color-gray-100); border:1px solid var(--mds-border-default); border-left:0;
+    border-radius:0 var(--mds-border-radius-xs) var(--mds-border-radius-xs) 0;
+    color:var(--mds-color-gray-700); width:44px; cursor:pointer;
+  }
+  .cur-forgot{text-align:right; margin-bottom:var(--mds-spacing-md)}
+  .cur-btn-primary{
+    width:100%; height:38px; border:0; border-radius:var(--mds-border-radius-xs);
+    background:var(--mds-bg-interactive-primary-default); color:#fff; cursor:pointer;
+  }
+  .cur-signup{text-align:center; font-size:var(--mds-font-size-small); margin-bottom:var(--mds-spacing-md)}
+  .cur-separator{
+    display:flex; align-items:center; gap:.75rem; margin:3rem 0;   /* my-5 */
+    color:var(--mds-color-gray-600); font-size:var(--mds-font-size-small);
+    text-transform:uppercase; letter-spacing:.08em;
+  }
+  .cur-separator::before,.cur-separator::after{content:""; flex:1; border-top:1px solid var(--mds-border-default)}
+  .cur-idp{
+    width:100%; display:flex; align-items:center; justify-content:center; gap:var(--mds-spacing-xs);
+    background:#fff; border:1px solid var(--mds-color-gray-400); color:var(--mds-color-gray-600);
+    border-radius:var(--mds-border-radius-xs); height:38px; margin-bottom:var(--mds-spacing-md);
+    cursor:pointer; text-decoration:none;
+  }
+  .cur-lang{display:flex; justify-content:center; margin:3rem 0}
+  .cur-lang button{
+    background:transparent; border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-xs);
+    padding:6px 12px; color:var(--mds-text-default); cursor:pointer; font-size:var(--mds-font-size-small);
+  }
+  .cur-cookies{text-align:center}
+  .cur-cookies button{background:none; border:0; padding:0; color:var(--mds-color-gray-600); font-size:var(--mds-font-size-small); cursor:pointer; text-decoration:underline}
+  .cur-alert{
+    padding:var(--mds-spacing-sm) var(--mds-spacing-md); border-radius:var(--mds-border-radius-xs);
+    margin-bottom:var(--mds-spacing-md); font-size:var(--mds-font-size-small);
+  }
+  .cur-alert-danger{background:var(--mds-bg-interactive-danger-light); color:var(--mds-color-red-700); border:1px solid var(--mds-color-red-200)}
+  .cur-alert-warning{background:var(--mds-bg-feedback-warning-subtle); color:var(--mds-text-feedback-warning); border:1px solid var(--mds-color-yellow-500)}
+  .cur-recaptcha{
+    height:78px; width:304px; max-width:100%; border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-xs); background:var(--mds-color-gray-100);
+    display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:0 var(--mds-spacing-md);
+    margin-bottom:var(--mds-spacing-md); font-size:var(--mds-font-size-small); color:var(--mds-text-subtle);
+  }
+  .cur-recaptcha .box{width:24px; height:24px; border:2px solid var(--mds-color-gray-500); border-radius:2px; background:#fff}
+
+  .pro-logo{display:flex; align-items:center; gap:var(--mds-spacing-xs); height:32px}
+  .pro-logo img{height:28px; width:auto}
+  .pro-logo .fallback{
+    font-weight:var(--mds-typography-font-weight-bold); color:var(--mds-color-blue-500);
+    letter-spacing:-.02em; font-size:var(--mds-font-size-heading-5);
+  }
+  .pro-langbtn{
+    display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 12px;
+    background:transparent; border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-pill); color:var(--mds-text-subtle);
+    font-size:var(--mds-font-size-small); cursor:pointer;
+  }
+  .pro-langbtn:hover{background:var(--mds-bg-surface-subtle)}
+
+  .pro-sub{color:var(--mds-text-muted); margin:0 0 var(--mds-spacing-xl); font-size:var(--mds-font-size-body)}
+
+  .pro-alert{
+    display:flex; gap:var(--mds-spacing-sm); padding:var(--mds-spacing-sm) var(--mds-spacing-md);
+    border-radius:var(--mds-border-radius-md); margin-bottom:var(--mds-spacing-md);
+    font-size:var(--mds-font-size-small); align-items:flex-start;
+  }
+  .pro-alert i{margin-top:2px}
+  .pro-alert strong{display:block}
+  .pro-alert-danger{background:var(--mds-bg-interactive-danger-light); color:var(--mds-color-red-700); border-left:3px solid var(--mds-color-red-500)}
+  .pro-alert-warning{background:var(--mds-bg-feedback-warning-subtle); color:var(--mds-text-feedback-warning); border-left:3px solid var(--mds-color-yellow-500)}
+
+  /* credentials first, third-party below the divider */
+  .pro-credentials{position:relative}
+  .pro-idp-list{display:flex; flex-direction:column; gap:var(--mds-spacing-xs); position:relative}
+  .pro-idp{
+    display:flex; align-items:center; justify-content:center; gap:var(--mds-spacing-sm);
+    height:var(--control-h); width:100%; text-decoration:none;
+    background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-md); color:var(--mds-text-default);
+    font-size:var(--mds-font-size-body); font-weight:var(--mds-font-weight-medium);
+    cursor:pointer; transition:background .12s ease, border-color .12s ease, box-shadow .12s ease;
+  }
+  .pro-idp:hover{background:var(--mds-bg-surface-subtle); border-color:var(--mds-color-gray-400)}
+  .pro-idp:focus-visible{outline:0; border-color:var(--mds-color-blue-500); box-shadow:0 0 0 3px var(--mds-bg-interactive-primary-light)}
+  .pro-idp .brand{width:20px; text-align:center; font-size:18px}
+  .pro-idp .brand.g{color:#4285f4}
+  .pro-idp .brand.ms{color:#0078d4}
+  .pro-idp .brand.ap{color:#111}
+
+  .pro-separator{
+    display:flex; align-items:center; gap:var(--mds-spacing-sm);
+    margin:var(--mds-spacing-lg) 0; color:var(--mds-text-muted);
+    font-size:var(--mds-font-size-small); text-transform:uppercase; letter-spacing:.08em;
+  }
+  .pro-separator::before,.pro-separator::after{content:""; flex:1; border-top:1px solid var(--mds-border-subtle)}
+
+  .pro-field{margin-bottom:var(--mds-spacing-md); position:relative}
+  .pro-label-row{display:flex; align-items:baseline; justify-content:space-between; gap:var(--mds-spacing-sm); margin-bottom:var(--mds-spacing-xxs)}
+  .pro-label-row label{font-size:var(--mds-font-size-small); font-weight:var(--mds-font-weight-medium); color:var(--mds-text-subtle)}
+  .pro-label-row a{font-size:var(--mds-font-size-small); text-decoration:none}
+  .pro-label-row a:hover{text-decoration:underline}
+  .pro-control{position:relative; display:flex; align-items:center}
+  .pro-control input{
+    width:100%; height:var(--control-h); padding:0 var(--mds-spacing-md); font-size:var(--mds-font-size-body);
+    background:var(--mds-bg-surface-subtle); border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-md); color:var(--mds-text-default);
+    transition:border-color .12s ease, box-shadow .12s ease, background .12s ease;
+  }
+  .pro-control input::placeholder{color:var(--mds-color-gray-500)}
+  .pro-control input:hover{border-color:var(--mds-color-gray-400)}
+  .pro-control input:focus{
+    outline:0; background:var(--mds-bg-surface-default);
+    border-color:var(--mds-color-blue-500); box-shadow:0 0 0 3px var(--mds-bg-interactive-primary-light);
+  }
+  .pro-control.has-toggle input{padding-right:46px}
+  .pro-toggle{
+    position:absolute; right:6px; width:34px; height:34px; border:0; background:transparent;
+    color:var(--mds-text-muted); border-radius:var(--mds-border-radius-sm); cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .pro-toggle:hover{background:var(--mds-bg-surface-strong); color:var(--mds-text-subtle)}
+  .pro-toggle:focus-visible{outline:0; box-shadow:0 0 0 3px var(--mds-bg-interactive-primary-light)}
+  body[data-error="on"] .pro-field-invalid input{border-color:var(--mds-color-red-500); background:var(--mds-bg-interactive-danger-light)}
+
+  .pro-submit{
+    width:100%; height:var(--control-h); border:0; border-radius:var(--mds-border-radius-md);
+    background:var(--mds-bg-interactive-primary-default); color:#fff; cursor:pointer;
+    font-size:var(--mds-font-size-body); font-weight:var(--mds-font-weight-semibold);
+    transition:background .12s ease, box-shadow .12s ease;
+  }
+  .pro-submit:hover{background:var(--mds-bg-interactive-primary-hover)}
+  .pro-submit:active{background:var(--mds-bg-interactive-primary-active)}
+  .pro-submit:focus-visible{outline:0; box-shadow:0 0 0 3px var(--mds-bg-interactive-primary-light)}
+
+  .pro-recaptcha{
+    height:78px; width:304px; max-width:100%; border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-md); background:var(--mds-bg-surface-subtle);
+    display:flex; align-items:center; gap:var(--mds-spacing-sm); padding:0 var(--mds-spacing-md);
+    margin-bottom:var(--mds-spacing-md); font-size:var(--mds-font-size-small); color:var(--mds-text-subtle);
+  }
+  .pro-recaptcha .box{width:24px; height:24px; border:2px solid var(--mds-color-gray-500); border-radius:2px; background:#fff}
+
+  .pro-signup{
+    margin:var(--mds-spacing-lg) 0 0; text-align:center;
+    font-size:var(--mds-font-size-small); color:var(--mds-text-muted);
+  }
+  .pro-signup a{font-weight:var(--mds-font-weight-semibold); text-decoration:none}
+  .pro-signup a:hover{text-decoration:underline}
+  .pro-guest{
+    margin-top:var(--mds-spacing-lg); text-align:center; padding-top:var(--mds-spacing-md);
+    border-top:1px solid var(--mds-border-subtle); position:relative;
+  }
+  .pro-guest button{
+    background:none; border:0; padding:6px 10px; border-radius:var(--mds-border-radius-sm);
+    color:var(--mds-text-subtle); font-size:var(--mds-font-size-small); cursor:pointer;
+    display:inline-flex; align-items:center; gap:8px;
+  }
+  .pro-guest button:hover{background:var(--mds-bg-surface-subtle); color:var(--mds-text-default)}
+
+  /* ---- magic link (NET-NEW: no core equivalent) ----
+     Presented as a second-choice action under the password submit, so the
+     primary path is unchanged for anyone who knows their password. */
+  .pro-magic{
+    width:100%; height:var(--control-h); margin-top:var(--mds-spacing-xs);
+    display:flex; align-items:center; justify-content:center; gap:var(--mds-spacing-xs);
+    background:none; border:1px solid var(--mds-border-default); border-radius:var(--mds-border-radius-md);
+    color:var(--mds-text-subtle); font-size:var(--mds-font-size-small); cursor:pointer;
+  }
+  .pro-magic:hover{background:var(--mds-bg-surface-subtle); color:var(--mds-text-default); border-color:var(--mds-color-gray-400)}
+  .pro-magic:focus-visible{outline:0; border-color:var(--mds-color-blue-500); box-shadow:0 0 0 3px var(--mds-bg-interactive-primary-light)}
+
+  .magic-sent{display:none; text-align:center}
+  .magic-sent .icon{
+    width:56px; height:56px; margin:0 auto var(--mds-spacing-md); border-radius:50%;
+    background:var(--mds-bg-interactive-primary-light); color:var(--mds-color-blue-500);
+    display:flex; align-items:center; justify-content:center; font-size:22px;
+  }
+  .magic-sent h3{font-size:var(--mds-font-size-heading-5); margin:0 0 var(--mds-spacing-xs)}
+  .magic-sent p{margin:0 0 var(--mds-spacing-md); color:var(--mds-text-subtle); font-size:var(--mds-font-size-small)}
+  .magic-sent strong{color:var(--mds-text-default)}
+  .magic-sent .expiry{
+    display:inline-flex; align-items:center; gap:6px; font-size:var(--mds-font-size-small);
+    color:var(--mds-text-muted); background:var(--mds-bg-surface-subtle);
+    border-radius:var(--mds-border-radius-pill); padding:5px 12px; margin-bottom:var(--mds-spacing-md);
+  }
+  .magic-back{
+    background:none; border:0; padding:6px 10px; border-radius:var(--mds-border-radius-sm); cursor:pointer;
+    color:var(--mds-text-link-primary); font-size:var(--mds-font-size-small); font-weight:var(--mds-font-weight-semibold);
+  }
+  .magic-back:hover{background:var(--mds-bg-surface-subtle)}
+  /* sent state takes over the column; everything else in it stands down */
+  .magic-on .magic-hide{display:none !important}
+  .magic-on .magic-sent{display:block}
+
+  /* ---- short instructions, inline in the box ----
+     A brief note above the fields, read before anyone types. Only a brief one:
+     every line here pushes the login controls down. The long version renders
+     below the box instead — see .cen-long. */
+  .instr-inline{
+    position:relative; font-size:var(--mds-font-size-small); color:var(--mds-text-subtle);
+    background:var(--mds-bg-surface-subtle); border-radius:var(--mds-border-radius-md);
+    padding:var(--mds-spacing-sm) var(--mds-spacing-md); margin-bottom:var(--mds-spacing-md);
+  }
+  .instr-inline strong{color:var(--mds-text-default)}
+  .instr-inline:focus-visible{outline:2px solid var(--mds-color-blue-500); outline-offset:2px}
+  .instr-inline p{margin:0}
+  .edit-hint{
+    display:flex; align-items:center; gap:6px; margin-top:var(--mds-spacing-xs);
+    font-size:11px; color:var(--mds-text-muted);
+  }
+
+  .pro-sso-note{
+    font-size:var(--mds-font-size-small); color:var(--mds-text-muted);
+    text-align:center; margin-top:var(--mds-spacing-md);
+  }
+
+  /* ============================================================
+     THE CENTRED DESIGN (no panel, no image)
+     ============================================================ */
+  .cen-page{display:flex; flex-direction:column; min-height:100vh; background:var(--mds-bg-surface-default)}
+  body[data-viewport="mobile"] .cen-page{min-height:780px}
+  .cen-topbar{
+    display:flex; align-items:center; justify-content:space-between; gap:var(--mds-spacing-md);
+    padding:var(--mds-spacing-lg) var(--mds-spacing-xl); position:relative;
+  }
+  body[data-viewport="mobile"] .cen-topbar{padding:var(--mds-spacing-md)}
+  .cen-main{
+    flex:1 1 auto; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:var(--mds-spacing-xl) var(--mds-spacing-md);
+  }
+  body[data-viewport="mobile"] .cen-main{padding:var(--mds-spacing-xs) var(--mds-spacing-md); align-items:flex-start}
+  .cen-card{
+    width:100%; max-width:440px; position:relative;
+    background:var(--mds-bg-surface-default);
+    border:1px solid var(--mds-border-subtle);
+    border-radius:var(--mds-border-radius-xl);
+    padding:var(--mds-spacing-xl);
+    box-shadow:0 1px 2px rgba(6,43,76,.06), 0 16px 32px rgba(6,43,76,.08);
+  }
+  body[data-viewport="mobile"] .cen-card{border:0; box-shadow:none; padding:0; max-width:100%}
+  .cen-card h2{
+    font-size:var(--mds-font-size-heading-3); line-height:1.2; margin:0 0 var(--mds-spacing-xxs);
+    font-weight:var(--mds-typography-font-weight-bold); letter-spacing:-.01em;
+  }
+  .cen-welcome{
+    display:block; font-size:var(--mds-font-size-small); text-transform:uppercase; letter-spacing:.08em;
+    color:var(--mds-text-link-primary); font-weight:var(--mds-font-weight-semibold);
+    margin-bottom:var(--mds-spacing-xs);
+  }
+  /* Instructions have a real home here — no left panel to hide them in. */
+  /* ---- long auth_instructions: outside and below the login box ----
+     The field has no length limit. Inside the card, long copy pushes the
+     controls down the page; below it, the box keeps its position and the copy
+     flows underneath at the same width. contenteditable here so a reviewer can
+     paste their own site's text in. */
+  .cen-long{
+    width:100%; max-width:440px; margin:var(--mds-spacing-xl) auto 0;
+    padding-top:var(--mds-spacing-xl); border-top:1px solid var(--mds-border-subtle);
+  }
+  body[data-viewport="mobile"] .cen-long{max-width:100%}
+  .cen-long h3{
+    font-size:var(--mds-font-size-heading-6); margin:0 0 var(--mds-spacing-sm);
+    font-weight:var(--mds-font-weight-semibold); color:var(--mds-text-default);
+  }
+  .cen-long-body{font-size:var(--mds-font-size-small); color:var(--mds-text-subtle); outline-offset:4px}
+  .cen-long-body:focus-visible{outline:2px solid var(--mds-color-blue-500)}
+  .cen-long-body p{margin:0 0 var(--mds-spacing-md)}
+  .cen-long-body p:last-child{margin-bottom:0}
+  .cen-long-body strong{color:var(--mds-text-default)}
+
+  .cen-footer{
+    display:flex; align-items:center; justify-content:center; gap:var(--mds-spacing-md); flex-wrap:wrap;
+    padding:var(--mds-spacing-lg) var(--mds-spacing-md);
+    font-size:var(--mds-font-size-small); color:var(--mds-text-muted);
+  }
+  .cen-footer button{background:none; border:0; padding:0; color:inherit; font-size:inherit; cursor:pointer; text-decoration:underline}
+  .cen-footer .dot{width:3px; height:3px; border-radius:50%; background:var(--mds-color-gray-400)}
+
+  /* ============================================================
+     PROTOTYPE CHROME — dev "State" switcher, ported from
+     PROTOTYPE-course-settings: fixed bottom-left, minimises to a
+     chip that still says which state you left it in.
+     ============================================================ */
+  .devswitch{
+    position:fixed; left:16px; bottom:64px; z-index:85; width:250px;
+    background:var(--mds-bg-surface-default); border:1px solid var(--mds-border-default);
+    border-radius:var(--mds-border-radius-md); box-shadow:0 8px 28px rgba(0,0,0,.16);
+    padding:var(--mds-spacing-sm); transition:width .12s ease, padding .12s ease;
+  }
+  .devswitch h5{margin:0 0 6px; font-size:.625rem; text-transform:uppercase; letter-spacing:.5px; color:var(--mds-text-muted)}
+  .devrow{display:flex; flex-wrap:wrap; gap:4px}
+  .devbtn{
+    border:1px solid var(--mds-border-default); background:var(--mds-bg-surface-subtle);
+    border-radius:var(--mds-border-radius-xs); padding:4px 8px; cursor:pointer; font-family:inherit;
+    font-size:.6875rem; color:var(--mds-text-subtle); font-weight:var(--mds-font-weight-medium);
+  }
+  .devbtn:hover{background:var(--mds-bg-surface-strong)}
+  .devbtn.on{background:var(--mds-bg-interactive-primary-default); color:#fff; border-color:transparent}
+  /* a setting that cannot apply given another one is locked, not silently ignored */
+  .devbtn:disabled{opacity:.4; cursor:not-allowed}
+  .devbtn:disabled:hover{background:var(--mds-bg-surface-subtle)}
+  .devbtn.on:disabled:hover{background:var(--mds-bg-interactive-primary-default)}
+  .dev-head{display:flex; align-items:center; gap:.4rem; margin-bottom:var(--mds-spacing-xs)}
+  .dev-head .dev-flask{font-size:11px; color:var(--mds-text-muted)}
+  .dev-head .dev-name{
+    font-size:.625rem; text-transform:uppercase; letter-spacing:.5px;
+    color:var(--mds-text-muted); font-weight:var(--mds-font-weight-semibold); white-space:nowrap;
+  }
+  .dev-toggle{
+    margin-left:auto; width:22px; height:22px; flex:0 0 auto; display:flex;
+    align-items:center; justify-content:center; border:none; background:none; cursor:pointer;
+    border-radius:var(--mds-border-radius-xs); color:var(--mds-text-muted); font-size:10px;
+  }
+  .dev-toggle:hover{background:var(--mds-bg-surface-strong); color:var(--mds-text-default)}
+  .dev-toggle:focus-visible{outline:2px solid var(--mds-bg-interactive-primary-default); outline-offset:1px}
+  .devswitch.min{width:auto; padding:6px 6px 6px var(--mds-spacing-xs); cursor:pointer}
+  .devswitch.min:hover{background:var(--mds-bg-surface-subtle)}
+  .devswitch.min .dev-body{display:none}
+  .devswitch.min .dev-head{margin-bottom:0}
+  .devswitch.min .dev-toggle{margin-left:var(--mds-spacing-xs)}
+  .dev-ref{
+    margin-top:var(--mds-spacing-sm); width:100%; border:1px dashed var(--mds-border-default);
+    background:none; border-radius:var(--mds-border-radius-xs); padding:5px 8px; cursor:pointer;
+    font-size:.6875rem; color:var(--mds-text-subtle); display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .dev-ref:hover{background:var(--mds-bg-surface-subtle); color:var(--mds-text-default)}
+
+  /* ---- annotations: dashed pulsing ring on the target + blue callout ---- */
+  .anno-layer{position:fixed; inset:0; z-index:60; pointer-events:none}
+  body:not(.annotations-on) .anno-layer{display:none}
+  /* the grounding sheet is the same explanation in long form — don't stack both */
+  body.ref-on .anno-layer, body.ref-on .anno-toggle{display:none}
+  .anno-ring{
+    position:fixed; border:2px dashed var(--mds-bg-interactive-primary-default); border-radius:8px;
+    box-shadow:0 0 0 3px rgba(15,108,191,.16); pointer-events:none; animation:annoPulse 1.9s ease-in-out infinite;
+  }
+  @keyframes annoPulse{0%,100%{box-shadow:0 0 0 3px rgba(15,108,191,.16)} 50%{box-shadow:0 0 0 8px rgba(15,108,191,.06)}}
+  .anno-card{
+    position:fixed; width:230px; background:var(--mds-bg-interactive-primary-default); color:#fff;
+    border-radius:10px; padding:10px 12px 11px; font-size:12px; line-height:1.45;
+    box-shadow:0 10px 28px rgba(0,0,0,.28); pointer-events:auto;
+  }
+  .anno-badge{
+    position:absolute; top:-11px; left:-11px; width:23px; height:23px; border-radius:50%; background:#fff;
+    color:var(--mds-bg-interactive-primary-default); font-weight:700; font-size:12px;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,.25);
+  }
+  .anno-title{font-weight:700; font-size:12px; display:flex; align-items:center; gap:6px; margin:0 16px 3px 0}
+  .anno-title i{font-size:12px}
+  .anno-body{color:rgba(255,255,255,.92)}
+  .anno-body code{background:rgba(255,255,255,.16); padding:0 3px; border-radius:2px; font-size:11px}
+  .anno-close{
+    position:absolute; top:5px; right:6px; border:none; background:none; cursor:pointer;
+    color:rgba(255,255,255,.85); font-size:13px; line-height:1; padding:3px;
+  }
+  .anno-close:hover{color:#fff}
+  .anno-toggle{
+    position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:71;
+    background:var(--mds-bg-interactive-primary-default); color:#fff; border:none; border-radius:999px;
+    padding:9px 16px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,.25); display:flex; align-items:center; gap:8px;
+  }
+  .anno-toggle:hover{background:var(--mds-bg-interactive-primary-hover)}
+  .anno-toggle i{font-size:12px}
+  body:not(.annotations-on) .anno-toggle{background:var(--mds-text-subtle)}
+
+  /* ---- codebase grounding sheet (opened from the state panel) ---- */
+  .ref-backdrop{position:fixed; inset:0; background:rgba(29,33,37,.45); z-index:95; display:none}
+  body.ref-on .ref-backdrop{display:block}
+  .ref-sheet{
+    position:fixed; top:0; right:0; bottom:0; width:min(620px,94vw); z-index:96;
+    background:var(--mds-bg-surface-default); box-shadow:-12px 0 40px rgba(0,0,0,.24);
+    transform:translateX(100%); transition:transform .18s ease; overflow-y:auto; padding:var(--mds-spacing-xl);
+  }
+  body.ref-on .ref-sheet{transform:none}
+  .ref-sheet h2{font-size:var(--mds-font-size-heading-5); margin:0 0 var(--mds-spacing-xs)}
+  .ref-sheet h3{font-size:var(--mds-font-size-heading-6); margin:var(--mds-spacing-xl) 0 var(--mds-spacing-xs)}
+  .ref-sheet p{font-size:var(--mds-font-size-small); color:var(--mds-text-subtle); margin:0 0 var(--mds-spacing-sm)}
+  .ref-close{
+    position:absolute; top:12px; right:12px; width:32px; height:32px; border:0; cursor:pointer;
+    background:var(--mds-bg-surface-subtle); border-radius:50%; color:var(--mds-text-subtle);
+  }
+  .ref-close:hover{background:var(--mds-bg-surface-strong); color:var(--mds-text-default)}
+  table.ref{width:100%; border-collapse:collapse; font-size:12px}
+  table.ref th, table.ref td{text-align:left; padding:8px 10px; border-bottom:1px solid var(--mds-border-subtle); vertical-align:top}
+  table.ref th{background:var(--mds-bg-surface-subtle); font-weight:var(--mds-font-weight-semibold)}
+  table.ref tr:last-child td{border-bottom:0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+       background:var(--mds-bg-surface-subtle); padding:1px 4px; border-radius:3px}
+</style>
+</head>
+<body class="annotations-on" data-variant="centered" data-viewport="desktop" data-idp="on"
+      data-showform="on" data-guest="off" data-error="off" data-maintenance="off"
+      data-instructions="off" data-longinstr="off" data-recaptcha="off" data-bgimage="on"
+      data-signup="off" data-magic="off">
+
+<div class="stage">
+
+  <!-- ==================================================================
+       core/login_layout.mustache — <aside class="login-layout-left"> +
+       <div id="region-main" class="login-layout-right">
+       ================================================================== -->
+  <div class="login-shell v-split">
+
+    <!-- ---------- LEFT PANEL ---------- -->
+    <aside class="panel-left">
+
+      <!-- CURRENT: core/login_panel.mustache inside the translucent card -->
+      <div class="cur-left-inner v-current">
+        <div class="cur-left-content">
+          <div class="no-instructions">
+            <h2>Welcome to Moodle</h2>
+            <p>Your learning journey starts here. Access courses, connect with peers, and achieve your goals.</p>
+            <p>You're part of a global learning community</p>
+            <div class="cur-stats">
+              <div class="cur-stat"><strong>500M</strong><span>users</span></div>
+              <div class="cur-stat"><strong>150K</strong><span>sites</span></div>
+              <div class="cur-stat"><strong>200+</strong><span>countries</span></div>
+            </div>
+          </div>
+          <!-- shown as-is: today auth_instructions replaces this card and the card
+               has no bound, so a page of text grows it until the panel clips it -->
+          <div class="needs-instructions" style="text-align:left">
+            <p style="margin:0 0 .5rem"><strong>Staff and students of Riverside College</strong></p>
+            <p style="margin:0 0 .5rem">Use your college account to log in. Your username is your staff or student number, not your email address.</p>
+            <p style="margin:0 0 .5rem"><strong>First time here?</strong> Your account is created automatically once enrolment is confirmed by the registry. This can take up to two working days after you accept your offer. If you have accepted and still cannot log in after that, contact the IT service desk rather than creating a second account.</p>
+            <p style="margin:0 0 .5rem"><strong>Forgotten your password?</strong> Use the reset link on this page. The reset email goes to your college address only — personal addresses are not held on the account, for security reasons.</p>
+            <p style="margin:0 0 .5rem"><strong>Multi-factor authentication</strong> is required for all staff and for students on placement. You will be asked to confirm a code the first time you log in from a new device. Register a second device before you travel; codes cannot be issued by phone.</p>
+            <p style="margin:0 0 .5rem"><strong>Guest and visitor access:</strong> visiting academics should use the sponsor request form rather than this page. Conference and short-course attendees are issued temporary accounts by their course administrator.</p>
+            <p style="margin:0">IT service desk: ext. 4400, or servicedesk@riverside.example.edu, 08:00–18:00 Monday to Friday. Out of hours, log a ticket in the portal and it will be picked up the next working morning.</p>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ---------- RIGHT PANEL ---------- -->
+    <div class="panel-right">
+
+      <!-- ================= CURRENT 5.3 ================= -->
+      <div class="cur-right-inner v-current">
+
+        <div class="cur-alert cur-alert-warning needs-maintenance">
+          This site is undergoing scheduled maintenance until 06:00 UTC.
+        </div>
+        <div class="cur-alert cur-alert-danger needs-error" role="alert">
+          <strong style="display:block; margin-bottom:.25rem">Unable to log in</strong>
+          Your login info may be incorrect. Please try again.
+        </div>
+
+        <h2>Welcome back</h2>
+        <p class="cur-sub">Log in to Local Moodle</p>
+
+        <div class="needs-form">
+          <div class="cur-field">
+            <label for="cur-username">Username or email</label>
+            <input class="cur-input" id="cur-username" type="text" placeholder="Enter your username or email" value="admin">
+          </div>
+          <div class="cur-field">
+            <label for="cur-password">Password</label>
+            <div class="cur-toggle-group">
+              <input class="cur-input" id="cur-password" type="password" placeholder="Enter your password">
+              <button class="cur-toggle-btn" type="button" aria-label="Show password"><i class="fa-regular fa-eye-slash" aria-hidden="true"></i></button>
+            </div>
+          </div>
+          <div class="cur-forgot"><a href="#">Forgot password?</a></div>
+          <div class="cur-recaptcha needs-recaptcha"><span class="box"></span> I'm not a robot <span style="margin-left:auto; color:var(--mds-text-muted)">reCAPTCHA</span></div>
+          <div style="margin-bottom:var(--mds-spacing-md)">
+            <button class="cur-btn-primary" type="button">Log in</button>
+          </div>
+        </div>
+
+        <div class="cur-signup needs-signup no-instructions">
+          <span style="color:var(--mds-text-muted)">Don't have an account?</span> <a href="#">Sign up</a>
+        </div>
+        <div class="cur-signup needs-signup needs-instructions"><a href="#">Sign up</a></div>
+
+        <div class="cur-separator needs-idp">OR</div>
+        <div class="cur-separator no-idp needs-guest">OR</div>
+
+        <div class="needs-idp">
+          <a class="cur-idp" href="#"><i class="fa-brands fa-google" aria-hidden="true"></i> Log in with Google</a>
+          <a class="cur-idp" href="#"><i class="fa-brands fa-microsoft" aria-hidden="true"></i> Log in with Microsoft</a>
+          <a class="cur-idp" href="#"><i class="fa-brands fa-apple" aria-hidden="true"></i> Log in with Apple</a>
+        </div>
+
+        <div class="needs-guest" style="margin-bottom:var(--mds-spacing-lg)">
+          <button class="cur-idp" type="button"><i class="fa fa-user" aria-hidden="true"></i> Log in as guest</button>
+        </div>
+
+        <div class="cur-lang">
+          <button type="button">English (en) <i class="fa-solid fa-caret-down" aria-hidden="true"></i></button>
+        </div>
+        <div class="cur-cookies"><button type="button">Cookies notice</button></div>
+      </div>
+
+    </div><!-- /panel-right -->
+  </div><!-- /login-shell -->
+
+  <!-- ==================================================================
+       VARIANT C — centred single column. Same core/loginform pieces,
+       but core/login_layout collapses to one region: no <aside>, no image.
+       ================================================================== -->
+  <div class="cen-page v-centered">
+
+    <div class="cen-topbar">
+      <div class="pro-logo">
+        <img src="/pix/moodlelogo.svg" alt="Local Moodle"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+        <span class="fallback" style="display:none">Local Moodle</span>
+      </div>
+      <button class="pro-langbtn" type="button">
+        <i class="fa-solid fa-globe" aria-hidden="true"></i> English (en)
+        <i class="fa-solid fa-chevron-down" style="font-size:10px" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="cen-main">
+      <div class="cen-card" data-magic-scope>
+       <div class="magic-hide">
+
+        <div class="pro-alert pro-alert-warning needs-maintenance">
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+          <span>This site is undergoing scheduled maintenance until 06:00 UTC.</span>
+        </div>
+
+        <div class="pro-alert pro-alert-danger needs-error" role="alert">
+          <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+          <span><strong>Unable to log in</strong>Your login info may be incorrect. Please try again.</span>
+        </div>
+
+        <span class="cen-welcome">Welcome to Moodle</span>
+        <h2>Welcome back</h2>
+        <p class="pro-sub">Log in to Local Moodle</p>
+
+        <!-- centred takes SHORT instructions only: there is no panel to hold more,
+             and pushing the fields down the page is the thing to avoid -->
+        <div class="instr-inline needs-instructions no-longinstr" contenteditable="true" spellcheck="false"
+             role="textbox" aria-multiline="true" aria-label="Site login instructions">
+          <p><strong>Staff and students of Riverside College</strong><br>
+          Use your college account to log in. Contact the IT service desk on ext. 4400 if you cannot get in.</p>
+        </div>
+        <p class="edit-hint needs-instructions no-longinstr"><i class="fa-solid fa-pen" aria-hidden="true"></i> Editable — keep it short here; the long version renders below the box</p>
+
+        <div class="pro-credentials needs-form">
+          <div class="pro-field pro-field-invalid">
+            <div class="pro-label-row">
+              <label for="cen-username">Username or email</label>
+            </div>
+            <div class="pro-control">
+              <input id="cen-username" type="text" autocomplete="username"
+                     placeholder="Enter your username or email" value="admin">
+            </div>
+          </div>
+
+          <div class="pro-field pro-field-invalid">
+            <div class="pro-label-row">
+              <label for="cen-password">Password</label>
+              <a href="#">Forgot password?</a>
+            </div>
+            <div class="pro-control has-toggle">
+              <input id="cen-password" type="password" autocomplete="current-password" placeholder="Enter your password">
+              <button class="pro-toggle" type="button" data-toggle-password aria-label="Show password">
+                <i class="fa-regular fa-eye-slash" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="pro-recaptcha needs-recaptcha">
+            <span class="box"></span> I'm not a robot
+            <span style="margin-left:auto; color:var(--mds-text-muted)">reCAPTCHA</span>
+          </div>
+
+          <button class="pro-submit" type="button">Log in</button>
+
+          <button class="pro-magic needs-magic" type="button" data-magic-send>
+            <i class="fa-regular fa-envelope" aria-hidden="true"></i> Email me a login link
+          </button>
+        </div>
+
+        <div class="needs-idp">
+          <div class="pro-separator needs-form">OR</div>
+          <div class="pro-idp-list">
+            <a class="pro-idp" href="#"><span class="brand g"><i class="fa-brands fa-google" aria-hidden="true"></i></span> Log in with Google</a>
+            <a class="pro-idp" href="#"><span class="brand ms"><i class="fa-brands fa-microsoft" aria-hidden="true"></i></span> Log in with Microsoft</a>
+            <a class="pro-idp" href="#"><span class="brand ap"><i class="fa-brands fa-apple" aria-hidden="true"></i></span> Log in with Apple</a>
+          </div>
+        </div>
+
+        <p class="pro-signup needs-signup"><span>Don't have an account?</span> <a href="#">Sign up</a></p>
+
+        <p class="pro-sso-note needs-noform">
+          Your site administrator has turned off username and password login.
+        </p>
+
+        <div class="pro-guest needs-guest">
+          <button type="button"><i class="fa-solid fa-user" aria-hidden="true"></i> Log in as guest</button>
+        </div>
+       </div><!-- /.magic-hide -->
+
+       <!-- NET-NEW: emailed one-time login link, sent state -->
+       <div class="magic-sent">
+         <div class="icon"><i class="fa-regular fa-paper-plane" aria-hidden="true"></i></div>
+         <h3>Check your email</h3>
+         <p>If an account matches <strong>admin</strong>, we've sent a link that logs you straight in. No password needed.</p>
+         <span class="expiry"><i class="fa-regular fa-clock" aria-hidden="true"></i> The link expires in 30 minutes</span>
+         <div><button class="magic-back" type="button" data-magic-back>Use a password instead</button></div>
+       </div>
+      </div><!-- /.cen-card -->
+
+      <!-- long auth_instructions: outside the login box, below it -->
+      <section class="cen-long needs-instructions needs-longinstr">
+        <h3>Login help</h3>
+        <div class="cen-long-body" contenteditable="true" spellcheck="false"
+             role="textbox" aria-multiline="true" aria-label="Site login instructions">
+          <p>Use your college account to log in. Your username is your staff or student number, not your email address.</p>
+          <p><strong>First time here?</strong> Your account is created automatically once enrolment is confirmed by the registry. This can take up to two working days after you accept your offer. If you have accepted and still cannot log in after that, contact the IT service desk rather than creating a second account.</p>
+          <p><strong>Forgotten your password?</strong> Use the reset link on this page. The reset email goes to your college address only — personal addresses are not held on the account, for security reasons.</p>
+          <p><strong>Multi-factor authentication</strong> is required for all staff and for students on placement. You will be asked to confirm a code the first time you log in from a new device. Register a second device before you travel; codes cannot be issued by phone.</p>
+          <p><strong>Guest and visitor access:</strong> visiting academics should use the sponsor request form rather than this page. Conference and short-course attendees are issued temporary accounts by their course administrator.</p>
+          <p>IT service desk: ext. 4400, or servicedesk@riverside.example.edu, 08:00–18:00 Monday to Friday. Out of hours, log a ticket in the portal and it will be picked up the next working morning.</p>
+        </div>
+        <p class="edit-hint"><i class="fa-solid fa-pen" aria-hidden="true"></i> Editable in this prototype — type or paste your own site's instructions</p>
+      </section>
+    </div>
+
+    <div class="cen-footer">
+      <button type="button">Cookies notice</button>
+      <span class="dot"></span>
+      <span>Moodle 5.3</span>
+    </div>
+  </div><!-- /cen-page -->
+</div><!-- /stage -->
+
+<!-- ===== dev state switcher (throwaway) ===== -->
+<div class="devswitch" id="devSwitch">
+  <div class="dev-head">
+    <i class="fa-solid fa-flask dev-flask"></i>
+    <span class="dev-name" id="devName">Prototype state</span>
+    <button class="dev-toggle" id="devToggle" aria-expanded="true" aria-controls="devBody"
+            title="Minimise the state panel" aria-label="Minimise the state panel">
+      <i class="fa-solid fa-minus"></i>
+    </button>
+  </div>
+  <div class="dev-body" id="devBody">
+    <h5>Design</h5>
+    <div class="devrow" id="devVariant">
+      <button class="devbtn" data-variant="current">Current 5.3</button>
+      <button class="devbtn on" data-variant="centered">Centred</button>
+
+    </div>
+    <h5 style="margin-top:.5rem">Viewport</h5>
+    <div class="devrow" id="devViewport">
+      <button class="devbtn on" data-viewport="desktop">Desktop</button>
+      <button class="devbtn" data-viewport="mobile">Mobile</button>
+    </div>
+    <h5 style="margin-top:.5rem">Site configuration</h5>
+    <div class="devrow" id="devConfig">
+      <button class="devbtn on" data-flag="idp">OAuth2 providers</button>
+      <button class="devbtn" data-flag="showform-off">Hide login form</button>
+      <button class="devbtn" data-flag="guest">Guest login</button>
+      <button class="devbtn" data-flag="signup">Self registration</button>
+      <button class="devbtn" data-flag="instructions">Custom instructions</button>
+      <button class="devbtn" data-flag="longinstr">&hellip; long version</button>
+      <button class="devbtn on" data-flag="bgimage">Background image</button>
+      <button class="devbtn" data-flag="recaptcha">reCAPTCHA</button>
+    </div>
+    <h5 style="margin-top:.5rem">Net-new <span style="text-transform:none; letter-spacing:0">(no core equivalent)</span></h5>
+    <div class="devrow" id="devNew">
+      <button class="devbtn" data-flag="magic">Magic link</button>
+    </div>
+    <h5 style="margin-top:.5rem">State</h5>
+    <div class="devrow" id="devState">
+      <button class="devbtn" data-flag="error">Failed login</button>
+      <button class="devbtn" data-flag="maintenance">Maintenance</button>
+    </div>
+    <button class="dev-ref" id="refOpen" type="button">
+      <i class="fa-solid fa-code" aria-hidden="true"></i> Codebase grounding
+    </button>
+  </div><!-- /.dev-body -->
+</div>
+
+<!-- ===== annotations ===== -->
+<button class="anno-toggle" id="annoToggle" title="Show or hide the explainer annotations">
+  <i class="fa-solid fa-location-dot"></i> <span id="annoToggleLabel">Hide annotations</span>
+</button>
+<div class="anno-layer" id="annoLayer">
+
+  <!-- CURRENT 5.3 -->
+  <div class="anno-card" data-target=".cur-left-content" data-side="left">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">1</div>
+    <div class="anno-title"><i class="fa-solid fa-image"></i> A card floating on a photo</div>
+    <div class="anno-body">A 450px translucent box, centred, with <code>margin-bottom:5rem</code> — it lands over the subject of whatever image the site uploads. <code>login.scss:34-50</code></div>
+  </div>
+  <div class="anno-card" data-target=".panel-left" data-side="right">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">2</div>
+    <div class="anno-title"><i class="fa-regular fa-image"></i> Take the background away</div>
+    <div class="anno-body">Not possible today: <code>lib.php:58-89</code> always injects an image, falling back to a shipped AI-generated photo when <code>loginbackgroundimage</code> is unset. Off gives white on both sides and ink instead of knockout; on drops in a random landscape, standing in for the admin's upload.</div>
+  </div>
+  <div class="anno-card" data-target=".cur-lang" data-side="left">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">3</div>
+    <div class="anno-title"><i class="fa-solid fa-globe"></i> Language menu marooned</div>
+    <div class="anno-body">It sits below the guest button with <code>my-5</code> above and below, pushing the cookies notice off short viewports. <code>loginform.mustache:188-192</code></div>
+  </div>
+  <div class="anno-card" data-target=".cur-right-inner .needs-guest .cur-idp" data-side="left">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">4</div>
+    <div class="anno-title"><i class="fa-solid fa-user"></i> Guest looks like a provider</div>
+    <div class="anno-body">It uses the same <code>.login-identityprovider-btn</code> class as the OAuth2 buttons above it, so it reads as a fourth way to sign in. <code>loginform.mustache:180-187</code></div>
+  </div>
+  <div class="anno-card" data-target=".cur-left-content .needs-instructions" data-side="left">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">5</div>
+    <div class="anno-title"><i class="fa-solid fa-scissors"></i> Instructions have one home</div>
+    <div class="anno-body">They replace the welcome panel entirely (<code>layout/login.php:31</code>), in a panel that is <code>sticky</code> at exactly <code>100vh</code> (<code>login.scss:22-32</code>) — so anything past the fold cannot be scrolled to. Below 992px the panel is <code>d-none</code> and it is rendered a second time inside the form.</div>
+  </div>
+
+  <!-- CENTRED -->
+  <div class="anno-card" data-target=".cen-card h2" data-side="right">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">6</div>
+    <div class="anno-title"><i class="fa-solid fa-crop-simple"></i> One column, no image</div>
+    <div class="anno-body">A card on white; the site's own logo is the only branding, so nothing depends on a photo. Credentials lead, third-party sits below the divider — the order Moodle already ships.</div>
+  </div>
+  <div class="anno-card" data-target=".cen-topbar" data-side="bottom">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">7</div>
+    <div class="anno-title"><i class="fa-solid fa-grip-lines"></i> Logo and language, top rail</div>
+    <div class="anno-body">Both are pulled out of the form's vertical flow. The logo stops competing with "Welcome back", and the language menu is where people look for it rather than adrift below the guest button.</div>
+  </div>
+  <div class="anno-card" data-target=".cen-card .instr-inline" data-side="right">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">8</div>
+    <div class="anno-title"><i class="fa-solid fa-align-left"></i> Short instructions, in the box</div>
+    <div class="anno-body">A brief note sits above the fields, where it is read before anyone types. It has to stay brief: every line here pushes the login controls further down.</div>
+  </div>
+  <div class="anno-card" data-target=".cen-long h3" data-side="right">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">9</div>
+    <div class="anno-title"><i class="fa-solid fa-arrow-down-long"></i> Long instructions, below the box</div>
+    <div class="anno-body"><code>auth_instructions</code> has no length limit, so the long version goes outside the login box entirely. The controls keep their position on the page however much a site writes, and the copy simply flows below. Editable: type into it.</div>
+  </div>
+  <div class="anno-card" data-target=".cen-card .pro-idp-list" data-side="left">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">10</div>
+    <div class="anno-title"><i class="fa-solid fa-scale-unbalanced"></i> What it gives up</div>
+    <div class="anno-body">No panel means no home for the welcome copy or the 500M / 150K / 200+ stats (<code>login_panel.mustache:31-51</code>). If those strings are load-bearing for the marketing site, this design drops them.</div>
+  </div>
+  <div class="anno-card" data-target=".pro-magic" data-side="left">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">M</div>
+    <div class="anno-title"><i class="fa-regular fa-envelope"></i> Magic link — net-new</div>
+    <div class="anno-body">Moodle has no passwordless login today. The plumbing does exist: <code>user_password_resets</code> already stores a 32-char token with an expiry (<code>pwresettime</code>, 30 min) and emails a one-time URL. <code>login/lib.php:84</code></div>
+  </div>
+  <div class="anno-card" data-target=".magic-sent .expiry" data-side="right">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">M</div>
+    <div class="anno-title"><i class="fa-regular fa-paper-plane"></i> Sent state</div>
+    <div class="anno-body">Worded so it does not confirm whether the account exists — the same discretion <code>core_login_process_password_reset()</code> uses. Expiry is stated up front rather than discovered when the link fails.</div>
+  </div>
+
+  <!-- the panel itself -->
+  <div class="anno-card" data-target=".devswitch" data-side="top">
+    <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+    <div class="anno-badge">12</div>
+    <div class="anno-title"><i class="fa-solid fa-flask"></i> Prototype state switcher</div>
+    <div class="anno-body">Demo-only. Every toggle maps to a real setting — open <strong>Codebase grounding</strong> for the mapping. Use the &minus; to minimise it; click the chip to bring it back.</div>
+  </div>
+</div>
+
+<!-- ===== codebase grounding sheet ===== -->
+<div class="ref-backdrop" id="refBackdrop"></div>
+<aside class="ref-sheet" id="refSheet" aria-label="Codebase grounding">
+  <button class="ref-close" id="refClose" aria-label="Close">&times;</button>
+  <h2>Codebase grounding</h2>
+  <p>Every toggle in the State panel maps to a real setting. Nothing in this prototype is invented.</p>
+
+  <table class="ref">
+    <thead><tr><th>Setting</th><th>Renderable flag</th><th>Effect</th><th>Defined in</th></tr></thead>
+    <tbody>
+      <tr><td>OAuth2 / other auth plugins</td><td><code>hasidentityproviders</code></td><td>One "Log in with X" button per provider, plus the OR separator.</td><td><code>auth/classes/output/login.php:131</code>, <code>lib/authlib.php:732-769</code></td></tr>
+      <tr><td><code>showloginform</code></td><td><code>showloginform</code></td><td>Hides the credential form entirely — SSO-only sites.</td><td><code>admin/settings/login.php:75-80</code></td></tr>
+      <tr><td><code>guestloginbutton</code></td><td><code>canloginasguest</code></td><td>Second POST form submitting guest/guest, with its own separator when there are no providers.</td><td><code>admin/settings/login.php:58-64</code></td></tr>
+      <tr><td><code>authloginviaemail</code></td><td><code>canloginbyemail</code></td><td>Switches the first field between "Username" and "Username or email".</td><td><code>admin/settings/login.php:42-47</code></td></tr>
+      <tr><td><code>auth_instructions</code></td><td><code>instructions</code>, <code>hasauthinstructions</code>, <code>leftinstructions</code></td><td>Today: replaces the whole left panel, and is repeated above the sign-up link on small screens. Centred: short copy inline in the box, long copy below it.</td><td><code>admin/settings/login.php:92-97</code>, <code>theme/boost/layout/login.php:31</code></td></tr>
+      <tr><td><code>registerauth</code> (self registration)</td><td><code>cansignup</code>, <code>signupurl</code></td><td><strong>Empty by default</strong>, so a stock site shows no "Sign up" at all — the prototype defaults to off to match. Set it and the link appears, and the default instructions become "Don't have an account?".</td><td><code>adminlib.php:6592-6613</code> (default <code>''</code>), <code>auth/classes/output/login.php:101,118-120</code></td></tr>
+      <tr><td><code>enableloginrecaptcha</code></td><td><code>recaptcha</code></td><td>reCAPTCHA v2 challenge above the submit button.</td><td><code>admin/settings/login.php:100-139</code></td></tr>
+      <tr><td><code>loginpasswordtoggle</code></td><td><code>togglepassword</code>, <code>smallscreensonly</code></td><td>Wraps the password input in the toggle-sensitive group (always, or small screens only).</td><td><code>admin/settings/login.php:141-152</code></td></tr>
+      <tr><td><code>loginpageautofocus</code></td><td><code>autofocusform</code></td><td>Focuses username on load — suppressed when an error shows, because focus moves there instead.</td><td><code>loginform.mustache:202-241</code></td></tr>
+      <tr><td><code>maintenance_enabled</code></td><td><code>maintenance</code></td><td>Alert above the heading; falls back to the <code>sitemaintenance</code> string.</td><td><code>auth/classes/output/login.php:122-128</code></td></tr>
+      <tr><td>Theme <code>loginbackgroundimage</code></td><td>—</td><td>Left-panel background. Unset ships <code>pix/login_background.jpg</code> + an "AI-generated image" watermark.</td><td><code>theme/boost/lib.php:58-89</code></td></tr>
+      <tr><td>Site logo</td><td><code>logourl</code>, <code>sitename</code></td><td>Renders above "Welcome back" today; the centred design moves it to the top rail.</td><td><code>theme/boost/classes/output/core_renderer.php:296-306</code></td></tr>
+      <tr><td>Failed login</td><td><code>errortitle</code>, <code>error</code></td><td>AUTH_LOGIN_FAILED gives a bold "Unable to log in" over the detail line.</td><td><code>auth/classes/output/login.php:153-160</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Net-new: magic link</h3>
+  <p>
+    The one thing in this prototype with no core equivalent. Moodle has no passwordless
+    login: <code>login/token.php</code> is web-service tokens, and <code>auth/email</code>
+    only confirms a new account. The nearest existing mechanic is the forgot-password flow,
+    and it is the right shape to build on — <code>user_password_resets</code> stores a
+    32-character token per user with <code>timerequested</code>, expiry comes from
+    <code>$CFG->pwresettime</code> (1800s), and <code>core_login_process_password_reset()</code>
+    (<code>login/lib.php:84</code>) already emails a one-time URL and deliberately does not
+    reveal whether the account exists. A login link is the same three parts with a different
+    landing page. Anything real would still have to answer: does it bypass MFA
+    (<code>tool_mfa</code>), and is it offered per auth plugin or site-wide?
+  </p>
+
+  <h3>Where the instructions go</h3>
+  <p>
+    <code>auth_instructions</code> is an <code>admin_setting_confightmleditor</code> with no
+    length limit (<code>admin/settings/login.php:92-97</code>), and it is one of the first things
+    a site fills in. Today it <em>replaces</em> the welcome panel
+    (<code>theme/boost/layout/login.php:31</code> → <code>login_panel.mustache:52-56</code>),
+    vertically centred inside a panel that is <code>sticky</code> at exactly <code>100vh</code>
+    (<code>login.scss:22-32</code>) — so anything past the fold cannot be scrolled to. Because
+    that panel is <code>d-none</code> below 992px, the same content is rendered a second time
+    inside the form for small screens (<code>loginform.mustache:133-137</code>).
+  </p>
+  <p>
+    The centred design splits it by length instead of by breakpoint. A short note sits inline
+    above the fields, where it is read before anyone types. The long version goes outside the
+    login box, below it: the box keeps its position on the page however much a site writes, and
+    the copy flows underneath at the same width — no panel to outgrow, no bound, no second copy
+    for mobile. Both regions are <code>contenteditable</code> here, so paste your own site's text
+    in and see where it lands.
+  </p>
+
+  <h3>Removing the background image</h3>
+  <p>
+    An option on today's design, and a proposal rather than a setting.
+    <code>theme_boost_get_extra_scss()</code> (<code>lib.php:58-89</code>) always injects a
+    background image for <code>.login-layout-left</code>: the admin's
+    <code>loginbackgroundimage</code> if one is set, otherwise the shipped
+    <code>pix/login_background.jpg</code> plus an "AI-generated image" watermark. There is no way
+    for a site to say "no image".
+  </p>
+  <p>
+    With it off, the panel is white and the translucent copy box goes with it — that box only
+    exists to lift white text off a photo, so without the photo it is just a grey rectangle over
+    nothing. The copy becomes ink and the layout is otherwise untouched. With it on, the
+    prototype drops in one of five inline-SVG landscapes at random, standing in for the admin's
+    upload; switching the option back on picks another. That variety is the point — the panel has
+    to hold up against an image nobody on the Moodle side chose.
+  </p>
+
+  <h3>Same shell, other pages</h3>
+  <p>
+    <code>pagelayout = login</code> is not just this page: sign-up, forgot password, digital minor,
+    age/location verification and MFA all render in the same shell
+    (<code>login/signup.php:103</code>, <code>login/forgot_password.php:51</code>,
+    <code>login/digital_minor.php:54</code>, <code>login/verify_age_location.php:57</code>,
+    <code>admin/tool/mfa/auth.php:38</code>). Anything changed in <code>core/login_layout</code>
+    or <code>core/login_panel</code> changes all of them — signup is a real <code>moodleform</code>
+    with a dozen fields, which is worth holding in mind when choosing between the two shells.
+  </p>
+
+  <h3>Templates this prototype re-creates</h3>
+  <p>
+    <code>theme/boost/templates/core/login_layout.mustache</code> ·
+    <code>core/login_panel.mustache</code> ·
+    <code>core/loginform.mustache</code> ·
+    <code>theme/boost/scss/moodle/login.scss</code> ·
+    <code>theme/boost/layout/login.php</code>. Strings are verbatim from
+    <code>lang/en/moodle.php:1242-1272</code>.
+  </p>
+</aside>
+
+<script>
+(function(){
+  var body = document.body;
+
+  /* ============================================================
+     PANEL IMAGE
+     A stand-in for whatever the admin uploads to loginbackgroundimage.
+     Five landscapes, drawn as inline SVG so the file stays self-contained,
+     one picked at random each time the image option is switched on — the
+     point being that the layout has to hold up against an image nobody on
+     the Moodle side chose.
+     ============================================================ */
+  var PANEL_SCENES = [
+    // dusk over a mountain range
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 1200' preserveAspectRatio='xMidYMid slice'>" +
+      "<defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'>" +
+      "<stop offset='0' stop-color='#0d2a4d'/><stop offset='.5' stop-color='#5b4a72'/><stop offset='1' stop-color='#e98a4e'/>" +
+      "</linearGradient></defs><rect width='800' height='1200' fill='url(#g)'/>" +
+      "<circle cx='520' cy='700' r='78' fill='#ffd39b' opacity='.95'/>" +
+      "<path d='M0 770 L150 615 L285 755 L420 620 L560 785 L680 705 L800 800 L800 1200 L0 1200Z' fill='#20395c' opacity='.92'/>" +
+      "<path d='M0 890 L170 785 L330 905 L500 815 L650 925 L800 865 L800 1200 L0 1200Z' fill='#152a45'/>" +
+      "<path d='M0 1005 L200 945 L420 1035 L640 965 L800 1025 L800 1200 L0 1200Z' fill='#0d1c30'/></svg>",
+
+    // morning over rolling hills
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 1200' preserveAspectRatio='xMidYMid slice'>" +
+      "<defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'>" +
+      "<stop offset='0' stop-color='#9fc9e8'/><stop offset='.6' stop-color='#dcecf6'/><stop offset='1' stop-color='#fbeed2'/>" +
+      "</linearGradient></defs><rect width='800' height='1200' fill='url(#g)'/>" +
+      "<circle cx='250' cy='330' r='54' fill='#fff3d0'/>" +
+      "<path d='M0 820 Q200 700 400 800 T800 760 L800 1200 L0 1200Z' fill='#8fb87a' opacity='.85'/>" +
+      "<path d='M0 930 Q220 840 430 920 T800 890 L800 1200 L0 1200Z' fill='#5f9257'/>" +
+      "<path d='M0 1050 Q240 980 480 1050 T800 1030 L800 1200 L0 1200Z' fill='#3d6b3c'/></svg>",
+
+    // coastline
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 1200' preserveAspectRatio='xMidYMid slice'>" +
+      "<defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'>" +
+      "<stop offset='0' stop-color='#123a52'/><stop offset='.45' stop-color='#3d8fa8'/><stop offset='1' stop-color='#f3c48a'/>" +
+      "</linearGradient>" +
+      "<linearGradient id='s' x1='0' y1='0' x2='0' y2='1'>" +
+      "<stop offset='0' stop-color='#1c5a72'/><stop offset='1' stop-color='#0e3244'/></linearGradient></defs>" +
+      "<rect width='800' height='1200' fill='url(#g)'/>" +
+      "<circle cx='600' cy='640' r='60' fill='#ffe3b0' opacity='.9'/>" +
+      "<rect y='720' width='800' height='480' fill='url(#s)'/>" +
+      "<path d='M0 720 L120 600 L250 720Z' fill='#0f2f42'/>" +
+      "<path d='M420 720 L560 560 L720 720Z' fill='#0c2635'/>" +
+      "<path d='M0 1010 Q200 970 400 1010 T800 1010 L800 1200 L0 1200Z' fill='#e8cfa4'/></svg>",
+
+    // misty forest ridges
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 1200' preserveAspectRatio='xMidYMid slice'>" +
+      "<defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'>" +
+      "<stop offset='0' stop-color='#cfdfe0'/><stop offset='1' stop-color='#6d8f86'/>" +
+      "</linearGradient></defs><rect width='800' height='1200' fill='url(#g)'/>" +
+      "<path d='M0 760 L90 690 L160 760 L250 680 L340 770 L430 700 L520 780 L620 700 L720 780 L800 730 L800 1200 L0 1200Z' fill='#5b7d74' opacity='.75'/>" +
+      "<path d='M0 890 L100 810 L190 890 L290 800 L390 900 L500 820 L610 900 L720 830 L800 890 L800 1200 L0 1200Z' fill='#3f6159' opacity='.9'/>" +
+      "<path d='M0 1020 L120 940 L240 1030 L370 950 L500 1040 L640 960 L800 1030 L800 1200 L0 1200Z' fill='#26443e'/></svg>",
+
+    // desert dunes
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 1200' preserveAspectRatio='xMidYMid slice'>" +
+      "<defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'>" +
+      "<stop offset='0' stop-color='#f6c98f'/><stop offset='.5' stop-color='#e9a06a'/><stop offset='1' stop-color='#b96f4c'/>" +
+      "</linearGradient></defs><rect width='800' height='1200' fill='url(#g)'/>" +
+      "<circle cx='300' cy='420' r='66' fill='#fff0cf' opacity='.9'/>" +
+      "<path d='M0 800 Q220 720 420 810 T800 780 L800 1200 L0 1200Z' fill='#d98f5f'/>" +
+      "<path d='M0 930 Q260 850 500 940 T800 920 L800 1200 L0 1200Z' fill='#b96f4c'/>" +
+      "<path d='M0 1060 Q240 1000 470 1070 T800 1050 L800 1200 L0 1200Z' fill='#8f5238'/></svg>"
+  ];
+
+  function pickPanelPhoto(){
+    var svg = PANEL_SCENES[Math.floor(Math.random() * PANEL_SCENES.length)];
+    document.documentElement.style.setProperty(
+      "--panel-photo",
+      'url("data:image/svg+xml;utf8,' + encodeURIComponent(svg) + '")'
+    );
+  }
+
+  /* ============================================================
+     STATE PANEL
+     ============================================================ */
+  var VARIANT_LABEL = { current: "Current 5.3", centered: "Centred" };
+
+  document.getElementById("devVariant").addEventListener("click", function(e){
+    var b = e.target.closest(".devbtn"); if(!b) return;
+    body.dataset.variant = b.dataset.variant;
+    this.querySelectorAll(".devbtn").forEach(function(x){ x.classList.toggle("on", x === b); });
+    syncDeps();
+    updateDevName();
+    setTimeout(updateAnnotations, 30);
+  });
+
+  document.getElementById("devViewport").addEventListener("click", function(e){
+    var b = e.target.closest(".devbtn"); if(!b) return;
+    body.dataset.viewport = b.dataset.viewport;
+    this.querySelectorAll(".devbtn").forEach(function(x){ x.classList.toggle("on", x === b); });
+    setTimeout(updateAnnotations, 30);
+  });
+
+  // keep the button and the body attribute in step, whoever asked for the change
+  function setFlag(flag, on){
+    var btn = document.querySelector('.devbtn[data-flag="' + flag + '"]');
+    if(btn) btn.classList.toggle("on", on);
+    body.dataset[flag] = on ? "on" : "off";
+  }
+
+  function toggleFlag(e){
+    var b = e.target.closest(".devbtn"); if(!b || b.disabled) return;
+    var flag = b.dataset.flag, on = !b.classList.contains("on");
+    b.classList.toggle("on", on);
+    if(flag === "showform-off"){
+      body.dataset.showform = on ? "off" : "on";
+      if(on){
+        setFlag("idp", true);        // nothing left to log in with otherwise
+        setFlag("recaptcha", false); // both live inside the credential form
+        setFlag("magic", false);
+      }
+    } else {
+      setFlag(flag, on);
+      // a different landscape each time it comes back on
+      if(flag === "bgimage" && on) pickPanelPhoto();
+      if(flag === "instructions" && !on) setFlag("longinstr", false);
+    }
+    syncDeps();
+    setTimeout(updateAnnotations, 30);
+  }
+
+  /* Settings that cannot hold at the same time are locked rather than left to
+     produce a state the real page could never render. */
+  function syncDeps(){
+    var noform = body.dataset.showform === "off";
+    var variant = body.dataset.variant;
+    function lock(flag, locked, why){
+      var btn = document.querySelector('.devbtn[data-flag="' + flag + '"]');
+      if(!btn) return;
+      btn.disabled = locked;
+      btn.title = locked ? why : "";
+    }
+    lock("idp", noform, "With the login form hidden, providers are the only way in");
+    lock("recaptcha", noform, "reCAPTCHA sits inside the login form");
+    lock("magic", noform, "The login link needs the username field");
+
+    // The image lives on the panel, so it only means anything on today's design.
+    lock("bgimage", variant !== "current", "The centred layout has no panel to put an image on");
+    // The long version is a size of auth_instructions, not a separate setting,
+    // and it only has somewhere to go in the centred layout.
+    lock("longinstr",
+      body.dataset.instructions !== "on" || variant !== "centered",
+      variant !== "centered"
+        ? "Today's design has nowhere below the box to put them"
+        : "Turn on Custom instructions first");
+  }
+  document.getElementById("devConfig").addEventListener("click", toggleFlag);
+  document.getElementById("devState").addEventListener("click", toggleFlag);
+  document.getElementById("devNew").addEventListener("click", toggleFlag);
+
+  /* minimise / restore — the panel floats over the page, so it has to be
+     possible to get it out of the way without losing it */
+  var devSwitchEl = document.getElementById("devSwitch");
+  var devToggle = document.getElementById("devToggle");
+  var devName = document.getElementById("devName");
+  var devMinimised = false;
+
+  function setDevMin(min){
+    devMinimised = min;
+    devSwitchEl.classList.toggle("min", min);
+    devToggle.querySelector("i").className = min
+      ? "fa-solid fa-up-right-and-down-left-from-center"
+      : "fa-solid fa-minus";
+    var label = min ? "Restore the state panel" : "Minimise the state panel";
+    devToggle.setAttribute("aria-expanded", min ? "false" : "true");
+    devToggle.setAttribute("aria-label", label);
+    devToggle.title = label;
+    devSwitchEl.setAttribute("aria-label", min ? "Prototype state panel, minimised" : "Prototype state panel");
+    updateDevName();
+    setTimeout(updateAnnotations, 30);
+  }
+  // minimised, the chip still says which design you left it on
+  function updateDevName(){
+    devName.textContent = devMinimised
+      ? ("Design: " + (VARIANT_LABEL[body.dataset.variant] || ""))
+      : "Prototype state";
+  }
+  devToggle.addEventListener("click", function(e){ e.stopPropagation(); setDevMin(!devMinimised); });
+  devSwitchEl.addEventListener("click", function(e){
+    if(devMinimised && !e.target.closest(".dev-toggle")) setDevMin(false);
+  });
+
+  /* grounding sheet */
+  function setRef(on){ body.classList.toggle("ref-on", on); }
+  document.getElementById("refOpen").addEventListener("click", function(e){ e.stopPropagation(); setRef(true); });
+  document.getElementById("refClose").addEventListener("click", function(){ setRef(false); });
+  document.getElementById("refBackdrop").addEventListener("click", function(){ setRef(false); });
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape") setRef(false); });
+
+  /* ============================================================
+     ANNOTATIONS (ported from PROTOTYPE-course-settings)
+     ============================================================ */
+  var annoLayer = document.getElementById("annoLayer");
+  var annoToggle = document.getElementById("annoToggle");
+  var annoToggleLabel = document.getElementById("annoToggleLabel");
+  var annoCards = Array.prototype.slice.call(document.querySelectorAll(".anno-card"));
+  var annoOn = true;
+  var annoRings = annoCards.map(function(){
+    var r = document.createElement("div"); r.className = "anno-ring"; r.style.display = "none";
+    annoLayer.appendChild(r); return r;
+  });
+
+  function isElVisible(el){ return !!(el && (el.offsetWidth || el.offsetHeight || el.getClientRects().length)); }
+  function firstVisibleTarget(sel){
+    var els = document.querySelectorAll(sel);
+    for(var i=0;i<els.length;i++){ if(isElVisible(els[i])) return els[i]; }
+    return null;
+  }
+  function aliveCount(){ return annoCards.filter(function(c){ return c.dataset.dismissed !== "1"; }).length; }
+  function updateAnnoToggleLabel(){
+    annoToggleLabel.textContent = annoOn ? "Hide annotations" : ("Show annotations (" + aliveCount() + ")");
+  }
+
+  function updateAnnotations(){
+    if(!annoLayer) return;
+    var vw = window.innerWidth, vh = window.innerHeight;
+    // A zero-size window (offscreen render, print preview, embedded snapshot)
+    // would place every card at 8,8 and then cache that. Wait for a real one.
+    if(vw < 2 || vh < 2) return;
+    var placed = [];
+    annoCards.forEach(function(card, i){
+      var ring = annoRings[i];
+      if(!annoOn || card.dataset.dismissed === "1"){ card.style.display = "none"; ring.style.display = "none"; return; }
+      var target = firstVisibleTarget(card.dataset.target);
+      var tr = target && target.getBoundingClientRect();
+      var visible = tr && tr.width > 0 && tr.height > 0 && tr.bottom > 16 && tr.top < vh - 8 && tr.right > 0 && tr.left < vw;
+      if(!visible){ card.style.display = "none"; ring.style.display = "none"; return; }
+      card.style.display = "block"; ring.style.display = "block";
+      ring.style.left = (tr.left - 4) + "px"; ring.style.top = (tr.top - 4) + "px";
+      ring.style.width = (tr.width + 8) + "px"; ring.style.height = (tr.height + 8) + "px";
+      var cw = card.offsetWidth || 230, chh = card.offsetHeight || 90, side = card.dataset.side, cl, ct;
+      if(side === "right"){ cl = tr.right + 18; ct = tr.top - 6; }
+      else if(side === "top"){ cl = tr.left; ct = tr.top - chh - 18; }
+      else if(side === "bottom"){ cl = tr.left; ct = tr.bottom + 18; }
+      else { cl = tr.left - cw - 18; ct = tr.top - 6; }
+      cl = Math.max(8, Math.min(cl, vw - cw - 8));
+      ct = Math.max(16, Math.min(ct, vh - chh - 8));
+      card.style.left = cl + "px"; card.style.top = ct + "px";
+      placed.push({ card: card, l: cl, t: ct, w: cw, h: chh });
+    });
+    deoverlap(placed, vw, vh, obstacles());
+  }
+
+  /* Fixed chrome a card must not hide behind — nothing else would move it. */
+  function obstacles(){
+    return [".devswitch", ".anno-toggle"].map(function(sel){
+      var el = document.querySelector(sel);
+      if(!el || !isElVisible(el) || el.style.display === "none") return null;
+      var r = el.getBoundingClientRect();
+      return { l:r.left, t:r.top, w:r.width, h:r.height, fixed:true };
+    }).filter(Boolean);
+  }
+
+  /* Keep annotation cards off each other and off the fixed chrome.
+
+     The course-settings original nudges a card out along the shortest axis and
+     re-tests, which ping-pongs when a card is squeezed between two obstacles
+     closer together than the card is wide: the state panel and a neighbouring
+     card sit 15px apart here, so the card bounced 261 -> 276 -> 261 until it ran
+     out of passes and was left overlapping both. This scores candidate positions
+     instead — the preferred spot plus the four ways out of every settled box —
+     and takes the one with the least overlap area, tie-broken by distance from
+     where the card's data-side asked to be. Deterministic, and it cannot cycle. */
+  function deoverlap(placed, vw, vh, fixedBoxes){
+    placed.sort(function(a, b){ return a.t - b.t || a.l - b.l; });
+    var settled = (fixedBoxes || []).slice();
+    var gap = 10;
+
+    function overlapArea(l, t, w, h){
+      var total = 0;
+      for(var i = 0; i < settled.length; i++){
+        var o = settled[i];
+        var ox = Math.min(l + w, o.l + o.w) - Math.max(l, o.l);
+        var oy = Math.min(t + h, o.t + o.h) - Math.max(t, o.t);
+        if(ox > 0 && oy > 0) total += ox * oy;
+      }
+      return total;
+    }
+
+    placed.forEach(function(c){
+      var l0 = c.l, t0 = c.t;
+      var candidates = [{ l:l0, t:t0 }];
+      settled.forEach(function(o){
+        candidates.push({ l:l0, t:o.t + o.h + gap });   // below it
+        candidates.push({ l:l0, t:o.t - c.h - gap });   // above it
+        candidates.push({ l:o.l + o.w + gap, t:t0 });   // to its right
+        candidates.push({ l:o.l - c.w - gap, t:t0 });   // to its left
+      });
+
+      var best = null;
+      candidates.forEach(function(p){
+        var l = Math.max(8, Math.min(p.l, vw - c.w - 8));
+        var t = Math.max(8, Math.min(p.t, vh - c.h - 8));
+        var score = overlapArea(l, t, c.w, c.h);
+        var dist = Math.abs(l - l0) + Math.abs(t - t0);
+        if(!best || score < best.score - 0.5 || (Math.abs(score - best.score) <= 0.5 && dist < best.dist)){
+          best = { l:l, t:t, score:score, dist:dist };
+        }
+      });
+
+      c.l = best.l; c.t = best.t;
+      c.card.style.top = c.t + "px";
+      c.card.style.left = c.l + "px";
+      settled.push(c);
+    });
+  }
+
+  annoToggle.addEventListener("click", function(){
+    annoOn = !annoOn;
+    body.classList.toggle("annotations-on", annoOn);
+    if(annoOn && aliveCount() === 0){ annoCards.forEach(function(c){ c.dataset.dismissed = ""; }); }
+    updateAnnoToggleLabel(); updateAnnotations();
+  });
+  annoCards.forEach(function(card){
+    card.querySelector(".anno-close").addEventListener("click", function(){
+      card.dataset.dismissed = "1";
+      if(aliveCount() === 0){ annoOn = false; body.classList.remove("annotations-on"); }
+      updateAnnoToggleLabel(); updateAnnotations();
+    });
+  });
+  window.addEventListener("scroll", updateAnnotations, true);
+  window.addEventListener("resize", updateAnnotations);
+
+  /* ============================================================
+     PAGE BEHAVIOUR — password visibility, mirrors core/togglesensitive
+     ============================================================ */
+  document.querySelectorAll("[data-toggle-password], .cur-toggle-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var input = btn.closest(".pro-control, .cur-toggle-group").querySelector("input");
+      var showing = input.type === "text";
+      input.type = showing ? "password" : "text";
+      btn.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+      btn.querySelector("i").className = showing ? "fa-regular fa-eye-slash" : "fa-regular fa-eye";
+    });
+  });
+
+  /* magic link (net-new): send -> confirmation, and back again */
+  document.querySelectorAll("[data-magic-send]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      btn.closest("[data-magic-scope]").classList.add("magic-on");
+      setTimeout(updateAnnotations, 30);
+    });
+  });
+  document.querySelectorAll("[data-magic-back]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      btn.closest("[data-magic-scope]").classList.remove("magic-on");
+      setTimeout(updateAnnotations, 30);
+    });
+  });
+
+  /* the instructions region is editable in this prototype — typing changes the
+     page height, so the annotation cards have to follow it */
+  document.querySelectorAll("[contenteditable]").forEach(function(el){
+    el.addEventListener("input", function(){ setTimeout(updateAnnotations, 0); });
+  });
+
+  /* ---- init ---- */
+  pickPanelPhoto();
+  syncDeps();
+  updateDevName();
+  updateAnnoToggleLabel();
+  updateAnnotations();
+  window.addEventListener("load", updateAnnotations);
+  [60, 200, 600].forEach(function(ms){ setTimeout(updateAnnotations, ms); });
+  // web fonts and a late-sized window both change where the cards belong
+  if(window.ResizeObserver) new ResizeObserver(updateAnnotations).observe(document.documentElement);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(updateAnnotations);
+})();
+</script>
+</body>
+</html>

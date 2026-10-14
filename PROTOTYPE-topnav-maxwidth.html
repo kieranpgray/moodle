@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTOTYPE — Top navigation max width (MDL-89293)</title>
+
+<!--
+  THROWAWAY PROTOTYPE for MDL-89293 "Limit the maximum width of top navigation".
+
+  RULE OF THIS PROTOTYPE: everything below the top navigation is Moodle as it
+  behaves today. The only thing the controls change is how wide the top bar's
+  CONTENTS are allowed to be. That way the comparison is about one variable
+  and nothing else.
+
+  Everything below the bar is modelled on theme/boost as it stands:
+
+    $navbar-height            60px    variables.scss
+    $course-content-maxwidth  830px   variables.scss
+    $drawer-left-width        285px   drawer.scss
+    $drawer-right-width       315px   drawer.scss
+    $drawer-main-gap          calc(0.5rem + 20px) = 28px
+
+    #page.drawers            padding 0 3rem at md+ (gutters for the drawer
+                             toggle buttons), margin-left 285px when
+                             .show-drawer-left, margin-right 315px when
+                             .show-drawer-right (layout.scss, lg+)
+    .main-inner              max-width 100%, or 830px centred on
+                             .pagelayout-standard / body.limitedwidth at md+
+                             padding 1.5rem 0.5rem
+    div[role="main"]         padding 0 15px at md+
+
+    Drawers are position:fixed, top 60px, height calc(100vh - 60px).
+    WHERE they sit depends on the page layout:
+      - Limited-width pages at xxl (1400px+): anchored relative to the 830px
+        content column via $drawer-anchor-none, $drawer-anchor-xxl-left-open,
+        $drawer-anchor-both-left and friends - i.e. already tucked in beside
+        the content rather than out at the window edges.
+      - Full-width pages: at the viewport edges.
+    Between lg and xxl an open drawer on a limited-width page does go to the
+    viewport edge; this prototype models the xxl behaviour, since the whole
+    question only arises on wide screens.
+
+  WHICH PAGES ARE WHICH: "limited width" is an explicit per-page opt-in -
+  $PAGE->add_body_class('limitedwidth') - and about 90 files have taken it,
+  including public/course/view.php, public/index.php and public/course/index.php.
+  Pages that have NOT opted in, such as a forum discussion, still run full
+  width. So the migration to a narrower measure is already under way in the
+  codebase, page by page.
+
+  MEASURED AGAINST A REAL INSTANCE (Moodle 5.3dev, Boost, viewport 1600px).
+  These are the numbers this prototype reproduces:
+
+    Course page - course/view.php, body.limitedwidth.pagelayout-course,
+    #page.drawers.show-drawer-left.show-drawer-right
+      nav .container-fluid   0 -> 1585, padding 12px
+      #page                285 -> 1270, margin 285/315, padding 48px
+      .main-inner          363 -> 1193  (830px, centred, padding 8px)
+      div[role=main]       341.. content 386 -> 1170  (padding 15px)
+      course index drawer   50 -> 335    <- tucked in beside the content
+      blocks drawer       1221 -> 1536   <- ditto
+
+    Forum discussion - mod/forum/view.php, pagelayout-incourse, NO limitedwidth,
+    #page.drawers.show-drawer-left.hasstickyfooter
+      nav .container-fluid   0 -> 1600, padding 12px
+      #page                285 -> 1600, margin 285/0, padding 48px
+      .main-inner          333 -> 1552  (max-width 100% - full width)
+      div[role=main]       341.. content 356 -> 1529
+      course index drawer    0 -> 285    <- at the window edge
+      blocks drawer        absent on this page
+
+  Note both pages carry body.drawer-open-index, i.e. the course index is open
+  by default. That is why this prototype starts with drawers open.
+
+  WHY THE NAV CAP IS A CONSTANT: because that opt-in is partial, the width of
+  the main region is not a stable thing to follow. If the bar tracked it, the
+  bar would jump between a capped width and full width as you moved from a
+  course page to a forum discussion. So the cap here is fixed and identical on
+  every page, and pages are expected to come to it over time rather than the
+  bar adapting to them. Switch "Page type" below and watch the nav: it must
+  not move.
+
+  No external dependencies, so it works offline. Open it and WIDEN THE WINDOW -
+  the question only exists above roughly 1400px.
+-->
+
+<style>
+  /* ============================================================
+     Boost tokens
+     ============================================================ */
+  :root{
+    --navbar-h: 60px;
+    --content-max: 830px;        /* $course-content-maxwidth */
+    --drawer-left: 285px;        /* $drawer-left-width */
+    --drawer-right: 315px;       /* $drawer-right-width */
+    --gap: 28px;                 /* $drawer-main-gap = 0.5rem + 20px */
+    --page-gutter: 3rem;         /* #page.drawers padding at md+ */
+
+    --shell-max: 1320px;         /* the proposed bound for the NAV only */
+    --shell-pad: 48px;
+
+    /* Boost's drawer anchors, transcribed from drawer.scss. These are what
+       keep the drawers beside the content column instead of at the window
+       edges on limited-width pages. */
+    --anchor-none:      calc(50% + var(--content-max) / 2 + var(--gap));
+    --anchor-xxl-left:  calc(50% + var(--content-max) / 2 - var(--drawer-left) / 2 + var(--gap));
+    --anchor-xxl-right: calc(50% + var(--content-max) / 2 - var(--drawer-right) / 2 + var(--gap));
+    --anchor-both-left: min(
+        calc(50% + var(--content-max) / 2 + (var(--drawer-right) - var(--drawer-left)) / 2 + var(--gap)),
+        calc(100% - var(--drawer-left)));
+    --anchor-both-right: min(
+        calc(50% + var(--content-max) / 2 - (var(--drawer-right) - var(--drawer-left)) / 2 + var(--gap)),
+        calc(100% - var(--drawer-right)));
+
+    --text: #1d2125;
+    --text-muted: #6a737b;
+    --blue: #0f6cbf;
+    --border-subtle: #e9ecef;
+    --gray-100: #f8f9fa;
+    --gray-200: #e9ecef;
+    --white: #fff;
+
+    --g-nav: #1971c2;            /* guide: nav contents */
+    --g-extent: #2f9e44;         /* guide: outermost page furniture */
+    --g-col: #d6336c;            /* guide: reading column */
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{ margin:0; padding:0; }
+  body{
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--text);
+    background: var(--gray-100);
+    padding-bottom: 140px;       /* room for the fixed control bar */
+  }
+
+  /* ============================================================
+     TOP NAVIGATION - the only thing this prototype changes
+     ============================================================ */
+  .navbar{
+    position: fixed; top:0; left:0; right:0;
+    height: var(--navbar-h);
+    background: var(--white);
+    border-bottom: 1px solid var(--border-subtle);
+    z-index: 30;
+  }
+
+  /* CURRENT: .container-fluid - spans the whole viewport, 12px gutters. */
+  .navbar-inner{
+    width:100%; height:100%;
+    padding: 0 12px;
+    margin: 0 auto;
+    display:flex; align-items:center; gap:24px;
+  }
+
+  /* PROPOSED: capped. The bar itself is untouched - its background and bottom
+     border still span the viewport; only the contents are constrained. */
+  body[data-nav="shell"] .navbar-inner{
+    max-width: var(--shell-max);
+    padding: 0 var(--shell-pad);
+  }
+
+  /* Note there is deliberately NO mode that caps the bar to the reading
+     column. That would make the bar's width a function of the page you happen
+     to be on, so it would jump between widths as you navigated. The cap is a
+     constant. */
+
+  .brand{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:17px; white-space:nowrap; }
+  .brand .mark{
+    width:28px; height:28px; border-radius:6px; background:var(--blue);
+    color:#fff; display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:800;
+  }
+  .primary-nav{ display:flex; align-items:center; gap:4px; min-width:0; }
+  .primary-nav a{
+    padding:8px 12px; border-radius:6px; text-decoration:none;
+    color:var(--text-muted); font-size:14px; white-space:nowrap;
+  }
+  .primary-nav a.active{ color:var(--text); font-weight:600; box-shadow: inset 0 -2px 0 var(--blue); border-radius:0; }
+
+  .nav-right{ margin-left:auto; display:flex; align-items:center; gap:12px; }
+  .icon-btn{
+    width:32px; height:32px; border:none; background:transparent; border-radius:6px;
+    color:var(--text-muted); cursor:pointer; font-size:14px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .icon-btn:hover{ background:var(--gray-200); }
+  .editmode{ display:flex; align-items:center; gap:8px; font-size:14px; color:var(--text-muted); white-space:nowrap; }
+  .switch{
+    width:32px; height:16px; border-radius:800px; background:var(--blue);
+    position:relative; display:inline-block; flex:0 0 auto;
+  }
+  .switch::after{
+    content:""; position:absolute; top:2px; left:18px;
+    width:12px; height:12px; border-radius:50%; background:#fff;
+  }
+  .usermenu{ display:flex; align-items:center; gap:8px; font-size:14px; white-space:nowrap; }
+  .avatar{
+    width:28px; height:28px; border-radius:50%; background:#c9805a; color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600;
+  }
+  .burger{ display:none; width:32px; height:32px; border:none; background:transparent; font-size:18px; cursor:pointer; }
+
+  /* ============================================================
+     BELOW THE NAV - Moodle today, unchanged by any control
+     ============================================================ */
+  #page{
+    margin-top: var(--navbar-h);
+    min-height: calc(100vh - var(--navbar-h));
+    position: relative;
+    padding: 0 var(--page-gutter);          /* md+ toggle gutters */
+    transition: margin-left .2s ease, margin-right .2s ease;
+  }
+  /* #page.drawers.show-drawer-left / .show-drawer-right at lg+ */
+  body.index-open  #page{ margin-left:  var(--drawer-left); }
+  body.blocks-open #page{ margin-right: var(--drawer-right); }
+
+  .main-inner{
+    max-width: 100%;
+    background: var(--white);
+    border-radius: 8px;
+    padding: 1.5rem 0.5rem;
+    margin: 1.5rem auto 3rem;
+  }
+  /* .pagelayout-standard / body.limitedwidth */
+  body[data-page="limited"] .main-inner{ max-width: var(--content-max); }
+
+  .region-main{ padding: 0 15px; }          /* div[role="main"] at md+ */
+  .region-main h1{ margin:0 0 4px; font-size:26px; }
+  .region-main .sub{ margin:0 0 20px; color:var(--text-muted); font-size:14px; }
+  .fake-line{ height:12px; border-radius:4px; background:var(--gray-200); margin-bottom:10px; }
+  .fake-block{ border:1px solid var(--border-subtle); border-radius:8px; padding:16px; margin-bottom:12px; }
+  .fake-block h3{ margin:0 0 10px; font-size:15px; }
+
+  /* ---- Drawers: position:fixed, width animates open ---- */
+  .drawer{
+    position: fixed; top: var(--navbar-h);
+    height: calc(100vh - var(--navbar-h));
+    width: 0; overflow: hidden;
+    background: var(--white); border-color: var(--border-subtle); border-style: solid;
+    z-index: 20;
+    transition: width .2s ease, left .2s ease, right .2s ease;
+  }
+  .drawer-inner{ width: var(--drawer-left); padding:16px; }
+  .drawer-right .drawer-inner{ width: var(--drawer-right); }
+  .drawer h2{ font-size:14px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-muted); margin:0 0 12px; }
+  .ci-item{ padding:7px 8px; border-radius:6px; font-size:14px; color:var(--text-muted); }
+  .ci-item.on{ background:var(--gray-200); color:var(--text); }
+  .drawer-left { border-width:0 1px 0 0; }
+  .drawer-right{ border-width:0 0 0 1px; }
+
+  /* Course pages: drawers live at the viewport edges. */
+  body[data-page="full"] .drawer-left { left: 0; }
+  body[data-page="full"] .drawer-right{ right: 0; }
+  body[data-page="full"].index-open  .drawer-left { width: var(--drawer-left); }
+  body[data-page="full"].blocks-open .drawer-right{ width: var(--drawer-right); }
+
+  /* Limited-width pages at xxl: anchored beside the content column, which is
+     why they do NOT sit out at the window edges there today. */
+  body[data-page="limited"] .drawer-left { left: auto;  right: var(--anchor-none); }
+  body[data-page="limited"] .drawer-right{ right: auto; left:  var(--anchor-none); }
+  body[data-page="limited"].index-open .drawer-left { width: var(--drawer-left);  right: var(--anchor-xxl-left); }
+  body[data-page="limited"].blocks-open .drawer-right{ width: var(--drawer-right); left:  var(--anchor-xxl-right); }
+  body[data-page="limited"].index-open.blocks-open .drawer-left { right: var(--anchor-both-left); }
+  body[data-page="limited"].index-open.blocks-open .drawer-right{ left:  var(--anchor-both-right); }
+
+  /* ============================================================
+     ALIGNMENT GUIDES (prototype instrumentation)
+     ============================================================ */
+  .guide{
+    position: fixed; top:0; bottom:0; width:0; z-index:60;
+    pointer-events:none; display:none; border-left:1px dashed;
+  }
+  body.guides-on .guide{ display:block; }
+  /* Labels stack just above the control bar so they never sit on top of the
+     content being measured. */
+  .guide::after{
+    content: attr(data-label);
+    position:absolute; left:3px; font-size:10px; color:#fff;
+    padding:1px 5px; border-radius:3px; white-space:nowrap;
+  }
+  .g-nav   { border-color: var(--g-nav);    border-left-style: solid; }
+  .g-extent{ border-color: var(--g-extent); }
+  .g-col   { border-color: var(--g-col); }
+  .g-nav::after   { background: var(--g-nav);    bottom: 196px; }
+  .g-extent::after{ background: var(--g-extent); bottom: 174px; }
+  .g-col::after   { background: var(--g-col);    bottom: 152px; }
+
+  /* ============================================================
+     CONTROL BAR - prototype chrome, not part of the design
+     ============================================================ */
+  .controls{
+    position:fixed; left:0; right:0; bottom:0; z-index:100;
+    background:#1d2125; color:#fff; padding:10px 16px; font-size:13px;
+    display:flex; flex-wrap:wrap; gap:8px 20px; align-items:center;
+    box-shadow: 0 -2px 12px rgba(0,0,0,.25);
+  }
+  .controls .tag{
+    font-size:10px; text-transform:uppercase; letter-spacing:.6px;
+    background:#495057; padding:2px 6px; border-radius:3px;
+  }
+  .ctl{ display:flex; align-items:center; gap:6px; }
+  .ctl label{ color:#adb5bd; }
+  .controls select, .controls button{
+    font:inherit; font-size:12px; background:#343a40; color:#fff;
+    border:1px solid #495057; border-radius:5px; padding:3px 7px; cursor:pointer;
+  }
+  .controls button.on{ background:var(--blue); border-color:var(--blue); }
+  .readout{
+    flex-basis:100%; display:flex; flex-wrap:wrap; gap:6px 18px;
+    border-top:1px solid #343a40; padding-top:8px; margin-top:2px;
+    font-variant-numeric: tabular-nums; color:#adb5bd; font-size:12px;
+  }
+  .readout b{ color:#fff; font-weight:600; }
+  .ok  { color:#51cf66; font-weight:700; }
+  .near{ color:#ffd43b; font-weight:700; }
+  .bad { color:#ff8787; font-weight:700; }
+  .hint{ color:#ffd43b; }
+  .swatch{ display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:5px; vertical-align:middle; }
+
+  /* ============================================================
+     Below md - unchanged from Moodle today: drawers overlay, nav collapses.
+     Here only so the demo doesn't look broken at small sizes.
+     ============================================================ */
+  @media (max-width: 767.98px){
+    .burger{ display:flex; }
+    .primary-nav, .editmode, .usermenu .uname{ display:none; }
+    #page{ padding: 0; }
+    body.index-open #page, body.blocks-open #page{ margin-left:0; margin-right:0; }
+    body[data-page="limited"] .drawer-left { left:0;  right:auto; }
+    body[data-page="limited"] .drawer-right{ right:0; left:auto; }
+    .drawer{ z-index:40; box-shadow:0 0 30px rgba(0,0,0,.2); }
+    .navbar-inner{ padding: 0 16px !important; }
+  }
+</style>
+</head>
+
+<!-- Default state matches a real Moodle 5.3dev instance: the course index is
+     open (body.drawer-open-index) and, on a course page with blocks, the
+     blocks drawer is open too. -->
+<body data-nav="shell" data-page="limited" class="guides-on index-open blocks-open">
+
+  <!-- ===== TOP NAVIGATION ===== -->
+  <nav class="navbar">
+    <div class="navbar-inner" id="navInner">
+      <button class="burger" aria-label="Side panel">&#9776;</button>
+      <span class="brand"><span class="mark">M</span> Fleetwood University</span>
+      <div class="primary-nav">
+        <a href="#">Dashboard</a>
+        <a href="#" class="active">My courses</a>
+        <a href="#">Site administration</a>
+      </div>
+      <div class="nav-right">
+        <button class="icon-btn" aria-label="Search">&#128269;</button>
+        <span class="editmode">Edit mode <span class="switch"></span></span>
+        <button class="icon-btn" aria-label="Notifications">&#128276;</button>
+        <button class="icon-btn" aria-label="Messages">&#128172;</button>
+        <span class="usermenu"><span class="avatar">S</span><span class="uname">Sarah</span></span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== COURSE INDEX DRAWER (285px) ===== -->
+  <aside class="drawer drawer-left" id="drawerLeft">
+    <div class="drawer-inner">
+      <h2>Course index</h2>
+      <div class="ci-item on">Introduction</div>
+      <div class="ci-item">Cell structure</div>
+      <div class="ci-item">Genetics</div>
+      <div class="ci-item">Evolution</div>
+      <div class="ci-item">Assessment</div>
+    </div>
+  </aside>
+
+  <!-- ===== BLOCKS DRAWER (315px) ===== -->
+  <aside class="drawer drawer-right" id="drawerRight">
+    <div class="drawer-inner">
+      <h2>Blocks</h2>
+      <div class="fake-block"><h3>Calendar</h3><div class="fake-line" style="width:80%"></div><div class="fake-line" style="width:60%"></div></div>
+      <div class="fake-block"><h3>Recent activity</h3><div class="fake-line" style="width:90%"></div><div class="fake-line" style="width:50%"></div></div>
+    </div>
+  </aside>
+
+  <!-- ===== PAGE ===== -->
+  <div id="page">
+    <div class="main-inner" id="mainInner">
+      <div class="region-main" role="main" id="regionMain">
+        <h1>Biology 101</h1>
+        <p class="sub">Course &rsaquo; Biology 101 &rsaquo; General</p>
+
+        <div class="fake-block">
+          <h3>Announcements</h3>
+          <div class="fake-line" style="width:96%"></div>
+          <div class="fake-line" style="width:88%"></div>
+          <div class="fake-line" style="width:64%"></div>
+        </div>
+        <div class="fake-block">
+          <h3>Topic 1 &mdash; Cell structure</h3>
+          <div class="fake-line" style="width:92%"></div>
+          <div class="fake-line" style="width:78%"></div>
+          <div class="fake-line" style="width:85%"></div>
+          <div class="fake-line" style="width:40%"></div>
+        </div>
+        <div class="fake-block">
+          <h3>Topic 2 &mdash; Genetics</h3>
+          <div class="fake-line" style="width:90%"></div>
+          <div class="fake-line" style="width:70%"></div>
+          <div class="fake-line" style="width:82%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ALIGNMENT GUIDES ===== -->
+  <div class="guide g-nav"    id="gNavL"    data-label="nav"></div>
+  <div class="guide g-nav"    id="gNavR"    data-label="nav"></div>
+  <div class="guide g-extent" id="gExtentL" data-label="page furniture"></div>
+  <div class="guide g-extent" id="gExtentR" data-label="page furniture"></div>
+  <div class="guide g-col"    id="gColL"    data-label="reading column"></div>
+  <div class="guide g-col"    id="gColR"    data-label="reading column"></div>
+
+  <!-- ===== PROTOTYPE CONTROLS ===== -->
+  <div class="controls">
+    <span class="tag">Prototype controls</span>
+
+    <div class="ctl">
+      <label for="navMode">Nav contents</label>
+      <select id="navMode">
+        <option value="current">Current (full width)</option>
+        <option value="shell" selected>Capped (page bound)</option>
+      </select>
+    </div>
+
+    <div class="ctl">
+      <label for="pageType">Page type</label>
+      <select id="pageType">
+        <option value="limited">Limited width (course view, dashboard)</option>
+        <option value="full">Full width (forum discussion)</option>
+      </select>
+    </div>
+
+    <div class="ctl">
+      <label for="shellMax">Cap</label>
+      <select id="shellMax">
+        <option value="1440px">1440px (design)</option>
+        <option value="1320px" selected>1320px (Bootstrap xxl default)</option>
+      </select>
+    </div>
+
+    <div class="ctl">
+      <label>Open</label>
+      <button id="btnIndex">Course index</button>
+      <button id="btnBlocks">Blocks</button>
+    </div>
+
+    <div class="ctl"><button id="btnGuides" class="on">Guides</button></div>
+
+    <div class="readout" id="readout"></div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  var body       = document.body;
+  var navInner   = document.getElementById("navInner");
+  var regionMain = document.getElementById("regionMain");
+  var drawerL    = document.getElementById("drawerLeft");
+  var drawerR    = document.getElementById("drawerRight");
+  var readout    = document.getElementById("readout");
+
+  var G = {
+    navL:    document.getElementById("gNavL"),
+    navR:    document.getElementById("gNavR"),
+    extentL: document.getElementById("gExtentL"),
+    extentR: document.getElementById("gExtentR"),
+    colL:    document.getElementById("gColL"),
+    colR:    document.getElementById("gColR")
+  };
+
+  /* The visual left/right edge of an element's CONTENTS, i.e. inside its own
+     horizontal padding. That is what a reader perceives as "where things
+     start", and it is what has to match for two regions to look aligned. */
+  function contentBox(el){
+    var r  = el.getBoundingClientRect();
+    var cs = getComputedStyle(el);
+    return {
+      left:  r.left  + parseFloat(cs.paddingLeft  || 0),
+      right: r.right - parseFloat(cs.paddingRight || 0)
+    };
+  }
+
+  /* Outermost extent of everything on the page: the reading column, plus any
+     drawer that is actually open. This is what has to fit inside the nav's
+     width for the page to read as one contained composition. */
+  function pageExtent(){
+    var col = contentBox(regionMain);
+    var l = col.left, r = col.right;
+    [[drawerL, "index-open"], [drawerR, "blocks-open"]].forEach(function(pair){
+      if (!body.classList.contains(pair[1])) return;
+      var b = pair[0].getBoundingClientRect();
+      if (b.width < 1) return;
+      l = Math.min(l, b.left);
+      r = Math.max(r, b.right);
+    });
+    return { left: l, right: r };
+  }
+
+  function place(g, x){ g.style.left = x + "px"; }
+
+  /* Tiered so the readout does not overstate a few px as a problem. */
+  function cls(d){
+    var a = Math.abs(d);
+    return a <= 1 ? "ok" : (a <= 8 ? "near" : "bad");
+  }
+  function verdict(dL, dR){
+    var worst = Math.max(Math.abs(dL), Math.abs(dR));
+    if (worst <= 1) return '<span class="ok">Aligned</span>';
+    if (worst <= 8) return '<span class="near">Within ' + worst + 'px</span>';
+    return '<span class="bad">Out by ' + worst + 'px</span>';
+  }
+
+  function refresh(){
+    var nav = contentBox(navInner);
+    var col = contentBox(regionMain);
+    var ext = pageExtent();
+
+    place(G.navL,    nav.left);  place(G.navR,    nav.right);
+    place(G.extentL, ext.left);  place(G.extentR, ext.right);
+    place(G.colL,    col.left);  place(G.colR,    col.right);
+
+    var eL = Math.round(ext.left  - nav.left);
+    var eR = Math.round(nav.right - ext.right);
+    var cL = Math.round(col.left  - nav.left);
+    var cR = Math.round(nav.right - col.right);
+
+    /* Negative means the page furniture pokes out beyond the nav. */
+    var contained = eL >= -1 && eR >= -1;
+
+    var vw    = Math.round(window.innerWidth);
+    var shMax = parseInt(getComputedStyle(document.documentElement)
+                  .getPropertyValue("--shell-max"), 10);
+
+    readout.innerHTML =
+      '<span>Viewport <b>' + vw + 'px</b></span>' +
+      '<span><i class="swatch" style="background:#1971c2"></i>Nav <b>' +
+        Math.round(nav.left) + ' &rarr; ' + Math.round(nav.right) + '</b></span>' +
+      '<span><i class="swatch" style="background:#2f9e44"></i>Page furniture <b>' +
+        Math.round(ext.left) + ' &rarr; ' + Math.round(ext.right) + '</b> &nbsp;' +
+        (contained
+          ? '<span class="ok">inside the nav</span>'
+          : '<span class="bad">outside the nav by ' +
+            Math.max(-eL, -eR) + 'px</span>') + '</span>' +
+      '<span><i class="swatch" style="background:#d6336c"></i>Nav vs reading column ' +
+        '<span class="' + cls(cL) + '">' + cL + '</span> / ' +
+        '<span class="' + cls(cR) + '">' + cR + '</span> &nbsp;' + verdict(cL, cR) + '</span>' +
+      (vw < shMax + 40
+        ? '<span class="hint">Widen the window past ' + shMax +
+          'px &mdash; the cap only bites above it.</span>'
+        : '');
+  }
+
+  /* Drawer widths animate over 200ms. Measure immediately, on the transition
+     actually ending, and again on a timer as a backstop for environments that
+     throttle or drop transition frames - otherwise the readout can be left
+     showing a start-of-flight value. */
+  function refreshSoon(){
+    refresh();
+    setTimeout(refresh, 240);
+    setTimeout(refresh, 600);
+  }
+  ["#page", "#drawerLeft", "#drawerRight"].forEach(function(sel){
+    var el = document.querySelector(sel);
+    if (el) el.addEventListener("transitionend", refresh);
+  });
+
+  function onSelect(id, fn){
+    document.getElementById(id).addEventListener("change", function(e){
+      fn(e.target.value); refreshSoon();
+    });
+  }
+  onSelect("navMode",  function(v){ body.setAttribute("data-nav", v); });
+  onSelect("pageType", function(v){ body.setAttribute("data-page", v); });
+  onSelect("shellMax", function(v){
+    document.documentElement.style.setProperty("--shell-max", v);
+  });
+
+  function toggleBtn(id, className){
+    var btn = document.getElementById(id);
+    btn.addEventListener("click", function(){
+      btn.classList.toggle("on", body.classList.toggle(className));
+      refreshSoon();
+    });
+  }
+  toggleBtn("btnIndex",  "index-open");
+  toggleBtn("btnBlocks", "blocks-open");
+  /* Reflect the default-open drawers in the buttons at startup. */
+  document.getElementById("btnIndex").classList.toggle("on",  body.classList.contains("index-open"));
+  document.getElementById("btnBlocks").classList.toggle("on", body.classList.contains("blocks-open"));
+
+  var btnGuides = document.getElementById("btnGuides");
+  btnGuides.addEventListener("click", function(){
+    btnGuides.classList.toggle("on", body.classList.toggle("guides-on"));
+  });
+
+  window.addEventListener("resize", refresh);
+  refresh();
+})();
+</script>
+
+<!--
+WHAT THIS IS FOR
+
+Open it wide (1600px or more). Everything below the bar is Moodle today and
+never changes; only the "Nav contents" control does anything to the design.
+
+It opens in the proposed state: nav capped at 1320px, a limited-width page
+(course view), both drawers open, guides on. That is the case the decision
+hangs on.
+
+1. As it opens, look at the guides. Blue is the nav's contents. Green is the
+   outermost extent of the page furniture, drawers included. The drawers
+   escape the capped nav on both sides, and the readout says by how much.
+
+2. Switch the Cap between 1320px and 1440px and watch that overflow change.
+   At a 1600px viewport, both drawers open, the furniture escapes the nav by
+   131px at 1320 and by 71px at 1440.
+
+3. Close the Blocks drawer. The overflow disappears - a single drawer already
+   fits. The both-open case is the one that does not, because drawer.scss
+   only has an xxl override for the SINGLE-drawer anchors
+   ($drawer-anchor-xxl-left-open and -right-open). With both open it falls
+   back to the lg formula, which is clamped with
+   Min(..., calc(100% - drawer-width)) and so spreads the drawers back out
+   towards the window edges.
+
+4. Switch Page type to "Full width (forum discussion)" and watch the nav: it
+   does not move. That is the point of a fixed cap. The page beneath it runs
+   full width because forum has not opted into limitedwidth yet, so the
+   furniture escapes further still - that is a page waiting to be migrated,
+   not a fault in the bar.
+
+5. Switch Nav contents to "Current (full width)" to see today's behaviour for
+   comparison: the bar sprawls the whole window while the reading column sits
+   at 830px in the middle.
+
+So capping the nav on its own does not produce a contained composition. To
+get one, the drawers have to be brought inside the same bound too, which
+means two things Boost does not do today: the tucked-in anchoring extended
+to course pages, and an anchor for the both-open case that respects the cap
+rather than the viewport.
+
+THE CAP: 1320px vs 1440px
+
+The course page composition is a fixed sum, independent of viewport:
+
+  285 (course index) + 28 (gap) + 830 (reading column) + 28 (gap)
+  + 315 (blocks) = 1486px
+
+So a 1440px cap is 46px short of containing it - roughly what you would
+recover by tightening the two 28px gaps. A 1320px cap is 166px short:
+zeroing both gaps recovers only 56px, so the remaining 110px has to come out
+of the drawers (~18% narrower) or out of the 830px reading measure.
+
+Note 1320px is NOT an existing Moodle bound. It is Bootstrap's
+$container-max-widths value at xxl, and container-xxl appears nowhere in
+Moodle's own templates or SCSS - only in compiled Bootstrap output. The
+layout uses .container-fluid plus $course-content-maxwidth. Either number is
+a new token.
+
+The trade the other way is reach: a cap only does anything above its own
+width, so 1320 affects nearly every desktop (1366, 1440, 1512, 1536, 1920)
+while 1440 leaves the smaller laptops alone and bites from ~1512 up.
+-->
+</body>
+</html>
