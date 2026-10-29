@@ -213,14 +213,6 @@ body.behat-site.core-my-dashboard-page #sticky-footer {
     }
 }
 
-// A block that will move to join the others when editing finishes (see joinUp() in core_my/layout).
-// A text token, not the warning border one: that is a pale tint, about 1.2:1 against the light page;
-// this is over 8:1 against the page in light and dark themes (dark.scss remaps text tokens).
-.core-my-dashboard-tile.core-my-dashboard-tile--joining {
-    outline: var(--mds-stroke-weight-md) dashed var(--mds-text-feedback-warning);
-    outline-offset: var(--mds-spacing-xxs);
-}
-
 .core-my-dashboard-toolbar__actions {
     display: flex;
     flex-wrap: wrap;
@@ -440,8 +432,9 @@ body.behat-site.core-my-dashboard-page #sticky-footer {
     flex: 1 1 auto;
     min-height: 0;
     padding: var(--mds-spacing-md);
+    // Taller content scrolls inside the tile; once it reaches either end, scrolling carries on to
+    // the page (the default overscroll-behavior), so the dashboard can always be scrolled over a block.
     overflow: auto;
-    overscroll-behavior: contain;
 }
 
 .core-my-dashboard-tile__block-footer {
