@@ -34927,10 +34927,36 @@ body:not(.editing) [id^=module-]:target, body.editing [id^=module-]:target .acti
 
 /* Option summary styles. */
 .modchooser .optionsummary {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 100%;
+  border: var(--mds-stroke-weight-sm) solid var(--mds-border-subtle);
+  border-radius: var(--mds-border-radius-xl);
+  background-color: var(--mds-bg-surface-subtle);
+  padding-block: var(--mds-spacing-md);
+}
+.modchooser .optionsummary [data-region=chooser-option-summary-content-container] {
+  min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  width: 100%;
-  background-color: var(--bs-white);
+  padding-inline: var(--mds-spacing-md);
+  scrollbar-width: thin;
+  scrollbar-color: var(--bs-gray-600) var(--mds-bg-surface-subtle);
+}
+.modchooser .optionsummary [data-region=chooser-option-summary-content-container]::-webkit-scrollbar {
+  width: 12px;
+}
+.modchooser .optionsummary [data-region=chooser-option-summary-content-container]::-webkit-scrollbar-track {
+  background: var(--mds-bg-surface-subtle);
+}
+.modchooser .optionsummary [data-region=chooser-option-summary-content-container]::-webkit-scrollbar-thumb {
+  background-color: var(--bs-gray-600);
+  border-radius: 20px;
+  border: 3px solid var(--mds-bg-surface-subtle);
+}
+.modchooser .optionsummary [data-region=chooser-option-summary-content-container]::-webkit-scrollbar-thumb:hover {
+  background-color: var(--bs-gray-700);
 }
 .modchooser .optionsummary .activitychooser-option-details {
   min-width: 15rem;
@@ -34942,6 +34968,9 @@ body:not(.editing) [id^=module-]:target, body.editing [id^=module-]:target .acti
 }
 .modchooser .optionsummary .optionsummary-summary {
   font-size: larger;
+}
+.modchooser .optionsummary .optionsummary-help h4, .modchooser .optionsummary .optionsummary-help .h4 {
+  font-size: 1rem;
 }
 
 /* Make modchooser modal full height and scrollable on small screens. */
@@ -34956,10 +34985,12 @@ body:not(.editing) [id^=module-]:target, body.editing [id^=module-]:target .acti
   .modchooser .modal-body .carousel,
   .modchooser .modal-body .carousel-inner,
   .modchooser .modal-body .carousel-item,
-  .modchooser .modal-body .optionsummary,
   .modchooser .modal-body .searchresultitemscontainer-wrapper {
     height: 100%;
     overflow-y: auto;
+  }
+  .modchooser .modal-body .optionsummary {
+    height: 100%;
   }
   .modchoosercontainer,
   .optionscontainer,
@@ -51955,7 +51986,7 @@ body {
   .brand .word span{ display:block; font-size:11px; letter-spacing:2px; color:var(--text-subtle); }
 
   /* Figma "Main Navigation": 28px tall, 4px between pills. */
-  .nav-pills{ display:flex; align-items:center; gap:var(--sp-xxs); }
+  .nav-left .nav-pills{ display:flex; align-items:center; gap:var(--sp-xxs); }
   .nav-pill{
     display:flex; align-items:center; gap:var(--sp-xxs);
     height:28px; padding:0 var(--sp-sm);
@@ -52193,6 +52224,18 @@ body {
     padding:0 23px;   /* core's main-inner 8px + div[role=main] 15px */
   }
   body.limitedwidth .content-col{ max-width:var(--content-max); }
+  /* Step footer. Core sizes its content to #page via the drawer classes;
+     this shell has its own drawers, so alignFooter() lines the content up
+     with the main column instead. Core lifts its floating buttons above the
+     footer; the prototype's own floating chrome does the same. */
+  .step-foot{ display:none; }
+  .step-foot.on{ display:flex; }
+  #sticky-footer .sticky-footer-content{ max-width:none; }
+  body.hasstickyfooter .content-col{ padding-bottom:calc(var(--sticky-footer-total-height, 4rem) + 24px); }
+  body.hasstickyfooter .anno-toggle,
+  body.hasstickyfooter .debug,
+  body.hasstickyfooter .devpanel{ bottom:calc(16px + var(--sticky-footer-total-height, 4rem)); }
+  body.hasstickyfooter .toast-p{ bottom:calc(1.5rem + var(--sticky-footer-total-height, 4rem)); }
   .content-col > *{ width:100%; }
 
   /* ---- placeholder: delete this and build your screen here ---- */
@@ -52677,10 +52720,43 @@ body {
   body:not(.edit-on) #courseContent .bulkcb-wrap,
   body:not(.edit-on) #courseContent .ssummary,
   body:not(.edit-on) #courseContent [data-chooser]{ display:none; }
+  /* core's divider carries Bootstrap's d-flex, which is !important */
+  body:not(.edit-on) #courseContent .divider{ display:none !important; }
   body:not(.edit-on) #courseContent .acard-badges:not(:has(.chip)){ display:none; }
   /* draft: hidden AND cannot work yet. Dashed says "not finished", which is
      different from hidden-on-purpose. */
   #courseContent .acard.is-draft{ border-style:dashed; }
+  /* COURSE PAGE CARD - Figma MDL-87755 "Activity Card" (5135:64926).
+     Top row: grip, bare 24px activity icon, type label in its category
+     colour; right: Dropdown triggers (groups, visibility, completion) and
+     an icon-only menu. Then the title (Heading 6). The icon is core's own
+     monologo (same artwork as the MDS ActivityIcon asset), shown with no
+     tile, which is the frame's Container=None. */
+  #courseContent .acard{ display:flex; flex-direction:column; gap:var(--mds-spacing-xs); }
+  #courseContent .acard-top{ align-items:center; margin:0; gap:var(--mds-spacing-xs) var(--mds-spacing-lg); flex-wrap:wrap; }
+  #courseContent .acard-identity{ gap:var(--mds-spacing-xxs); }
+  #courseContent .atype{ gap:var(--mds-spacing-xxs); font-size:var(--mds-font-size-paragraph-small);
+    font-weight:var(--mds-font-weight-medium); line-height:var(--mds-line-height-paragraph-xs); color:var(--cat); }
+  #courseContent .acard-icon{ width:24px; height:24px; padding:0; margin:0; background:none; border-radius:0; flex:0 0 auto; }
+  #courseContent .acard-icon .activityicon{ width:24px; height:24px; }
+  #courseContent .acard[data-purpose="assessment"]{ --cat:var(--mds-activity-icon-assessment-icon); }
+  #courseContent .acard[data-purpose="collaboration"]{ --cat:var(--mds-activity-icon-collaboration-icon); }
+  #courseContent .acard[data-purpose="communication"]{ --cat:var(--mds-activity-icon-communication-icon); }
+  #courseContent .acard[data-purpose="content"]{ --cat:var(--mds-activity-icon-resource-icon); }
+  #courseContent .acard[data-purpose="interactivecontent"]{ --cat:var(--mds-activity-icon-interactive-icon); }
+  #courseContent .acard[data-purpose="other"],
+  #courseContent .acard[data-purpose="administration"]{ --cat:var(--mds-activity-icon-other-icon); }
+  #courseContent .atitle{ font-size:var(--mds-font-size-paragraph-default); font-weight:var(--mds-font-weight-medium);
+    line-height:1.2; letter-spacing:0; color:var(--mds-text-default); }
+  #courseContent .acard-badges{ margin-top:var(--mds-spacing-xs); }
+  /* the controls wrap under the type label when the card is narrow */
+  #courseContent .achips{ gap:var(--mds-spacing-xs); flex-wrap:wrap; margin-left:auto; }
+  #courseContent .achips .mds-btn{ white-space:nowrap; }
+  /* the open menu: MDS .mds-dropdown-menu, floated like the outcome picker */
+  .cb-ddmenu{ position:absolute; z-index:1040; box-shadow:var(--bs-box-shadow); max-width:min(360px, calc(100vw - 16px)); }
+  /* core's dividers sit in the card list's gap rather than adding to it */
+  #courseContent .acards > .divider{ margin:calc(-1 * var(--mds-spacing-xs)) 0; }
+  #courseContent .acards > .divider hr{ margin:var(--mds-spacing-xxs) 0; }
   .chip.hidden{ background:var(--mds-bg-surface-strong); border-color:var(--mds-border-default); color:var(--mds-text-subtle); }
   /* the readiness bar's filter */
   #courseContent.drafts-only .acard:not(.is-draft),
@@ -52820,6 +52896,515 @@ body {
   .sbody{ padding:0 20px 20px; }
   .scard.collapsed .sbody{ display:none; }
 
+</style>
+<style>
+/* ===== MDS Dropdown (components/dropdown/dropdown.css), glyphs inlined ===== */
+/*
+ * Dropdown — trigger, menu panel, and item rows.
+ * Figma: "Dropdown" component set (file MvAObVzHaB9QZ5JGaP8sO2).
+ *
+ * The trigger reuses button.css / nav-pill.css via shared classes; rules here
+ * only add what the Dropdown needs on top (chevron, open state, menu, items).
+ * Depends on button.css and nav-pill.css being loaded (both are part of
+ * components/index.css, which precedes this file).
+ */
+
+/* ------------------------------------------------------------------ */
+/* Trigger                                                             */
+/* ------------------------------------------------------------------ */
+
+/* Chevron — masked so the glyph follows the trigger's text color across
+   hover/active/disabled states. md triggers use the 12×8 glyph.
+   Always points downward (no rotation). */
+.mds-dropdown-trigger__chevron {
+  display: inline-block;
+  flex-shrink: 0;
+  inline-size: var(--mds-icons-xs);
+  block-size: var(--mds-icons-xxs);
+  background-color: currentColor;
+  mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik01LjQ3MjY2IDYuNzc3MzRMMC45NzI2NTYgMi4yNzczNEMwLjY2Nzk2OSAxLjk5NjA5IDAuNjY3OTY5IDEuNTAzOTEgMC45NzI2NTYgMS4yMjI2NkMxLjI1MzkxIDAuOTE3OTY5IDEuNzQ2MDkgMC45MTc5NjkgMi4wMjczNCAxLjIyMjY2TDYuMDExNzIgNS4xODM1OUw5Ljk3MjY2IDEuMjIyNjZDMTAuMjUzOSAwLjkxNzk2OSAxMC43NDYxIDAuOTE3OTY5IDExLjAyNzMgMS4yMjI2NkMxMS4zMzIgMS41MDM5MSAxMS4zMzIgMS45OTYwOSAxMS4wMjczIDIuMjc3MzRMNi41MjczNCA2Ljc3NzM0QzYuMjQ2MDkgNy4wODIwMyA1Ljc1MzkxIDcuMDgyMDMgNS40NzI2NiA2Ljc3NzM0WiIgZmlsbD0iIzFEMjEyNSIvPgo8L3N2Zz4K");
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik01LjQ3MjY2IDYuNzc3MzRMMC45NzI2NTYgMi4yNzczNEMwLjY2Nzk2OSAxLjk5NjA5IDAuNjY3OTY5IDEuNTAzOTEgMC45NzI2NTYgMS4yMjI2NkMxLjI1MzkxIDAuOTE3OTY5IDEuNzQ2MDkgMC45MTc5NjkgMi4wMjczNCAxLjIyMjY2TDYuMDExNzIgNS4xODM1OUw5Ljk3MjY2IDEuMjIyNjZDMTAuMjUzOSAwLjkxNzk2OSAxMC43NDYxIDAuOTE3OTY5IDExLjAyNzMgMS4yMjI2NkMxMS4zMzIgMS41MDM5MSAxMS4zMzIgMS45OTYwOSAxMS4wMjczIDIuMjc3MzRMNi41MjczNCA2Ljc3NzM0QzYuMjQ2MDkgNy4wODIwMyA1Ljc1MzkxIDcuMDgyMDMgNS40NzI2NiA2Ljc3NzM0WiIgZmlsbD0iIzFEMjEyNSIvPgo8L3N2Zz4K");
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
+/* sm and nav-pill triggers use the 8×8 glyph. */
+.mds-dropdown-trigger__chevron--sm {
+  inline-size: var(--mds-icons-xxs);
+  mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgOCA4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBkPSJNMy42NDg0NCA1Ljg1MTU2TDAuNjQ4NDM4IDIuODUxNTZDMC40NDUzMTIgMi42NjQwNiAwLjQ0NTMxMiAyLjMzNTk0IDAuNjQ4NDM4IDIuMTQ4NDRDMC44MzU5MzggMS45NDUzMSAxLjE2NDA2IDEuOTQ1MzEgMS4zNTE1NiAyLjE0ODQ0TDQuMDA3ODEgNC43ODkwNkw2LjY0ODQ0IDIuMTQ4NDRDNi44MzU5NCAxLjk0NTMxIDcuMTY0MDYgMS45NDUzMSA3LjM1MTU2IDIuMTQ4NDRDNy41NTQ2OSAyLjMzNTk0IDcuNTU0NjkgMi42NjQwNiA3LjM1MTU2IDIuODUxNTZMNC4zNTE1NiA1Ljg1MTU2QzQuMTY0MDYgNi4wNTQ2OSAzLjgzNTk0IDYuMDU0NjkgMy42NDg0NCA1Ljg1MTU2WiIgZmlsbD0iIzFEMjEyNSIvPgo8L3N2Zz4K");
+  -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgOCA4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBkPSJNMy42NDg0NCA1Ljg1MTU2TDAuNjQ4NDM4IDIuODUxNTZDMC40NDUzMTIgMi42NjQwNiAwLjQ0NTMxMiAyLjMzNTk0IDAuNjQ4NDM4IDIuMTQ4NDRDMC44MzU5MzggMS45NDUzMSAxLjE2NDA2IDEuOTQ1MzEgMS4zNTE1NiAyLjE0ODQ0TDQuMDA3ODEgNC43ODkwNkw2LjY0ODQ0IDIuMTQ4NDRDNi44MzU5NCAxLjk0NTMxIDcuMTY0MDYgMS45NDUzMSA3LjM1MTU2IDIuMTQ4NDRDNy41NTQ2OSAyLjMzNTk0IDcuNTU0NjkgMi42NjQwNiA3LjM1MTU2IDIuODUxNTZMNC4zNTE1NiA1Ljg1MTU2QzQuMTY0MDYgNi4wNTQ2OSAzLjgzNTk0IDYuMDU0NjkgMy42NDg0NCA1Ljg1MTU2WiIgZmlsbD0iIzFEMjEyNSIvPgo8L3N2Zz4K");
+}
+
+/* Open (Figma State=active): filled appearances keep the active fill and gain
+   a 1px inside ring. The inset box-shadow is a pressed-state ring, not a
+   focus ring — focus rings remain outline-based per the focus ring pattern. */
+.mds-dropdown-trigger--open.mds-btn.btn.btn-secondary,
+.mds-dropdown-trigger--open.mds-btn.btn.btn-ghost {
+  background-color: var(--mds-bg-interactive-secondary-active);
+  color: var(--mds-text-subtle);
+  box-shadow: inset 0 0 0 var(--mds-stroke-weight-sm)
+    var(--mds-border-interactive-secondary-active);
+}
+
+/* Open outlined appearance: solid dark fill with inverse text. */
+.mds-dropdown-trigger--open.mds-btn.btn.btn-outline-secondary {
+  border-color: var(--mds-border-interactive-secondary-active);
+  background-color: var(--mds-border-interactive-secondary-active);
+  color: var(--mds-text-inverse);
+}
+
+/* nav-pill trigger renders a <button>; nav-pill.css already resets border and
+   background for the class, so only layout inherited from Bootstrap's button
+   normalisation needs neutralising. */
+.mds-dropdown-trigger--nav-pill {
+  font-family: var(--mds-font-family-base);
+}
+
+.mds-dropdown-trigger--open.mds-nav-pill {
+  background-color: var(--mds-bg-nav-pill-pressed);
+}
+
+/* ------------------------------------------------------------------ */
+/* Menu panel                                                          */
+/* ------------------------------------------------------------------ */
+
+.mds-dropdown-menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mds-spacing-xxs);
+  align-items: stretch;
+  min-inline-size: 13.5625rem; /* 217px per Figma; grows with content */
+  padding: var(--mds-spacing-xxs);
+  background-color: var(--mds-bg-surface-default);
+  border: var(--mds-stroke-weight-sm) solid var(--mds-border-default);
+  border-radius: var(--mds-border-radius-md);
+  overflow: clip;
+}
+
+/* ------------------------------------------------------------------ */
+/* Item rows — shared chrome                                           */
+/* ------------------------------------------------------------------ */
+
+.mds-dropdown-item {
+  display: flex;
+  gap: var(--mds-spacing-xs);
+  align-items: center;
+  inline-size: 100%;
+  padding: var(--mds-spacing-xs) var(--mds-spacing-sm);
+  border: none;
+  border-radius: var(--mds-border-radius-xs);
+  background: none;
+  margin: 0;
+  text-align: start;
+  cursor: pointer;
+  font-family: var(--mds-font-family-base);
+  color: var(--mds-text-subtle);
+  position: relative;
+  box-sizing: border-box;
+}
+
+.mds-dropdown-item:disabled,
+.mds-dropdown-item[aria-disabled='true'] {
+  cursor: default;
+  pointer-events: none;
+  color: var(--mds-text-muted);
+}
+
+/* Rows with a description top-align their content. */
+.mds-dropdown-item--with-description {
+  align-items: flex-start;
+}
+
+.mds-dropdown-item:focus {
+  box-shadow: none;
+  outline: none;
+}
+
+.mds-dropdown-item:focus-visible {
+  outline: var(--mds-stroke-weight-md) solid var(--mds-focus-default);
+  outline-offset: var(--mds-spacing-offset);
+  box-shadow: none;
+}
+
+.mds-dropdown-item__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  block-size: 24px; /* 24px per Figma. */
+  flex-shrink: 0;
+}
+
+.mds-dropdown-item__icon i,
+.mds-dropdown-item__icon svg {
+  inline-size: var(--mds-icons-xs);
+  block-size: var(--mds-icons-xs);
+  font-size: var(--mds-icons-xs);
+  line-height: 1;
+}
+
+.mds-dropdown-item__label-wrap {
+  display: flex;
+  flex: 1 0 0;
+  min-inline-size: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.mds-dropdown-item--with-description .mds-dropdown-item__label-wrap {
+  gap: var(--mds-spacing-xxs);
+}
+
+.mds-dropdown-item__label {
+  font-size: var(--mds-font-size-paragraph-default);
+  font-weight: var(--mds-font-weight-regular);
+  line-height: var(--mds-line-height-paragraph-default);
+  white-space: nowrap;
+  inline-size: 100%;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mds-dropdown-item__description {
+  font-size: var(--mds-font-size-paragraph-small);
+  font-weight: var(--mds-font-weight-regular);
+  line-height: var(--mds-line-height-paragraph-small);
+  color: var(--mds-text-muted);
+  white-space: normal;
+}
+
+/* Figma: on hover (and disabled) the description matches the row color. */
+.mds-dropdown-item:hover .mds-dropdown-item__description,
+.mds-dropdown-item:disabled .mds-dropdown-item__description,
+.mds-dropdown-item[aria-disabled='true'] .mds-dropdown-item__description {
+  color: inherit;
+}
+
+/* ------------------------------------------------------------------ */
+/* Action item                                                         */
+/* ------------------------------------------------------------------ */
+
+.mds-dropdown-item--action:hover:not(:disabled):not([aria-disabled='true']) {
+  background-color: var(--mds-bg-interactive-primary-default-light);
+}
+
+.mds-dropdown-item--action:active:not(:disabled):not([aria-disabled='true']) {
+  background-color: var(--mds-bg-interactive-primary-default-light);
+}
+
+.mds-dropdown-item--action[role='menuitem'].mds-dropdown-item--danger {
+  color: var(--mds-text-danger);
+}
+
+.mds-dropdown-item--action.mds-dropdown-item--danger:hover:not(:disabled):not(
+    [aria-disabled='true']
+  ) {
+  color: var(--mds-text-danger);
+  background-color: var(--mds-bg-interactive-danger-default-light);
+}
+
+.mds-dropdown-item--action.mds-dropdown-item--danger:active:not(:disabled):not(
+    [aria-disabled='true']
+  ) {
+  background-color: var(--mds-bg-interactive-danger-default-light);
+}
+
+.mds-dropdown-item--action[role='menuitem'].mds-dropdown-item--danger:disabled,
+.mds-dropdown-item--action[role='menuitem'].mds-dropdown-item--danger[aria-disabled='true'] {
+  color: var(--mds-text-danger-disabled);
+}
+
+.mds-dropdown-item--action[role='menuitem'].mds-dropdown-item--danger:focus-visible {
+  outline-color: var(--mds-focus-danger);
+}
+
+/* Link variant: reset default anchor styling to match button appearance */
+.mds-dropdown-item--action[role='menuitem'] {
+  text-decoration: none;
+  color: var(--mds-text-subtle);
+}
+
+.mds-dropdown-item--action[role='menuitem'][aria-disabled='true'] {
+  color: var(--mds-text-muted);
+}
+
+.mds-dropdown-item--action[role='menuitem']:not(
+    .mds-dropdown-item--danger
+  ):hover,
+.mds-dropdown-item--action[role='menuitem']:not(
+    .mds-dropdown-item--danger
+  ):active,
+.mds-dropdown-item--action[role='menuitem']:not(
+    .mds-dropdown-item--danger
+  ):focus,
+.mds-dropdown-item--action[role='menuitem']:not(
+    .mds-dropdown-item--danger
+  ):visited {
+  text-decoration: none;
+  color: var(--mds-text-subtle);
+}
+
+/* ------------------------------------------------------------------ */
+/* Select item                                                         */
+/* ------------------------------------------------------------------ */
+
+.mds-dropdown-item--select:hover:not(:disabled):not([aria-disabled='true']) {
+  background-color: var(--mds-bg-interactive-primary-default-light);
+}
+
+.mds-dropdown-item--select:active:not(:disabled):not([aria-disabled='true']) {
+  background-color: var(--mds-bg-interactive-primary-default-light);
+}
+
+.mds-dropdown-item--select.mds-dropdown-item--selected {
+  background-color: var(--mds-bg-surface-subtle);
+}
+
+/* Hover wins over the selected fill, matching the Figma state matrix. */
+.mds-dropdown-item--select.mds-dropdown-item--selected:hover:not(:disabled):not(
+    [aria-disabled='true']
+  ) {
+  background-color: var(--mds-bg-interactive-primary-default-light);
+}
+
+/* Check mark — Figma color/theme/primary; text-link token carries the same
+  semantic primary color for glyph-on-surface use. */
+.mds-dropdown-item__check-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  block-size: var(--mds-icons-md);
+  flex-shrink: 0;
+}
+
+.mds-dropdown-item__check {
+  display: inline-block;
+  flex-shrink: 0;
+  inline-size: var(--mds-icons-xs);
+  block-size: var(--mds-icons-xxs);
+  background-color: var(--mds-text-link-primary-default);
+  margin: auto 0;
+  mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iNyIgdmlld0JveD0iMCAwIDkuMzMzMzMgNyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIuNzI0NTggNi42ODUyOUMzLjEzOTM5IDcuMTA0OSAzLjc4MDQ3IDcuMTA0OSA0LjE5NTI5IDYuNjg1MjlMOS4wMjIyMiAxLjgwMjQ1QzkuNDM3MDQgMS4zODI4MyA5LjQzNzA0IDAuNzM0MzMyIDkuMDIyMjIgMC4zMTQ3MTRDOC42MDc0MSAtMC4xMDQ5MDUgNy45NjYzMyAtMC4xMDQ5MDUgNy41NTE1MiAwLjMxNDcxNEwzLjQ3ODc5IDQuNDM0NjFMMS43ODE4MiAyLjc1NjEzQzEuMzY3IDIuMzM2NTEgMC43MjU5MjYgMi4zMzY1MSAwLjMxMTExMSAyLjc1NjEzQy0wLjEwMzcwNCAzLjE3NTc1IC0wLjEwMzcwNCAzLjgyNDI1IDAuMzExMTExIDQuMjQzODdMMi43MjQ1OCA2LjY4NTI5WiIgZmlsbD0iIzFEMjEyNSIvPgo8L3N2Zz4K");
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iNyIgdmlld0JveD0iMCAwIDkuMzMzMzMgNyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIuNzI0NTggNi42ODUyOUMzLjEzOTM5IDcuMTA0OSAzLjc4MDQ3IDcuMTA0OSA0LjE5NTI5IDYuNjg1MjlMOS4wMjIyMiAxLjgwMjQ1QzkuNDM3MDQgMS4zODI4MyA5LjQzNzA0IDAuNzM0MzMyIDkuMDIyMjIgMC4zMTQ3MTRDOC42MDc0MSAtMC4xMDQ5MDUgNy45NjYzMyAtMC4xMDQ5MDUgNy41NTE1MiAwLjMxNDcxNEwzLjQ3ODc5IDQuNDM0NjFMMS43ODE4MiAyLjc1NjEzQzEuMzY3IDIuMzM2NTEgMC43MjU5MjYgMi4zMzY1MSAwLjMxMTExMSAyLjc1NjEzQy0wLjEwMzcwNCAzLjE3NTc1IC0wLjEwMzcwNCAzLjgyNDI1IDAuMzExMTExIDQuMjQzODdMMi43MjQ1OCA2LjY4NTI5WiIgZmlsbD0iIzFEMjEyNSIvPgo8L3N2Zz4K");
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
+/* Check is always in the DOM to preserve trailing-column width across
+   selection state changes. Hide it visually when the row is unselected. */
+.mds-dropdown-item--select:not(.mds-dropdown-item--selected)
+  .mds-dropdown-item__check {
+  visibility: hidden;
+}
+
+.mds-dropdown-item:disabled .mds-dropdown-item__check,
+.mds-dropdown-item[aria-disabled='true'] .mds-dropdown-item__check {
+  background-color: var(--mds-text-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* Expandable item                                                     */
+/* ------------------------------------------------------------------ */
+
+.mds-dropdown-item--expandable:hover:not(:disabled):not(
+    [aria-disabled='true']
+  ) {
+  background-color: var(--mds-bg-interactive-primary-default-light);
+}
+
+.mds-dropdown-item--expandable:active:not(:disabled):not(
+    [aria-disabled='true']
+  ) {
+  background-color: var(--mds-bg-interactive-primary-default-light);
+}
+
+.mds-dropdown-item__chevron-right {
+  display: inline-block;
+  flex-shrink: 0;
+  inline-size: var(--mds-icons-xxs);
+  block-size: var(--mds-icons-xs);
+  background-color: var(--mds-text-subtle);
+  mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNyIgaGVpZ2h0PSIxMSIgdmlld0JveD0iMCAwIDYuMDExNzIgMTAuNTExNyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTUuNzgzMiA0LjcyODUyQzYuMDg3ODkgNS4wMDk3NyA2LjA4Nzg5IDUuNTAxOTUgNS43ODMyIDUuNzgzMkwxLjI4MzIgMTAuMjgzMkMxLjAwMTk1IDEwLjU4NzkgMC41MDk3NjYgMTAuNTg3OSAwLjIyODUxNiAxMC4yODMyQy0wLjA3NjE3MTkgMTAuMDAyIC0wLjA3NjE3MTkgOS41MDk3NyAwLjIyODUxNiA5LjIyODUyTDQuMTg5NDUgNS4yNDQxNEwwLjIyODUxNiAxLjI4MzJDLTAuMDc2MTcxOSAxLjAwMTk1IC0wLjA3NjE3MTkgMC41MDk3NjYgMC4yMjg1MTYgMC4yMjg1MTZDMC41MDk3NjYgLTAuMDc2MTcxOSAxLjAwMTk1IC0wLjA3NjE3MTkgMS4yODMyIDAuMjI4NTE2TDUuNzgzMiA0LjcyODUyWiIgZmlsbD0iIzFEMjEyNSIvPgo8L3N2Zz4K");
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNyIgaGVpZ2h0PSIxMSIgdmlld0JveD0iMCAwIDYuMDExNzIgMTAuNTExNyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTUuNzgzMiA0LjcyODUyQzYuMDg3ODkgNS4wMDk3NyA2LjA4Nzg5IDUuNTAxOTUgNS43ODMyIDUuNzgzMkwxLjI4MzIgMTAuMjgzMkMxLjAwMTk1IDEwLjU4NzkgMC41MDk3NjYgMTAuNTg3OSAwLjIyODUxNiAxMC4yODMyQy0wLjA3NjE3MTkgMTAuMDAyIC0wLjA3NjE3MTkgOS41MDk3NyAwLjIyODUxNiA5LjIyODUyTDQuMTg5NDUgNS4yNDQxNEwwLjIyODUxNiAxLjI4MzJDLTAuMDc2MTcxOSAxLjAwMTk1IC0wLjA3NjE3MTkgMC41MDk3NjYgMC4yMjg1MTYgMC4yMjg1MTZDMC41MDk3NjYgLTAuMDc2MTcxOSAxLjAwMTk1IC0wLjA3NjE3MTkgMS4yODMyIDAuMjI4NTE2TDUuNzgzMiA0LjcyODUyWiIgZmlsbD0iIzFEMjEyNSIvPgo8L3N2Zz4K");
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
+/* Mirror the submenu chevron under RTL so it keeps pointing towards the
+   inline-end where the submenu opens. */
+[dir='rtl'] .mds-dropdown-item__chevron-right {
+  transform: scaleX(-1);
+}
+
+/* Disabled expandable row: mute the chevron to match the label color. */
+.mds-dropdown-item[aria-disabled='true'] .mds-dropdown-item__chevron-right {
+  background-color: var(--mds-text-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* Header item                                                         */
+/* ------------------------------------------------------------------ */
+
+.mds-dropdown-item--header {
+  cursor: default;
+  gap: var(--mds-spacing-xxs);
+}
+
+.mds-dropdown-item--header .mds-dropdown-item__label {
+  font-size: var(--mds-font-size-paragraph-small);
+  font-weight: var(--mds-font-weight-medium);
+  line-height: var(--mds-line-height-paragraph-xs);
+  color: var(--mds-text-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* Divider                                                             */
+/* ------------------------------------------------------------------ */
+
+.mds-dropdown-divider {
+  inline-size: 100%;
+  block-size: var(--mds-stroke-weight-sm);
+  background-color: var(--mds-border-default);
+  border-radius: var(--mds-border-radius-pill);
+  flex-shrink: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* List item                                                         */
+/* ------------------------------------------------------------------ */
+
+.mds-dropdown-item--list {
+  pointer-events: none;
+  align-items: flex-start;
+}
+
+/* List rows can contain longer status text; allow wrapping on narrow menus
+   instead of inheriting the default single-line ellipsis behavior. */
+.mds-dropdown-item--list .mds-dropdown-item__label {
+  color: var(--mds-text-subtle);
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+
+/* Keep the list indicator aligned with the first text line when labels wrap. */
+.mds-dropdown-item--list .mds-dropdown-item__check {
+  /* margin-block-start: var(--mds-spacing-xxs); */
+}
+
+/* Unselected (todo) list items show an empty circle instead of the filled check. */
+.mds-dropdown-item--list:not(.mds-dropdown-item--selected)
+  .mds-dropdown-item__check {
+  background-color: var(--mds-text-subtle);
+  mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTYgMTJDMi42NzE4OCAxMiAwIDkuMzI4MTIgMCA2QzAgMi42OTUzMSAyLjY3MTg4IDAgNiAwQzkuMzA0NjkgMCAxMiAyLjY5NTMxIDEyIDZDMTIgOS4zMjgxMiA5LjMwNDY5IDEyIDYgMTJaTTYgMS4xMjVDMy4yODEyNSAxLjEyNSAxLjEyNSAzLjMwNDY5IDEuMTI1IDZDMS4xMjUgOC43MTg3NSAzLjI4MTI1IDEwLjg3NSA2IDEwLjg3NUM4LjY5NTMxIDEwLjg3NSAxMC44NzUgOC43MTg3NSAxMC44NzUgNkMxMC44NzUgMy4zMDQ2OSA4LjY5NTMxIDEuMTI1IDYgMS4xMjVaIiBmaWxsPSIjNDk1MDU3Ii8+Cjwvc3ZnPgo=");
+  -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTYgMTJDMi42NzE4OCAxMiAwIDkuMzI4MTIgMCA2QzAgMi42OTUzMSAyLjY3MTg4IDAgNiAwQzkuMzA0NjkgMCAxMiAyLjY5NTMxIDEyIDZDMTIgOS4zMjgxMiA5LjMwNDY5IDEyIDYgMTJaTTYgMS4xMjVDMy4yODEyNSAxLjEyNSAxLjEyNSAzLjMwNDY5IDEuMTI1IDZDMS4xMjUgOC43MTg3NSAzLjI4MTI1IDEwLjg3NSA2IDEwLjg3NUM4LjY5NTMxIDEwLjg3NSAxMC44NzUgOC43MTg3NSAxMC44NzUgNkMxMC44NzUgMy4zMDQ2OSA4LjY5NTMxIDEuMTI1IDYgMS4xMjVaIiBmaWxsPSIjNDk1MDU3Ii8+Cjwvc3ZnPgo=");
+}
+
+/* List items are aria-disabled for read-only semantics; keep done state check
+   on the primary token instead of inheriting the generic disabled mute color. */
+.mds-dropdown-item--list.mds-dropdown-item--selected .mds-dropdown-item__check {
+  background-color: var(--mds-text-link-primary-default);
+}
+
+/* ------------------------------------------------------------------ */
+/* Multiselect item                                                    */
+/* ------------------------------------------------------------------ */
+
+/* Keep top/bottom spacing on the XS token while preserving the default
+   horizontal spacing used by other dropdown rows. */
+.mds-dropdown-item.mds-dropdown-item--multiselect {
+  padding-block: var(--mds-spacing-xs);
+  gap: 0; /* Checkbox has its own internal gap. */
+}
+
+.mds-dropdown-item--multiselect:hover:not([aria-disabled='true']) {
+  background-color: var(--mds-bg-interactive-primary-default-light);
+}
+
+.mds-dropdown-item--multiselect:active:not([aria-disabled='true']) {
+  background-color: var(--mds-bg-interactive-primary-default-light);
+}
+
+/* Multiselect rows can include longer option labels; wrap rather than
+   truncating so text does not collide with the trailing indicator area. */
+.mds-dropdown-item--multiselect .mds-dropdown-item__label {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+
+/* The inert wrapper span for the Checkbox visual indicator — remove from
+   layout flow so the Checkbox's own form-check structure sits inline. */
+.mds-dropdown-item__checkbox {
+  display: contents;
+}
+
+/* ------------------------------------------------------------------ */
+/* Custom item (slot)                                                  */
+/* ------------------------------------------------------------------ */
+
+.mds-dropdown-item--custom {
+  cursor: default;
+}
+
+.mds-dropdown-item__slot {
+  flex: 1 0 0;
+  min-inline-size: 0;
+}
+
+/* ------------------------------------------------------------------ */
+
+/* Group wrapper                                                       */
+/* ------------------------------------------------------------------ */
+
+/* display:contents removes the wrapper from layout flow so the menu
+   panel's gap applies uniformly across group labels and items. */
+.mds-dropdown-item-group {
+  display: contents;
+}
+
+/* Styled to match DropdownItemHeader visually. */
+.mds-dropdown-item-group__label {
+  display: flex;
+  align-items: center;
+  inline-size: 100%;
+  padding: var(--mds-spacing-xs) var(--mds-spacing-sm);
+  font-size: var(--mds-font-size-paragraph-small);
+  font-weight: var(--mds-font-weight-medium);
+  color: var(--mds-text-muted);
+  line-height: var(--mds-line-height-paragraph-xs);
+  box-sizing: border-box;
+  cursor: default;
+}
+
+/* ------------------------------------------------------------------ */
+/* Composed Dropdown                                                   */
+/* ------------------------------------------------------------------ */
+
+.mds-dropdown {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  /* No position:relative needed — the menu is portaled via FloatingPortal */
+}
+
+</style>
+<style>
   .acards{ display:flex; flex-direction:column; gap:12px; }
   /* ACTIVITY CARD - three states, sampled pixel by pixel in the source
      prototype rather than inferred from token lists:
@@ -52947,20 +53532,6 @@ body {
     background:var(--mds-bg-surface-subtle);
   }
 
-  /* the real chooser lives in a Boost modal; these are the few bits the
-     compiled CSS does not already carry for a standalone use */
-  /* core lays the chooser out as a grid of tiles; width:100% would stack them */
-  .modchoosercontainer .option{
-    text-align:left; flex:1 1 210px; max-width:260px; align-items:flex-start;
-    border:1px solid var(--mds-border-subtle); border-radius:.5rem; padding:12px;
-  }
-  .modchoosercontainer .option:hover{
-    border-color:var(--mds-bg-interactive-primary-default);
-    background:var(--mds-bg-surface-subtle);
-  }
-  .modchoosercontainer .optionscontainer{ gap:12px; }
-  .optionname{ font-weight:600; }
-  .optionsummary{ font-size:12.5px; color:var(--mds-text-muted); }
 
 
   /* dev:start */
@@ -53167,7 +53738,6 @@ body {
                 <label class="form-check-label" for="advSwitch">Advanced course details</label>
               </div>
               <span class="text-muted small" id="modeHint"></span>
-              <button type="button" class="btn mds-btn btn-primary mds-btn--size-md ms-auto" data-go="2">Continue</button>
             </div>
           </div>
 
@@ -53200,11 +53770,6 @@ body {
                 </div>
               </fieldset>
             </form>
-            <div class="d-flex gap-2">
-              <button type="button" class="btn mds-btn btn-secondary mds-btn--size-md" data-go="1">Back</button>
-              <div class="ms-auto"></div>
-              <button type="button" class="btn mds-btn btn-primary mds-btn--size-md" id="loNext" data-go="3">Continue</button>
-            </div>
           </div>
 
           <!-- STEP 3 : course template -->
@@ -53222,11 +53787,6 @@ body {
                 </div>
               </fieldset>
             </form>
-            <div class="d-flex gap-2">
-              <button type="button" class="btn mds-btn btn-secondary mds-btn--size-md" data-go="2">Back</button>
-              <div class="ms-auto"></div>
-              <button type="button" class="btn mds-btn btn-primary mds-btn--size-md" id="tplNext">Build the outline</button>
-            </div>
           </div>
 
           <!-- STEP 4 : outline, real activity-item rows -->
@@ -53239,11 +53799,6 @@ body {
               </h2>
               <div id="outline"></div>
             </section>
-            <div class="d-flex gap-2">
-              <button type="button" class="btn mds-btn btn-secondary mds-btn--size-md" data-go="3">Back</button>
-              <div class="ms-auto"></div>
-              <button type="button" class="btn mds-btn btn-primary mds-btn--size-md" data-go="5">Review</button>
-            </div>
           </div>
 
           <!-- STEP 5 : review -->
@@ -53253,10 +53808,36 @@ body {
               <div id="reviewBody"></div>
             </section>
             <div id="reqBlock" class="mb-3"></div>
-            <div class="d-flex gap-2">
-              <button type="button" class="btn mds-btn btn-secondary mds-btn--size-md" data-go="4">Back</button>
-              <div class="ms-auto"></div>
-              <button type="button" class="btn mds-btn btn-primary mds-btn--size-md" id="createBtn">Create course</button>
+          </div>
+
+          <!-- Step buttons in core's sticky footer: theme_boost's
+               core/sticky_footer markup, as a form gets from
+               add_sticky_action_buttons(). Core's .stickyfooter .btn rule plus
+               MDS Button size lg make them the large footer buttons. One group
+               per step; goStep() shows the current one. -->
+          <div id="sticky-footer" class="stickyfooter bg-white border-top">
+            <div class="sticky-footer-content-wrapper d-flex justify-content-center">
+              <div class="sticky-footer-content d-flex align-items-center px-3 py-2 justify-content-end" id="stepFooter">
+                <div class="step-foot on gap-2 w-100" data-foot="1">
+                  <button type="button" class="btn mds-btn btn-primary mds-btn--size-lg ms-auto" data-go="2">Continue</button>
+                </div>
+                <div class="step-foot gap-2 w-100" data-foot="2">
+                  <button type="button" class="btn mds-btn btn-secondary mds-btn--size-lg" data-go="1">Back</button>
+                  <button type="button" class="btn mds-btn btn-primary mds-btn--size-lg ms-auto" id="loNext" data-go="3">Continue</button>
+                </div>
+                <div class="step-foot gap-2 w-100" data-foot="3">
+                  <button type="button" class="btn mds-btn btn-secondary mds-btn--size-lg" data-go="2">Back</button>
+                  <button type="button" class="btn mds-btn btn-primary mds-btn--size-lg ms-auto" id="tplNext">Build the outline</button>
+                </div>
+                <div class="step-foot gap-2 w-100" data-foot="4">
+                  <button type="button" class="btn mds-btn btn-secondary mds-btn--size-lg" data-go="3">Back</button>
+                  <button type="button" class="btn mds-btn btn-primary mds-btn--size-lg ms-auto" data-go="5">Review</button>
+                </div>
+                <div class="step-foot gap-2 w-100" data-foot="5">
+                  <button type="button" class="btn mds-btn btn-secondary mds-btn--size-lg" data-go="4">Back</button>
+                  <button type="button" class="btn mds-btn btn-primary mds-btn--size-lg ms-auto" id="createBtn">Create course</button>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -53320,36 +53901,61 @@ body {
           </section>
         </section>
 
-        <!-- Activity chooser: core's own modchooser structure
-             (modchoosercontainer / modchooserfilters / modchoosernav /
-             modchoosercontent + .option tiles), inside a Boost modal. -->
-        <div class="modal fade" id="chooserModal" tabindex="-1" aria-labelledby="chooserTitle" aria-hidden="true">
-          <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <!-- Activity chooser, as core 5.2 builds it: core/modal with
+             classes "modchooser" + large (modal-lg), body from
+             core_courseformat/activitychooser (carousel: modules | help),
+             modchoosercontainer, search_input_auto, footer.mustache. -->
+        <div class="modal fade moodle-has-zindex" id="chooserModal" tabindex="-1" role="dialog" aria-modal="true"
+             aria-labelledby="chooserTitle" aria-hidden="true">
+          <div class="modal-dialog modchooser modal-lg" data-region="modal" tabindex="0">
             <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="chooserTitle">Add an activity or resource</h5>
+              <div class="modal-header" data-region="header">
+                <h2 id="chooserTitle" class="modal-title fs-5 text-truncate" data-region="title">Add an activity or resource</h2>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
-              <div class="modal-body">
-                <div class="modchoosercontainer">
-                  <div class="modchooserfilters">
-                    <div class="searchcontainer mb-4 p-1">
-                      <input type="search" class="form-control" id="chooserSearch"
-                             placeholder="Search activities" aria-label="Search activities">
+              <div class="modal-body" data-region="body">
+                <div data-region="carousel" class="carousel slide d-flex flex-fill">
+                  <div class="carousel-inner d-flex flex-fill" aria-live="polite">
+                    <div class="carousel-item p-3 py-sm-3 px-sm-5 active" data-region="modules" id="chooserModules">
+                      <div class="modchoosercontainer" data-region="chooser-container">
+                        <div class="modchooserfilters">
+                          <div class="searchcontainer mb-4 p-1">
+                            <div class="d-flex flex-wrap align-items-center simplesearchform">
+                              <div class="input-group searchbar w-100" role="search" aria-labelledby="chooserSearchLabel">
+                                <label for="chooserSearch" id="chooserSearchLabel">
+                                  <span class="visually-hidden">Search for activities by name or description</span>
+                                </label>
+                                <input type="text" data-region="input" data-action="search" id="chooserSearch"
+                                       class="form-control withclear rounded" placeholder="Search" name="search" autocomplete="off">
+                                <button class="btn btn-clear d-none" data-action="clearsearch" type="button" id="chooserClear">
+                                  <i class="icon fa-solid fa-xmark fa-fw" aria-hidden="true"></i>
+                                  <span class="visually-hidden">Clear search input</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="nav nav-pills modchoosernav d-flex flex-row flex-md-column flex-nowrap gap-2 me-md-5"
+                             id="chooserNav" role="tablist"></div>
+                        <div class="modchoosercontent tab-content" id="chooserContent" data-region="tabcontent" tabindex="-1"></div>
+                      </div>
                     </div>
+                    <div class="carousel-item p-3 py-sm-3 px-sm-5" data-region="help" id="chooserHelp"></div>
                   </div>
-                  <div class="nav nav-pills modchoosernav d-flex flex-row flex-md-column flex-nowrap gap-2 me-md-5"
-                       id="chooserNav" role="tablist"></div>
-                  <div class="modchoosercontent tab-content" id="chooserContent"></div>
                 </div>
               </div>
-              <div class="modal-footer justify-content-start">
-                <p class="small text-muted mb-0">
-                  Nothing here opens a form.
-                  <span class="chip meta">Ready</span> works as soon as it is added &middot;
-                  <span class="chip free">0 fields</span> nothing to set at all &middot;
-                  <span class="chip cost">Needs more</span> added hidden from students until it has what it needs.
-                </p>
+              <div class="modal-footer" data-region="footer">
+                <div class="w-100 d-flex justify-content-between" data-region="chooser-option-summary-actions-container">
+                  <div data-region="active-footer-container"></div>
+                  <div>
+                    <button class="closeoptionsummary btn btn-secondary d-none" data-action="close-chooser-option-summary"
+                            tabindex="0" id="chooserBack">Back</button>
+                  </div>
+                  <div>
+                    <button class="addoption btn btn-primary" title="Add selected activity"
+                            data-action="add-selected-chooser-option" tabindex="0" id="chooserAdd" disabled>Add</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -53537,7 +54143,7 @@ body {
       <div class="anno-title"><i class="fa-solid fa-door-open"></i> Created now, finished later</div>
       <div class="anno-body">The course and every activity in it exist already. What is not finished is hidden from students until it is &mdash; so a teacher can build the whole shape in one sitting and fill in the content over the following week, without anyone seeing a half-built course.</div>
     </div>
-    <div class="anno-card" data-target="#courseContent .acard.is-draft .achips" data-side="left">
+    <div class="anno-card" data-target="#courseContent .acard.is-draft .chip-act" data-side="left">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
       <div class="anno-badge">10</div>
       <div class="anno-title"><i class="fa-solid fa-pen-ruler"></i> Placeholders that say what they need</div>
@@ -53958,6 +54564,7 @@ Decisions:
 - "Advanced course details" is a switch: step 1 becomes the existing
   course/edit_form.php (headers, order, strings), same field ids, values kept
   both ways; the wizard continues. Format stays with the template.
+- Core sticky-footer step buttons; course cards per Figma MDL-87755; chooser core 5.2.
 - ABC learning types are gone from cards, chooser and report. Swap now
   cycles within the module's MOD_PURPOSE. The Alignment report keeps outcome
   coverage only; the radar went with ABC.
@@ -54215,6 +54822,13 @@ Traps:
     clearTimeout(tT); tT = setTimeout(function(){ toastEl.classList.remove("on"); }, 3000); }
 
   /* real activity icon + real purpose colour container */
+  /* the course card's icon: core's monologo at 24px with no tile (MDS
+     ActivityIcon Container=None). activityiconcontainer + the purpose class
+     keep core's recolouring filter. */
+  function iconBare(m){
+    return '<span class="activityiconcontainer acard-icon ' + (MODS[m].purpose || "other") + '">'
+      + '<img src=' + JSON.stringify(ICONS[m] || "") + ' class="activityicon" alt=""></span>';
+  }
   function icon(m){
     return '<div class="activity-icon activityiconcontainer smaller ' + (MODS[m].purpose||"other")
       + ' align-self-start me-2">'
@@ -54760,15 +55374,16 @@ Traps:
 
     var actions;
     if(isCourse){
-      actions = (draft
-          ? ''
-          : hidden
-            ? '<button class="btn mds-btn btn-outline-primary mds-btn--size-sm" data-act="show" data-si="' + si + '" data-ii="' + ii + '">'
-              + '<i class="fa-regular fa-eye me-1" aria-hidden="true"></i>Show to students</button>'
-            : '<button class="btn mds-btn btn-ghost mds-btn--icon-only mds-btn--size-md" data-act="hide" data-si="' + si + '" data-ii="' + ii
-              + '" title="Hide from students" aria-label="Hide from students"><i class="fa-regular fa-eye-slash" aria-hidden="true"></i></button>')
-        + '<button class="btn mds-btn btn-ghost mds-btn--icon-only mds-btn--size-md" data-act="drop" data-si="' + si
-        + '" data-ii="' + ii + '" title="Delete" aria-label="Delete"><span aria-hidden="true">&times;</span></button>';
+      /* MDS Dropdown triggers, as in the Figma card: groups, visibility,
+         completion, then an icon-only menu. Each opens an MDS menu. */
+      var key = ' data-si="' + si + '" data-ii="' + ii + '"';
+      var g = GROUPMODES[it.group || "none"];
+      actions = ddTrigger("group", key, g.icon, g.label)
+        + ddTrigger("vis", key, hidden ? "fa-eye-slash" : "fa-eye", hidden ? "Hidden" : "Visible")
+        + ddTrigger("compl", key, null, "Completion")
+        + '<button type="button" class="btn mds-btn btn-ghost mds-btn--icon-only mds-btn--size-lg mds-dropdown-trigger"'
+        + ' data-dd="more"' + key + ' aria-haspopup="menu" aria-expanded="false" aria-label="Edit ' + esc(it.t) + '">'
+        + '<i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i></button>';
     } else {
       actions = it.skel ? ''
         : '<button class="btn mds-btn btn-ghost mds-btn--icon-only mds-btn--size-md" data-act="swap" data-si="' + si
@@ -54796,7 +55411,7 @@ Traps:
           + '<button type="button" class="acard-drag" aria-label="Move ' + esc(it.t) + '"'
           + ' title="Drag to move, or use the arrow keys">'
           + '<i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>'
-          + '<span class="atype">' + icon(it.m) + '<span class="tlabel">' + mod.label + '</span>' + abcLabel + '</span>'
+          + '<span class="atype">' + (isCourse ? iconBare(it.m) : icon(it.m)) + '<span class="tlabel">' + mod.label + '</span>' + abcLabel + '</span>'
           + (MODHELP[it.m] ? '<button type="button" class="typeinfo" data-typeinfo="' + it.m + '"'
               + ' aria-label="About ' + mod.label + '" aria-expanded="false">'
               + '<i class="fa-solid fa-circle-info" aria-hidden="true"></i></button>' : '')
@@ -54879,16 +55494,38 @@ Traps:
     startRename(b, modelFor(b));
   }); });
 
+  /* Core's own add controls on the course page (edit mode only):
+     core_courseformat/local/content/divider wrapping
+     addresourceoractivitybutton. A hover divider with an icon-only "+"
+     before every activity (cm.mustache), and an always-visible divider
+     with the full label closing each section (add_cm_controls). */
+  function addDivider(si, ii, it){
+    var before = ii !== undefined;
+    return '<div class="divider bulk-hidden d-flex justify-content-center align-items-center'
+      + (before ? '' : ' always-visible my-3') + '"><hr><div class="divider-content px-3">'
+      + '<button class="section-modchooser section-modchooser-link btn add-content d-flex justify-content-center align-items-center icon-no-margin"'
+      + ' data-action="open-chooser" data-chooser="' + si + '"'
+      + (before ? ' data-before="' + ii + '" aria-label="Insert an activity or resource before \'' + esc(it.t) + '\'"'
+                + ' title="Add an activity or resource"' : '') + '>'
+      + (before ? '<i class="icon fa-solid fa-plus fa-fw" aria-hidden="true"></i>'
+                : '<div><span class="me-2"><i class="icon fa-solid fa-plus fa-fw" aria-hidden="true"></i></span>'
+                  + '<span class="activity-add-text">Add an activity or resource</span></div>')
+      + '</button></div></div>';
+  }
   function sectionsHTML(secs, ctx){
+    var isCourse = ctx === "course";
     return secs.map(function(sec,si){
       var body = sec.items.length
-        ? '<div class="acards">' + sec.items.map(function(it,ii){ return acard(it, si, ii, ctx); }).join("") + '</div>'
+        ? '<div class="acards">' + sec.items.map(function(it,ii){
+            return (isCourse ? addDivider(si, ii, it) : '') + acard(it, si, ii, ctx); }).join("") + '</div>'
+        : isCourse ? ''
         : '<div class="sempty">'
           + '<p class="mb-2">Nothing here yet.</p>'
           + '<button class="btn mds-btn btn-primary mds-btn--size-sm" data-chooser="' + si + '">'
           + '<i class="fa-solid fa-plus me-1" aria-hidden="true"></i>Add an activity or resource</button>'
           + '</div>';
-      var add = sec.items.length
+      var add = isCourse ? addDivider(si)
+        : sec.items.length
         ? '<button class="btn mds-btn btn-secondary mds-btn--size-sm mt-3" data-chooser="' + si + '">'
           + '<i class="fa-solid fa-plus me-1" aria-hidden="true"></i>Add an activity or resource</button>'
         : '';
@@ -55075,74 +55712,291 @@ Traps:
      four empty topics, it should mean the normal way of adding things is
      one click away.
      ============================================================ */
-  var chooserTarget = null, chooserModal = null;
-  var PURPOSE_TABS = [
-    {k:"all",                label:"All"},
-    {k:"content",            label:"Content"},
-    {k:"assessment",         label:"Assessment"},
-    {k:"collaboration",      label:"Collaboration"},
-    {k:"communication",      label:"Communication"},
-    {k:"interactivecontent", label:"Interactive"}
+  var chooserTarget = null, chooserModal = null, chooserBefore = null, chooserSel = null;
+  var starred = {};
+  /* core_courseformat/local/activitychooser/exporter: All, Starred (only
+     once something is starred), Recommended (only when the site sets any),
+     a separator, then each MOD_PURPOSE category that has modules. Labels
+     and help are core_course's mod_purpose_* strings. */
+  var CATS = [
+    {k:"administration",     label:"Administration",      help:"Tools for course management."},
+    {k:"assessment",         label:"Assessment",          help:"Activities that support evaluation and measurement of student understanding and performance, including individual and collaborative assessment, and peer assessment."},
+    {k:"collaboration",      label:"Collaboration",       help:"Activities for collaborative learning that encourage knowledge sharing, discussion, and teamwork."},
+    {k:"communication",      label:"Communication",       help:"Activities for real-time communication, asynchronous interactions, and feedback collection."},
+    {k:"content",            label:"Resources",           help:"Activities and tools for organising and displaying course materials such as documents, web links, and multimedia."},
+    {k:"interactivecontent", label:"Interactive content", help:"Engaging interactive activities that encourage active learner participation."}
   ];
-  function chooserTiles(purpose){
+  function chooserMods(k){
     return Object.keys(MODS).filter(function(m){
-      return purpose === "all" || MODS[m].purpose === purpose;
-    }).map(function(m){
-      var mod = MODS[m], cost = mod.cost;
-      var badge = mod.needs ? '<span class="chip cost">Needs more</span>'
-        : cost === "0" ? '<span class="chip free">0 fields</span>'
-        : '<span class="chip meta">Ready</span>';
-      return '<div class="option btn m-sm-1 position-relative" data-choose="' + m + '">'
-        + '<div class="d-flex gap-2 rounded align-items-start">'
-        + '<div class="optionicon icon-no-margin activityiconcontainer smaller ' + mod.purpose + '">'
-        + '<img src=' + JSON.stringify(ICONS[m] || "") + ' class="activityicon" alt="">'
-        + '</div>'
-        + '<div><div class="optionname clamp-2">' + mod.label + '</div>'
-        + '<div class="optionsummary">' + mod.purpose + ' ' + badge + '</div></div>'
-        + '</div></div>';
-    }).join("");
+      if(m === "subsection") return k === "all" || k === "content";
+      return k === "all" || (k === "favourites" ? starred[m] : MODS[m].purpose === k);
+    }).sort(function(a,b){ return MODS[a].label.localeCompare(MODS[b].label); });
   }
-  function buildChooser(){
-    $("#chooserNav").innerHTML = PURPOSE_TABS.map(function(t,i){
-      return '<a class="nav-item nav-link' + (i===0?" active":"") + '" data-bs-toggle="tab"'
-        + ' href="#chtab_' + t.k + '" role="tab">' + t.label + '</a>'; }).join("");
-    $("#chooserContent").innerHTML = PURPOSE_TABS.map(function(t,i){
-      return '<div class="tab-pane' + (i===0?" active":"") + '" id="chtab_' + t.k + '" role="tabpanel">'
-        + '<div class="optionscontainer d-flex flex-wrap">' + chooserTiles(t.k) + '</div></div>'; }).join("");
+  /* core_courseformat/local/activitychooser/item */
+  function chooserItem(m){
+    var mod = MODS[m], fav = !!starred[m];
+    return '<div tabindex="-1" role="menuitem" aria-label="' + mod.label + '"'
+      + ' class="option btn m-sm-1 position-relative" data-region="chooser-option-container" data-internal="' + m + '">'
+      + '<div class="d-flex gap-2 rounded" data-region="chooser-option-info-container">'
+      + '<div class="optionicon icon-no-margin modicon_' + m + ' activityiconcontainer smaller ' + (mod.purpose || "other") + '">'
+      + '<img src=' + JSON.stringify(ICONS[m] || "") + ' class="activityicon" alt=""></div>'
+      + '<div><a href="#" title="Add a new ' + mod.label + '" tabindex="-1" data-action="add-chooser-option"'
+      + ' class="optioninfo text-decoration-none text-body stretched-link"><div class="optionname clamp-2">' + mod.label + '</div></a>'
+      + '<div class="optionactions d-flex align-items-start" role="group" data-region="chooser-option-actions-container">'
+      + '<button class="btn btn-icon m-0 optionaction" data-action="show-option-summary" tabindex="-1"'
+      + ' title="Information about the ' + mod.label + ' activity"><span aria-hidden="true">'
+      + '<i class="icon fa-solid fa-circle-info fa-fw" aria-hidden="true"></i></span></button>'
+      + '<button class="btn btn-icon m-0 optionaction" data-action="manage-module-favourite" data-internal="' + m + '"'
+      + ' aria-pressed="' + fav + '" tabindex="-1" aria-label="' + (fav ? 'Remove ' + mod.label + ' from starred' : 'Add ' + mod.label + ' to starred') + '"'
+      + ' title="' + (fav ? 'Remove ' + mod.label + ' from starred' : 'Add ' + mod.label + ' to starred') + '">'
+      + '<i class="icon fa-' + (fav ? 'solid' : 'regular') + ' fa-star fa-fw" aria-hidden="true"></i></button>'
+      + '</div></div></div></div>';
+  }
+  function chooserTab(id, label, help, mods, active){
+    return '<div class="tab-pane' + (active ? ' active' : '') + '" id="chtab_' + id + '" data-region="' + id + '" role="tabpanel"'
+      + ' aria-labelledby="chnav_' + id + '">'
+      + '<div class="categorycontent" data-region="category-content">'
+      + '<h3 class="h5 mb-3 fw-bold">' + label + '</h3>'
+      + (help ? '<p class="activitychooser_help">' + help + '</p>' : '')
+      + '<div class="optionscontainer mw-100 position-relative" role="menubar" data-region="chooser-options-container">'
+      + mods.map(chooserItem).join("") + '</div></div></div>';
+  }
+  function buildChooser(keepTab){
+    var favN = chooserMods("favourites").length;
+    var tabs = [{id:"all", label:"All", mods:chooserMods("all")},
+                {id:"favourites", label:"Starred", mods:chooserMods("favourites"), shown:favN > 0},
+                {id:"recommended", label:"Recommended", help:"Activities recommended by your organisation.", mods:[], shown:false, sep:true}]
+      .concat(CATS.map(function(c){ return {id:c.k, label:c.label, help:c.help, mods:chooserMods(c.k)}; })
+      .filter(function(c){ return c.mods.length; }));
+    var active = keepTab && tabs.some(function(t){ return t.id === keepTab && t.shown !== false; }) ? keepTab : "all";
+    $("#chooserNav").innerHTML = tabs.map(function(t){
+      var on = t.id === active, shown = t.shown !== false;
+      return '<a class="nav-item nav-link' + (on ? ' active' : '') + (shown ? '' : ' d-none disabled') + '"'
+        + ' id="chnav_' + t.id + '" data-bs-toggle="tab" data-region="' + t.id + '-tab-nav" href="#chtab_' + t.id + '"'
+        + ' role="tab" aria-controls="chtab_' + t.id + '" aria-selected="' + on + '">' + t.label + '</a>'
+        + (t.sep ? '<hr class="d-none d-md-block ms-3" aria-hidden="true">' : '');
+    }).join("");
+    $("#chooserContent").innerHTML = tabs.map(function(t){
+      return chooserTab(t.id, t.label, t.help, t.mods, t.id === active); }).join("");
+    selectOption(null);
   }
   buildChooser();
 
-  $("#chooserSearch").addEventListener("input", function(){
-    var q = this.value.trim().toLowerCase();
-    $$("#chooserContent .option").forEach(function(o){
-      var name = o.querySelector(".optionname").textContent.toLowerCase();
-      o.style.display = (!q || name.indexOf(q) > -1) ? "" : "none";
+  /* search: core shows matches in the All tab and hides the categories */
+  function runSearch(){
+    var q = $("#chooserSearch").value.trim().toLowerCase();
+    $("#chooserClear").classList.toggle("d-none", !q);
+    if(q) bootstrap.Tab.getOrCreateInstance($("#chnav_all")).show();
+    var n = 0;
+    $$("#chtab_all .option").forEach(function(o){
+      var m = o.dataset.internal, hay = (MODS[m].label + " " + ((MODHELP[m] || {}).s || "")).toLowerCase();
+      var hit = !q || hay.indexOf(q) > -1; o.classList.toggle("d-none", !hit); if(hit) n++;
     });
-  });
-
-  var chooserModel = null;
-  function openChooser(si, M){
-    chooserTarget = si; chooserModel = M;
-    if(!chooserModal) chooserModal = new bootstrap.Modal(document.getElementById("chooserModal"));
-    chooserModal.show();
+    $("#chtab_all h3").textContent = q ? n + (n === 1 ? " result" : " results") : "All";
   }
-  document.addEventListener("click", function(e){
-    var b = e.target.closest("[data-chooser]"); if(!b) return;
-    openChooser(+b.dataset.chooser, modelFor(b));
-  });
-  $("#chooserContent").addEventListener("click", function(e){
-    var t = e.target.closest("[data-choose]"); if(!t || chooserTarget === null) return;
-    var m = t.dataset.choose, mod = MODS[m];
+  $("#chooserSearch").addEventListener("input", runSearch);
+  $("#chooserClear").addEventListener("click", function(){ $("#chooserSearch").value = ""; runSearch(); $("#chooserSearch").focus(); });
+
+  /* core: a click selects an option and enables Add; a double click, or
+     Add, adds it. The info button slides to the help page. */
+  function selectOption(m){
+    chooserSel = m;
+    $$("#chooserContent .option").forEach(function(o){
+      var on = o.dataset.internal === m;
+      o.classList.toggle("selected", on); o.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    $("#chooserAdd").disabled = !m;
+  }
+  function showHelp(m){
+    var mod = MODS[m], h = MODHELP[m] || {}, cat = CATS.filter(function(c){ return c.k === mod.purpose; })[0];
+    $("#chooserHelp").innerHTML = '<div class="optionsummary" tabindex="-1" data-region="chooser-option-summary-container">'
+      + '<div data-region="chooser-option-summary-content-container">'
+      + '<div data-region="summary-header" tabindex="0"><h3 class="h4 d-flex align-self-stretch align-items-center mb-4 gap-2">'
+      + '<span class="modicon_' + m + ' activityiconcontainer smaller ' + (mod.purpose || "other") + '">'
+      + '<img src=' + JSON.stringify(ICONS[m] || "") + ' class="activityicon" alt=""></span>' + mod.label + '</h3></div>'
+      + '<div class="d-flex flex-column flex-md-row-reverse gap-3 gap-md-5">'
+      + '<div class="activitychooser-option-details">'
+      + (cat ? '<div class="modchooser-detail"><p class="visually-hidden">Supports</p>'
+        + '<ul class="list-unstyled modchoosernav nav nav-pills d-flex gap-2 flex-column"><li>'
+        + '<button class="nav-item nav-link border" data-action="chooser-display-category" data-category="' + cat.k + '">'
+        + cat.label + '</button></li></ul></div>' : '')
+      + '</div><hr class="d-block d-md-none my-2">'
+      + '<div class="flex-grow-1 pe-md-5" tabindex="0"><div class="optionsummary-summary"><p>' + esc(h.s || "") + '</p></div>'
+      + (h.t ? '<div class="optionsummary-help"><p>' + esc(h.t) + '</p></div>' : '')
+      + '</div></div></div></div>';
+    selectOption(m);
+    slide("help");
+  }
+  function slide(which){
+    $("#chooserModules").classList.toggle("active", which !== "help");
+    $("#chooserHelp").classList.toggle("active", which === "help");
+    $("#chooserBack").classList.toggle("d-none", which !== "help");
+  }
+  function addChosen(m){
+    if(chooserTarget === null || !m) return;
+    var mod = MODS[m];
     var name = mod.cost === "0" ? "(text and media area)" : mod.label;
     var it = {m:m, t:name, lo:0, filled:false};
     if(chooserModel.ctx === "course") it.visible = needs(it) ? 0 : 1;
-    chooserModel.secs[chooserTarget].items.push(it);
+    var list = chooserModel.secs[chooserTarget].items;
+    if(chooserBefore !== null) list.splice(chooserBefore, 0, it); else list.push(it);
     chooserModel.render(); renderRequirements();
     if(chooserModal) chooserModal.hide();
     toast(needs(it)
       ? "<strong>" + mod.label + "</strong> added" + (chooserModel.ctx === "course" ? ", hidden from students" : "")
         + ". It needs " + needs(it) + " before they can use it."
-      : "<strong>" + mod.label + "</strong> added \u2014 no form to fill in. Rename it any time.");
+      : "<strong>" + mod.label + "</strong> added — no form to fill in. Rename it any time.");
+  }
+
+  var chooserModel = null;
+  function openChooser(si, M, before){
+    chooserTarget = si; chooserModel = M; chooserBefore = (before === undefined || before === null) ? null : before;
+    $("#chooserSearch").value = ""; runSearch(); slide("modules"); selectOption(null);
+    if(!chooserModal) chooserModal = new bootstrap.Modal(document.getElementById("chooserModal"));
+    chooserModal.show();
+  }
+  document.addEventListener("click", function(e){
+    var b = e.target.closest("[data-chooser]"); if(!b) return;
+    openChooser(+b.dataset.chooser, modelFor(b), b.dataset.before !== undefined ? +b.dataset.before : null);
+  });
+  $("#chooserModal").addEventListener("click", function(e){
+    var act = e.target.closest("[data-action]"), opt = e.target.closest(".option");
+    var a = act && act.dataset.action;
+    if(a === "manage-module-favourite"){
+      e.preventDefault();
+      var m = act.dataset.internal; starred[m] = !starred[m];
+      var tab = ($("#chooserNav .nav-link.active") || {}).id;
+      buildChooser(tab ? tab.replace("chnav_", "") : null);
+      return;
+    }
+    if(a === "show-option-summary" && opt){ e.preventDefault(); showHelp(opt.dataset.internal); return; }
+    if(a === "close-chooser-option-summary"){ slide("modules"); return; }
+    if(a === "add-selected-chooser-option"){ addChosen(chooserSel); return; }
+    if(a === "chooser-display-category"){
+      slide("modules"); bootstrap.Tab.getOrCreateInstance($("#chnav_" + act.dataset.category)).show(); return;
+    }
+    if(opt){ e.preventDefault(); selectOption(opt.dataset.internal); }
+  });
+  $("#chooserContent").addEventListener("dblclick", function(e){
+    var opt = e.target.closest(".option"); if(opt){ e.preventDefault(); addChosen(opt.dataset.internal); }
+  });
+  $("#chooserContent").addEventListener("keydown", function(e){
+    var opt = e.target.closest(".option"); if(!opt) return;
+    if(e.key === "Enter"){ e.preventDefault(); addChosen(opt.dataset.internal); }
+    if(e.key === " "){ e.preventDefault(); selectOption(opt.dataset.internal); }
+  });
+  /* core's tab focus model: the first option in the shown tab is focusable */
+  $("#chooserModal").addEventListener("shown.bs.tab", function(){ selectOption(null); });
+
+  /* ============================================================
+     COURSE CARD DROPDOWNS - MDS Dropdown (trigger = MDS Button
+     outline-secondary md + masked chevron; menu = .mds-dropdown-menu with
+     select / action items). One menu open at a time, floated like the
+     outcome picker. Arrow keys move, Escape closes back to the trigger.
+     ============================================================ */
+  var GROUPMODES = {
+    none:     {label:"No groups",       icon:"fa-users-slash"},
+    separate: {label:"Separate groups", icon:"fa-users-rectangle"},
+    visible:  {label:"Visible groups",  icon:"fa-users"}
+  };
+  var COMPLETION = {
+    none:   "None",
+    manual: "Students must manually mark the activity as done",
+    auto:   "Add requirements"
+  };
+  function ddTrigger(kind, key, ico, label){
+    return '<button type="button" class="btn mds-btn btn-outline-secondary mds-btn--size-md mds-dropdown-trigger"'
+      + ' data-dd="' + kind + '"' + key + ' aria-haspopup="menu" aria-expanded="false">'
+      + (ico ? '<i class="fa-solid ' + ico + '" aria-hidden="true"></i>' : '')
+      + label + '<i class="mds-dropdown-trigger__chevron" aria-hidden="true"></i></button>';
+  }
+  function ddSelect(val, label, ico, on, desc, disabled){
+    return '<button type="button" role="menuitemradio" aria-checked="' + !!on + '" tabindex="-1"'
+      + (disabled ? ' aria-disabled="true"' : '') + ' data-ddv="' + val + '"'
+      + ' class="mds-dropdown-item mds-dropdown-item--select' + (on ? ' mds-dropdown-item--selected' : '')
+      + (desc ? ' mds-dropdown-item--with-description' : '') + '">'
+      + (ico ? '<span class="mds-dropdown-item__icon"><i class="fa-solid ' + ico + '" aria-hidden="true"></i></span>' : '')
+      + '<span class="mds-dropdown-item__label-wrap"><span class="mds-dropdown-item__label">' + label + '</span>'
+      + (desc ? '<span class="mds-dropdown-item__description">' + desc + '</span>' : '') + '</span>'
+      + '<span class="mds-dropdown-item__check-wrap" aria-hidden="true"><span class="mds-dropdown-item__check"></span></span></button>';
+  }
+  function ddAction(val, label, ico, danger){
+    return '<button type="button" role="menuitem" tabindex="-1" data-ddv="' + val + '"'
+      + ' class="mds-dropdown-item mds-dropdown-item--action' + (danger ? ' mds-dropdown-item--danger' : '') + '">'
+      + '<span class="mds-dropdown-item__icon"><i class="fa-solid ' + ico + '" aria-hidden="true"></i></span>'
+      + '<span class="mds-dropdown-item__label-wrap"><span class="mds-dropdown-item__label">' + label + '</span></span></button>';
+  }
+  var ddEl = null, ddBtn = null;
+  function closeDD(refocus){
+    if(ddEl){ ddEl.remove(); ddEl = null; }
+    if(ddBtn){
+      ddBtn.setAttribute("aria-expanded", "false"); ddBtn.classList.remove("mds-dropdown-trigger--open");
+      if(refocus) ddBtn.focus();
+      ddBtn = null;
+    }
+  }
+  function openDD(btn){
+    var same = ddBtn === btn; closeDD(); if(same) return;
+    var M = modelFor(btn), si = +btn.dataset.si, ii = +btn.dataset.ii, it = M.secs[si].items[ii], kind = btn.dataset.dd;
+    var html = "";
+    if(kind === "group"){
+      html = Object.keys(GROUPMODES).map(function(k){
+        return ddSelect(k, GROUPMODES[k].label, GROUPMODES[k].icon, (it.group || "none") === k); }).join("");
+    } else if(kind === "vis"){
+      var need = needs(it);
+      html = ddSelect("show", "Show on course page", "fa-eye", !!it.visible,
+               !it.visible && need ? "Add " + need + " first" : "", !it.visible && !!need)
+           + ddSelect("hide", "Hide on course page", "fa-eye-slash", !it.visible);
+    } else if(kind === "compl"){
+      html = Object.keys(COMPLETION).map(function(k){
+        return ddSelect(k, COMPLETION[k], null, (it.completion || "none") === k); }).join("");
+    } else {
+      html = ddAction("edit", "Edit settings", "fa-pen")
+           + ddAction("dup", "Duplicate", "fa-copy")
+           + '<div role="separator" class="mds-dropdown-divider"></div>'
+           + ddAction("drop", "Delete", "fa-trash", true);
+    }
+    ddEl = document.createElement("div");
+    ddEl.className = "mds-dropdown-menu cb-ddmenu"; ddEl.setAttribute("role", "menu");
+    ddEl.innerHTML = html;
+    document.body.appendChild(ddEl);
+    ddBtn = btn; btn.setAttribute("aria-expanded", "true"); btn.classList.add("mds-dropdown-trigger--open");
+    var r = btn.getBoundingClientRect(), w = ddEl.offsetWidth, h = ddEl.offsetHeight;
+    var left = kind === "more" ? r.right - w : r.left;
+    /* page coordinates: the menu scrolls with its trigger */
+    ddEl.style.left = (Math.max(8, Math.min(left, window.innerWidth - w - 8)) + window.scrollX) + "px";
+    ddEl.style.top = ((r.bottom + h + 8 < window.innerHeight ? r.bottom + 4 : r.top - h - 4) + window.scrollY) + "px";
+    var first = ddEl.querySelector('[aria-checked="true"]') || ddEl.querySelector(".mds-dropdown-item");
+    if(first){ first.tabIndex = 0; first.focus(); }
+    ddEl.addEventListener("click", function(e){
+      var b = e.target.closest("[data-ddv]"); if(!b || b.getAttribute("aria-disabled") === "true") return;
+      var v = b.dataset.ddv, msg = "";
+      if(kind === "group"){ it.group = v; msg = GROUPMODES[v].label + "."; }
+      else if(kind === "vis"){ it.visible = v === "show" ? 1 : 0; msg = v === "show" ? "Shown to students." : "Hidden from students."; }
+      else if(kind === "compl"){ it.completion = v; msg = "Completion: " + COMPLETION[v].toLowerCase() + "."; }
+      else if(v === "edit"){
+        if(needs(it)){ it.filled = true; msg = "Settings opened. " + esc(it.t) + " now has what it needed."; }
+        else msg = "This would open the " + MODS[it.m].label + " settings.";
+      }
+      else if(v === "dup"){ var c = JSON.parse(JSON.stringify(it)); c.t = it.t + " (copy)"; M.secs[si].items.splice(ii + 1, 0, c); msg = "Duplicated."; }
+      else if(v === "drop"){ M.secs[si].items.splice(ii, 1); sel = {}; msg = "Deleted."; }
+      closeDD(); M.render(); renderRequirements(); toast(msg);
+    });
+    ddEl.addEventListener("keydown", function(e){
+      var items = $$(".mds-dropdown-item", ddEl), i = items.indexOf(document.activeElement);
+      if(e.key === "ArrowDown" || e.key === "ArrowUp"){
+        e.preventDefault();
+        var n = items[(i + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length];
+        items.forEach(function(x){ x.tabIndex = -1; }); n.tabIndex = 0; n.focus();
+      } else if(e.key === "Escape" || e.key === "Tab"){ e.preventDefault(); closeDD(true); }
+    });
+  }
+  $("#courseContent").addEventListener("click", function(e){
+    var b = e.target.closest("[data-dd]"); if(!b) return;
+    e.stopPropagation(); openDD(b);
+  });
+  document.addEventListener("click", function(e){
+    if(ddEl && !e.target.closest(".cb-ddmenu") && !e.target.closest("[data-dd]")) closeDD();
   });
 
   /* ============================================================
@@ -55241,6 +56095,7 @@ Traps:
       }
     });
     $$(".stepbody").forEach(function(b){ b.classList.toggle("on", +b.dataset.body === n); });
+    $$(".step-foot").forEach(function(b){ b.classList.toggle("on", +b.dataset.foot === n); });
     if(n === 4 && !outline.length) generate();
     if(n === 5){ renderReview(); renderRequirements(); }
     try { history.replaceState(null, "", "#step-" + n); } catch(err){}
@@ -55577,9 +56432,27 @@ Traps:
   });
 
   /* ---- screens ---- */
+  function alignFooter(){
+    var col = $(".content-col"), box = $("#stepFooter");
+    if(!col || !box) return;
+    var r = col.getBoundingClientRect(), cs = getComputedStyle(col);
+    var pl = parseFloat(cs.paddingLeft), pr = parseFloat(cs.paddingRight);
+    var wrap = box.parentNode;
+    wrap.classList.remove("justify-content-center");     /* !important; we position instead */
+    box.style.marginLeft = (r.left + pl - 16 - wrap.getBoundingClientRect().left) + "px";     /* px-3 inside */
+    box.style.width = (r.width - pl - pr + 32) + "px";
+  }
+  window.addEventListener("resize", alignFooter);
+  if(window.ResizeObserver) new ResizeObserver(alignFooter).observe($(".content-col"));
+  /* a drawer opening or closing can slide the column without resizing it */
+  document.addEventListener("transitionend", function(e){
+    if(e.target.closest && e.target.closest("#drawer, #drawerRight, .content-col")) alignFooter();
+  });
   function setScreen(name){
     $("#screenSwitch").querySelectorAll(".devbtn").forEach(function(x){ x.classList.toggle("on", x.dataset.screen === name); });
     document.body.dataset.screen = name;
+    document.body.classList.toggle("hasstickyfooter", name === "create");
+    alignFooter();
     window.scrollTo({top:0});
     if(window.annoRefresh) setTimeout(window.annoRefresh, 0);
   }
@@ -55667,7 +56540,7 @@ Traps:
     /* Fixed chrome a card must never hide behind. It cannot be moved out of
        the way by the de-overlap pass, so it is seeded as immovable. */
     function obstacles(){
-      return [".devpanel", ".anno-toggle", ".stickyfooter:not(.d-none)"].map(function(sel){
+      return [".devpanel", ".anno-toggle", "#sticky-footer", "#bulkFooter:not(.d-none)"].map(function(sel){
         var el = document.querySelector(sel);
         if(!el || !visible(el)) return null;
         var r = el.getBoundingClientRect();
@@ -55762,6 +56635,8 @@ Traps:
     setScreen(b.dataset.screen);
   });
   document.body.dataset.screen = "create";
+  document.body.classList.add("hasstickyfooter");
+  alignFooter();
 })();
 </script>
 </body>
