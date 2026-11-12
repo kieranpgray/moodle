@@ -52930,16 +52930,6 @@ body {
                 padding:var(--mds-spacing-xs) var(--mds-spacing-sm); border-radius:var(--mds-border-radius-sm);
                 background:var(--mds-bg-surface-subtle); color:var(--mds-text-subtle); }
   .typepop-tip i{ margin-top:3px; }
-  /* B: the template's reason. Its own surface, label and icon, so it can't
-     be mistaken for a description the teacher wrote or students will see. */
-  .why-note{
-    display:flex; gap:var(--mds-spacing-xs); align-items:flex-start; margin:8px 0 0;
-    color:var(--mds-text-subtle); font-size:var(--mds-font-size-paragraph-small); line-height:1.5;
-  }
-  .why-note i{ margin-top:4px; color:var(--mds-color-blue-600); }
-  .why-src{ font-weight:var(--mds-font-weight-semibold); color:var(--mds-color-blue-700); }
-  .swhy{ padding:0 20px 16px; }
-  .swhy .why-note{ margin:0; }
   .achips{ margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
   .acard-badges{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; }
   .chip{
@@ -54003,9 +53993,9 @@ Decisions:
 - The AI draft is a mock of the wired experience (canned per course, says
   whether the description was used, rotates on Try again, tick-to-keep,
   fills empty outcome rows first).
-- Explaining activities: (A) an info toggletip on the type showing core's
-  modulename_summary / modulename_tip (MDL-87117); (B) the template's reason
-  as a labelled note, outline only. Descriptions stay empty for the teacher.
+- Explaining activities: an info toggletip on the type showing core's
+  modulename_summary / modulename_tip (MDL-87117). No template commentary on
+  the outline; descriptions stay empty for the teacher.
 - Adding an activity never opens a form. Modules whose mod_form needs only a
   name get a generated one; the four that genuinely need one more thing
   (page content, URL, first wiki page, H5P file) say so on the card instead.
@@ -54114,12 +54104,6 @@ Traps:
     choice:{s:"Run a single-question poll and let students choose from a list of options."},
     feedback:{s:"Create custom surveys using different question types."}
   };
-  /* B: the template's reason, as its own labelled note. Only while
-     building; it never becomes the activity or section description. */
-  function whyNote(text){
-    return '<p class="why-note"><i class="fa-solid fa-shapes" aria-hidden="true"></i><span>'
-      + '<span class="why-src">' + esc((tpl || BLANK).name) + ':</span> ' + text + '</span></p>';
-  }
   function needs(it){ return it.filled ? null : (MODS[it.m].needs || null); }
 
   /* ---- decorative, in the CA PRD's sense ----
@@ -54683,7 +54667,6 @@ Traps:
         var items = clone(t.section).map(function(it){
           it.t = it.t + " " + (oi+1);
           it.lo = oi + 1;                 /* inherited, not chased */
-          if(oi > 0) delete it.d;         /* explained once, not per outcome */
           return it;
         });
         outline.push({
@@ -54698,12 +54681,8 @@ Traps:
         var items = clone(t.section).map(function(it){ it.t = it.t + (n > 1 ? " " + i : ""); return it; });
         if(t.every && i % t.every.n === 0){
           var x = clone([t.every.item])[0]; x.t = x.t + " " + (i / t.every.n);
-          if(i > t.every.n) delete x.d;
           items.push(x);
         }
-        /* each repeating item explains itself once, the first time it
-           appears, not twelve times down the page */
-        if(i > 1) items.forEach(function(it){ if(it !== x) delete it.d; });
         /* the reason is said once, on the first section, not repeated n times */
         outline.push({title:sectionTitle(t, i), auto:true, why: i === 1 ? (t.why || "") : "", items:items});
       }
@@ -54826,9 +54805,7 @@ Traps:
       + '</div>'
       + '<h4 class="atitle">' + titleBtn(it.t, si, ii) + '</h4>'
       /* the description area is the activity's REAL description, the one
-         students see; a new activity has none. The template's reason is a
-         separate note, outline only. */
-      + (!isCourse && it.d ? whyNote(it.d) : '')
+         students see; a new activity has none. The info button explains the type. */
       + (chips || tag || abcSel ? '<div class="acard-badges">' + chips + abcSel + tag + '</div>' : '')
       + '</article>';
   }
@@ -54933,7 +54910,6 @@ Traps:
           + '</div>'
           + (sec.lo ? '<p class="slo"><i class="fa-solid fa-bullseye" aria-hidden="true"></i>'
               + 'Outcome ' + sec.lo + '</p>' : '')
-          + (ctx !== "course" && sec.why ? '<div class="swhy">' + whyNote(sec.why) + '</div>' : '')
         + '</div>'
         + '<div class="sbody">' + body + add + '</div>'
         + '</section>';
