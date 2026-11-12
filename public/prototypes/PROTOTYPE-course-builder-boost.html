@@ -52670,6 +52670,7 @@ body {
   body:not(.edit-on) #courseContent .shead-drag,
   body:not(.edit-on) #courseContent .achips,
   body:not(.edit-on) #courseContent .adesc,
+  body:not(.edit-on) #courseContent .typeinfo,
   body:not(.edit-on) #courseContent .abc-label,
   body:not(.edit-on) #courseContent .lopick.unset,
   body:not(.edit-on) #courseContent .acard-badges .selwrap,
@@ -52700,16 +52701,20 @@ body {
   .ai-draft .ai-item .form-check-label{ line-height:1.45; }
   .ai-draft .ai-item .form-check-input{ margin-top:.35em; }
 
-  /* step rail: core has .nav-tabs, used here, plus a numbered bullet */
-  .stepnum{
-    display:inline-grid; place-items:center; width:1.5rem; height:1.5rem;
-    border-radius:50%; font-size:var(--mds-font-size-paragraph-small); font-weight:700;
-    margin-right:var(--mds-spacing-xs);
-    background:var(--mds-bg-surface-strong); color:var(--mds-text-subtle);
+  /* step rail: MDS NavPill instances in a row. The component ships no group
+     layout, so this is the only rule: one horizontal row with the
+     component's own xxs gap, scrolling sideways at narrow widths rather than
+     wrapping or stacking (both ruled out by the nav pill usage guidance).
+     The number lives in the label text; there is deliberately no "done"
+     styling, because the component has no such state. */
+  .stepnav{
+    display:flex; flex-wrap:nowrap; gap:var(--mds-spacing-xxs);
+    overflow-x:auto; padding:var(--mds-spacing-xxs);
   }
-  .nav-link.active .stepnum{ background:var(--mds-color-blue-600); color:var(--on-primary); }
-  .nav-link.done .stepnum{ background:var(--mds-color-green-600); color:var(--on-primary); }
   .stepbody{ display:none; } .stepbody.on{ display:block; }
+  .advanced-line{ font-size:var(--mds-font-size-paragraph-small); }
+  .advanced-line a{ font-weight:var(--mds-font-weight-medium); margin-right:var(--mds-spacing-xs); }
+  .tpl-src{ margin-left:var(--mds-spacing-xs); }
 
   /* NOTE: no icon sizing here on purpose. Core sizes .activityiconcontainer
      at 52px, with .small (42) and .smaller (32) modifiers, and sets the icon
@@ -52887,10 +52892,54 @@ body {
     border:0; background:none; padding:0; color:var(--mds-text-muted); cursor:grab;
   }
   .acard-drag:active{ cursor:grabbing; }
+  .acard-drag:focus-visible, button.shead-drag:focus-visible{
+    outline:var(--mds-stroke-weight-md) solid var(--mds-focus-default); outline-offset:2px;
+    border-radius:var(--mds-border-radius-xs);
+  }
+  /* drag feedback: the lifted card fades, the drop point is a primary line
+     on the edge it will land against (core's own course page draws the
+     same kind of line), and a section being dropped into is outlined */
+  .acard.is-dragging, .scard.is-dragging{ opacity:.4; }
+  .acard.drop-before{ box-shadow:0 -3px 0 0 var(--mds-bg-interactive-primary-default); }
+  .acard.drop-after{ box-shadow:0 3px 0 0 var(--mds-bg-interactive-primary-default); }
+  .scard.drop-before{ box-shadow:0 -3px 0 0 var(--mds-bg-interactive-primary-default); }
+  .scard.drop-after{ box-shadow:0 3px 0 0 var(--mds-bg-interactive-primary-default); }
+  .scard.drop-into{ outline:2px dashed var(--mds-bg-interactive-primary-default); outline-offset:-2px; }
+  /* the "Needs …" chip doubles as the action on the course screen */
+  button.chip-act{ cursor:pointer; font-family:inherit; }
+  button.chip-act:hover{ background:var(--mds-color-yellow-100); }
+  button.chip-act:focus-visible{ outline:var(--mds-stroke-weight-md) solid var(--mds-focus-default); outline-offset:1px; }
+  .acard-drag, button.shead-drag{ touch-action:none; }
+  body.cb-dragging, body.cb-dragging *{ cursor:grabbing !important; -webkit-user-select:none; user-select:none; }
   .atype{ display:inline-flex; align-items:center; gap:7px; flex:0 0 auto;
           font-size:14px; font-weight:600; line-height:1.2; color:var(--mds-text-subtle); }
   .atitle{ margin:0; font-size:17px; font-weight:600; line-height:1.35; letter-spacing:-.1px; }
   .adesc{ margin:6px 0 0; font-size:14px; line-height:1.55; color:var(--mds-text-subtle); }
+  /* A: info button on the activity type */
+  .typeinfo{
+    display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px;
+    border:0; border-radius:var(--mds-border-radius-xl); background:none; padding:0;
+    color:var(--mds-text-muted); cursor:pointer; margin-left:-2px;
+  }
+  .typeinfo:hover, .typeinfo[aria-expanded="true"]{ background:var(--mds-bg-surface-strong); color:var(--mds-text-link-primary-default); }
+  .typeinfo:focus-visible{ outline:var(--mds-stroke-weight-md) solid var(--mds-focus-default); outline-offset:1px; }
+  .typepop{ width:min(340px, calc(100vw - 32px)); font-size:var(--mds-font-size-paragraph-small); line-height:1.5; }
+  .typepop-name{ display:flex; align-items:center; margin:0 0 var(--mds-spacing-xs);
+                 font-weight:var(--mds-font-weight-semibold); font-size:var(--mds-font-size-paragraph-default); }
+  .typepop-tip{ display:flex; gap:var(--mds-spacing-xs); margin:0 0 var(--mds-spacing-sm);
+                padding:var(--mds-spacing-xs) var(--mds-spacing-sm); border-radius:var(--mds-border-radius-sm);
+                background:var(--mds-bg-surface-subtle); color:var(--mds-text-subtle); }
+  .typepop-tip i{ margin-top:3px; }
+  /* B: the template's reason. Its own surface, label and icon, so it can't
+     be mistaken for a description the teacher wrote or students will see. */
+  .why-note{
+    display:flex; gap:var(--mds-spacing-xs); align-items:flex-start; margin:8px 0 0;
+    color:var(--mds-text-subtle); font-size:var(--mds-font-size-paragraph-small); line-height:1.5;
+  }
+  .why-note i{ margin-top:4px; color:var(--mds-color-blue-600); }
+  .why-src{ font-weight:var(--mds-font-weight-semibold); color:var(--mds-color-blue-700); }
+  .swhy{ padding:0 20px 16px; }
+  .swhy .why-note{ margin:0; }
   .achips{ margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
   .acard-badges{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; }
   .chip{
@@ -53108,19 +53157,27 @@ body {
         <section class="screen" id="screen-create">
           <h1 class="h2 mb-3">Create a course</h1>
 
-          <ul class="nav nav-tabs mb-3" id="stepNav" role="tablist"></ul>
+          <!-- Step navigation: MDS NavPill (components/nav-pill), one per step,
+               inside Boost's own .secondary-navigation wrapper. The component
+               ships no group wrapper, so the row is ours (single row, scrolls
+               rather than wraps, per the nav pill layout guidance). -->
+          <div class="secondary-navigation mb-4">
+            <nav class="stepnav" id="stepNav" aria-label="Create a course: steps"></nav>
+          </div>
 
-          <!-- STEP 1 : basics -->
+          <!-- STEP 1 : course details -->
           <div class="stepbody on" data-body="1">
-            <form class="mform">
-              <fieldset class="step-section">
-                <legend class="step-title">General</legend>
-                <div id="basicsFields"></div>
-              </fieldset>
-            </form>
-            <div class="d-flex gap-2">
-              <div class="ms-auto"></div>
-              <button type="button" class="btn btn-primary" data-go="2">Continue</button>
+            <!-- One form, two layouts. The switch is core's form-switch (what the
+                 edit-mode toggle uses): the MDS Switch component's CSS is not in
+                 this build, only its track token. -->
+            <form class="mform mb-4" id="courseForm"></form>
+            <div class="d-flex flex-wrap align-items-center gap-3" id="advancedLine">
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="advSwitch" aria-describedby="modeHint">
+                <label class="form-check-label" for="advSwitch">Advanced course details</label>
+              </div>
+              <span class="text-muted small" id="modeHint"></span>
+              <button type="button" class="btn mds-btn btn-primary mds-btn--size-md ms-auto" data-go="2">Continue</button>
             </div>
           </div>
 
@@ -53130,11 +53187,11 @@ body {
               <fieldset class="step-section">
                 <legend class="step-title">
                   <span>What should students be able to do?</span>
-                  <span class="badge text-bg-secondary ms-auto" id="modePill"></span>
+                  <span class="mds-badge mds-badge--secondary mds-badge--subtle ms-auto" id="modePill"></span>
                 </legend>
                 <div>
                   <div id="loFields"></div>
-                  <button type="button" class="btn btn-sm btn-outline-secondary" id="loAdd">Add an outcome</button>
+                  <button type="button" class="btn mds-btn btn-secondary mds-btn--size-sm" id="loAdd">Add an outcome</button>
                   <div id="loStatus" class="mt-3"></div>
 
                   <!-- AI draft. Mocked end to end: idle, drafting, review, applied.
@@ -53144,9 +53201,9 @@ body {
                     <div class="d-flex align-items-start gap-2">
                       <div class="flex-grow-1">
                         <strong><i class="fa-solid fa-wand-magic-sparkles me-1" aria-hidden="true"></i>Draft these for me</strong>
-                        <div class="text-muted small">Suggests outcomes from the course name, for you to edit or discard.</div>
+                        <div class="text-muted small">Suggests outcomes from the course name and description, for you to edit or discard.</div>
                       </div>
-                      <button type="button" class="btn btn-sm btn-outline-secondary" id="aiDraftBtn">Draft</button>
+                      <button type="button" class="btn mds-btn btn-secondary mds-btn--size-sm" id="aiDraftBtn">Draft</button>
                     </div>
                     <div id="aiDraftResults" class="d-none" aria-live="polite"></div>
                   </div>
@@ -53154,39 +53211,31 @@ body {
               </fieldset>
             </form>
             <div class="d-flex gap-2">
-              <button type="button" class="btn btn-outline-secondary" data-go="1">Back</button>
+              <button type="button" class="btn mds-btn btn-secondary mds-btn--size-md" data-go="1">Back</button>
               <div class="ms-auto"></div>
-              <button type="button" class="btn btn-primary" id="loNext" data-go="3">Continue</button>
+              <button type="button" class="btn mds-btn btn-primary mds-btn--size-md" id="loNext" data-go="3">Continue</button>
             </div>
           </div>
 
-          <!-- STEP 3 : ABC primary type -->
+          <!-- STEP 3 : course template -->
           <div class="stepbody" data-body="3">
             <form class="mform">
               <fieldset class="step-section">
-                <legend class="step-title">Pedagogical starting point</legend>
+                <legend class="step-title">What kind of course is this?</legend>
                 <div>
-                  <div id="abcFields"></div>
+                  <p class="text-muted mb-3">A template sets up the sections and a first set of activities. Everything it adds can be renamed, moved or removed.</p>
+                  <div id="tplFields"></div>
                   <hr>
-                  <div class="cbstack">
-                    <div class="mds-choicebox-wrapper">
-                      <input class="mds-choicebox-input" type="radio" name="abc" id="abc_skip" value="">
-                      <label class="mds-choicebox" for="abc_skip">
-                        <span class="mds-choicebox-labels">
-                          <span class="mds-choicebox-label">Skip &mdash; set up an empty course</span>
-                          <span class="mds-choicebox-supporting-text">No learning type is recorded.</span>
-                        </span>
-                        <span class="mds-choicebox-indicator" aria-hidden="true"></span>
-                      </label>
-                    </div>
-                  </div>
+                  <div id="tplBlank"></div>
+                  <div id="tplInvalid" class="invalid-feedback d-none mt-2">Choose a template, or Blank course.</div>
+                  <div class="mt-4" id="tplCount"></div>
                 </div>
               </fieldset>
             </form>
             <div class="d-flex gap-2">
-              <button type="button" class="btn btn-outline-secondary" data-go="2">Back</button>
+              <button type="button" class="btn mds-btn btn-secondary mds-btn--size-md" data-go="2">Back</button>
               <div class="ms-auto"></div>
-              <button type="button" class="btn btn-primary" data-go="4">Build the outline</button>
+              <button type="button" class="btn mds-btn btn-primary mds-btn--size-md" id="tplNext">Build the outline</button>
             </div>
           </div>
 
@@ -53194,15 +53243,16 @@ body {
           <div class="stepbody" data-body="4">
             <section class="step-section">
               <h2 class="step-title">
-                <span>Suggested outline</span>
-                <button class="btn btn-sm btn-outline-secondary ms-auto" id="regenBtn">Regenerate</button>
+                <span id="outlineTitle">Your outline</span>
+                <button type="button" class="btn mds-btn btn-secondary mds-btn--size-sm ms-auto" id="regenBtn" disabled
+                        title="Nothing to reset yet">Reset to template</button>
               </h2>
               <div id="outline"></div>
             </section>
             <div class="d-flex gap-2">
-              <button type="button" class="btn btn-outline-secondary" data-go="3">Back</button>
+              <button type="button" class="btn mds-btn btn-secondary mds-btn--size-md" data-go="3">Back</button>
               <div class="ms-auto"></div>
-              <button type="button" class="btn btn-primary" data-go="5">Review</button>
+              <button type="button" class="btn mds-btn btn-primary mds-btn--size-md" data-go="5">Review</button>
             </div>
           </div>
 
@@ -53214,9 +53264,9 @@ body {
             </section>
             <div id="reqBlock" class="mb-3"></div>
             <div class="d-flex gap-2">
-              <button type="button" class="btn btn-outline-secondary" data-go="4">Back</button>
+              <button type="button" class="btn mds-btn btn-secondary mds-btn--size-md" data-go="4">Back</button>
               <div class="ms-auto"></div>
-              <button type="button" class="btn btn-primary" id="createBtn">Create course</button>
+              <button type="button" class="btn mds-btn btn-primary mds-btn--size-md" id="createBtn">Create course</button>
             </div>
           </div>
         </section>
@@ -53230,7 +53280,7 @@ body {
           <!-- before Create has been pressed -->
           <div id="courseEmpty" class="sempty mb-4">
             <p class="mb-2">No course yet. Finish the wizard and press <strong>Create course</strong>.</p>
-            <button type="button" class="btn btn-primary btn-sm" data-screen-go="create">Back to Create</button>
+            <button type="button" class="btn mds-btn btn-primary mds-btn--size-sm" data-screen-go="create">Back to Create</button>
           </div>
 
           <div id="courseBody" class="d-none">
@@ -53264,28 +53314,9 @@ body {
 
           <section class="step-section">
             <h2 class="step-title">
-              <span>The blend</span>
+              <span>Coverage</span>
               <span class="ms-auto small text-muted fw-normal" id="alignSummary"></span>
             </h2>
-            <div class="row g-4">
-              <div class="col-lg-4">
-                <svg class="radar" id="radar" viewBox="0 0 200 200" role="img"
-                     aria-label="Radar of activity counts by ABC learning type; the table beside it carries the same data."></svg>
-              </div>
-              <div class="col-lg-8">
-                <div class="table-responsive">
-                  <table class="table table-sm align-middle mb-2" id="alignTable">
-                    <thead><tr><th>Learning type</th><th class="text-end">Activities</th><th class="text-end">Share</th></tr></thead>
-                    <tbody></tbody>
-                  </table>
-                </div>
-                <div class="alert alert-info py-2 px-3 small mb-0" id="reflect"></div>
-              </div>
-            </div>
-          </section>
-
-          <section class="step-section">
-            <h2 class="step-title">Coverage</h2>
             <div class="row g-4">
               <div class="col-md-6">
                 <h3 class="small text-uppercase text-muted">Outcomes with no activity</h3>
@@ -53339,10 +53370,10 @@ body {
           <div class="container-fluid d-flex align-items-center gap-2">
             <span class="fw-bold" id="bulkCount">0 selected</span>
             <div class="ms-auto d-flex gap-2">
-              <button class="btn btn-sm btn-outline-secondary" data-bulk="show">Show to students</button>
-              <button class="btn btn-sm btn-outline-secondary" data-bulk="hide">Hide</button>
-              <button class="btn btn-sm btn-outline-danger" data-bulk="delete">Delete</button>
-              <button class="btn btn-sm btn-outline-secondary" data-bulk="clear">Cancel</button>
+              <button class="btn mds-btn btn-secondary mds-btn--size-sm" data-bulk="show">Show to students</button>
+              <button class="btn mds-btn btn-secondary mds-btn--size-sm" data-bulk="hide">Hide</button>
+              <button class="btn mds-btn btn-outline-danger mds-btn--size-sm" data-bulk="delete">Delete</button>
+              <button class="btn mds-btn btn-secondary mds-btn--size-sm" data-bulk="clear">Cancel</button>
             </div>
           </div>
         </div>
@@ -53427,9 +53458,14 @@ body {
       <button class="devbtn on" data-lomode="soft">Soft</button>
       <button class="devbtn" data-lomode="hard">Hard</button>
     </div>
+    <h5>Templates offered</h5>
+    <div class="devrow" id="tplSetSwitch">
+      <button class="devbtn on" data-tplset="all">Moodle + site</button>
+      <button class="devbtn" data-tplset="site">Site only</button>
+    </div>
     <h5>Outline shape</h5>
     <div class="devrow" id="shapeSwitch">
-      <button class="devbtn on" data-shape="type">By type</button>
+      <button class="devbtn on" data-shape="type">By template</button>
       <button class="devbtn" data-shape="outcome">By outcome</button>
     </div>
     <h5>Page width</h5>
@@ -53457,71 +53493,71 @@ body {
     <i class="fa-solid fa-location-dot"></i> <span id="annoToggleLabel">Show annotations</span>
   </button>
   <div class="anno-layer" id="annoLayer">
-    <div class="anno-card" data-target="#basicsFields" data-side="right">
+    <div class="anno-card" data-target="#courseForm" data-side="right">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
       <div class="anno-badge">1</div>
       <div class="anno-title"><i class="fa-solid fa-clipboard-list"></i> Only what we need to begin</div>
-      <div class="anno-body">The few details that actually shape the course &mdash; what it is called, where it lives, how long it runs and roughly how many topics. The number of topics feeds straight into the outline we build later. Everything else Moodle asks for today is still there, just not here: it can wait until the course exists.</div>
+      <div class="anno-body">Name, category, a description and dates. The description also feeds the outcome drafting in step 2. Everything else waits until the course exists.</div>
+    </div>
+    <div class="anno-card" data-target="#advancedLine .form-switch" data-side="right">
+      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+      <div class="anno-badge">2</div>
+      <div class="anno-title"><i class="fa-solid fa-sliders"></i> The full form, same journey</div>
+      <div class="anno-body">Switch it on and this step becomes the existing course settings form. What you typed carries across both ways, and the wizard carries on to outcomes and templates.</div>
     </div>
     <div class="anno-card" data-target="#loFields" data-side="right">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
-      <div class="anno-badge">2</div>
+      <div class="anno-badge">3</div>
       <div class="anno-title"><i class="fa-solid fa-bullseye"></i> What students should be able to do</div>
       <div class="anno-body">Outcomes come first, in the teacher&rsquo;s own words &mdash; no jargon, no verb picker. Everything built afterwards can be checked against them, which is the whole point of constructive alignment. How many a course needs, and whether that number is a requirement or a recommendation, are decided by the site.</div>
     </div>
     <div class="anno-card" data-target="#aiDraft" data-side="right">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
-      <div class="anno-badge">3</div>
+      <div class="anno-badge">4</div>
       <div class="anno-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Optional help writing them</div>
       <div class="anno-body">A teacher facing a blank box can ask for a first draft, then keep, edit or throw away each suggestion &mdash; nothing is added until they say so. Here it works from the course name alone to keep the demo simple; a real version would use more of what the teacher has already told us. Entirely optional: the course can be built without it.</div>
     </div>
-    <div class="anno-card" data-target="#abcFields" data-side="right">
-      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
-      <div class="anno-badge">4</div>
-      <div class="anno-title"><i class="fa-solid fa-compass"></i> How should students spend their time?</div>
-      <div class="anno-body">These six are ABC Learning Design, a well-established way of describing what learners <em>do</em> &mdash; read, investigate, practise, discuss, work together, produce. Moodle Academy has used it since 2021. Asking now, rather than later, is what lets us suggest a sensible first outline instead of handing over an empty course.</div>
-    </div>
-    <div class="anno-card" data-target="label[for=abc_skip].mds-choicebox" data-side="right">
+    <div class="anno-card" data-target="#tplFields" data-side="right">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
       <div class="anno-badge">5</div>
-      <div class="anno-title"><i class="fa-solid fa-forward"></i> A way through for everyone</div>
-      <div class="anno-body">Not every teacher wants a framework, and nobody should have to argue with one to make a course. Skip is on the same screen as the other options, never hidden behind &ldquo;more&rdquo;, and it leads to an ordinary empty course with the normal Add activity button. The pedagogical route is the default, not a toll gate.</div>
+      <div class="anno-title"><i class="fa-solid fa-shapes"></i> Templates, not frameworks</div>
+      <div class="anno-body">Moodle ships a handful; sites and plugins add their own. Try &ldquo;Site only&rdquo; in the State panel to see a restricted list.</div>
+    </div>
+    <div class="anno-card" data-target="label[for=tpl_blank].mds-choicebox" data-side="right">
+      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
+      <div class="anno-badge">6</div>
+      <div class="anno-title"><i class="fa-solid fa-forward"></i> Blank is always there</div>
+      <div class="anno-body">Same screen, never hidden behind &ldquo;more&rdquo;, and offered even when a site restricts its templates.</div>
     </div>
     <div class="anno-card" data-target="#outline .acard" data-side="right">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
-      <div class="anno-badge">6</div>
+      <div class="anno-badge">7</div>
       <div class="anno-title"><i class="fa-regular fa-eye"></i> A preview of the course itself</div>
       <div class="anno-body">This is the course page, shown before the course exists, so teachers can shape the real thing rather than a summary of it. Two changes for this context: nothing claims a status the course cannot have yet, and every card and topic explains why it was suggested &mdash; so the teacher can disagree with the reasoning, not just the result.</div>
     </div>
     <div class="anno-card" data-target="#reqBlock" data-side="right">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
-      <div class="anno-badge">7</div>
+      <div class="anno-badge">8</div>
       <div class="anno-title"><i class="fa-solid fa-circle-check"></i> What actually stops you</div>
       <div class="anno-body">Only the handful of things Moodle genuinely cannot create a course without. Everything else is a note, not a barrier &mdash; you can create the course and come back. Sites that want the outcome minimum enforced can switch it to a requirement; the State panel shows both.</div>
     </div>
     <div class="anno-card" data-target="#readyBar" data-side="right">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
-      <div class="anno-badge">8</div>
+      <div class="anno-badge">9</div>
       <div class="anno-title"><i class="fa-solid fa-door-open"></i> Created now, finished later</div>
       <div class="anno-body">The course and every activity in it exist already. What is not finished is hidden from students until it is &mdash; so a teacher can build the whole shape in one sitting and fill in the content over the following week, without anyone seeing a half-built course.</div>
     </div>
     <div class="anno-card" data-target="#courseContent .acard.is-draft .achips" data-side="left">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
-      <div class="anno-badge">9</div>
+      <div class="anno-badge">10</div>
       <div class="anno-title"><i class="fa-solid fa-pen-ruler"></i> Placeholders that say what they need</div>
       <div class="anno-body">This activity was created for you, but it cannot do its job yet &mdash; a page with no content, a quiz with no questions. The card says exactly what is missing and takes you straight to the form that asks for it. Until then it stays hidden, so students never meet an empty activity.</div>
-    </div>
-    <div class="anno-card" data-target="#courseContent .abc-label" data-side="bottom">
-      <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
-      <div class="anno-badge">10</div>
-      <div class="anno-title"><i class="fa-solid fa-tag"></i> The thinking is kept, not thrown away</div>
-      <div class="anno-body">Each activity remembers the kind of learning it was chosen for, and a teacher can change it. That is what the Alignment report reads to show the balance of the course. Only teachers see it; to students it is just the activity.</div>
     </div>
     <div class="anno-card" data-target=".devpanel" data-side="top">
       <button class="anno-close" aria-label="Dismiss this annotation">&times;</button>
       <div class="anno-badge">11</div>
       <div class="anno-title"><i class="fa-solid fa-flask"></i> Prototype controls</div>
-      <div class="anno-body">Not part of the design. Switches between the create flow and the finished course, between the outcome minimum being required or recommended, and between the two ways of shaping the outline.</div>
+      <div class="anno-body">Not part of the design. Switches screens, the outcome minimum, which templates a site offers, and how the outline is shaped.</div>
     </div>
   </div>
   </div>
@@ -53912,9 +53948,30 @@ Decisions:
   (lib/moodlelib.php, course/format/classes/stateactions.php::new_module,
   course/lib.php::create_module). Only mod_subsection opts in today; some
   *_add_instance functions assume a form (mod_url's empty-URL guard).
-- The learning type is persisted per activity (`abc`, one value), editable
-  on the card in edit mode, and drives the Alignment radar. Edit mode gates
-  the whole teacher layer on the Course screen.
+- Course templates replace the ABC pedagogical step (LMS initiative
+  alignment, 2 Nov): "what kind of course?" pre-populates sections and
+  activities. Five core templates plus one site template ("Your site"
+  badge); State panel "Site only" shows a site restricting the list. Blank
+  course is always offered, separately, even when restricted. Each template
+  sets a real course format (format_weeks "Weekly sections", format_topics
+  "Custom sections"), a section count and a few presets (completion,
+  restrictions, group mode). Presets are listed on Review, not applied.
+- Weekly sections are named as format_weeks does: strftimedateshort joined
+  by " - ", counted from the step 1 start date. "By outcome" is disabled for
+  weekly and blank templates.
+- Step navigation is MDS NavPill markup (components/nav-pill) inside Boost's
+  .secondary-navigation. Number is part of the label string; no "done"
+  state, because the component has none. aria-current="step", not the
+  component's hard-coded "page": a deliberate deviation, flag to DS.
+- Description (summary_editor in course/edit_form.php) is on step 1 and
+  feeds the AI outcome draft. Number of sections moved to the template step.
+- "Advanced course details" is a switch: step 1 becomes the existing
+  course/edit_form.php (headers, order, strings), same field ids, values kept
+  both ways; the wizard continues. Format stays with the template.
+- ABC learning types are gone from cards, chooser and report. Swap now
+  cycles within the module's MOD_PURPOSE. The Alignment report keeps outcome
+  coverage only; the radar went with ABC.
+- Edit mode gates the whole teacher layer on the Course screen.
 - Alignment surfaces follow the CA PRD's own placement: the two-way report is
   its OWN screen (the PRD puts it under Course Reports); the course page keeps
   only an unresolved-state indicator, one line, next to the readiness bar.
@@ -53929,44 +53986,42 @@ Decisions:
   re-arms it. There is deliberately no "do not show again".
 - Outcome tagging lives in the OUTLINE (a select per card, where the PRD says
   tagging happens - "as the teacher adds activities"); on the course page it
-  is a chip when set and an "Add outcome" affordance when not. The learning
-  type is a click-to-edit LABEL, not a select, because the ABC PRD calls it an
-  inferred value the teacher may override.
+  is a chip when set and an "Add outcome" affordance when not.
 - "Outline shape" in the State panel is a PROPOSAL BEYOND BOTH PRDs: one topic
   per outcome, every activity inheriting it, so the report opens clean instead
-  of opening red. The PRDs never join the two halves at build time - CA calls
-  outcomes "inferred" after prefill and defers recommendation engines. Default
-  is "By type", which is what the PRDs actually describe.
+  of opening red. The CA PRD never joins the two halves at build time: it
+  calls outcomes "inferred" after prefill and defers recommendation engines.
+  Default is "By template".
 - Form rows are core's mform contract (.fitem.row > .col-md-3.col-form-label
   + .col-md-9.felement, .form-label-addon required marker). Field limits are
   real and live in the attributes, not the help: fullname 1333, shortname 255
-  (core_course\constants), topics default 4 / max 52, duration 365 days,
-  completion on (moodlecourse/*). One category because this site has one.
+  (core_course\constants), sections max 52, duration 365 days. One category
+  because this site has one.
 - Learning outcomes: free text, minimum 3, "required" vs "recommended" is the
   CA PRD's hard/soft admin setting. Soft never blocks; hard blocks Continue
   AND Create. Core's own required fields block in both.
-- ABC: one primary type per course, real radios, skip always visible, module
-  membership is multi-valued (a Forum is Discussion + Collaboration +
-  Production). Mapping is a Moodle-authored derivative per the PRD's licence.
-- The AI draft is a mock of the wired experience (canned per course name,
-  rotates on Try again, tick-to-keep, fills empty outcome rows first).
-- Each generated topic is three activities in a fixed order - lead,
-  reinforce, close the loop - and the third is always a different ABC type
-  from the primary. Every card carries a one-line reason; every section a
-  one-paragraph one. That is what replaced the "Name generated" chip.
+- The AI draft is a mock of the wired experience (canned per course, says
+  whether the description was used, rotates on Try again, tick-to-keep,
+  fills empty outcome rows first).
+- Explaining activities: (A) an info toggletip on the type showing core's
+  modulename_summary / modulename_tip (MDL-87117); (B) the template's reason
+  as a labelled note, outline only. Descriptions stay empty for the teacher.
 - Adding an activity never opens a form. Modules whose mod_form needs only a
   name get a generated one; the four that genuinely need one more thing
   (page content, URL, first wiki page, H5P file) say so on the card instead.
 - Outline cards follow the course-page uplift but drop completion and
   availability chips: the course does not exist yet.
-- Drag handles on every activity and section, skeleton rows included.
+- Move by pointer drag on the grip (mouse/touch) or arrow keys; General has
+  no grip (core never moves section 0); moved weeks re-date. Reset is
+  disabled until the outline differs from the template's.
+- Course: the "Needs …" chip is the action (no duplicate Add button).
+- Buttons are MDS Button, status badges MDS Badge; gaps listed in chat.
 - Create is gated on core's required fields and, in hard mode only, the
   outcome minimum. The rest is warnings. Prefill would be one transaction.
 - Icons are the real monologo.svg files, base64-inlined, recoloured by core's
-  MOD_PURPOSE feColorMatrix filter. That filter is Moodle's OWN activity
-  taxonomy (one per module, "what the tool is") and it disagrees with ABC
-  (several per module, "what the learner does"). Neither PRD mentions this.
+  MOD_PURPOSE feColorMatrix filter.
 - Annotations off by default: the screen is what is under review.
+- The template list, the site template and every preset are invented.
 - Dev panel and annotation layer sit at z-index 1030, above Boost's .drawer
   (1015) and below its modal backdrop (1050).
 
@@ -54002,40 +54057,30 @@ Traps:
      feColorMatrix filter still recolours them by MOD_PURPOSE. */
   var ICONS = {"assign": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik03LjQ5NzA3IDMuNDk5NTFDNi42Njg2NCAzLjQ5OTUxIDUuOTk3MDcgNC4xNzEwOCA1Ljk5NzA3IDQuOTk5NTFWMTguMDE4OUM1Ljk5NzA3IDE4Ljg0NzMgNi42Njg2NCAxOS41MTg5IDcuNDk3MDcgMTkuNTE4OUg4LjUwODk0QzguNzg1MDggMTkuNTE4OSA5LjAwODk0IDE5Ljc0MjggOS4wMDg5NCAyMC4wMTg5QzkuMDA4OTQgMjAuMjk1IDguNzg1MDggMjAuNTE4OSA4LjUwODk0IDIwLjUxODlINy40OTcwN0M2LjExNjM2IDIwLjUxODkgNC45OTcwNyAxOS4zOTk2IDQuOTk3MDcgMTguMDE4OVY0Ljk5OTUxQzQuOTk3MDcgMy42MTg4IDYuMTE2MzYgMi40OTk1MSA3LjQ5NzA3IDIuNDk5NTFIMTMuNDkzNUMxMy40OTc0IDIuNDk5NTEgMTMuNTAxMyAyLjQ5OTUzIDEzLjUwNTIgMi40OTk1NkwxMy42OTA3IDIuNDk5NTVDMTQuMzU2NSAyLjQ5OTUyIDE0Ljk5NDcgMi43NjUwNCAxNS40NjQgMy4yMzcyNkwxOC4yNzYyIDYuMDY2ODJDMTguNzQxNyA2LjUzNTIxIDE5LjAwMjkgNy4xNjg3NSAxOS4wMDI5IDcuODI5MTFWMTguMDE4OUMxOS4wMDI5IDE5LjM5OTYgMTcuODgzNiAyMC41MTg5IDE2LjUwMjkgMjAuNTE4OUgxNS41MDMxQzE1LjIyNyAyMC41MTg5IDE1LjAwMzEgMjAuMjk1IDE1LjAwMzEgMjAuMDE4OUMxNS4wMDMxIDE5Ljc0MjggMTUuMjI3IDE5LjUxODkgMTUuNTAzMSAxOS41MTg5SDE2LjUwMjlDMTcuMzMxNCAxOS41MTg5IDE4LjAwMjkgMTguODQ3MyAxOC4wMDI5IDE4LjAxODlWOC4wMTg5OEMxOC4wMDI5IDcuNzQyODQgMTcuNzc5MSA3LjUxODk4IDE3LjUwMjkgNy41MTg5OEgxNS40OTM1QzE0LjY2NSA3LjUxODk4IDEzLjk5MzUgNi44NDc0MSAxMy45OTM1IDYuMDE4OThWMy45OTk1MUMxMy45OTM1IDMuNzI1NjMgMTMuNzczMyAzLjUwMzE5IDEzLjUwMDMgMy40OTk1NkwxMi44OTU1IDMuNDk5NThDMTIuODkyNyAzLjQ5OTU4IDEyLjg4OTggMy40OTk1NiAxMi44ODcgMy40OTk1MUg3LjQ5NzA3Wk0xNC45OTM1IDQuMTgyMzdWNi4wMTg5OEMxNC45OTM1IDYuMjk1MTIgMTUuMjE3MyA2LjUxODk4IDE1LjQ5MzUgNi41MTg5OEgxNy4zMTU3TDE0Ljk5MzUgNC4xODIzN1pNMTIgMTEuMDA3M0MxMi4xMzI2IDExLjAwNzMgMTIuMjU5OCAxMS4wNiAxMi4zNTM2IDExLjE1MzhMMTUuMzUzNiAxNC4xNTM4QzE1LjU0ODggMTQuMzQ5IDE1LjU0ODggMTQuNjY1NiAxNS4zNTM2IDE0Ljg2MDlDMTUuMTU4MyAxNS4wNTYxIDE0Ljg0MTcgMTUuMDU2MSAxNC42NDY0IDE0Ljg2MDlMMTIuNSAxMi43MTQ0VjIxLjAwMDVDMTIuNSAyMS4yNzY2IDEyLjI3NjEgMjEuNTAwNSAxMiAyMS41MDA1QzExLjcyMzkgMjEuNTAwNSAxMS41IDIxLjI3NjYgMTEuNSAyMS4wMDA1VjEyLjcxNDRMOS4zNTM1NSAxNC44NjA5QzkuMTU4MjkgMTUuMDU2MSA4Ljg0MTcxIDE1LjA1NjEgOC42NDY0NSAxNC44NjA5QzguNDUxMTggMTQuNjY1NiA4LjQ1MTE4IDE0LjM0OSA4LjY0NjQ1IDE0LjE1MzhMMTEuNjQ2NCAxMS4xNTM4QzExLjc0MDIgMTEuMDYgMTEuODY3NCAxMS4wMDczIDEyIDExLjAwNzNaIiBmaWxsPSIjMjEyNTI5Ii8+Cjwvc3ZnPgo=", "bigbluebuttonbn": "data:image/svg+xml;base64,PHN2ZyB4bWw6c3BhY2U9InByZXNlcnZlIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiCgl4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIKCXhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKCXZpZXdCb3g9Ii0yMCAtMjAgMzEwIDMxMCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pbllNaWQgbWVldCI+Cgk8ZGVmcz4KCQk8bGluZWFyR3JhZGllbnQgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIiBncmFkaWVudFRyYW5zZm9ybT0ibWF0cml4KDExNy44OTU3NCAtMTY4LjM3MjUzIC0xNjguMzcyNTMgLTExNy44OTU3MiA0OC44MDIgMTkyLjE4NykiIHNwcmVhZE1ldGhvZD0icGFkIiBpZD0iYSI+CgkJCTxzdG9wIHN0eWxlPSJzdG9wLW9wYWNpdHk6MTtzdG9wLWNvbG9yOiMyODMxNzQiIG9mZnNldD0iMCIvPgoJCQk8c3RvcCBzdHlsZT0ic3RvcC1vcGFjaXR5OjE7c3RvcC1jb2xvcjojMjgzMTc0IiBvZmZzZXQ9Ii40NzkiLz4KCQkJPHN0b3Agc3R5bGU9InN0b3Atb3BhY2l0eToxO3N0b3AtY29sb3I6IzI4MzE3NCIgb2Zmc2V0PSIxIi8+CgkJPC9saW5lYXJHcmFkaWVudD4KCQk8bGluZWFyR3JhZGllbnQgeGxpbms6aHJlZj0iI2EiIGlkPSJkIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgZ3JhZGllbnRUcmFuc2Zvcm09Im1hdHJpeCgxNDcuMzY5NjcgMjEwLjQ2NTY2IC0yMTAuNDY1NjYgMTQ3LjM2OTY1IDYxLjMxNCAyOS43NjYpIiBzcHJlYWRNZXRob2Q9InBhZCIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjAiLz4KCQk8Y2xpcFBhdGggY2xpcFBhdGhVbml0cz0idXNlclNwYWNlT25Vc2UiIGlkPSJiIj4KCQkJPHBhdGggZD0iTTAgMjE2aDIxNlYwSDB2MjE2WiIvPgoJCTwvY2xpcFBhdGg+CgkJPGNsaXBQYXRoIGNsaXBQYXRoVW5pdHM9InVzZXJTcGFjZU9uVXNlIiBpZD0iYyI+CgkJCTxwYXRoIGQ9Ik00Ljk4NyAxMDhDNC45ODcgNTEuMjQ1IDUwLjk5NiA1LjIzNiAxMDcuNzUgNS4yMzZjNTYuNzU2IDAgMTAyLjc2NCA0Ni4wMDkgMTAyLjc2NCAxMDIuNzY0IDAgNTYuNzU1LTQ2LjAwOCAxMDIuNzY0LTEwMi43NjQgMTAyLjc2NEM1MC45OTYgMjEwLjc2NCA0Ljk4NyAxNjQuNzU1IDQuOTg3IDEwOCIvPgoJCTwvY2xpcFBhdGg+Cgk8L2RlZnM+Cgk8ZyBzdHlsZT0iZGlzcGxheTppbmxpbmUiPgoJCTxnIGNsaXAtcGF0aD0idXJsKCNjKSIgdHJhbnNmb3JtPSJtYXRyaXgoMS4yNSAwIDAgLTEuMjUgLS40MiAyNjkuMzc1KSIgc3R5bGU9ImZpbGwtcnVsZTpub256ZXJvIj4KCQkJPGcgc3R5bGU9ImZpbGwtcnVsZTpub256ZXJvIj4KCQkJCTxwYXRoIHN0eWxlPSJmaWxsOnVybCgjZCk7ZmlsbC1ydWxlOm5vbnplcm87c3Ryb2tlOm5vbmU7c3Ryb2tlLXdpZHRoOjEuMjU7ZmlsdGVyOnVybCgjZmlsdGVyMzc4NikiIGQ9Ik0xMzUgNi41NDVDNjQuMDU4IDYuNTQ1IDYuNTQ1IDY0LjA1NiA2LjU0NSAxMzVjMCA3MC45NDQgNTcuNTEzIDEyOC40NTUgMTI4LjQ1NSAxMjguNDU1IDcwLjk0NSAwIDEyOC40NTUtNTcuNTExIDEyOC40NTUtMTI4LjQ1NSAwLTcwLjk0NC01Ny41MS0xMjguNDU1LTEyOC40NTUtMTI4LjQ1NVpNNzIuNDcgNTYuOGM4LjMyIDAgMTUuNDIxIDQuMDY5IDIxLjMwNyAxMi4yMDUgNS44ODUgOC4xMzYgOC44MjggMTcuOTMgOC44MjggMjkuMzh2NzUuNjRjMCA2LjAyNiAzLjAxMyA5LjAzOCA5LjA0IDkuMDM4aDQ2LjcwOWM2LjAyNiAwIDkuMDQtMy4wMTIgOS4wNC05LjAzOXYtMzUuODZjMC01LjgyNy0zLjAxNC04Ljg0LTkuMDQtOS4wNDJoLTkuMDRjLTExLjY1My0uNDA1LTIxLjQ5OC0zLjQ0NS0yOS41My05LjEyOS04LjAzOC01LjY3OS0xMi4wNTUtMTIuNjgtMTIuMDU1LTIxLjAwNmg1MC42MjVjMTAuODQ4IDAgMjAuMDg1IDMuODE5IDI3LjcyNCAxMS40NTEgNy42MzEgNy42MzggMTEuNDUxIDE2Ljg3NSAxMS40NTEgMjcuNzI1djM1Ljg2MWMwIDEwLjg0OC0zLjgyIDIwLjA5LTExLjQ1IDI3LjcyMy03LjY0IDcuNjM2LTE2Ljg3NyAxMS40NTEtMjcuNzI1IDExLjQ1MWgtNDYuNzFjLTEwLjg0NyAwLTIwLjA5LTMuODE1LTI3LjcyMi0xMS40NTEtNy42MzgtNy42MzQtMTEuNDUxLTE2Ljg3NS0xMS40NTEtMjcuNzIzeiIgdHJhbnNmb3JtPSJtYXRyaXgoLjggMCAwIC0uOCAuOTIzIDIxNSkiLz4KCQkJPC9nPgoJCTwvZz4KCTwvZz4KPC9zdmc+", "book": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik02LjM2ODYzIDUuNDA3NzZDNi4zNjk2MSA0LjU4MDAzIDcuMDQwODkgMy45MDk1NSA3Ljg2ODYyIDMuOTA5NTVIOS42Njc3M0MxMC44MjU5IDMuOTA5NTUgMTEuODAxOSA0LjYwMjkxIDEyLjM1NzQgNS41NDIzN0MxMi45MjI1IDQuNjAxNTIgMTMuOTEyNSAzLjkwOTU1IDE1LjA2NzcgMy45MDk1NUgxNi44NzQ2QzE3LjcwMzcgMy45MDk1NSAxOC4zNzU2IDQuNTgyMjEgMTguMzc0NiA1LjQxMTMzTDE4LjM3NCA1LjkxMjMxTDE5Ljg0NjcgNS45MTIzNEMyMC42NzQ3IDUuOTEyMzUgMjEuMzQ2MSA2LjU4MzMzIDIxLjM0NjcgNy40MTEzNkwyMS4zNTMyIDE3LjQwNzJDMjEuMzUzNyAxOC4yMzYgMjAuNjgyIDE4LjkwODIgMTkuODUzMiAxOC45MDgyTDE0LjE2MSAxOC45MDgyQzE0LjA3MDQgMTguOTA4MiAxMy45ODEyIDE4LjkwNSAxMy44OTIgMTguOTAxOEMxMy42OTMyIDE4Ljg5NDggMTMuNDk0MSAxOC44ODc3IDEzLjI3ODMgMTguOTE1NkMxMi45NzQxIDE4Ljk1NDggMTIuODQ3MiAxOS4wNDQ4IDEyLjc5NTcgMTkuMTQyOEMxMi43MDk4IDE5LjMwNiAxMi41NDExIDE5LjQwODcgMTIuMzU2NyAxOS40MTAxQzEyLjE3MjMgMTkuNDExNCAxMi4wMDIyIDE5LjMxMTEgMTEuOTE0IDE5LjE0OTFDMTEuODU5OSAxOS4wNDk4IDExLjcyOTEgMTguOTU5OSAxMS40Mjc0IDE4LjkxOTRDMTEuMjEwNSAxOC44OTAzIDExLjAwNzIgMTguODk2NyAxMC44MDU4IDE4LjkwMjlDMTAuNzIxNSAxOC45MDU1IDEwLjYzNzYgMTguOTA4MiAxMC41NTMxIDE4LjkwODJINi45NTMxNUw2Ljk1MDY2IDE4LjkwODFMNC44NDU1OCAxOC44OTc3QzQuMDIwMDcgMTguODkzNiAzLjM1MzAzIDE4LjIyMzIgMy4zNTMwMyAxNy4zOTc3VjcuNDAyMDVDMy4zNTMwMyA2LjU3MDYyIDQuMDI5MyA1Ljg5NzggNC44NjA3MiA1LjkwMjA3TDYuMzY4MDMgNS45MDk4TDYuMzY4NjMgNS40MDc3NlpNNi4zNjY4NCA2LjkwOThMNC44NTU1OSA2LjkwMjA1QzQuNTc4NDUgNi45MDA2MyA0LjM1MzAzIDcuMTI0OSA0LjM1MzAzIDcuNDAyMDVWMTcuMzk3N0M0LjM1MzAzIDE3LjY3MjkgNC41NzUzOCAxNy44OTYzIDQuODUwNTQgMTcuODk3N0w2Ljk1MzE1IDE3LjkwODJIMTAuNTUzMUMxMC41ODkyIDE3LjkwODIgMTAuNjM5MSAxNy45MDY2IDEwLjY5OTEgMTcuOTA0N0MxMC45MTE5IDE3Ljg5NzkgMTEuMjUyNiAxNy44ODcgMTEuNTYwMyAxNy45MjgzQzExLjU4MjUgMTcuOTMxMyAxMS42MDUzIDE3LjkzNDYgMTEuNjI4NCAxNy45MzgzQzExLjUzNDUgMTcuNzk1NyAxMS40MTQ0IDE3LjY3NzMgMTEuMjc0MyAxNy41Nzg2QzEwLjg5ODMgMTcuMzEzNiAxMC4zMzY3IDE3LjE2MzkgOS42NTMxNCAxNy4xNjM5SDcuODU2NDJDNy4wMjczIDE3LjE2MzkgNi4zNTU0NCAxNi40OTEzIDYuMzU2NDIgMTUuNjYyMkw2LjM2Njg0IDYuOTA5OFpNMTMuMDgxIDE3LjkzMzZDMTMuMTA0NSAxNy45MyAxMy4xMjc2IDE3LjkyNjcgMTMuMTUwMiAxNy45MjM4QzEzLjQ1NTQgMTcuODg0NCAxMy43OTg2IDE3Ljg5NjYgMTQuMDExNSAxNy45MDQxQzE0LjA3MzkgMTcuOTA2MyAxNC4xMjUyIDE3LjkwODIgMTQuMTYxIDE3LjkwODJMMTkuODUzMiAxNy45MDgyQzIwLjEyOTUgMTcuOTA4MiAyMC4zNTM0IDE3LjY4NDEgMjAuMzUzMiAxNy40MDc5TDIwLjM0NjcgNy40MTIwMUMyMC4zNDY1IDcuMTM2IDIwLjEyMjcgNi45MTIzNCAxOS44NDY3IDYuOTEyMzRMMTguMzcyOCA2LjkxMjMxTDE4LjM2MjQgMTUuNjY1N0MxOC4zNjE0IDE2LjQ5MzUgMTcuNjkwMSAxNy4xNjM5IDE2Ljg2MjQgMTcuMTYzOUgxNS4wNTMxQzE0LjM2OTYgMTcuMTYzOSAxMy44MDggMTcuMzEzNiAxMy40MzIgMTcuNTc4NkMxMy4yOTM0IDE3LjY3NjMgMTMuMTc0NCAxNy43OTMxIDEzLjA4MSAxNy45MzM2Wk0xNy4zNzM2IDYuMzAxNDVDMTcuMzY1NSA2LjMzNzEgMTcuMzYxMiA2LjM3NDIgMTcuMzYxMiA2LjQxMjI5QzE3LjM2MTIgNi40NDk5NyAxNy4zNjU0IDYuNDg2NjggMTcuMzczMyA2LjUyMTk4TDE3LjM2MjQgMTUuNjY0NUMxNy4zNjIxIDE1Ljk0MDQgMTcuMTM4MyAxNi4xNjM5IDE2Ljg2MjQgMTYuMTYzOUgxNS4wNTMxQzE0LjI0NTUgMTYuMTYzOSAxMy40NTcxIDE2LjMzNzUgMTIuODU1OSAxNi43NjEyTDEyLjg1MzEgMTYuNzYzMVY3LjMwMTY4QzEyLjg1MzEgNi4wNzEwNSAxMy44OTU1IDQuOTA5NTUgMTUuMDY3NyA0LjkwOTU1SDE2Ljg3NDZDMTcuMTUxIDQuOTA5NTUgMTcuMzc0OSA1LjEzMzc3IDE3LjM3NDYgNS40MTAxNEwxNy4zNzM2IDYuMzAxNDVaTTExLjg1MzEgNy4zMDE2OEMxMS44NTMxIDYuMDYzNzEgMTAuODMzMyA0LjkwOTU1IDkuNjY3NzMgNC45MDk1NUg3Ljg2ODYyQzcuNTkyNzEgNC45MDk1NSA3LjM2ODk1IDUuMTMzMDQgNy4zNjg2MiA1LjQwODk1TDcuMzU2NDIgMTUuNjYzM0M3LjM1NjA5IDE1LjkzOTcgNy41ODAwNSAxNi4xNjM5IDcuODU2NDIgMTYuMTYzOUg5LjY1MzE0QzEwLjQ2MDggMTYuMTYzOSAxMS4yNDkyIDE2LjMzNzUgMTEuODUwNCAxNi43NjEyTDExLjg1MzEgMTYuNzYzMVY3LjMwMTY4WiIgZmlsbD0iIzIxMjUyOSIvPgo8L3N2Zz4K", "choice": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik02LjY0OTk5IDMuMTQzMzdDNi43OTMwNSAzLjAwMDU0IDcuMDA4MDUgMi45NTc5MSA3LjE5NDc4IDMuMDM1MzVDNy4zODE1MiAzLjExMjc4IDcuNTAzMjUgMy4yOTUwNSA3LjUwMzI1IDMuNDk3MjFWNC40OTcyM0M5LjI0ODY1IDQuNTAxNDUgMTAuODMzMSA1LjE5MjczIDExLjk5OTggNi4zMTM2NkMxMy4xNjcgNS4xOTIxOSAxNC43NTExIDQuNTAxNDUgMTYuNDk2NCA0LjQ5NzIzVjMuNDk3MjFDMTYuNDk2NCAzLjI5NTA1IDE2LjYxODIgMy4xMTI3OCAxNi44MDQ5IDMuMDM1MzVDMTYuOTkxNiAyLjk1NzkxIDE3LjIwNjYgMy4wMDA1NCAxNy4zNDk3IDMuMTQzMzdMMjAuODU2OSA2LjY0NDgyQzIwLjk1MDggNi43Mzg2MSAyMS4wMDM2IDYuODY1OTEgMjEuMDAzNiA2Ljk5ODY2QzIxLjAwMzYgNy4xMzE0MSAyMC45NTA4IDcuMjU4NzEgMjAuODU2OSA3LjM1MjVMMTcuMzQ5NyAxMC44NTRDMTcuMjA2NiAxMC45OTY4IDE2Ljk5MTYgMTEuMDM5NCAxNi44MDQ5IDEwLjk2MkMxNi42MTgyIDEwLjg4NDUgMTYuNDk2NCAxMC43MDIzIDE2LjQ5NjQgMTAuNTAwMVY4LjQ5NTlDMTUuMTIwMiA4LjUxMTM0IDE0LjAwOTEgOS42MzI0MyAxNC4wMDkxIDExLjAxMjZWMTkuMDI1M0MxMy45OTQxIDIwLjEyIDEzLjEwMTggMjEuMDAyOCAxMi4wMDM1IDIxLjAwMjhDMTAuOTA1MiAyMS4wMDI4IDEwLjAxMzEgMjAuMTIgOS45OTgwNyAxOS4wMjUzTDkuOTk3ODggMTEuMDEyNkg5Ljk5MDU4QzkuOTkwNTggOS42MzI0MyA4Ljg3OTQ1IDguNTExMzQgNy41MDMyNSA4LjQ5NTlWMTAuNTAwMUM3LjUwMzI1IDEwLjcwMjMgNy4zODE1MiAxMC44ODQ1IDcuMTk0NzggMTAuOTYyQzcuMDA4MDUgMTEuMDM5NCA2Ljc5MzA1IDEwLjk5NjggNi42NDk5OSAxMC44NTRMMy4xNDI4MyA3LjM1MjVDMy4wNDg4OCA3LjI1ODcxIDIuOTk2MDkgNy4xMzE0MSAyLjk5NjA5IDYuOTk4NjZDMi45OTYwOSA2Ljg2NTkxIDMuMDQ4ODggNi43Mzg2MSAzLjE0MjgzIDYuNjQ0ODJMNi42NDk5OSAzLjE0MzM3Wk0xMC4zMjg0IDguOTU4MTJDMTAuNTU3OSA4LjI2NjgxIDEwLjkwMDEgNy42MjY4NyAxMS4zMzMyIDcuMDYwMUMxMC4zNDkgNi4xMDE4IDkuMDA5MyA1LjUwODgyIDcuNTMwNzYgNS40OTczOEM3LjUyNDIzIDUuNDk3NjMgNy41MTc2NyA1LjQ5Nzc2IDcuNTExMDggNS40OTc3Nkg3LjAwMzI1QzYuNzI3MTEgNS40OTc3NiA2LjUwMzI1IDUuMjczOSA2LjUwMzI1IDQuOTk3NzZWNC43MDI5M0w0LjIwMzc4IDYuOTk4NjZMNi41MDMyNSA5LjI5NDRWNy45OTM1QzYuNTAzMjUgNy43MTczNSA2LjcyNzExIDcuNDkzNSA3LjAwMzI1IDcuNDkzNUg3LjQ4NzE2QzcuNTA1MzQgNy40OTM1IDcuNTIzMyA3LjQ5NDQ3IDcuNTQwOTggNy40OTYzNkM4LjY4ODc5IDcuNTE3NjYgOS43MDIwNCA4LjA4OTIgMTAuMzI4NCA4Ljk1ODEyWk0xMC45OTc5IDExLjAxMjZDMTAuOTk3OSA3Ljk4MTQxIDEzLjQ0MzQgNS41MjA4MyAxNi40Njg5IDUuNDk3MzhDMTYuNDc1NCA1LjQ5NzYzIDE2LjQ4MiA1LjQ5Nzc2IDE2LjQ4ODYgNS40OTc3NkgxNi45OTY0QzE3LjI3MjYgNS40OTc3NiAxNy40OTY0IDUuMjczOSAxNy40OTY0IDQuOTk3NzZWNC43MDI5M0wxOS43OTU5IDYuOTk4NjZMMTcuNDk2NCA5LjI5NDRWNy45OTM1QzE3LjQ5NjQgNy43MTczNSAxNy4yNzI2IDcuNDkzNSAxNi45OTY0IDcuNDkzNUgxNi41MTI1QzE2LjQ5NDMgNy40OTM1IDE2LjQ3NjQgNy40OTQ0NyAxNi40NTg3IDcuNDk2MzZDMTQuNTQ3MyA3LjUzMTg0IDEzLjAwOTEgOS4wOTMwNyAxMy4wMDkxIDExLjAxMjZWMTguOTk3MkMxMy4wMDkxIDE5LjU1MjYgMTIuNTU4OSAyMC4wMDI4IDEyLjAwMzUgMjAuMDAyOEMxMS40NDgxIDIwLjAwMjggMTAuOTk3OSAxOS41NTI2IDEwLjk5NzkgMTguOTk3MlYxMS4wMTI2WiIgZmlsbD0iIzIxMjUyOSIvPgo8L3N2Zz4K", "data": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0zLjQ5OTUxIDQuNDk3MDdDMy40OTk1MSAzLjExNjM2IDQuNjE4OCAxLjk5NzA3IDUuOTk5NTEgMS45OTcwN0gxNC45OTc4QzE2LjM3ODUgMS45OTcwNyAxNy40OTc4IDMuMTE2MzYgMTcuNDk3OCA0LjQ5NzA3VjQuOTk5MDJIMTguMDAxQzE5LjM4MTcgNC45OTkwMiAyMC41MDEgNi4xMTgzMSAyMC41MDEgNy40OTkwMlYxOS41MDI5QzIwLjUwMSAyMC44ODM2IDE5LjM4MTcgMjIuMDAyOSAxOC4wMDEgMjIuMDAyOUg4Ljk3MDdDNy41ODk5OSAyMi4wMDI5IDYuNDcwNyAyMC44ODM2IDYuNDcwNyAxOS41MDI5VjE4Ljk5MjdINS45OTk1MUM0LjYxODggMTguOTkyNyAzLjQ5OTUxIDE3Ljg3MzQgMy40OTk1MSAxNi40OTI3VjQuNDk3MDdaTTE3LjQ5NzggMTYuNDkyN1Y1Ljk5OTAySDE4LjAwMUMxOC44Mjk0IDUuOTk5MDIgMTkuNTAxIDYuNjcwNiAxOS41MDEgNy40OTkwMlYxOS41MDI5QzE5LjUwMSAyMC4zMzE0IDE4LjgyOTQgMjEuMDAyOSAxOC4wMDEgMjEuMDAyOUg4Ljk3MDdDOC4xNDIyOCAyMS4wMDI5IDcuNDcwNyAyMC4zMzE0IDcuNDcwNyAxOS41MDI5VjE4Ljk5MjdIMTQuOTk3OEMxNi4zNzg1IDE4Ljk5MjcgMTcuNDk3OCAxNy44NzM0IDE3LjQ5NzggMTYuNDkyN1pNNS45OTk1MSAyLjk5NzA3QzUuMTcxMDggMi45OTcwNyA0LjQ5OTUxIDMuNjY4NjQgNC40OTk1MSA0LjQ5NzA3VjE2LjQ5MjdDNC40OTk1MSAxNy4zMjExIDUuMTcxMDggMTcuOTkyNyA1Ljk5OTUxIDE3Ljk5MjdIMTQuOTk3OEMxNS44MjYyIDE3Ljk5MjcgMTYuNDk3OCAxNy4zMjExIDE2LjQ5NzggMTYuNDkyN1Y0LjQ5NzA3QzE2LjQ5NzggMy42Njg2NCAxNS44MjYyIDIuOTk3MDcgMTQuOTk3OCAyLjk5NzA3SDUuOTk5NTFaTTcuOTkyMTkgMTAuMDA2NkM3LjE2Mzc2IDEwLjAwNjYgNi40OTIxOSAxMC42NzgyIDYuNDkyMTkgMTEuNTA2NlYxNC40OTU2QzYuNDkyMTkgMTUuMzI0IDcuMTYzNzYgMTUuOTk1NiA3Ljk5MjE5IDE1Ljk5NTZIMTIuOTkzN0MxMy44MjIxIDE1Ljk5NTYgMTQuNDkzNyAxNS4zMjQgMTQuNDkzNyAxNC40OTU2VjExLjUwNjZDMTQuNDkzNyAxMC42NzgyIDEzLjgyMjEgMTAuMDA2NiAxMi45OTM3IDEwLjAwNjZINy45OTIxOVpNNy40OTIxOSAxMS41MDY2QzcuNDkyMTkgMTEuMjMwNCA3LjcxNjA0IDExLjAwNjYgNy45OTIxOSAxMS4wMDY2SDEyLjk5MzdDMTMuMjY5OCAxMS4wMDY2IDEzLjQ5MzcgMTEuMjMwNCAxMy40OTM3IDExLjUwNjZWMTQuNDk1NkMxMy40OTM3IDE0Ljc3MTcgMTMuMjY5OCAxNC45OTU2IDEyLjk5MzcgMTQuOTk1Nkg3Ljk5MjE5QzcuNzE2MDUgMTQuOTk1NiA3LjQ5MjE5IDE0Ljc3MTcgNy40OTIxOSAxNC40OTU2VjExLjUwNjZaTTYuNTAyNDQgNy40OTc4QzYuNTAyNDQgNy4yMjE2NiA2LjcyNjMgNi45OTc4IDcuMDAyNDQgNi45OTc4SDEzLjk5MzdDMTQuMjY5OCA2Ljk5NzggMTQuNDkzNyA3LjIyMTY2IDE0LjQ5MzcgNy40OTc4QzE0LjQ5MzcgNy43NzM5NSAxNC4yNjk4IDcuOTk3OCAxMy45OTM3IDcuOTk3OEg3LjAwMjQ0QzYuNzI2MyA3Ljk5NzggNi41MDI0NCA3Ljc3Mzk1IDYuNTAyNDQgNy40OTc4Wk03LjAwMjQ0IDQuOTk3OEM2LjcyNjMgNC45OTc4IDYuNTAyNDQgNS4yMjE2NiA2LjUwMjQ0IDUuNDk3OEM2LjUwMjQ0IDUuNzczOTUgNi43MjYzIDUuOTk3OCA3LjAwMjQ0IDUuOTk3OEwxMS4wMDU2IDUuOTk3OEMxMS4yODE4IDUuOTk3OCAxMS41MDU2IDUuNzczOTUgMTEuNTA1NiA1LjQ5NzhDMTEuNTA1NiA1LjIyMTY2IDExLjI4MTggNC45OTc4IDExLjAwNTYgNC45OTc4TDcuMDAyNDQgNC45OTc4WiIgZmlsbD0iIzIxMjUyOSIvPgo8L3N2Zz4K", "feedback": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMi41Nzg3IDUuNTQwMzZDMTMuNTYyNyA0Ljc2NjM3IDE1LjAwNiA1LjQ2NzM5IDE1LjAwNiA2LjcxOTM4VjE3LjA4NDFDMTUuMDA2IDE4LjMzNTkgMTMuNTYzMiAxOS4wMzcgMTIuNTc5IDE4LjI2MzRMOC4wMDE5NiAxNC42NjU4TDguMDAyMDYgOS4xMzk5TDEyLjU3ODcgNS41NDAzNlpNMTYuMDA2IDYuNzE5MzhDMTYuMDA2IDQuNjMyNzMgMTMuNjAwNiAzLjQ2NDM1IDExLjk2MDQgNC43NTQzNEw3LjMyMzk1IDguNDAxSDQuNTAxOTVDMy4xMjEyNCA4LjQwMSAyLjAwMTk1IDkuNTIwMjkgMi4wMDE5NSAxMC45MDFWMTIuOTAxQzIuMDAxOTUgMTQuMjgxNyAzLjEyMTI0IDE1LjQwMSA0LjUwMTk1IDE1LjQwMUg0LjY0MzM4TDYuNTMyMyAyMC45Nzk0QzYuNzE4MjUgMjEuNTI4NSA3LjIzMzUzIDIxLjg5ODEgNy44MTMzIDIxLjg5ODFDOC43MzkxMyAyMS44OTgxIDkuMzkxMjUgMjAuOTg4OCA5LjA5NDMxIDIwLjExMThMNy41NjQ0NSAxNS41OTM4TDExLjk2MSAxOS4wNDk2QzEzLjYwMTMgMjAuMzM4OSAxNi4wMDYgMTkuMTcwNCAxNi4wMDYgMTcuMDg0MVY2LjcxOTM4Wk02LjQ0MzM4IDE1LjQwMUg1LjY5OTE1TDcuNDc5NDcgMjAuNjU4N0M3LjUyNzkzIDIwLjgwMTggNy42NjIyMSAyMC44OTgxIDcuODEzMyAyMC44OTgxQzguMDU0NTggMjAuODk4MSA4LjIyNDUyIDIwLjY2MTEgOC4xNDcxNCAyMC40MzI2TDYuNDQzMzggMTUuNDAxWk02LjgwMTk2IDE0LjQwMUg3LjAwMTk1VjkuNDAxSDQuNTAxOTVDMy42NzM1MyA5LjQwMSAzLjAwMTk1IDEwLjA3MjYgMy4wMDE5NSAxMC45MDFWMTIuOTAxQzMuMDAxOTUgMTMuNzI5NCAzLjY3MzUzIDE0LjQwMSA0LjUwMTk1IDE0LjQwMUg1LjAwMTk2SDYuODAxOTZaTTE3Ljk4ODMgMTIuOTAxQzE3Ljk4ODMgMTIuNjI0OSAxOC4yMTIxIDEyLjQwMSAxOC40ODgzIDEyLjQwMUgyMS40OTgzQzIxLjc3NDQgMTIuNDAxIDIxLjk5ODMgMTIuNjI0OSAyMS45OTgzIDEyLjkwMUMyMS45OTgzIDEzLjE3NzEgMjEuNzc0NCAxMy40MDEgMjEuNDk4MyAxMy40MDFIMTguNDg4M0MxOC4yMTIxIDEzLjQwMSAxNy45ODgzIDEzLjE3NzEgMTcuOTg4MyAxMi45MDFaTTIwLjExNzUgOC44Mjc2N0MyMC4zMzgyIDguNjYxNjQgMjAuMzgyNSA4LjM0ODE3IDIwLjIxNjQgOC4xMjc1MUMyMC4wNTA0IDcuOTA2ODYgMTkuNzM2OSA3Ljg2MjU3IDE5LjUxNjMgOC4wMjg1OUwxOC4xODcyIDkuMDI4NTlDMTcuOTY2NSA5LjE5NDYyIDE3LjkyMjMgOS41MDgwOSAxOC4wODgzIDkuNzI4NzRDMTguMjU0MyA5Ljk0OTQgMTguNTY3OCA5Ljk5MzY5IDE4Ljc4ODQgOS44Mjc2N0wyMC4xMTc1IDguODI3NjdaTTE4LjA4ODcgMTYuMDczOEMxNy45MjI3IDE2LjI5NDUgMTcuOTY3IDE2LjYwNzkgMTguMTg3NyAxNi43NzRMMTkuNTE2NyAxNy43NzRDMTkuNzM3NCAxNy45NCAyMC4wNTA5IDE3Ljg5NTcgMjAuMjE2OSAxNy42NzVDMjAuMzgyOSAxNy40NTQ0IDIwLjMzODYgMTcuMTQwOSAyMC4xMTggMTYuOTc0OUwxOC43ODg5IDE1Ljk3NDlDMTguNTY4MiAxNS44MDg5IDE4LjI1NDggMTUuODUzMSAxOC4wODg3IDE2LjA3MzhaIiBmaWxsPSIjMjEyNTI5Ii8+Cjwvc3ZnPgo=", "folder": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik01Ljc5NTQxIDQuOTEwNjRDNC45NjMxIDQuOTEwNjQgNC4yODk5MiA1LjU4ODMgNC4yOTU0NCA2LjQyMDZMNC4zNjgzOCAxNy40MTMxQzQuMzczODUgMTguMjM3NiA1LjA0MzggMTguOTAzMSA1Ljg2ODM0IDE4LjkwMzFMMTguODQ1MiAxOC45MDMxQzE5LjY3MzYgMTguOTAzMSAyMC4zNDUyIDE4LjIzMTUgMjAuMzQ1MiAxNy40MDMxTDIwLjM0NTEgMTAuMzk0OUMyMC4zNDUxIDkuNTY2NDggMTkuNjczNSA4Ljg5NDkxIDE4Ljg0NTEgOC44OTQ5MUgxNC4yNzU3QzEzLjQ5MDUgOC44OTQ5MSAxMi43NTA5IDguNTI1OTcgMTIuMjc4NSA3Ljg5ODY1TDEwLjQ3ODkgNS41MDg0QzEwLjE5NTUgNS4xMzIwMiA5Ljc1MTcgNC45MTA2NSA5LjI4MDU1IDQuOTEwNjVMNS43OTU0MSA0LjkxMDY0Wk0zLjI5NTQ3IDYuNDI3MjNDMy4yODYyNiA1LjA0MDA3IDQuNDA4MjIgMy45MTA2NCA1Ljc5NTQxIDMuOTEwNjRMOS4yODA1NSAzLjkxMDY1QzEwLjA2NTcgMy45MTA2NSAxMC44MDUzIDQuMjc5NTMgMTEuMjc3NiA0LjkwNjc0SDE4Ljg0OUMyMC4yMjk3IDQuOTA2NzQgMjEuMzQ5IDYuMDI2MDMgMjEuMzQ5IDcuNDA2NzRWMTAuNDA2N0MyMS4zNDkgMTAuNDI4IDIxLjM0NzcgMTAuNDQ5IDIxLjM0NTEgMTAuNDY5NUwyMS4zNDUyIDE3LjQwMzFDMjEuMzQ1MiAxOC43ODM4IDIwLjIyNTkgMTkuOTAzMSAxOC44NDUyIDE5LjkwMzFMNS44NjgzNCAxOS45MDMxQzQuNDk0MSAxOS45MDMxIDMuMzc3NTIgMTguNzkzOSAzLjM2ODQgMTcuNDE5N0wzLjI5NTQ3IDYuNDI3MjNaTTEzLjA3NzQgNy4yOTcxNkwxMi4wMzA1IDUuOTA2NzRIMTguODQ5QzE5LjY3NzQgNS45MDY3NCAyMC4zNDkgNi41NzgzMSAyMC4zNDkgNy40MDY3NFY4LjM5NzY3QzE5LjkzMDUgOC4wODIwNSAxOS40MDk3IDcuODk0OTEgMTguODQ1MSA3Ljg5NDkxSDE0LjI3NTdDMTMuODA0NiA3Ljg5NDkxIDEzLjM2MDggNy42NzM1NCAxMy4wNzc0IDcuMjk3MTZaTTEzLjg1NDUgMTUuOTFDMTMuNTc4NCAxNS45MSAxMy4zNTQ1IDE2LjEzMzkgMTMuMzU0NSAxNi40MUMxMy4zNTQ1IDE2LjY4NjIgMTMuNTc4NCAxNi45MSAxMy44NTQ1IDE2LjkxSDE3Ljg1MzNDMTguMTI5NCAxNi45MSAxOC4zNTMzIDE2LjY4NjIgMTguMzUzMyAxNi40MUMxOC4zNTMzIDE2LjEzMzkgMTguMTI5NCAxNS45MSAxNy44NTMzIDE1LjkxSDEzLjg1NDVaIiBmaWxsPSIjMjEyNTI5Ii8+Cjwvc3ZnPgo=", "forum": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik02LjQ5NjA5IDIuOTg5OTlDNC41NjMxIDIuOTg5OTkgMi45OTYwOSA0LjU1Njk5IDIuOTk2MDkgNi40ODk5OVYxNC41NTYxQzIuOTk2MDkgMTQuNTYzNSAyLjk5NjI2IDE0LjU3MSAyLjk5NjU4IDE0LjU3ODRWMjAuMDA5MkMyLjk5NjU4IDIwLjg0MSAzLjk1Mjk4IDIxLjMwOTIgNC42MDk5NCAyMC43OTlMOC4yMTA2MSAxOC4wMDI3SDE3LjUwMzRDMTkuNDM2NCAxOC4wMDI3IDIxLjAwMzQgMTYuNDM1NyAyMS4wMDM0IDE0LjUwMjdWNi40ODk5OUMyMS4wMDM0IDQuNTU2OTkgMTkuNDM2NCAyLjk4OTk5IDE3LjUwMzQgMi45ODk5OUg2LjQ5NjA5Wk0zLjk5NjU4IDEzLjk3NDlDMy45OTY1OCAxMy45Njc0IDMuOTk2NDIgMTMuOTU5OSAzLjk5NjA5IDEzLjk1MjZWNi40ODk5OUMzLjk5NjA5IDUuMTA5MjggNS4xMTUzOCAzLjk4OTk5IDYuNDk2MDkgMy45ODk5OUgxNy41MDM0QzE4Ljg4NDEgMy45ODk5OSAyMC4wMDM0IDUuMTA5MjggMjAuMDAzNCA2LjQ4OTk5VjE0LjUwMjdDMjAuMDAzNCAxNS44ODM0IDE4Ljg4NDEgMTcuMDAyNyAxNy41MDM0IDE3LjAwMjdIOC4wMjMzN0M3Ljg3MjIyIDE3LjAwMjcgNy43MzY3MyAxNy4wNjk4IDcuNjQ1MDQgMTcuMTc1OEwzLjk5NjU4IDIwLjAwOTJWMTMuOTc0OVpNNy4wMDM5MSA3LjQ5NDE0QzcuMDAzOTEgNy4yMTggNy4yMjc3NiA2Ljk5NDE0IDcuNTAzOTEgNi45OTQxNEgxNi41MDg1QzE2Ljc4NDcgNi45OTQxNCAxNy4wMDg1IDcuMjE4IDE3LjAwODUgNy40OTQxNEMxNy4wMDg1IDcuNzcwMjggMTYuNzg0NyA3Ljk5NDE0IDE2LjUwODUgNy45OTQxNEg3LjUwMzkxQzcuMjI3NzYgNy45OTQxNCA3LjAwMzkxIDcuNzcwMjggNy4wMDM5MSA3LjQ5NDE0Wk03LjUwMzkxIDkuOTkwNDhDNy4yMjc3NiA5Ljk5MDQ4IDcuMDAzOTEgMTAuMjE0MyA3LjAwMzkxIDEwLjQ5MDVDNy4wMDM5MSAxMC43NjY2IDcuMjI3NzYgMTAuOTkwNSA3LjUwMzkxIDEwLjk5MDVIMTYuNTA4NUMxNi43ODQ3IDEwLjk5MDUgMTcuMDA4NSAxMC43NjY2IDE3LjAwODUgMTAuNDkwNUMxNy4wMDg1IDEwLjIxNDMgMTYuNzg0NyA5Ljk5MDQ4IDE2LjUwODUgOS45OTA0OEg3LjUwMzkxWk03LjUwMzkxIDEyLjk5MDVDNy4yMjc3NiAxMi45OTA1IDcuMDAzOTEgMTMuMjE0MyA3LjAwMzkxIDEzLjQ5MDVDNy4wMDM5MSAxMy43NjY2IDcuMjI3NzYgMTMuOTkwNSA3LjUwMzkxIDEzLjk5MDVIMTMuNTA3MUMxMy43ODMyIDEzLjk5MDUgMTQuMDA3MSAxMy43NjY2IDE0LjAwNzEgMTMuNDkwNUMxNC4wMDcxIDEzLjIxNDMgMTMuNzgzMiAxMi45OTA1IDEzLjUwNzEgMTIuOTkwNUg3LjUwMzkxWiIgZmlsbD0iIzIxMjUyOSIvPgo8L3N2Zz4K", "glossary": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik01LjAwMzkxIDUuNTAwNDlDNS4wMDM5MSA0LjExOTc4IDYuMTIzMTkgMy4wMDA0OSA3LjUwMzkxIDMuMDAwNDlINy41MDg3OUgxOC41MDM5QzE4Ljc4IDMuMDAwNDkgMTkuMDAzOSAzLjIyNDM1IDE5LjAwMzkgMy41MDA0OVYyMC40OTk1QzE5LjAwMzkgMjAuNzc1NyAxOC43OCAyMC45OTk1IDE4LjUwMzkgMjAuOTk5NUwxOC41MDI1IDIwLjk5OTVMNi45OTI4IDIwLjk5OTVDNS44OTAwNSAyMC45OTk1IDQuOTk2MDkgMjAuMTA1NiA0Ljk5NjA5IDE5LjAwMjhDNC45OTYwOSAxOC45NDI5IDQuOTk4NzMgMTguODgzNiA1LjAwMzkxIDE4LjgyNVY1LjUwMDQ5Wk03LjAwODc5IDQuMDg0MTJDNi40MjM2NCA0LjI4ODY2IDYuMDAzOTEgNC44NDU1NiA2LjAwMzkxIDUuNTAwNDlWMTcuMjY3OEM2LjI5NTQ1IDE3LjEwMTMgNi42MzMwMSAxNy4wMDYxIDYuOTkyOCAxNy4wMDYxSDcuMDA4NzlMNy4wMDg3OSA0LjA4NDEyWk04LjAwODc5IDE3LjAwNjFMOC4wMDg3OSA0LjAwMDQ5SDE4LjAwMzlWMTcuMDA2MUg4LjAwODc5Wk02Ljk5MjggMTguMDA2MUgxOC4wMDM5VjE5Ljk5OTVMNi45OTI4IDE5Ljk5OTVDNi40NTA0NiAxOS45OTk1IDYuMDA5MyAxOS41NjY0IDUuOTk2MzggMTkuMDI3MUM2LjAwMTMzIDE4Ljk5ODkgNi4wMDM5MSAxOC45Njk5IDYuMDAzOTEgMTguOTQwMlYxOC44Nzc0QzYuMDY1NTggMTguMzg2MSA2LjQ4NDgxIDE4LjAwNjEgNi45OTI4IDE4LjAwNjFaTTEwLjAwNjggMTMuNTAyQzEwLjAwNjggMTMuMjI1OCAxMC4yMzA3IDEzLjAwMiAxMC41MDY4IDEzLjAwMkwxNS41MDczIDEzLjAwMkMxNS43ODM1IDEzLjAwMiAxNi4wMDczIDEzLjIyNTggMTYuMDA3MyAxMy41MDJDMTYuMDA3MyAxMy43NzgxIDE1Ljc4MzUgMTQuMDAyIDE1LjUwNzMgMTQuMDAyTDEwLjUwNjggMTQuMDAyQzEwLjIzMDcgMTQuMDAyIDEwLjAwNjggMTMuNzc4MSAxMC4wMDY4IDEzLjUwMlpNMTEuNzI3MyA3LjMyNDA0QzExLjY1MTkgNy4xMzMyIDExLjQ2NzYgNy4wMDc4MSAxMS4yNjIzIDcuMDA3ODFDMTEuMDU3MSA3LjAwNzgxIDEwLjg3MjggNy4xMzMyIDEwLjc5NzMgNy4zMjQwNEw5LjU0MTk3IDEwLjUwMDVDOS40NDA0NyAxMC43NTczIDkuNTY2MzggMTEuMDQ3OCA5LjgyMzIgMTEuMTQ5M0MxMC4wOCAxMS4yNTA4IDEwLjM3MDUgMTEuMTI0OSAxMC40NzIgMTAuODY4MUwxMC42MTQzIDEwLjUwNzhIMTEuOTEwM0wxMi4wNTI3IDEwLjg2ODFDMTIuMTU0MiAxMS4xMjQ5IDEyLjQ0NDcgMTEuMjUwOCAxMi43MDE1IDExLjE0OTNDMTIuOTU4MyAxMS4wNDc4IDEzLjA4NDIgMTAuNzU3MyAxMi45ODI3IDEwLjUwMDVMMTEuNzI3MyA3LjMyNDA0Wk0xMS4yNjIzIDguODY4MThMMTEuNTE1MSA5LjUwNzgxSDExLjAwOTZMMTEuMjYyMyA4Ljg2ODE4Wk0xNC4wMDY4IDcuMDA3ODFDMTMuNzMwNyA3LjAwNzgxIDEzLjUwNjggNy4yMzE2NyAxMy41MDY4IDcuNTA3ODFDMTMuNTA2OCA3Ljc4Mzk2IDEzLjczMDcgOC4wMDc4MSAxNC4wMDY4IDguMDA3ODFIMTUuMDcyNkwxMy41OTA4IDEwLjIzMDVDMTMuNDg4NSAxMC4zODM5IDEzLjQ3OSAxMC41ODEyIDEzLjU2NiAxMC43NDM3QzEzLjY1MyAxMC45MDYzIDEzLjgyMjQgMTEuMDA3OCAxNC4wMDY4IDExLjAwNzhIMTYuMDA2OEMxNi4yODMgMTEuMDA3OCAxNi41MDY4IDEwLjc4NCAxNi41MDY4IDEwLjUwNzhDMTYuNTA2OCAxMC4yMzE3IDE2LjI4MyAxMC4wMDc4IDE2LjAwNjggMTAuMDA3OEgxNC45NDExTDE2LjQyMjkgNy43ODUxNkMxNi41MjUxIDcuNjMxNzMgMTYuNTM0NyA3LjQzNDQ2IDE2LjQ0NzcgNy4yNzE4OEMxNi4zNjA3IDcuMTA5MyAxNi4xOTEyIDcuMDA3ODEgMTYuMDA2OCA3LjAwNzgxSDE0LjAwNjhaIiBmaWxsPSIjMjEyNTI5Ii8+Cjwvc3ZnPgo=", "h5pactivity": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik02IDVDMy43OTA4NiA1IDIgNi43OTA4NiAyIDlWMTVDMiAxNy4yMDkxIDMuNzkwODYgMTkgNiAxOUgxOEMyMC4yMDkxIDE5IDIyIDE3LjIwOTEgMjIgMTVWOUMyMiA2Ljc5MDg2IDIwLjIwOTEgNSAxOCA1SDZaTTE3LjE5NzEgOS4wMTMyNUMxOC4wMzE3IDkuMDM3MjkgMTguNjYxMyA5LjQ0Mjg3IDE4Ljg1NjcgMTAuMDc5QzE5LjEwNjggMTAuODkyIDE5LjA3MzggMTEuNjc2IDE4LjM5MDkgMTIuMzA1NEMxNy45NDA5IDEyLjcxOSAxNy4zNTMyIDEyLjc4MzcgMTYuNzY1NSAxMi44MDM0QzE2LjU0MDggMTIuODA5NiAxNi40ODIgMTIuODA4NSAxNi4zODIgMTIuODA2NUMxNi4zMTM0IDEyLjgwNTIgMTYuMjI1NCAxMi44MDM0IDE2LjA1MTEgMTIuODAzNFYxNC45ODU0SDEzLjM4MjJDMTMuOTk2NSAxNC43NjM1IDE0LjQwNDYgMTQuMzQ5MyAxNC42NTE1IDEzLjc1ODhDMTQuODk4NCAxMy4xNjgzIDE0LjkyMzEgMTIuNTgwOSAxNC42Mzk0IDExLjk5NzJDMTQuMjQzNCAxMS4xODA1IDEzLjE1NzUgMTAuNjIzOSAxMS41NjY0IDExLjE2MkMxMS41ODYxIDExLjA4MDggMTEuNjA0NCAxMS4wMDE1IDExLjYyMjMgMTAuOTIzN0wxMS42MjIzIDEwLjkyMzdMMTEuNjIyMyAxMC45MjM2TDExLjYyMjMgMTAuOTIzNUMxMS42NzA3IDEwLjcxMzIgMTEuNzE2NSAxMC41MTQyIDExLjc4MDkgMTAuMzIxMkMxMS43OTg3IDEwLjI2OTQgMTEuOTUyOSAxMC4yMzYyIDEyLjA0NDkgMTAuMjM2MkMxMi42MDE2IDEwLjIzMDQgMTMuMTU3MSAxMC4yMzEgMTMuNzEyNiAxMC4yMzE1SDEzLjcxMjZIMTMuNzEyNkwxMy43MTQxIDEwLjIzMTVDMTMuODc3IDEwLjIzMTcgMTQuMDM5OSAxMC4yMzE4IDE0LjIwMjggMTAuMjMxOEgxNC41NDY4VjkuMDQ2NTNDMTQuNTkzMSA5LjAyNzA1IDE0LjY0MTcgOS4wMTMxOCAxNC42OTE1IDkuMDA1MjNDMTQuOTMwMyA5LjAwNTIzIDE1LjE2OTEgOS4wMDM5MiAxNS40MDc4IDkuMDAyNjJIMTUuNDA3OUgxNS40MDc5QzE2LjAwNDYgOC45OTkzNSAxNi42MDEgOC45OTYwOCAxNy4xOTcxIDkuMDEzMjVaTTExLjU0MDIgMTIuMjY3MkMxMS44MTc1IDEyLjAyMTkgMTIuMTg1NiAxMS45NTA0IDEyLjUwOTMgMTIuMDk4OUMxMi42Njk3IDEyLjE3MDUgMTIuODAyOSAxMi4yODkxIDEyLjg5MDIgMTIuNDM4QzEyLjk3NzUgMTIuNTg3IDEzLjAxNDYgMTIuNzU4OCAxMi45OTYxIDEyLjkyOTJDMTIuOTg0NiAxMy4wOTk4IDEyLjkxNzcgMTMuMjYyNSAxMi44MDQ5IDEzLjM5MzhDMTIuNjkyMSAxMy41MjUxIDEyLjUzOTIgMTMuNjE4MiAxMi4zNjg0IDEzLjY1OTZDMTIuMDI4OCAxMy43NDg0IDExLjc0OSAxMy42NDI0IDExLjUwMjcgMTMuNDA4MUMxMS40MjkxIDEzLjMzODUgMTEuMzExNyAxMy4yNTcxIDExLjIyNDEgMTMuMjY2NEMxMC44NTczIDEzLjMwNTYgMTAuNDkxOSAxMy4zNTkzIDEwLjEyNjMgMTMuNDEzMUMxMC4wMDM2IDEzLjQzMTEgOS44ODA4NiAxMy40NDkyIDkuNzU4MDQgMTMuNDY2N0M5Ljg3MDM3IDE0LjA5NjcgMTAuMTcxMiAxNC40MzIgMTEuMTQ4NiAxNS4wMDAzSDguNzU4ODFWMTIuODI2OUg2LjkwMDhWMTQuOTg5OEg1VjkuMDE4ODNINi44ODU1N1YxMS41NDIzSDguNzQ0ODVWOS4wMjM3N0gxMC40NzAxTDkuNzI3NTcgMTIuMjUzNkM5Ljg1OTQxIDEyLjI3MTggOS45ODk2OCAxMi4yOTA1IDEwLjExODkgMTIuMzA5MUwxMC4xMTg5IDEyLjMwOTFMMTAuMTE4OSAxMi4zMDkxQzEwLjQ5MDMgMTIuMzYyNiAxMC44NTI3IDEyLjQxNDcgMTEuMjE3MSAxMi40NDcyQzExLjMxOTMgMTIuNDU2NCAxMS40NDg4IDEyLjM0ODYgMTEuNTQwMiAxMi4yNjcyWk0xNi4wNjY5IDExLjczNzNWMTAuMDAzOUwxNi4wODA2IDEwLjAwMzlDMTYuNjA2IDEwLjAwMzggMTcuMzczOSAxMC4wMDM3IDE3LjM3MzkgMTAuODU1NUMxNy4zNzM5IDExLjU0MjggMTYuODk3NSAxMS43MzczIDE2LjA2NjkgMTEuNzM3M1oiIGZpbGw9IiMzRDczQjgiLz4KPC9zdmc+Cg==", "imscp": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMS43NTczIDMuMDYzNzNDMTEuOTA4MiAyLjk3OTkgMTIuMDkxOCAyLjk3OTkgMTIuMjQyNyAzLjA2MzczTDE2Ljc0MjcgNS41NjI1QzE2LjkwMTUgNS42NTA2NyAxNyA1LjgxODAxIDE3IDUuOTk5NjNWMTAuNjkxOEwyMS4yNDI3IDEzLjA0NzdDMjEuNDAxNSAxMy4xMzU5IDIxLjUgMTMuMzAzMiAyMS41IDEzLjQ4NDlDMjEuNSAxMy41NDI0IDIxLjQ5MDEgMTMuNTk4NCAyMS40NzE2IDEzLjY1MUgyMS41VjE4LjY0ODZDMjEuNSAxOC44MzAyIDIxLjQwMTUgMTguOTk3NSAyMS4yNDI3IDE5LjA4NTdMMTYuNzUwNyAyMS41ODAxQzE2LjY3NyAyMS42MjI4IDE2LjU5MTQgMjEuNjQ3MyAxNi41IDIxLjY0NzNDMTYuNDA4NyAyMS42NDczIDE2LjMyMyAyMS42MjI4IDE2LjI0OTMgMjEuNTgwMUwxMiAxOS4yMjA1TDcuNzUwNjkgMjEuNTgwMUM3LjY3Njk5IDIxLjYyMjggNy41OTEzNSAyMS42NDczIDcuNSAyMS42NDczQzcuNDA4NjUgMjEuNjQ3MyA3LjMyMzAzIDIxLjYyMjggNy4yNDkzMyAyMS41ODAxTDIuNzU3MjcgMTkuMDg1N0MyLjU5ODQ5IDE4Ljk5NzUgMi41IDE4LjgzMDIgMi41IDE4LjY0ODZWMTMuNjUxSDIuNTI4NEMyLjUwOTg3IDEzLjU5ODQgMi41IDEzLjU0MjQgMi41IDEzLjQ4NDlDMi41IDEzLjMwMzIgMi41OTg0OSAxMy4xMzU5IDIuNzU3MjcgMTMuMDQ3N0w3IDEwLjY5MThWNS45OTk2M0M3IDUuODE4MDEgNy4wOTg0OSA1LjY1MDY3IDcuMjU3MjcgNS41NjI1TDExLjc1NzMgMy4wNjM3M1pNMTEuNSAxOC4zNTQzVjE0LjMzNDRMOCAxNi4yNzc5TDggMjAuMjk3OEwxMS41IDE4LjM1NDNaTTE2IDEwLjY5MThMMTIuNSAxMi42MzUzVjguNzkyNjhMMTYgNi44NDkxOVYxMC42OTE4Wk0xMi41IDE4LjM1NDNMMTYgMjAuMjk3OFYxNi4yNzc5TDEyLjUgMTQuMzM0NFYxOC4zNTQzWk0xMy4wMzk5IDEzLjQ5MDRMMTYuNSAxNS40MTE3TDE5Ljk3MDEgMTMuNDg0OUwxNi41MSAxMS41NjM2TDEzLjAzOTkgMTMuNDkwNFpNMTAuOTYwMSAxMy40OTA0TDcuNDkgMTEuNTYzNkw0LjAyOTk1IDEzLjQ4NDlMNy41IDE1LjQxMTdMMTAuOTYwMSAxMy40OTA0Wk0xMS41IDguNzkyNjhWMTIuNjM1M0w4IDEwLjY5MThWNi44NDkxOUwxMS41IDguNzkyNjhaTTguNTI5OTUgNS45OTk2M0wxMiA3LjkyNjVMMTUuNDcwMSA1Ljk5OTYzTDEyIDQuMDcyNzdMOC41Mjk5NSA1Ljk5OTYzWk03IDE2LjI3NzlMNyAyMC4yOTc4TDMuNSAxOC4zNTQzVjE0LjMzNDRMNyAxNi4yNzc5Wk0yMC41IDE4LjM1NDNMMTcgMjAuMjk3OFYxNi4yNzc5TDIwLjUgMTQuMzM0NFYxOC4zNTQzWiIgZmlsbD0iIzIxMjUyOSIvPgo8L3N2Zz4K", "label": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZD0iTTguMDAzOTEgOC40OTgwNUM4LjAwMzkxIDguMjIxOSA4LjIyNzc2IDcuOTk4MDUgOC41MDM5MSA3Ljk5ODA1TDE1LjUwODUgNy45OTgwNUMxNS43ODQ3IDcuOTk4MDUgMTYuMDA4NSA4LjIyMTkxIDE2LjAwODUgOC40OTgwNUMxNi4wMDg1IDguNTI3NzcgMTYuMDA2IDguNTU2ODkgMTYuMDAxIDguNTg1MlYxMC4zNzM1QzE2LjAwMSAxMC42NDk2IDE1Ljc3NzEgMTAuODczNSAxNS41MDEgMTAuODczNUMxNS4yMjQ4IDEwLjg3MzUgMTUuMDAxIDEwLjY0OTYgMTUuMDAxIDEwLjM3MzVWOC45OTgwNUgxMi41VjE0Ljk5ODhIMTMuNUMxMy43NzYxIDE0Ljk5ODggMTQgMTUuMjIyNiAxNCAxNS40OTg4QzE0IDE1Ljc3NDkgMTMuNzc2MSAxNS45OTg4IDEzLjUgMTUuOTk4OEgxMC41QzEwLjIyMzkgMTUuOTk4OCAxMCAxNS43NzQ5IDEwIDE1LjQ5ODhDMTAgMTUuMjIyNiAxMC4yMjM5IDE0Ljk5ODggMTAuNSAxNC45OTg4SDExLjVWOC45OTgwNUg5LjAwMzkxVjEwLjM3MzVDOS4wMDM5MSAxMC42NDk2IDguNzgwMDUgMTAuODczNSA4LjUwMzkxIDEwLjg3MzVDOC4yMjc3NiAxMC44NzM1IDguMDAzOTEgMTAuNjQ5NiA4LjAwMzkxIDEwLjM3MzVWOC40OTgwNVoiIGZpbGw9IiMyMTI1MjkiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0zIDIuNTAwMTJDMi43MjM4NiAyLjUwMDEyIDIuNSAyLjcyMzk4IDIuNSAzLjAwMDEyVjYuMDAwMTJDMi41IDYuMjc2MjYgMi43MjM4NiA2LjUwMDEyIDMgNi41MDAxMkg0VjE3LjQ5OTlIM0MyLjcyMzg2IDE3LjQ5OTkgMi41IDE3LjcyMzcgMi41IDE3Ljk5OTlWMjAuOTk5OUMyLjUgMjEuMjc2IDIuNzIzODYgMjEuNDk5OSAzIDIxLjQ5OTlINkM2LjI3NjE0IDIxLjQ5OTkgNi41IDIxLjI3NiA2LjUgMjAuOTk5OVYxOS45OTk5SDE3LjVWMjAuOTk5OUMxNy41IDIxLjI3NiAxNy43MjM5IDIxLjQ5OTkgMTggMjEuNDk5OUgyMUMyMS4yNzYxIDIxLjQ5OTkgMjEuNSAyMS4yNzYgMjEuNSAyMC45OTk5VjE3Ljk5OTlDMjEuNSAxNy43MjM3IDIxLjI3NjEgMTcuNDk5OSAyMSAxNy40OTk5SDE5Ljk5OThWNi41MDAxMkgyMUMyMS4yNzYxIDYuNTAwMTIgMjEuNSA2LjI3NjI2IDIxLjUgNi4wMDAxMlYzLjAwMDEyQzIxLjUgMi43MjM5OCAyMS4yNzYxIDIuNTAwMTIgMjEgMi41MDAxMkgxOEMxNy43MjM5IDIuNTAwMTIgMTcuNSAyLjcyMzk4IDE3LjUgMy4wMDAxMlY0LjAwMDEySDYuNVYzLjAwMDEyQzYuNSAyLjcyMzk4IDYuMjc2MTQgMi41MDAxMiA2IDIuNTAwMTJIM1pNNi41IDUuMDAwMTJWNi4wMDAxMkM2LjUgNi4yNzYyNiA2LjI3NjE0IDYuNTAwMTIgNiA2LjUwMDEySDVWMTcuNDk5OUg2QzYuMjc2MTQgMTcuNDk5OSA2LjUgMTcuNzIzNyA2LjUgMTcuOTk5OVYxOC45OTk5SDE3LjVWMTcuOTk5OUMxNy41IDE3LjcyMzcgMTcuNzIzOSAxNy40OTk5IDE4IDE3LjQ5OTlIMTguOTk5OFY2LjUwMDEySDE4QzE3LjcyMzkgNi41MDAxMiAxNy41IDYuMjc2MjYgMTcuNSA2LjAwMDEyVjUuMDAwMTJINi41Wk0zLjUgNS41MDAxMlYzLjUwMDEySDUuNVY1LjUwMDEySDMuNVpNMy41IDIwLjQ5OTlWMTguNDk5OUg1LjVWMjAuNDk5OUgzLjVaTTE4LjUgMy41MDAxMlY1LjUwMDEySDIwLjVWMy41MDAxMkgxOC41Wk0xOC41IDIwLjQ5OTlWMTguNDk5OUgyMC41VjIwLjQ5OTlIMTguNVoiIGZpbGw9IiMyMTI1MjkiLz4KPC9zdmc+Cg==", "lesson": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0zLjk5OTI3IDUuNDk0MzhDMy45OTkyNyA0LjY2NTk2IDQuNjcwODQgMy45OTQzOCA1LjQ5OTI3IDMuOTk0MzhIOC41MDQxNUM5LjMzMjU4IDMuOTk0MzggMTAuMDA0MiA0LjY2NTk2IDEwLjAwNDIgNS40OTQzOFY2LjUwMDg3TDE0LjA0OCA2LjQ5MjU5QzE0LjI4NTcgNS4wNzQ3OCAxNS41MTg3IDMuOTk0MzggMTcuMDA0IDMuOTk0MzhDMTguNjU5NSAzLjk5NDM4IDIwLjAwMTUgNS4zMzYzOCAyMC4wMDE1IDYuOTkxODJDMjAuMDAxNSA4LjY0NzI2IDE4LjY1OTUgOS45ODkyNiAxNy4wMDQgOS45ODkyNkMxNS41MTkyIDkuOTg5MjYgMTQuMjg2NiA4LjkwOTY1IDE0LjA0ODIgNy40OTI1OUwxMC4wMDQyIDcuNTAwODhWOC40OTkyN0MxMC4wMDQyIDguNzM3ODYgOS45NDg0NSA4Ljk2MzQ0IDkuODQ5MzMgOS4xNjM3MUwxNC44MzgxIDE0LjE1MjVDMTUuMDM2OCAxNC4wNTUzIDE1LjI2MDIgMTQuMDAwNyAxNS40OTYzIDE0LjAwMDdIMTguNTAxMkMxOS4zMjk2IDE0LjAwMDcgMjAuMDAxMiAxNC42NzIzIDIwLjAwMTIgMTUuNTAwN1YxOC41MDU2QzIwLjAwMTIgMTkuMzM0IDE5LjMyOTYgMjAuMDA1NiAxOC41MDEyIDIwLjAwNTZIMTUuNDk2M0MxNC42Njc5IDIwLjAwNTYgMTMuOTk2MyAxOS4zMzQgMTMuOTk2MyAxOC41MDU2VjE3LjQ5OUw5Ljk1MDgzIDE3LjUwNzNDOS43MDkwNSAxOC45MjAzIDguNDc4MzMgMTkuOTk1NiA2Ljk5NjQ2IDE5Ljk5NTZDNS4zNDEwMiAxOS45OTU2IDMuOTk5MDIgMTguNjUzNiAzLjk5OTAyIDE2Ljk5ODJDMy45OTkwMiAxNS4zNDI3IDUuMzQxMDIgMTQuMDAwNyA2Ljk5NjQ2IDE0LjAwMDdDOC40ODQ3NCAxNC4wMDA3IDkuNzE5NjggMTUuMDg1NCA5Ljk1MzkxIDE2LjUwNzNMMTMuOTk2MyAxNi40OTlWMTUuNTAwN0MxMy45OTYzIDE1LjI3MzcgMTQuMDQ2OCAxNS4wNTg1IDE0LjEzNyAxNC44NjU2TDkuMTMyOTMgOS44NjE1MkM4Ljk0MTY5IDkuOTQ5OTMgOC43Mjg2OCA5Ljk5OTI3IDguNTA0MTUgOS45OTkyN0g1LjQ5OTI3QzQuNjcwODQgOS45OTkyNyAzLjk5OTI3IDkuMzI3NjkgMy45OTkyNyA4LjQ5OTI3VjUuNDk0MzhaTTkuMDA0MTUgNS40OTQzOFY2Ljk0ODI4QzkuMDAyMjIgNi45NjYyMyA5LjAwMTI0IDYuOTg0NDYgOS4wMDEyNiA3LjAwMjkzQzkuMDAxMjcgNy4wMjEwNCA5LjAwMjI2IDcuMDM4OTIgOS4wMDQxNSA3LjA1NjUyVjguNDk5MjdDOS4wMDQxNSA4Ljc3NTQxIDguNzgwMjkgOC45OTkyNyA4LjUwNDE1IDguOTk5MjdINS40OTkyN0M1LjIyMzEzIDguOTk5MjcgNC45OTkyNyA4Ljc3NTQxIDQuOTk5MjcgOC40OTkyN1Y1LjQ5NDM4QzQuOTk5MjcgNS4yMTgyNCA1LjIyMzEzIDQuOTk0MzggNS40OTkyNyA0Ljk5NDM4SDguNTA0MTVDOC43ODAyOSA0Ljk5NDM4IDkuMDA0MTUgNS4yMTgyNCA5LjAwNDE1IDUuNDk0MzhaTTE0Ljk5NjMgMTcuMDUzOVYxOC41MDU2QzE0Ljk5NjMgMTguNzgxOCAxNS4yMjAyIDE5LjAwNTYgMTUuNDk2MyAxOS4wMDU2SDE4LjUwMTJDMTguNzc3NCAxOS4wMDU2IDE5LjAwMTIgMTguNzgxOCAxOS4wMDEyIDE4LjUwNTZWMTUuNTAwN0MxOS4wMDEyIDE1LjIyNDYgMTguNzc3NCAxNS4wMDA3IDE4LjUwMTIgMTUuMDAwN0gxNS40OTYzQzE1LjIyMDIgMTUuMDAwNyAxNC45OTYzIDE1LjIyNDYgMTQuOTk2MyAxNS41MDA3VjE2Ljk0MTFDMTQuOTk4NCAxNi45NTk0IDE0Ljk5OTUgMTYuOTc4MSAxNC45OTk1IDE2Ljk5N0MxNC45OTk1IDE3LjAxNjIgMTQuOTk4NCAxNy4wMzUyIDE0Ljk5NjMgMTcuMDUzOVpNMTUuMDA2NiA2Ljk5MTgyQzE1LjAwNjYgNS44ODg2NyAxNS45MDA5IDQuOTk0MzggMTcuMDA0IDQuOTk0MzhDMTguMTA3MiA0Ljk5NDM4IDE5LjAwMTUgNS44ODg2NyAxOS4wMDE1IDYuOTkxODJDMTkuMDAxNSA4LjA5NDk3IDE4LjEwNzIgOC45ODkyNiAxNy4wMDQgOC45ODkyNkMxNS45MDA5IDguOTg5MjYgMTUuMDA2NiA4LjA5NDk3IDE1LjAwNjYgNi45OTE4MlpNNi45OTY0NiAxNS4wMDA3QzguMDk5NjEgMTUuMDAwNyA4Ljk5MzkgMTUuODk1IDguOTkzOSAxNi45OTgyQzguOTkzOSAxOC4xMDEzIDguMDk5NjEgMTguOTk1NiA2Ljk5NjQ2IDE4Ljk5NTZDNS44OTMzMSAxOC45OTU2IDQuOTk5MDIgMTguMTAxMyA0Ljk5OTAyIDE2Ljk5ODJDNC45OTkwMiAxNS44OTUgNS44OTMzMSAxNS4wMDA3IDYuOTk2NDYgMTUuMDAwN1oiIGZpbGw9IiMyMTI1MjkiLz4KPC9zdmc+Cg==", "lti": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjUiIHZpZXdCb3g9IjAgMCAyNCAyNSIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMC4yMzI1IDQuMDY5NzJDMTEuMjA4OCAzLjA5MzQ0IDEyLjc5MTcgMy4wOTM0NiAxMy43NjggNC4wNjk3NkwxNS4zNTgzIDUuNjYwMDVDMTUuNDQwNiA1LjUzOTc0IDE1LjUzNTEgNS40MjUzOSAxNS42NDE3IDUuMzE4NzlDMTYuNTcyNCA0LjM4ODA5IDE4LjA4MTMgNC4zODgwOSAxOS4wMTIgNS4zMTg3OUMxOS45NDI3IDYuMjQ5NDkgMTkuOTQyNyA3Ljc1ODQ1IDE5LjAxMiA4LjY4OTE1QzE4LjkwNTQgOC43OTU3NSAxOC43OTExIDguODkwMjMgMTguNjcwOCA4Ljk3MjUyTDIwLjI2MSAxMC41NjI4QzIxLjIzNzMgMTEuNTM5MSAyMS4yMzczIDEzLjEyMiAyMC4yNjEgMTQuMDk4M0wxOC4xODExIDE2LjE3ODJMMTguMTcxIDE2LjE4OEMxOC4xMTA0IDE2LjI0OTkgMTguMDMyOSAxNi4yOTY4IDE3Ljk0MzEgMTYuMzIwOEMxNy42NzYzIDE2LjM5MiAxNy40MDIzIDE2LjIzMzUgMTcuMzMxMSAxNS45NjY3QzE3LjI3MDYgMTUuNzQwMiAxNy4xNTE2IDE1LjUyNiAxNi45NzI5IDE1LjM0NzNDMTYuNDMyNyAxNC44MDcxIDE1LjU1NjkgMTQuODA3MSAxNS4wMTY4IDE1LjM0NzNDMTQuNDc2NiAxNS44ODc1IDE0LjQ3NjYgMTYuNzYzMyAxNS4wMTY4IDE3LjMwMzVDMTUuMTk1NSAxNy40ODIyIDE1LjQwOTcgMTcuNjAxMSAxNS42MzYyIDE3LjY2MTZDMTUuOTAzIDE3LjczMjggMTYuMDYxNSAxOC4wMDY5IDE1Ljk5MDIgMTguMjczN0MxNS45NjQ1IDE4LjM3IDE1LjkxMjMgMTguNDUyMyAxNS44NDM2IDE4LjUxNDdDMTUuODM3NCAxOC41MjE1IDE1LjgzMTEgMTguNTI4MiAxNS44MjQ1IDE4LjUzNDhMMTMuNzY4MSAyMC41OTEyQzEyLjc5MTcgMjEuNTY3NiAxMS4yMDg4IDIxLjU2NzYgMTAuMjMyNSAyMC41OTEyTDguNjQyMjQgMTkuMDAxQzguNTU5OTcgMTkuMTIxMiA4LjQ2NTUyIDE5LjIzNTUgOC4zNTg5NSAxOS4zNDIxQzcuNDI4MjUgMjAuMjcyOCA1LjkxOTI5IDIwLjI3MjggNC45ODg1OSAxOS4zNDIxQzQuMDU3ODkgMTguNDExNCA0LjA1Nzg5IDE2LjkwMjUgNC45ODg1OSAxNS45NzE4QzUuMDk1MTYgMTUuODY1MiA1LjIwOTQ3IDE1Ljc3MDcgNS4zMjk3NCAxNS42ODg1TDMuNzM5NTYgMTQuMDk4M0MyLjc2MzI1IDEzLjEyMiAyLjc2MzI1IDExLjUzOTEgMy43Mzk1NiAxMC41NjI4TDUuODIyODcgOC40Nzk0NEM1Ljg4NDM4IDguNDE0MzIgNS45NjQxNSA4LjM2NDkzIDYuMDU3MDUgOC4zNDAxMkM2LjMyMzg0IDguMjY4ODcgNi41OTc4OCA4LjQyNzQgNi42NjkxMyA4LjY5NDE5QzYuNzI5NjIgOC45MjA3IDYuODQ4NTQgOS4xMzQ4NiA3LjAyNzI3IDkuMzEzNkM3LjU2NzQ1IDkuODUzNzggOC40NDMyNSA5Ljg1Mzc4IDguOTgzNDIgOS4zMTM2QzkuNTIzNiA4Ljc3MzQzIDkuNTIzNiA3Ljg5NzYzIDguOTgzNDIgNy4zNTc0NUM4LjgwNDY4IDcuMTc4NzIgOC41OTA1MiA3LjA1OTggOC4zNjQwMSA2Ljk5OTMxQzguMDk3MjIgNi45MjgwNiA3LjkzODY5IDYuNjU0MDIgOC4wMDk5NCA2LjM4NzIzQzguMDM2MzggNi4yODgyMiA4LjA5MDc1IDYuMjA0MTMgOC4xNjIzMSA2LjE0MTE1QzguMTY5MDYgNi4xMzM1MiA4LjE3NjA5IDYuMTI2MDUgOC4xODMzOSA2LjExODc1TDEwLjIzMjUgNC4wNjk3MlpNOS4zNDkzNSA2LjM2NzAzQzkuNDY5NjIgNi40NDkzMSA5LjU4Mzk1IDYuNTQzNzcgOS42OTA1MyA2LjY1MDM1QzEwLjYyMTIgNy41ODEwNSAxMC42MjEyIDkuMDkwMDEgOS42OTA1MyAxMC4wMjA3QzguNzU5ODMgMTAuOTUxNCA3LjI1MDg3IDEwLjk1MTQgNi4zMjAxNyAxMC4wMjA3QzYuMjEzNjEgOS45MTQxNSA2LjExOTE3IDkuNzk5ODYgNi4wMzY5MSA5LjY3OTYxTDQuNDQ2NjYgMTEuMjY5OUMzLjg2MDg4IDExLjg1NTYgMy44NjA4OCAxMi44MDU0IDQuNDQ2NjYgMTMuMzkxMkw2LjUzMTEzIDE1LjQ3NTZMNi41MzE1NiAxNS40NzYxQzYuNTk1ODMgMTUuNTM3NCA2LjY0NDU4IDE1LjYxNjYgNi42NjkxOCAxNS43MDg2QzYuNzQwNDIgMTUuOTc1NCA2LjU4MTkgMTYuMjQ5NSA2LjMxNTExIDE2LjMyMDdDNi4wODg2IDE2LjM4MTIgNS44NzQ0MyAxNi41MDAxIDUuNjk1NyAxNi42Nzg5QzUuMTU1NTIgMTcuMjE5IDUuMTU1NTIgMTguMDk0OCA1LjY5NTcgMTguNjM1QzYuMjM1ODcgMTkuMTc1MiA3LjExMTY3IDE5LjE3NTIgNy42NTE4NCAxOC42MzVDNy44MzA1OCAxOC40NTYzIDcuOTQ5NSAxOC4yNDIxIDguMDA5OTkgMTguMDE1NkM4LjA4MTI0IDE3Ljc0ODggOC4zNTUyNyAxNy41OTAzIDguNjIyMDcgMTcuNjYxNUM4LjcxNDE2IDE3LjY4NjEgOC43OTMzNSAxNy43MzQ5IDguODU0NjQgMTcuNzk5Mkw4Ljg1NDggMTcuNzk5M0wxMC45Mzk2IDE5Ljg4NDFDMTEuNTI1NCAyMC40Njk5IDEyLjQ3NTIgMjAuNDY5OSAxMy4wNjA5IDE5Ljg4NDFMMTQuNjUxMSAxOC4yOTRDMTQuNTMwNyAxOC4yMTE3IDE0LjQxNjMgMTguMTE3MiAxNC4zMDk3IDE4LjAxMDZDMTMuMzc5IDE3LjA3OTkgMTMuMzc5IDE1LjU3MDkgMTQuMzA5NyAxNC42NDAyQzE1LjI0MDQgMTMuNzA5NSAxNi43NDkzIDEzLjcwOTUgMTcuNjggMTQuNjQwMkMxNy43ODY3IDE0Ljc0NjggMTcuODgxMiAxNC44NjEyIDE3Ljk2MzUgMTQuOTgxNkwxOS41NTM5IDEzLjM5MTJDMjAuMTM5NyAxMi44MDU0IDIwLjEzOTcgMTEuODU1NiAxOS41NTM5IDExLjI2OTlMMTcuNDg4OSA5LjIwNDgxQzE3LjQ4NDEgOS4yMDAwNiAxNy40Nzk1IDkuMTk1MjQgMTcuNDc1IDkuMTkwMzRDMTcuNDA3OCA5LjEyODMyIDE3LjM1NjggOS4wNDcxNCAxNy4zMzE1IDguOTUyMjZDMTcuMjYwMiA4LjY4NTQ3IDE3LjQxODcgOC40MTE0NCAxNy42ODU1IDguMzQwMTlDMTcuOTEyIDguMjc5NyAxOC4xMjYyIDguMTYwNzggMTguMzA0OSA3Ljk4MjA0QzE4Ljg0NTEgNy40NDE4NyAxOC44NDUxIDYuNTY2MDcgMTguMzA0OSA2LjAyNTg5QzE3Ljc2NDggNS40ODU3MiAxNi44ODkgNS40ODU3MiAxNi4zNDg4IDYuMDI1ODlDMTYuMTcwMSA2LjIwNDYzIDE2LjA1MTEgNi40MTg3OSAxNS45OTA2IDYuNjQ1MzFDMTUuOTE5NCA2LjkxMjEgMTUuNjQ1NCA3LjA3MDYyIDE1LjM3ODYgNi45OTkzN0MxNS4yODk5IDYuOTc1NjkgMTUuMjEzMiA2LjkyOTYyIDE1LjE1MjkgNi44Njg4NUwxNS4xNTIgNi44Njc5NUwxMy4wNjA5IDQuNzc2ODZDMTIuNDc1MSA0LjE5MTA5IDExLjUyNTQgNC4xOTEwOCAxMC45Mzk2IDQuNzc2ODRMOS4zNDkzNSA2LjM2NzAzWiIgZmlsbD0iIzIxMjUyOSIvPgo8L3N2Zz4K", "page": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMy4yNDI2IDMuOTA2MzdINy44NTAxQzcuMDIxNjcgMy45MDYzNyA2LjM1MDEgNC41Nzc5NCA2LjM1MDEgNS40MDYzN1YxOC40MTA5QzYuMzUwMSAxOS4yMzkzIDcuMDIxNjcgMTkuOTEwOSA3Ljg1MDEgMTkuOTEwOUgxNi44NTZDMTcuNjg0NCAxOS45MTA5IDE4LjM1NiAxOS4yMzkzIDE4LjM1NiAxOC40MTA5VjguODg5MDNWOC40MjIzMkMxOC4zNTYgOC4xNDYxOCAxOC4xMzIxIDcuOTIyMzIgMTcuODU2IDcuOTIyMzJIMTUuODQ2NUMxNS4wMTgxIDcuOTIyMzIgMTQuMzQ2NSA3LjI1MDc1IDE0LjM0NjUgNi40MjIzMlY0LjQwNjM3QzE0LjM0NjUgNC4xMzEyMiAxNC4xMjQyIDMuOTA3OTcgMTMuODQ5NSAzLjkwNjM4QzEzLjg0ODUgMy45MDYzNyAxMy44NDc1IDMuOTA2MzcgMTMuODQ2NSAzLjkwNjM3TDEzLjI0ODYgMy45MDY0MUMxMy4yNDY2IDMuOTA2NDEgMTMuMjQ0NiAzLjkwNjQgMTMuMjQyNiAzLjkwNjM3Wk0xNS4zNDY1IDQuNTg4NDdWNi40MjIzMkMxNS4zNDY1IDYuNjk4NDcgMTUuNTcwNCA2LjkyMjMyIDE1Ljg0NjUgNi45MjIzMkgxNy42NjhMMTUuMzQ2NSA0LjU4ODQ3Wk0xOS4zNTYgOC40MjIzMlY4Ljg4OTAzVjE4LjQxMDlDMTkuMzU2IDE5Ljc5MTYgMTguMjM2NyAyMC45MTA5IDE2Ljg1NiAyMC45MTA5SDcuODUwMUM2LjQ2OTM5IDIwLjkxMDkgNS4zNTAxIDE5Ljc5MTYgNS4zNTAxIDE4LjQxMDlWNS40MDYzN0M1LjM1MDEgNC4wMjU2NiA2LjQ2OTM5IDIuOTA2MzcgNy44NTAxIDIuOTA2MzdIMTMuODQ2NUMxMy44NDgyIDIuOTA2MzcgMTMuODQ5OSAyLjkwNjM3IDEzLjg1MTYgMi45MDYzOEwxNC4wNDQzIDIuOTA2MzdDMTQuNzA5NiAyLjkwNjM0IDE1LjM0NzYgMy4xNzE1NiAxNS44MTY4IDMuNjQzMzFMMTguNjI4NCA2LjQ2OTg3QzE5LjA5NDQgNi45MzgzMyAxOS4zNTYgNy41NzIyIDE5LjM1NiA4LjIzMjk0VjguNDIyMzJaTTguMzQ5MTIgMTEuNDA2MkM4LjM0OTEyIDExLjEzMDEgOC41NzI5OCAxMC45MDYyIDguODQ5MTIgMTAuOTA2MkgxNS44NTExQzE2LjEyNzIgMTAuOTA2MiAxNi4zNTExIDExLjEzMDEgMTYuMzUxMSAxMS40MDYyQzE2LjM1MTEgMTEuNjgyNCAxNi4xMjcyIDExLjkwNjIgMTUuODUxMSAxMS45MDYySDguODQ5MTJDOC41NzI5OCAxMS45MDYyIDguMzQ5MTIgMTEuNjgyNCA4LjM0OTEyIDExLjQwNjJaTTguMzQ5MTIgMTQuNDA2MkM4LjM0OTEyIDE0LjEzMDEgOC41NzI5OCAxMy45MDYyIDguODQ5MTIgMTMuOTA2MkgxNS44NTExQzE2LjEyNzIgMTMuOTA2MiAxNi4zNTExIDE0LjEzMDEgMTYuMzUxMSAxNC40MDYyQzE2LjM1MTEgMTQuNjgyNCAxNi4xMjcyIDE0LjkwNjIgMTUuODUxMSAxNC45MDYySDguODQ5MTJDOC41NzI5OCAxNC45MDYyIDguMzQ5MTIgMTQuNjgyNCA4LjM0OTEyIDE0LjQwNjJaTTguODQ5MTIgMTYuOTA4N0M4LjU3Mjk4IDE2LjkwODcgOC4zNDkxMiAxNy4xMzI1IDguMzQ5MTIgMTcuNDA4N0M4LjM0OTEyIDE3LjY4NDggOC41NzI5OCAxNy45MDg3IDguODQ5MTIgMTcuOTA4N0gxNS44NTExQzE2LjEyNzIgMTcuOTA4NyAxNi4zNTExIDE3LjY4NDggMTYuMzUxMSAxNy40MDg3QzE2LjM1MTEgMTcuMTMyNSAxNi4xMjcyIDE2LjkwODcgMTUuODUxMSAxNi45MDg3SDguODQ5MTJaIiBmaWxsPSIjMjEyNTI5Ii8+Cjwvc3ZnPgo=", "qbank": "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDI1LjIuMywgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHdpZHRoPSIyNHB4IiBoZWlnaHQ9IjI0cHgiIHZlcnNpb249IjEuMSIgaWQ9IkViZW5lXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMjQgMjQ7IiB4bWw6c3BhY2U9InByZXNlcnZlIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPGc+Cgk8cGF0aCBkPSJNMTUuMiw3LjZMMTAuOCw3Yy0wLjIsMC0wLjQsMC4xLTAuNCwwLjN2MC4zYzAsMC4xLDAuMSwwLjIsMC4zLDAuM2w0LjMsMC42YzAuMiwwLDAuNC0wLjEsMC40LTAuM1Y3LjgKCQlDMTUuNCw3LjcsMTUuMyw3LjYsMTUuMiw3LjZ6Ii8+Cgk8cGF0aCBkPSJNMTAuNCw0LjNjLTAuMSwwLTAuMywwLTAuMywwLjFDOC45LDYsOCw3LjksNy42LDguOWMwLDAuMS0wLjIsMC4xLTAuMywwQzcuMiw4LjUsNi45LDgsNi41LDcuNUM2LjQsNy4zLDYuMiw3LjMsNiw3LjRsMCwwCgkJQzUuOSw3LjUsNS44LDcuNyw1LjksNy45YzAuNSwwLjksMSwyLDEuMywyLjhjMC4xLDAuMywwLjUsMC4zLDAuNywwYzAuNy0xLjksMS43LTQuMywyLjctNS44QzEwLjgsNC42LDEwLjcsNC4zLDEwLjQsNC4zeiIvPgoJPHBhdGggZD0iTTUuOSwxNi45bDQuNCwwLjdjMC40LDAuMSwwLjYtMC4xLDAuNi0wLjV2LTJjMC0wLjMtMC4yLTAuNS0wLjUtMC41bC00LjUtMC44Yy0wLjMsMC0wLjUsMC4yLTAuNSwwLjV2MgoJCUM1LjQsMTYuNiw1LjUsMTYuOCw1LjksMTYuOXogTTYuMSwxNS4xYzAtMC4yLDAuMi0wLjQsMC40LTAuNGwzLjEsMC41YzAuMiwwLDAuNCwwLjIsMC40LDAuNHYwLjhjMCwwLjMtMC4xLDAuNC0wLjQsMC40bC0zLjEtMC41CgkJYy0wLjIsMC0wLjQtMC4yLTAuNC0wLjRWMTUuMXoiLz4KCTxwYXRoIGQ9Ik0xNS4xLDEwbC00LjQtMC42Yy0wLjIsMC0wLjQsMC4xLTAuNCwwLjN2MC4zYzAsMC4xLDAuMSwwLjMsMC4zLDAuM2w0LjQsMC42YzAuMiwwLDAuNC0wLjEsMC40LTAuM3YtMC4zCgkJQzE1LjQsMTAuMiwxNS4zLDEwLjEsMTUuMSwxMHoiLz4KCTxwYXRoIGQ9Ik0yMiw4LjZsLTEuOS0wLjNWMi40YzAtMC40LTAuMy0wLjctMC42LTAuN0w3LjgsMC4xQzcuNCwwLDcsMC40LDcsMC44djEuN0w1LjYsMi4zQzUuMSwyLjMsNC43LDIuNiw0LjcsM3Y2LjFsLTIuOSwxLjcKCQljLTAuMiwwLjEtMC40LDAuMy0wLjQsMC42djkuMmMwLDAuNCwwLjMsMC43LDAuNiwwLjhsMTIuOSwyLjV2MGwwLDBsMCwwdjBsNy4yLTQuNmMwLjItMC4yLDAuMy0wLjQsMC4zLTAuOFY5LjMKCQlDMjIuNSw5LDIyLjUsOC43LDIyLDguNnogTTIxLjIsOS4zTDIwLjEsMTBsMC0wLjhMMjEuMiw5LjN6IE03LjcsMS4xYzAtMC4yLDAuMi0wLjQsMC40LTAuM2wxMSwxLjZjMC4yLDAsMC4zLDAuMiwwLjMsMC4zbDAsNy42CgkJbC0xLjUsMC45VjQuNmMwLTAuNC0wLjMtMC43LTAuNi0wLjdMNy43LDIuNlYxLjF6IE00LjcsMTB2MS4zTDMuMSwxMUw0LjcsMTB6IE0xNC40LDIyLjlMMi42LDIwLjdjLTAuMiwwLTAuNC0wLjMtMC40LTAuNXYtNy45CgkJYzAtMC4zLDAuMy0wLjUsMC41LTAuNWwxMS43LDEuOUwxNC40LDIyLjlMMTQuNCwyMi45eiBNMTQuOSwxM2wtOS40LTEuNmwwLThDNS41LDMuMiw1LjcsMyw1LjksM2wxMC45LDEuNWMwLjIsMCwwLjMsMC4yLDAuMywwLjMKCQl2Ni45TDE0LjksMTN6IE0yMS44LDE4LjNjMCwwLjItMC4xLDAuNS0wLjIsMC41bC02LjIsMy44di05bDUuOS0zLjRjMC4yLTAuMSwwLjQsMC4xLDAuNCwwLjRWMTguM3oiLz4KPC9nPgo8L3N2Zz4KCg==", "quiz": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik01LjQ5OTAyIDRDNC4xMTgzMSA0IDIuOTk5MDIgNS4xMTkyOSAyLjk5OTAyIDYuNVYxNy41QzIuOTk5MDIgMTguODgwNyA0LjExODMxIDIwIDUuNDk5MDIgMjBIMTguNTAwN0MxOS44ODE0IDIwIDIxLjAwMDcgMTguODgwNyAyMS4wMDA3IDE3LjVWNi41QzIxLjAwMDcgNS4xMTkyOSAxOS44ODE0IDQgMTguNTAwNyA0SDUuNDk5MDJaTTMuOTk5MDIgNi41QzMuOTk5MDIgNS42NzE1NyA0LjY3MDYgNSA1LjQ5OTAyIDVIMTguNTAwN0MxOS4zMjkyIDUgMjAuMDAwNyA1LjY3MTU3IDIwLjAwMDcgNi41VjE3LjVDMjAuMDAwNyAxOC4zMjg0IDE5LjMyOTIgMTkgMTguNTAwNyAxOUg1LjQ5OTAyQzQuNjcwNiAxOSAzLjk5OTAyIDE4LjMyODQgMy45OTkwMiAxNy41VjYuNVpNMTUuMjUgNy4zOTY0NUMxNS40NDUyIDcuMjAxMTggMTUuNzYxOCA3LjIwMTE4IDE1Ljk1NzEgNy4zOTY0NUwxNi4yNDkgNy42ODg0TDE2LjU0MSA3LjM5NjQ1QzE2LjczNjIgNy4yMDExOCAxNy4wNTI4IDcuMjAxMTggMTcuMjQ4MSA3LjM5NjQ1QzE3LjQ0MzMgNy41OTE3MSAxNy40NDMzIDcuOTA4MjkgMTcuMjQ4MSA4LjEwMzU1TDE2Ljk1NjEgOC4zOTU1MUwxNy4yNDgxIDguNjg3NDZDMTcuNDQzMyA4Ljg4MjcyIDE3LjQ0MzMgOS4xOTkzMSAxNy4yNDgxIDkuMzk0NTdDMTcuMDUyOCA5LjU4OTgzIDE2LjczNjIgOS41ODk4MyAxNi41NDEgOS4zOTQ1N0wxNi4yNDkgOS4xMDI2MkwxNS45NTcxIDkuMzk0NTdDMTUuNzYxOCA5LjU4OTgzIDE1LjQ0NTIgOS41ODk4MyAxNS4yNSA5LjM5NDU3QzE1LjA1NDcgOS4xOTkzMSAxNS4wNTQ3IDguODgyNzIgMTUuMjUgOC42ODc0NkwxNS41NDE5IDguMzk1NTFMMTUuMjUgOC4xMDM1NUMxNS4wNTQ3IDcuOTA4MjkgMTUuMDU0NyA3LjU5MTcxIDE1LjI1IDcuMzk2NDVaTTE3LjUxNTkgMTEuNzAzNUMxNy43MTExIDExLjUwODIgMTcuNzExMSAxMS4xOTE2IDE3LjUxNTggMTAuOTk2NEMxNy4zMjA1IDEwLjgwMTEgMTcuMDAzOSAxMC44MDEyIDE2LjgwODcgMTAuOTk2NUwxNS45MzQgMTEuODcxNEwxNS42OTA1IDExLjYyNzhDMTUuNDk1MyAxMS40MzI2IDE1LjE3ODcgMTEuNDMyNSAxNC45ODM0IDExLjYyNzdDMTQuNzg4MSAxMS44MjMgMTQuNzg4MSAxMi4xMzk1IDE0Ljk4MzMgMTIuMzM0OEwxNS41ODA0IDEyLjkzMjFDMTUuNjc0MSAxMy4wMjU5IDE1LjgwMTMgMTMuMDc4NiAxNS45MzQgMTMuMDc4NkMxNi4wNjY2IDEzLjA3ODYgMTYuMTkzOCAxMy4wMjU5IDE2LjI4NzYgMTIuOTMyMUwxNy41MTU5IDExLjcwMzVaTTE3LjUxNTkgMTUuMjQwOEMxNy43MTExIDE1LjA0NTUgMTcuNzExMSAxNC43MjkgMTcuNTE1OCAxNC41MzM3QzE3LjMyMDUgMTQuMzM4NSAxNy4wMDM5IDE0LjMzODUgMTYuODA4NyAxNC41MzM4TDE1LjkzNCAxNS40MDg3TDE1LjY5MDUgMTUuMTY1MkMxNS40OTUzIDE0Ljk2OTkgMTUuMTc4NyAxNC45Njk5IDE0Ljk4MzQgMTUuMTY1MUMxNC43ODgxIDE1LjM2MDMgMTQuNzg4MSAxNS42NzY5IDE0Ljk4MzMgMTUuODcyMkwxNS41ODA0IDE2LjQ2OTVDMTUuNjc0MSAxNi41NjMzIDE1LjgwMTMgMTYuNjE2IDE1LjkzNCAxNi42MTZDMTYuMDY2NiAxNi42MTYgMTYuMTkzOCAxNi41NjMzIDE2LjI4NzYgMTYuNDY5NUwxNy41MTU5IDE1LjI0MDhaTTYuNTAwOTggOC41MTczM0M2LjUwMDk4IDguMjQxMTkgNi43MjQ4MyA4LjAxNzMzIDcuMDAwOTggOC4wMTczM0wxMi4wMDEgOC4wMTczM0MxMi4yNzcxIDguMDE3MzMgMTIuNTAxIDguMjQxMTkgMTIuNTAxIDguNTE3MzNDMTIuNTAxIDguNzkzNDggMTIuMjc3MSA5LjAxNzMzIDEyLjAwMSA5LjAxNzMzTDcuMDAwOTggOS4wMTczM0M2LjcyNDgzIDkuMDE3MzMgNi41MDA5OCA4Ljc5MzQ4IDYuNTAwOTggOC41MTczM1pNNy4wMDA5OCAxNS4wMDE3QzYuNzI0ODMgMTUuMDAxNyA2LjUwMDk4IDE1LjIyNTYgNi41MDA5OCAxNS41MDE3QzYuNTAwOTggMTUuNzc3OSA2LjcyNDgzIDE2LjAwMTcgNy4wMDA5OCAxNi4wMDE3TDEyLjAwMSAxNi4wMDE3QzEyLjI3NzEgMTYuMDAxNyAxMi41MDEgMTUuNzc3OSAxMi41MDEgMTUuNTAxN0MxMi41MDEgMTUuMjI1NiAxMi4yNzcxIDE1LjAwMTcgMTIuMDAxIDE1LjAwMTdMNy4wMDA5OCAxNS4wMDE3Wk02LjUwMDk4IDEyLjAzMTJDNi41MDA5OCAxMS43NTUxIDYuNzI0ODMgMTEuNTMxMiA3LjAwMDk4IDExLjUzMTJMMTIuMDAxIDExLjUzMTNDMTIuMjc3MSAxMS41MzEzIDEyLjUwMSAxMS43NTUxIDEyLjUwMSAxMi4wMzEzQzEyLjUwMSAxMi4zMDc0IDEyLjI3NzEgMTIuNTMxMyAxMi4wMDEgMTIuNTMxM0w3LjAwMDk4IDEyLjUzMTJDNi43MjQ4MyAxMi41MzEyIDYuNTAwOTggMTIuMzA3NCA2LjUwMDk4IDEyLjAzMTJaIiBmaWxsPSIjMjEyNTI5Ii8+Cjwvc3ZnPgo=", "resource": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMy4yNDI2IDMuOTA2MzdINy44NTAxQzcuMDIxNjcgMy45MDYzNyA2LjM1MDEgNC41Nzc5NCA2LjM1MDEgNS40MDYzN1YxOC40MTA5QzYuMzUwMSAxOS4yMzkzIDcuMDIxNjcgMTkuOTEwOSA3Ljg1MDEgMTkuOTEwOUgxNi44NTZDMTcuNjg0NCAxOS45MTA5IDE4LjM1NiAxOS4yMzkzIDE4LjM1NiAxOC40MTA5VjguODg5MDNWOC40MjIzMkMxOC4zNTYgOC4xNDYxOCAxOC4xMzIxIDcuOTIyMzIgMTcuODU2IDcuOTIyMzJIMTUuODQ2NUMxNS4wMTgxIDcuOTIyMzIgMTQuMzQ2NSA3LjI1MDc1IDE0LjM0NjUgNi40MjIzMlY0LjQwNjM3QzE0LjM0NjUgNC4xMzEyMiAxNC4xMjQyIDMuOTA3OTcgMTMuODQ5NSAzLjkwNjM4QzEzLjg0ODUgMy45MDYzNyAxMy44NDc1IDMuOTA2MzcgMTMuODQ2NSAzLjkwNjM3TDEzLjI0ODYgMy45MDY0MUMxMy4yNDY2IDMuOTA2NDEgMTMuMjQ0NiAzLjkwNjQgMTMuMjQyNiAzLjkwNjM3Wk0xNS4zNDY1IDQuNTg4NDdWNi40MjIzMkMxNS4zNDY1IDYuNjk4NDcgMTUuNTcwNCA2LjkyMjMyIDE1Ljg0NjUgNi45MjIzMkgxNy42NjhMMTUuMzQ2NSA0LjU4ODQ3Wk0xOS4zNTYgOC40MjIzMlY4Ljg4OTAzVjE4LjQxMDlDMTkuMzU2IDE5Ljc5MTYgMTguMjM2NyAyMC45MTA5IDE2Ljg1NiAyMC45MTA5SDcuODUwMUM2LjQ2OTM5IDIwLjkxMDkgNS4zNTAxIDE5Ljc5MTYgNS4zNTAxIDE4LjQxMDlWNS40MDYzN0M1LjM1MDEgNC4wMjU2NiA2LjQ2OTM5IDIuOTA2MzcgNy44NTAxIDIuOTA2MzdIMTMuODQ2NUMxMy44NDgyIDIuOTA2MzcgMTMuODQ5OSAyLjkwNjM3IDEzLjg1MTYgMi45MDYzOEwxNC4wNDQzIDIuOTA2MzdDMTQuNzA5NiAyLjkwNjM0IDE1LjM0NzYgMy4xNzE1NiAxNS44MTY4IDMuNjQzMzFMMTguNjI4NCA2LjQ2OTg3QzE5LjA5NDQgNi45MzgzMyAxOS4zNTYgNy41NzIyIDE5LjM1NiA4LjIzMjk0VjguNDIyMzJaTTEyLjg1MzUgMTAuOTE5NEMxMi44NTM1IDEwLjY0MzMgMTIuNjI5NyAxMC40MTk0IDEyLjM1MzUgMTAuNDE5NEMxMi4wNzc0IDEwLjQxOTQgMTEuODUzNSAxMC42NDMzIDExLjg1MzUgMTAuOTE5NFYxMi45MTU3TDkuODU2ODMgMTIuOTE4NEM5LjU4MDY4IDEyLjkxODcgOS4zNTcxMiAxMy4xNDI5IDkuMzU3NDkgMTMuNDE5QzkuMzU3ODUgMTMuNjk1MiA5LjU4MiAxMy45MTg3IDkuODU4MTUgMTMuOTE4NEwxMS44NTM1IDEzLjkxNTdWMTUuOTEwOEMxMS44NTM1IDE2LjE4NjkgMTIuMDc3NCAxNi40MTA4IDEyLjM1MzUgMTYuNDEwOEMxMi42Mjk3IDE2LjQxMDggMTIuODUzNSAxNi4xODY5IDEyLjg1MzUgMTUuOTEwOFYxMy45MTQ0TDE0Ljg0OTUgMTMuOTExOEMxNS4xMjU2IDEzLjkxMTQgMTUuMzQ5MiAxMy42ODczIDE1LjM0ODggMTMuNDExMUMxNS4zNDg0IDEzLjEzNSAxNS4xMjQzIDEyLjkxMTQgMTQuODQ4MSAxMi45MTE4TDEyLjg1MzUgMTIuOTE0NFYxMC45MTk0WiIgZmlsbD0iIzIxMjUyOSIvPgo8L3N2Zz4K", "scorm": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMi4yMjM2IDMuMDU1MTFDMTIuMDgyOCAyLjk4NDcyIDExLjkxNzIgMi45ODQ3MiAxMS43NzY0IDMuMDU1MTFMMy43NzgzOSA3LjA1NDExQzMuNzcyIDcuMDU3MjcgMy43NjU2NyA3LjA2MDU3IDMuNzU5NCA3LjA2NDAxQzMuNTk5ODcgNy4xNTE1NSAzLjUgNy4zMTkzNSAzLjUgNy41MDIzMlYxNi40OTc3QzMuNSAxNi42ODcxIDMuNjA3IDE2Ljg2MDIgMy43NzYzOSAxNi45NDQ5TDExLjc3NDQgMjAuOTQzOUMxMS43ODA5IDIwLjk0NzIgMTEuNzg3NCAyMC45NTAzIDExLjc5NCAyMC45NTMzQzExLjkzMDEgMjEuMDE0OCAxMi4wODggMjEuMDEyNyAxMi4yMjM2IDIwLjk0NDlNMTIuMjI1NiAyMC45NDM5TDIwLjIyMzYgMTYuOTQ0OUMyMC4zOTMgMTYuODYwMiAyMC41IDE2LjY4NzEgMjAuNSAxNi40OTc3VjcuNTAyMzJDMjAuNSA3LjMzNjYxIDIwLjQxODEgNy4xODMzNCAyMC4yODQxIDcuMDkwODdDMjAuMjcwOCA3LjA4MTcxIDIwLjI1NyA3LjA3MzE0IDIwLjI0MjggNy4wNjUyMUMyMC4yMzU4IDcuMDYxMzIgMjAuMjI4NyA3LjA1NzYxIDIwLjIyMTUgNy4wNTQwN0wxMi4yMjM2IDMuMDU1MTFNMTIuNSAxOS42ODg3TDE5LjUgMTYuMTg4N1Y4LjMxMTM0TDEyLjUgMTEuODExM1YxOS42ODg3Wk0xMS41IDE5LjY4ODdWMTEuODExM0w4LjUgMTAuMzExM1YxMy4wMDQ5QzguNSAxMy4yODExIDguMjc2MTQgMTMuNTA0OSA4IDEzLjUwNDlDNy43MjM4NiAxMy41MDQ5IDcuNSAxMy4yODExIDcuNSAxMy4wMDQ5VjkuODExMzRMNC41IDguMzExMzRWMTYuMTg4N0wxMS41IDE5LjY4ODdaTTUuMTE4MDMgNy41MDIzMkwxMiA0LjA2MTM0TDE0LjcyMTggNS40MjIyM0w3LjgzOTgyIDguODYzMjFMNS4xMTgwMyA3LjUwMjMyWk04Ljk1Nzg2IDkuNDIyMjNMMTIgMTAuOTQzM0wxOC44ODIgNy41MDIzMkwxNS44Mzk4IDUuOTgxMjVMOC45NTc4NiA5LjQyMjIzWiIgZmlsbD0iIzIxMjUyOSIvPgo8L3N2Zz4K", "subsection": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjUiIHZpZXdCb3g9IjAgMCAyNCAyNSIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0yLjk5OTUxIDcuODMwNTdDMi45OTk1MSA2LjQ0OTg1IDQuMTE4OCA1LjMzMDU3IDUuNDk5NTEgNS4zMzA1N0gxOC41MDEyQzE5Ljg4MTkgNS4zMzA1NyAyMS4wMDEyIDYuNDQ5ODUgMjEuMDAxMiA3LjgzMDU3VjE2LjgzMDZDMjEuMDAxMiAxOC4yMTEzIDE5Ljg4MTkgMTkuMzMwNiAxOC41MDEyIDE5LjMzMDZINS40OTk1MUM0LjExODggMTkuMzMwNiAyLjk5OTUxIDE4LjIxMTMgMi45OTk1MSAxNi44MzA2VjcuODMwNTdaTTUuNDk5NTEgNi4zMzA1N0M0LjY3MTA4IDYuMzMwNTcgMy45OTk1MSA3LjAwMjE0IDMuOTk5NTEgNy44MzA1N1YxNi44MzA2QzMuOTk5NTEgMTcuNjU5IDQuNjcxMDggMTguMzMwNiA1LjQ5OTUxIDE4LjMzMDZIMTguNTAxMkMxOS4zMjk2IDE4LjMzMDYgMjAuMDAxMiAxNy42NTkgMjAuMDAxMiAxNi44MzA2VjcuODMwNTdDMjAuMDAxMiA3LjAwMjE0IDE5LjMyOTYgNi4zMzA1NyAxOC41MDEyIDYuMzMwNTdINS40OTk1MVpNOC40OTc1NiA5LjgzMTU0QzguNDk3NTYgOS41NTU0IDguNzIxNDIgOS4zMzE1NCA4Ljk5NzU2IDkuMzMxNTRMMTcuNTEyIDkuMzMxNTRDMTcuNzg4MSA5LjMzMTU0IDE4LjAxMiA5LjU1NTQgMTguMDEyIDkuODMxNTRDMTguMDEyIDEwLjEwNzcgMTcuNzg4MSAxMC4zMzE1IDE3LjUxMiAxMC4zMzE1TDguOTk3NTYgMTAuMzMxNUM4LjcyMTQyIDEwLjMzMTUgOC40OTc1NiAxMC4xMDc3IDguNDk3NTYgOS44MzE1NFpNOC40OTc1NiAxNC44MzIzQzguNDk3NTYgMTQuNTU2MSA4LjcyMTQyIDE0LjMzMjMgOC45OTc1NiAxNC4zMzIzTDE3LjUxMiAxNC4zMzIzQzE3Ljc4ODEgMTQuMzMyMyAxOC4wMTIgMTQuNTU2MSAxOC4wMTIgMTQuODMyM0MxOC4wMTIgMTUuMTA4NCAxNy43ODgxIDE1LjMzMjMgMTcuNTEyIDE1LjMzMjNMOC45OTc1NiAxNS4zMzIzQzguNzIxNDIgMTUuMzMyMyA4LjQ5NzU2IDE1LjEwODQgOC40OTc1NiAxNC44MzIzWk04Ljk5NzU2IDExLjgzMDZDOC43MjE0MiAxMS44MzA2IDguNDk3NTYgMTIuMDU0NCA4LjQ5NzU2IDEyLjMzMDZDOC40OTc1NiAxMi42MDY3IDguNzIxNDIgMTIuODMwNiA4Ljk5NzU2IDEyLjgzMDZMMTcuNTEyIDEyLjgzMDZDMTcuNzg4MSAxMi44MzA2IDE4LjAxMiAxMi42MDY3IDE4LjAxMiAxMi4zMzA2QzE4LjAxMiAxMi4wNTQ0IDE3Ljc4ODEgMTEuODMwNiAxNy41MTIgMTEuODMwNkw4Ljk5NzU2IDExLjgzMDZaTTYuNTAzNDIgOS4zMzE1NEM2LjIyNzI4IDkuMzMxNTQgNi4wMDM0MiA5LjU1NTQgNi4wMDM0MiA5LjgzMTU0QzYuMDAzNDIgMTAuMTA3NyA2LjIyNzI4IDEwLjMzMTUgNi41MDM0MiAxMC4zMzE1SDcuMDAxNDZDNy4yNzc2MSAxMC4zMzE1IDcuNTAxNDYgMTAuMTA3NyA3LjUwMTQ2IDkuODMxNTRDNy41MDE0NiA5LjU1NTQgNy4yNzc2MSA5LjMzMTU0IDcuMDAxNDYgOS4zMzE1NEg2LjUwMzQyWk02LjAwMzQyIDEyLjMzMDZDNi4wMDM0MiAxMi4wNTQ0IDYuMjI3MjggMTEuODMwNiA2LjUwMzQyIDExLjgzMDZINy4wMDE0NkM3LjI3NzYxIDExLjgzMDYgNy41MDE0NiAxMi4wNTQ0IDcuNTAxNDYgMTIuMzMwNkM3LjUwMTQ2IDEyLjYwNjcgNy4yNzc2MSAxMi44MzA2IDcuMDAxNDYgMTIuODMwNkg2LjUwMzQyQzYuMjI3MjggMTIuODMwNiA2LjAwMzQyIDEyLjYwNjcgNi4wMDM0MiAxMi4zMzA2Wk02LjUwMzQyIDE0LjMzMjNDNi4yMjcyOCAxNC4zMzIzIDYuMDAzNDIgMTQuNTU2MSA2LjAwMzQyIDE0LjgzMjNDNi4wMDM0MiAxNS4xMDg0IDYuMjI3MjggMTUuMzMyMyA2LjUwMzQyIDE1LjMzMjNINy4wMDE0NkM3LjI3NzYxIDE1LjMzMjMgNy41MDE0NiAxNS4xMDg0IDcuNTAxNDYgMTQuODMyM0M3LjUwMTQ2IDE0LjU1NjEgNy4yNzc2MSAxNC4zMzIzIDcuMDAxNDYgMTQuMzMyM0g2LjUwMzQyWiIgZmlsbD0iIzIxMjUyOSIvPgo8L3N2Zz4K", "url": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xOC43Nzg1IDUuMjE4NzdDMTcuMTQ3MyAzLjU4NzU2IDE0LjUwMjYgMy41ODc1NiAxMi44NzE0IDUuMjE4NzdMMTEuNTcxNCA2LjUxODc3QzExLjM3NjEgNi43MTQwMyAxMS4zNzYxIDcuMDMwNjIgMTEuNTcxNCA3LjIyNTg4QzExLjc2NjYgNy40MjExNCAxMi4wODMyIDcuNDIxMTQgMTIuMjc4NSA3LjIyNTg4TDEzLjU3ODUgNS45MjU4N0MxNC44MTkxIDQuNjg1MTkgMTYuODMwNyA0LjY4NTE5IDE4LjA3MTQgNS45MjU4N0MxOS4zMTIxIDcuMTY2NTYgMTkuMzEyMSA5LjE3ODEgMTguMDcxNCAxMC40MTg4TDE1LjQ3MTQgMTMuMDE4OEMxNC4yMzA3IDE0LjI1OTUgMTIuMjE5MSAxNC4yNTk1IDEwLjk3ODUgMTMuMDE4OEMxMC43ODMyIDEyLjgyMzUgMTAuNDY2NiAxMi44MjM1IDEwLjI3MTMgMTMuMDE4OEMxMC4wNzYxIDEzLjIxNDEgMTAuMDc2MSAxMy41MzA2IDEwLjI3MTMgMTMuNzI1OUMxMS45MDI2IDE1LjM1NzEgMTQuNTQ3MyAxNS4zNTcxIDE2LjE3ODUgMTMuNzI1OUwxOC43Nzg1IDExLjEyNTlDMjAuNDA5NyA5LjQ5NDY5IDIwLjQwOTcgNi44NDk5OCAxOC43Nzg1IDUuMjE4NzdaTTUuMjIxNDUgMTguNzgxQzYuODUyNjYgMjAuNDEyMiA5LjQ5NzM3IDIwLjQxMjIgMTEuMTI4NiAxOC43ODFMMTIuNDI4NiAxNy40ODFDMTIuNjIzOCAxNy4yODU3IDEyLjYyMzggMTYuOTY5MiAxMi40Mjg2IDE2Ljc3MzlDMTIuMjMzMyAxNi41Nzg2IDExLjkxNjcgMTYuNTc4NiAxMS43MjE1IDE2Ljc3MzlMMTAuNDIxNSAxOC4wNzM5QzkuMTgwNzkgMTkuMzE0NiA3LjE2OTI0IDE5LjMxNDYgNS45Mjg1NiAxOC4wNzM5QzQuNjg3ODggMTYuODMzMiA0LjY4Nzg4IDE0LjgyMTcgNS45Mjg1NiAxMy41ODFMOC41Mjg1NyAxMC45ODFDOS43NjkyNSA5Ljc0MDI5IDExLjc4MDggOS43NDAyOSAxMy4wMjE1IDEwLjk4MUMxMy4yMTY3IDExLjE3NjIgMTMuNTMzMyAxMS4xNzYyIDEzLjcyODYgMTAuOTgxQzEzLjkyMzggMTAuNzg1NyAxMy45MjM4IDEwLjQ2OTEgMTMuNzI4NiAxMC4yNzM5QzEyLjA5NzQgOC42NDI2NiA5LjQ1MjY3IDguNjQyNjYgNy44MjE0NiAxMC4yNzM5TDUuMjIxNDUgMTIuODczOUMzLjU5MDI1IDE0LjUwNTEgMy41OTAyNCAxNy4xNDk4IDUuMjIxNDUgMTguNzgxWiIgZmlsbD0iIzIxMjUyOSIvPgo8L3N2Zz4K", "wiki": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik04Ljk5NDYzIDQuNTA4MjRDOC45OTQ2MyA0LjIyOTAzIDkuMjIwOTcgNC4wMDI2OSA5LjUwMDE5IDQuMDAyNjlDOS43Nzk0IDQuMDAyNjkgMTAuMDA1NyA0LjIyOTAzIDEwLjAwNTcgNC41MDgyNEMxMC4wMDU3IDQuNzg3NDUgOS43Nzk0IDUuMDEzOCA5LjUwMDE5IDUuMDEzOEM5LjIyMDk3IDUuMDEzOCA4Ljk5NDYzIDQuNzg3NDUgOC45OTQ2MyA0LjUwODI0Wk05LjUwMDE5IDMuMDAyNjlDOC42Njg2OSAzLjAwMjY5IDcuOTk0NjMgMy42NzY3NSA3Ljk5NDYzIDQuNTA4MjRDNy45OTQ2MyA1LjMzMDgxIDguNjU0MjggNS45OTkzIDkuNDczNDQgNi4wMTM1N0wxMC40OTA3IDkuMDgxMTlDOS45MTk2MiA5LjM4NDQgOS40NDkwMiA5Ljg1MTggOS4xNDE4NCAxMC40MjA0TDYuMzk0NzYgOC45Mzg1M0M2LjQ2MzU5IDguNzIyNTIgNi41MDA3MyA4LjQ5MjM3IDYuNTAwNzMgOC4yNTM1NEM2LjUwMDczIDcuMDA4NjcgNS40OTE1NyA1Ljk5OTUxIDQuMjQ2NyA1Ljk5OTUxQzMuMDAxODQgNS45OTk1MSAxLjk5MjY4IDcuMDA4NjcgMS45OTI2OCA4LjI1MzU0QzEuOTkyNjggOS40OTg0MSAzLjAwMTg0IDEwLjUwNzYgNC4yNDY3IDEwLjUwNzZDNC44OTI2OSAxMC41MDc2IDUuNDc1MjEgMTAuMjM1OCA1Ljg4NjE4IDkuODAwNEw4LjgwNTEyIDExLjM3NUM4Ljc2OTI0IDExLjU2OTEgOC43NTA0OSAxMS43NjkyIDguNzUwNDkgMTEuOTczN0M4Ljc1MDQ5IDEyLjcyMDUgOS4wMDA2MyAxMy40MDg5IDkuNDIxNjkgMTMuOTU5N0w3LjI2MzQ5IDE2LjEzMTRDNi44NTczOSAxNS44NDYgNi4zNjI0NCAxNS42Nzg1IDUuODI4MzcgMTUuNjc4NUM0LjQ0ODMzIDE1LjY3ODUgMy4zMjk1OSAxNi43OTcyIDMuMzI5NTkgMTguMTc3MkMzLjMyOTU5IDE5LjU1NzMgNC40NDgzMyAyMC42NzYgNS44MjgzNyAyMC42NzZDNy4yMDg0MSAyMC42NzYgOC4zMjcxNSAxOS41NTczIDguMzI3MTUgMTguMTc3MkM4LjMyNzE1IDE3LjY5MzEgOC4xODk0NCAxNy4yNDEgNy45NTEwNSAxNi44NTgyTDEwLjE0MjggMTQuNjUyN0MxMC42NzQ5IDE1LjAyNjggMTEuMzIzNCAxNS4yNDY1IDEyLjAyMzMgMTUuMjQ2NUMxMi4yMDMgMTUuMjQ2NSAxMi4zNzkzIDE1LjIzMiAxMi41NTEyIDE1LjIwNDFMMTMuNTg3NyAxOC4yOTE4QzEzLjIyNTYgMTguNTY2NyAxMi45OTE3IDE5LjAwMTkgMTIuOTkxNyAxOS40OTE2QzEyLjk5MTcgMjAuMzIzMSAxMy42NjU4IDIwLjk5NzIgMTQuNDk3MyAyMC45OTcyQzE1LjMyODggMjAuOTk3MiAxNi4wMDI4IDIwLjMyMzEgMTYuMDAyOCAxOS40OTE2QzE2LjAwMjggMTguNjc0NSAxNS4zNTE4IDE4LjAwOTQgMTQuNTQwMiAxNy45ODY3TDEzLjUwMiAxNC44OTQyQzE0LjIwNTggMTQuNTM3MSAxNC43NjMyIDEzLjkzMzEgMTUuMDYwMSAxMy4xOTYxTDE4LjIzNTYgMTMuODc0N0MxOC4yNjM0IDE0Ljg5MjIgMTkuMDk3IDE1LjcwODYgMjAuMTIxMyAxNS43MDg2QzIxLjE2MzEgMTUuNzA4NiAyMi4wMDc2IDE0Ljg2NCAyMi4wMDc2IDEzLjgyMjJDMjIuMDA3NiAxMi43ODA0IDIxLjE2MzEgMTEuOTM1OCAyMC4xMjEzIDExLjkzNThDMTkuNDEzMiAxMS45MzU4IDE4Ljc5NjIgMTIuMzI1OSAxOC40NzM2IDEyLjkwMjlMMTUuMjg2OCAxMi4yMjJDMTUuMjkyOSAxMi4xNCAxNS4yOTYgMTIuMDU3MiAxNS4yOTYgMTEuOTczN0MxNS4yOTYgMTEuMjUgMTUuMDYxMSAxMC41ODEyIDE0LjY2MzQgMTAuMDM5M0wxNy4xMTM3IDcuNTk3OTRDMTcuNTEwNSA3Ljg2MjQ0IDE3Ljk4NzEgOC4wMTY2IDE4LjQ5OTggOC4wMTY2QzE5Ljg4MTcgOC4wMTY2IDIxLjAwMiA2Ljg5NjMzIDIxLjAwMiA1LjUxNDRDMjEuMDAyIDQuMTMyNDggMTkuODgxNyAzLjAxMjIxIDE4LjQ5OTggMy4wMTIyMUMxNy4xMTc4IDMuMDEyMjEgMTUuOTk3NiA0LjEzMjQ4IDE1Ljk5NzYgNS41MTQ0QzE1Ljk5NzYgNi4wMjIwNiAxNi4xNDg3IDYuNDk0NDEgMTYuNDA4NSA2Ljg4ODg4TDEzLjk1NjEgOS4zMzIzNkMxMy40MTQ1IDguOTM1MzYgMTIuNzQ2MyA4LjcwMDkzIDEyLjAyMzMgOC43MDA5M0MxMS44MjI3IDguNzAwOTMgMTEuNjI2MyA4LjcxODk4IDExLjQzNTYgOC43NTM1NEwxMC40MjI1IDUuNjk4MzRDMTAuNzc3MyA1LjQyMjkyIDExLjAwNTcgNC45OTIyNSAxMS4wMDU3IDQuNTA4MjRDMTEuMDA1NyAzLjY3Njc1IDEwLjMzMTcgMy4wMDI2OSA5LjUwMDE5IDMuMDAyNjlaTTE0LjI0NjUgMTIuNDQ3N0MxNC4yNzkgMTIuMjk0OCAxNC4yOTYgMTIuMTM2MiAxNC4yOTYgMTEuOTczN0MxNC4yOTYgMTAuNzE4NSAxMy4yNzg1IDkuNzAwOTMgMTIuMDIzMyA5LjcwMDkzQzEwLjc2OCA5LjcwMDkzIDkuNzUwNDkgMTAuNzE4NSA5Ljc1MDQ5IDExLjk3MzdDOS43NTA0OSAxMy4yMjg5IDEwLjc2OCAxNC4yNDY1IDEyLjAyMzMgMTQuMjQ2NUMxMy4wODAzIDE0LjI0NjUgMTMuOTY4OCAxMy41MjQ5IDE0LjIyMyAxMi41NDc0QzE0LjIyNDcgMTIuNTM0MSAxNC4yMjcgMTIuNTIwOCAxNC4yMjk5IDEyLjUwNzRDMTQuMjM0MyAxMi40ODY5IDE0LjIzOTkgMTIuNDY3IDE0LjI0NjUgMTIuNDQ3N1pNMTguNDk5OCA0LjAxMjIxQzE3LjY3MDEgNC4wMTIyMSAxNi45OTc2IDQuNjg0NzYgMTYuOTk3NiA1LjUxNDRDMTYuOTk3NiA2LjM0NDA0IDE3LjY3MDEgNy4wMTY2IDE4LjQ5OTggNy4wMTY2QzE5LjMyOTQgNy4wMTY2IDIwLjAwMiA2LjM0NDA0IDIwLjAwMiA1LjUxNDRDMjAuMDAyIDQuNjg0NzYgMTkuMzI5NCA0LjAxMjIxIDE4LjQ5OTggNC4wMTIyMVpNNC4zMjk1OSAxOC4xNzcyQzQuMzI5NTkgMTcuMzQ5NSA1LjAwMDYyIDE2LjY3ODUgNS44MjgzNyAxNi42Nzg1QzYuNjU2MTIgMTYuNjc4NSA3LjMyNzE1IDE3LjM0OTUgNy4zMjcxNSAxOC4xNzcyQzcuMzI3MTUgMTkuMDA1IDYuNjU2MTIgMTkuNjc2IDUuODI4MzcgMTkuNjc2QzUuMDAwNjIgMTkuNjc2IDQuMzI5NTkgMTkuMDA1IDQuMzI5NTkgMTguMTc3MlpNNC4yNDY3IDYuOTk5NTFDMy41NTQxMiA2Ljk5OTUxIDIuOTkyNjggNy41NjA5NiAyLjk5MjY4IDguMjUzNTRDMi45OTI2OCA4Ljk0NjEyIDMuNTU0MTIgOS41MDc1NyA0LjI0NjcgOS41MDc1N0M0LjkzOTI4IDkuNTA3NTcgNS41MDA3MyA4Ljk0NjEyIDUuNTAwNzMgOC4yNTM1NEM1LjUwMDczIDcuNTYwOTYgNC45MzkyOCA2Ljk5OTUxIDQuMjQ2NyA2Ljk5OTUxWk0xOS4yMzQ5IDEzLjgyMjJDMTkuMjM0OSAxMy4zMzI2IDE5LjYzMTcgMTIuOTM1OCAyMC4xMjEzIDEyLjkzNThDMjAuNjEwOCAxMi45MzU4IDIxLjAwNzYgMTMuMzMyNiAyMS4wMDc2IDEzLjgyMjJDMjEuMDA3NiAxNC4zMTE3IDIwLjYxMDggMTQuNzA4NiAyMC4xMjEzIDE0LjcwODZDMTkuNjMxNyAxNC43MDg2IDE5LjIzNDkgMTQuMzExNyAxOS4yMzQ5IDEzLjgyMjJaTTE0LjQ5NzMgMTguOTg2MUMxNC4yMTggMTguOTg2MSAxMy45OTE3IDE5LjIxMjQgMTMuOTkxNyAxOS40OTE2QzEzLjk5MTcgMTkuNzcwOSAxNC4yMTggMTkuOTk3MiAxNC40OTczIDE5Ljk5NzJDMTQuNzc2NSAxOS45OTcyIDE1LjAwMjggMTkuNzcwOSAxNS4wMDI4IDE5LjQ5MTZDMTUuMDAyOCAxOS4yMTI0IDE0Ljc3NjUgMTguOTg2MSAxNC40OTczIDE4Ljk4NjFaIiBmaWxsPSIjMjEyNTI5Ii8+Cjwvc3ZnPgo=", "workshop": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pZCBtZWV0Ij4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik04LjUyMDc0IDYuMjc4MDVDOC43ODk5IDYuMzQ4ODYgOC45NTE2MiA2LjYyMTA1IDguODgxOTYgNi44ODU5OUM4LjgxMjMgNy4xNTA5MyA4LjUzNzYzIDcuMzA4MyA4LjI2ODQ2IDcuMjM3NDlMNS42ODkxNiA2LjU1ODg5QzUuNTU5MTQgNi41MjQ2OCA1LjQ0Nzk1IDYuNDQwNzUgNS4zODAzMyA2LjMyNTc1QzUuMzEyNzEgNi4yMTA3NiA1LjI5NDI4IDYuMDc0MjQgNS4zMjkxMiA1Ljk0NjU3TDYuMDIwMjQgMy40MTQwMUM2LjA5MjM2IDMuMTQ5NzMgNi4zNjg1IDIuOTk0ODUgNi42MzcwMSAzLjA2ODA4QzYuOTA1NTIgMy4xNDEzMiA3LjA2NDczIDMuNDE0OTMgNi45OTI2MSAzLjY3OTIxTDYuNjEzMjUgNS4wNjkzNEM4LjEyNzg4IDQuMDUxMjggOS45ODQwNiAzLjQ1MzggMTEuOTg1NiAzLjQ1MzhDMTMuOTI4MiAzLjQ1MzggMTUuNzMzOSA0LjAxNjU5IDE3LjIyMzMgNC45ODA0OUwxNi44NjgyIDMuNjc5MzRDMTYuNzk2MSAzLjQxNTA1IDE2Ljk1NTMgMy4xNDE0NCAxNy4yMjM4IDMuMDY4MjFDMTcuNDkyMyAyLjk5NDk3IDE3Ljc2ODUgMy4xNDk4NSAxNy44NDA2IDMuNDE0MTNMMTguNTMxNyA1Ljk0NjY5QzE4LjU2NjYgNi4wNzQzNiAxOC41NDgxIDYuMjEwODggMTguNDgwNSA2LjMyNTg3QzE4LjQxMjkgNi40NDA4NyAxOC4zMDE3IDYuNTI0OCAxOC4xNzE3IDYuNTU5MDFMMTUuNTkyNCA3LjIzNzYxQzE1LjMyMzIgNy4zMDg0MiAxNS4wNDg1IDcuMTUxMDUgMTQuOTc4OSA2Ljg4NjExQzE0LjkwOTIgNi42MjExNyAxNS4wNzA5IDYuMzQ4OTkgMTUuMzQwMSA2LjI3ODE3TDE2Ljc5NDYgNS44OTU1MUMxNS40NDQ1IDQuOTg5NjcgMTMuNzg0NCA0LjQ1MzggMTEuOTg1NiA0LjQ1MzhDMTAuMTczMiA0LjQ1MzggOC41MDE0NCA0Ljk5Nzg3IDcuMTQ1ODUgNS45MTYzMkw4LjUyMDc0IDYuMjc4MDVaTTcuNDg4MjggMTAuNDU0NEM2LjY1MTE5IDEwLjQ1NDQgNS45ODgyOCAxMS4xMTgzIDUuOTg4MjggMTEuOTE4MkM1Ljk4ODI4IDEyLjcxOCA2LjY1MTE5IDEzLjM4MTkgNy40ODgyOCAxMy4zODE5QzguMzI1MzcgMTMuMzgxOSA4Ljk4ODI4IDEyLjcxOCA4Ljk4ODI4IDExLjkxODJDOC45ODgyOCAxMS4xMTgzIDguMzI1MzcgMTAuNDU0NCA3LjQ4ODI4IDEwLjQ1NDRaTTQuOTg4MjggMTEuOTE4MkM0Ljk4ODI4IDEwLjU0ODkgNi4xMTYyMyA5LjQ1NDQxIDcuNDg4MjggOS40NTQ0MUM4Ljg2MDMzIDkuNDU0NDEgOS45ODgyOCAxMC41NDg5IDkuOTg4MjggMTEuOTE4MkM5Ljk4ODI4IDEzLjI4NzQgOC44NjAzMyAxNC4zODE5IDcuNDg4MjggMTQuMzgxOUM2LjExNjIzIDE0LjM4MTkgNC45ODgyOCAxMy4yODc0IDQuOTg4MjggMTEuOTE4MlpNMTYuNTAxNSAxMC40NTQ0QzE1LjY2NDQgMTAuNDU0NCAxNS4wMDE1IDExLjExODMgMTUuMDAxNSAxMS45MTgyQzE1LjAwMTUgMTIuNzE4IDE1LjY2NDQgMTMuMzgxOSAxNi41MDE1IDEzLjM4MTlDMTcuMzM4NiAxMy4zODE5IDE4LjAwMTUgMTIuNzE4IDE4LjAwMTUgMTEuOTE4MkMxOC4wMDE1IDExLjExODMgMTcuMzM4NiAxMC40NTQ0IDE2LjUwMTUgMTAuNDU0NFpNMTQuMDAxNSAxMS45MTgyQzE0LjAwMTUgMTAuNTQ4OSAxNS4xMjk0IDkuNDU0NDEgMTYuNTAxNSA5LjQ1NDQxQzE3Ljg3MzUgOS40NTQ0MSAxOS4wMDE1IDEwLjU0ODkgMTkuMDAxNSAxMS45MTgyQzE5LjAwMTUgMTMuMjg3NCAxNy44NzM1IDE0LjM4MTkgMTYuNTAxNSAxNC4zODE5QzE1LjEyOTQgMTQuMzgxOSAxNC4wMDE1IDEzLjI4NzQgMTQuMDAxNSAxMS45MTgyWk0zLjQ4NjgyIDIwLjQ1MzRDMy40ODY4MiAxOC4yNDc4IDUuMjc3NjUgMTYuNDU4NiA3LjQ4ODMxIDE2LjQ1ODZDOS42OTM2MyAxNi40NTg2IDExLjQ4MTIgMTguMjM5MiAxMS40ODk4IDIwLjQzNzVMMTEuNDg5NyAyMC40NTM0QzExLjQ4OTcgMjAuNjExMSAxMS41NjI4IDIwLjc1MTggMTEuNjc2OSAyMC44NDM1QzExLjcxMjYgMjAuODcyMiAxMS43NTI0IDIwLjg5NiAxMS43OTUyIDIwLjkxNDFDMTEuODU1IDIwLjkzOTQgMTEuOTIwOCAyMC45NTM0IDExLjk4OTggMjAuOTUzNEMxMi4yNjU5IDIwLjk1MzQgMTIuNDg5OCAyMC43Mjk2IDEyLjQ4OTggMjAuNDUzNEwxMi40ODk4IDIwLjQzNzVDMTIuNDk4NCAxOC4yNDAzIDE0LjI4OTQgMTYuNDU4NiAxNi41MDE1IDE2LjQ1ODZDMTguNzE4OCAxNi40NTg2IDIwLjUxMzIgMTguMjQ4OSAyMC41MTMyIDIwLjQ1MzRDMjAuNTEzMiAyMC43Mjk1IDIwLjczNyAyMC45NTM0IDIxLjAxMzIgMjAuOTUzNEMyMS4yODkzIDIwLjk1MzQgMjEuNTEzMiAyMC43Mjk1IDIxLjUxMzIgMjAuNDUzNEMyMS41MTMyIDE3LjY5MzEgMTkuMjY3NiAxNS40NTg2IDE2LjUwMTUgMTUuNDU4NkMxNC41MTgyIDE1LjQ1ODYgMTIuODAyNSAxNi42MDcyIDExLjk5MDMgMTguMjc0OEMxMS4xNzk4IDE2LjYwNzYgOS40NjgxIDE1LjQ1ODYgNy40ODgzMSAxNS40NTg2QzQuNzI2NzYgMTUuNDU4NiAyLjQ4NjgyIDE3LjY5NDEgMi40ODY4MiAyMC40NTM0QzIuNDg2ODIgMjAuNzI5NiAyLjcxMDY3IDIwLjk1MzQgMi45ODY4MiAyMC45NTM0QzMuMjYyOTYgMjAuOTUzNCAzLjQ4NjgyIDIwLjcyOTYgMy40ODY4MiAyMC40NTM0WiIgZmlsbD0iIzIxMjUyOSIvPgo8L3N2Zz4K"};
 
-  /* ---- modules: real MOD_PURPOSE from each lib.php, plus the proposed ABC
-         mapping, plus what it costs to create one (mod_form sweep) ---- */
+  /* ---- modules: real MOD_PURPOSE from each lib.php, plus what it costs to
+         create one (mod_form sweep) ---- */
   var MODS = {
-    page:       {label:"Page",           purpose:"content",            cost:"one",  needs:"page content", abc:["acq"]},
-    book:       {label:"Book",           purpose:"content",            cost:"auto", abc:["acq","pro"]},
-    resource:   {label:"File",           purpose:"content",            cost:"one",  needs:"a file", abc:["acq"]},
-    url:        {label:"URL",            purpose:"content",            cost:"one",  needs:"a web address", abc:["acq","inv"]},
-    folder:     {label:"Folder",         purpose:"content",            cost:"auto", abc:["inv","acq"]},
+    page:       {label:"Page",           purpose:"content",            cost:"one",  needs:"page content"},
+    book:       {label:"Book",           purpose:"content",            cost:"auto"},
+    resource:   {label:"File",           purpose:"content",            cost:"one",  needs:"a file"},
+    url:        {label:"URL",            purpose:"content",            cost:"one",  needs:"a web address"},
+    folder:     {label:"Folder",         purpose:"content",            cost:"auto"},
     label:      {label:"Text and media", purpose:"content",            cost:"0",    abc:[]},
-    subsection: {label:"Subsection",     purpose:"content",            cost:"auto", abc:[]},
-    imscp:      {label:"IMS package",    purpose:"interactivecontent", cost:"one",  needs:"a package", abc:["acq"]},
-    lesson:     {label:"Lesson",         purpose:"interactivecontent", cost:"auto", needs:"at least one page", abc:["acq","pra"]},
-    h5pactivity:{label:"H5P",            purpose:"interactivecontent", cost:"one",  needs:"an H5P file", abc:["pra","acq"]},
-    scorm:      {label:"SCORM",          purpose:"interactivecontent", cost:"one",  needs:"a package", abc:["pra","acq"]},
-    quiz:       {label:"Quiz",           purpose:"assessment",         cost:"auto", needs:"at least one question", abc:["pra"]},
-    assign:     {label:"Assignment",     purpose:"assessment",         cost:"auto", abc:["pro","pra"]},
-    workshop:   {label:"Workshop",       purpose:"assessment",         cost:"auto", abc:["col","pro","pra"]},
-    forum:      {label:"Forum",          purpose:"collaboration",      cost:"auto", abc:["dis","col","pro"]},
-    glossary:   {label:"Glossary",       purpose:"collaboration",      cost:"auto", abc:["inv","col","pro"]},
-    wiki:       {label:"Wiki",           purpose:"collaboration",      cost:"auto", abc:["col","pro"]},
-    data:       {label:"Database",       purpose:"collaboration",      cost:"auto", abc:["inv","col","pro"]},
-    choice:     {label:"Choice",         purpose:"communication",      cost:"auto", abc:["dis"]},
-    feedback:   {label:"Feedback",       purpose:"communication",      cost:"auto", abc:["dis","inv"]}
+    subsection: {label:"Subsection",     purpose:"content",            cost:"auto"},
+    imscp:      {label:"IMS package",    purpose:"interactivecontent", cost:"one",  needs:"a package"},
+    lesson:     {label:"Lesson",         purpose:"interactivecontent", cost:"auto", needs:"at least one page"},
+    h5pactivity:{label:"H5P",            purpose:"interactivecontent", cost:"one",  needs:"an H5P file"},
+    scorm:      {label:"SCORM",          purpose:"interactivecontent", cost:"one",  needs:"a package"},
+    quiz:       {label:"Quiz",           purpose:"assessment",         cost:"auto", needs:"at least one question"},
+    assign:     {label:"Assignment",     purpose:"assessment",         cost:"auto"},
+    workshop:   {label:"Workshop",       purpose:"assessment",         cost:"auto"},
+    forum:      {label:"Forum",          purpose:"collaboration",      cost:"auto"},
+    glossary:   {label:"Glossary",       purpose:"collaboration",      cost:"auto"},
+    wiki:       {label:"Wiki",           purpose:"collaboration",      cost:"auto"},
+    data:       {label:"Database",       purpose:"collaboration",      cost:"auto"},
+    choice:     {label:"Choice",         purpose:"communication",      cost:"auto"},
+    feedback:   {label:"Feedback",       purpose:"communication",      cost:"auto"}
   };
-
-  var ABC = [
-    {k:"acq", name:"Acquisition",   short:"ACQ", desc:"Reading, watching, listening.",        verb:"Reading",     pool:["page","book","url","resource"]},
-    {k:"inv", name:"Investigation", short:"INV", desc:"Exploring and comparing sources.",     verb:"Investigation",pool:["glossary","data","folder","url"]},
-    {k:"pra", name:"Practice",      short:"PRA", desc:"Applying it and adapting from feedback.", verb:"Practice", pool:["quiz","h5pactivity","lesson"]},
-    {k:"dis", name:"Discussion",    short:"DIS", desc:"Asking, arguing, answering.",          verb:"Discussion",  pool:["forum","choice"]},
-    {k:"col", name:"Collaboration", short:"COL", desc:"Producing something jointly.",         verb:"Group work",  pool:["wiki","workshop","forum"]},
-    {k:"pro", name:"Production",    short:"PRO", desc:"Making something assessable.",         verb:"Assignment",  pool:["assign","workshop","book"]}
-  ];
-  var byK = {}; ABC.forEach(function(a){ byK[a.k]=a; });
 
   /* ---- readiness: can students use this activity yet? ----
      `needs` on MODS is what the activity must have before it works, which
@@ -54044,6 +54089,37 @@ Traps:
      ready as created. A quiz's form asks only for a name; a quiz with no
      questions is broken. In core this is a per-module callback that does
      not exist yet; here it is this one function. */
+  /* What each activity type IS, in core's own words: modulename_summary and
+     modulename_tip, the two strings MDL-87117 (5.2) added for the activity
+     chooser. Copied verbatim from mod/<name>/lang/en; nothing here is ours.
+     Subsection has neither string, so it gets no info button. */
+  var MODHELP = {
+    page:{s:"Create a page resource to display content.", t:"For long, structured content, use a Book instead."},
+    book:{s:"Organise and display content in a book-like format."},
+    resource:{s:"Share a file for students to view or download.", t:"Make sure students have the necessary software to open and view the files you upload."},
+    url:{s:"Add a link to an external web page or online file."},
+    folder:{s:"Create a folder on your course to upload and organise files."},
+    label:{s:"Insert graphics and text anywhere in the course page.", t:"Use Text and media areas for decorative items or images you want embedded on the course page. For course content, use a Page instead."},
+    imscp:{s:"Upload and display existing IMS Global Learning Consortium (IMS) content packages in your course. IMS is commonly used with third-party courseware."},
+    lesson:{s:"Create branching scenarios where students follow different paths based on their answers to questions.", t:"Map out the flow of your Lesson before building it. Planning the pages and paths ahead of time makes building your Lesson much easier."},
+    h5pactivity:{s:"Create or upload HTML5 Package (H5P) interactive content, like drag-and-drop activities, flashcards, or interactive videos."},
+    scorm:{s:"Upload and display existing Sharable Content Object Reference Model (SCORM) content. SCORM is commonly used with third-party courseware."},
+    quiz:{s:"Create a variety of assessments, from simple multiple-choice tests to complex exams with detailed feedback.", t:"Create your questions in the question bank first to reuse them easily in multiple quizzes."},
+    assign:{s:"Collect student submissions such as essays, reports, or projects, and provide feedback and grades."},
+    workshop:{s:"Facilitate peer assessment. Students submit work and review each other's submissions using criteria you define."},
+    forum:{s:"Create online discussions where participants can post and reply."},
+    glossary:{s:"Create a list of terms and definitions, like a dictionary, for students to browse or contribute to."},
+    wiki:{s:"Allow students to create and edit a collection of web pages collaboratively or individually."},
+    data:{s:"Build a shared, searchable collection of entries, like a directory or gallery, that students can contribute to.", t:"For a quick start, use one of the built-in presets such as an image gallery, journal, or resource list."},
+    choice:{s:"Run a single-question poll and let students choose from a list of options."},
+    feedback:{s:"Create custom surveys using different question types."}
+  };
+  /* B: the template's reason, as its own labelled note. Only while
+     building; it never becomes the activity or section description. */
+  function whyNote(text){
+    return '<p class="why-note"><i class="fa-solid fa-shapes" aria-hidden="true"></i><span>'
+      + '<span class="why-src">' + esc((tpl || BLANK).name) + ':</span> ' + text + '</span></p>';
+  }
   function needs(it){ return it.filled ? null : (MODS[it.m].needs || null); }
 
   /* ---- decorative, in the CA PRD's sense ----
@@ -54059,57 +54135,89 @@ Traps:
     return !!(sec && sec.skel);
   }
 
-  /* ---- what a topic looks like for each primary type ----
-     Three activities in a fixed order, and the order is the argument:
-     lead, reinforce, close the loop. The third slot is always a DIFFERENT
-     learning type from the primary, because ABC's point is that no type
-     works alone - acquisition without practice is passive, discussion
-     without a written position leaves nothing to assess. `why` is the
-     section's explanation; each item's `d` is its own. Titles take the
-     topic number so the course index stays distinct. */
-  var SHAPE = {
-    acq:{ why:"Take the idea in, see it a second way, then do something with it. Reading on its own is passive, so the third activity is always practice.",
-          items:[
-            {m:"page", t:"Reading", abc:"acq", d:"The core explanation for this topic. A Page keeps it inside the course, so you can see who has opened it."},
-            {m:"url",  t:"Watch",   abc:"acq", d:"The same idea shown rather than told \u2014 a video or an outside source."},
-            {m:"quiz", t:"Check",   abc:"pra", d:"Short and ungraded. Turns what was read into something the student has to do."}]},
-    inv:{ why:"Set the question, gather what students find, then compare notes. Investigation without a shared record stays private.",
-          items:[
-            {m:"url",  t:"Starting points", abc:"inv", d:"Where to begin looking, not the answer."},
-            {m:"data", t:"Findings",  abc:"inv", d:"Students log what they find. A Database gives every entry the same fields, so findings can be compared."},
-            {m:"forum",t:"Compare",   abc:"dis", d:"Investigation needs an audience. Reading what others found is where the comparison happens."}]},
-    pra:{ why:"See it done, try it with feedback, then apply it where the answer is not obvious. Three attempts at the same skill, each a little harder.",
-          items:[
-            {m:"page",   t:"Worked example", abc:"acq", d:"What good looks like, before they try. Practice without a model is guessing."},
-            {m:"quiz",   t:"Practice", abc:"pra", d:"Repeatable, immediate feedback, no grade. The point is the second attempt."},
-            {m:"lesson", t:"Apply",    abc:"pra", d:"A branching scenario: the choice a student makes changes what they see next."}]},
-    dis:{ why:"Something to argue about, the argument, then what each student concluded. A discussion with no written position leaves nothing to assess.",
-          items:[
-            {m:"page",   t:"Prompt",   abc:"acq", d:"The provocation. Good discussion starts from something specific enough to disagree with."},
-            {m:"forum",  t:"Discuss",  abc:"dis", d:"The discussion itself. Q&A style makes students post before they see replies."},
-            {m:"assign", t:"Position", abc:"pro", d:"A short written position, so the discussion ends somewhere."}]},
-    col:{ why:"Agree what to make, make it together, then review what other groups made. The third step is what makes it collaboration rather than group work.",
-          items:[
-            {m:"forum",    t:"Plan",           abc:"col", d:"Somewhere for the group to agree what it is making before it makes it."},
-            {m:"wiki",     t:"Build together", abc:"col", d:"One shared piece of work, every edit attributed."},
-            {m:"workshop", t:"Review",         abc:"pro", d:"Structured peer review of what the other groups produced."}]},
-    pro:{ why:"The brief, the making, then an audience. Producing for peers is a bigger task than producing for a marker.",
-          items:[
-            {m:"page",   t:"Brief",         abc:"acq", d:"What to make, how it will be judged, and an example. The brief is most of the assignment."},
-            {m:"assign", t:"Submit",        abc:"pro", d:"The work itself. Rubrics and feedback live here."},
-            {m:"forum",  t:"Show and tell", abc:"dis", d:"A place to share the finished work with the class."}]}
+  /* ---- course templates ----
+     The 2 Nov direction: a "what kind of course?" step whose answer
+     pre-populates sections and activities. Vanilla ships about five; sites
+     and plugins add their own (`src`), and a site can restrict the list to
+     its own. Blank is not in this list: it is always offered, separately.
+     `format` is the real course format plugin the template sets
+     (format_weeks "Weekly sections", format_topics "Custom sections").
+     `unit` names the count field. `section` is the repeating pattern,
+     `every` adds an item to every nth section, `wrap` closes the course,
+     `settings` are the course settings the template presets. */
+  var GENERAL = {
+    announcements:{m:"forum", t:"Announcements",      skel:true, d:"Your one-way channel to the whole class. Moodle creates this for every course anyway."},
+    about:        {m:"book",  t:"About this course",  skel:true, d:"Syllabus, expectations, how the course works. A Book keeps it in chapters rather than one long page."},
+    qa:           {m:"forum", t:"General discussion", skel:true, d:"For questions that belong to no single section."}
   };
-  var SKEL = {
-    general:{ why:"Orientation. Every course opens the same way whatever its learning type: what to expect, where announcements arrive, somewhere to ask, and a quick look at what students already know.",
-      items:[
-        {m:"forum", t:"Announcements",      skel:true, abc:"",    d:"Your one-way channel to the whole class. Moodle creates this for every course anyway."},
-        {m:"book",  t:"About this course",  skel:true, abc:"acq", d:"Syllabus, expectations, how the course works. A Book keeps it in chapters rather than one long page."},
-        {m:"forum", t:"General discussion", skel:true, abc:"dis", d:"For questions that belong to no single topic."},
-        {m:"quiz",  t:"Pre-check",          skel:true, abc:"pra", d:"Ungraded. Shows you what students bring with them before the first topic."}]},
-    wrap:{ why:"A closing check against the outcomes, so the alignment report has something to measure at the end as well as the start.",
-      items:[
-        {m:"quiz", t:"Course check", skel:true, abc:"pra", d:"One last look at the outcomes, from the student\u2019s side."}]}
-  };
+  var TEMPLATES = [
+    {k:"weekly", name:"Weekly course", src:"core", format:"weeks", unit:"weeks", count:12,
+      desc:"A section per week, dated from your start date. Notes, a discussion and a short check each week.",
+      why:"The same rhythm every week, so students always know where to look.",
+      general:["announcements","about","qa"],
+      section:[
+        {m:"page",  t:"Notes",        d:"This week’s material. A Page keeps it inside the course, so you can see who opened it."},
+        {m:"forum", t:"Discussion",   d:"Somewhere to talk about this week, separate from the general forum."},
+        {m:"quiz",  t:"Weekly check", d:"A few ungraded questions so students can see whether it landed."}],
+      every:{n:4, item:{m:"assign", t:"Assignment", d:"A graded submission every four weeks."}},
+      settings:["Show activity dates","Completion tracking on"]},
+    {k:"selfpaced", name:"Self-paced course", src:"core", format:"topics", unit:"topics", count:6,
+      desc:"Students work through in order, at their own pace. Each topic opens when the last one is complete.",
+      why:"Learn, try, check. Completing the check is what opens the next topic.",
+      general:["announcements","about"],
+      section:[
+        {m:"page",        t:"Learn",  d:"The explanation for this topic."},
+        {m:"h5pactivity", t:"Try it", d:"Something interactive to practise on before the check."},
+        {m:"quiz",        t:"Check",  d:"Completing this opens the next topic."}],
+      wrap:{title:"Finish", why:"A final check, and the point at which the course counts as complete.",
+        items:[{m:"quiz", t:"Final check", d:"Course completion is set to this quiz."}]},
+      settings:["Completion tracking on","Each topic restricted until the previous one is complete"]},
+    {k:"seminar", name:"Discussion-led seminar", src:"core", format:"topics", unit:"topics", count:8,
+      desc:"A reading, a discussion, then a short written response for each topic.",
+      why:"Something to argue about, the argument, then what each student concluded.",
+      general:["announcements","about"],
+      section:[
+        {m:"page",   t:"Reading",  d:"The text or prompt the discussion starts from."},
+        {m:"forum",  t:"Discuss",  d:"Q&A style, so students post before they see each other’s replies."},
+        {m:"assign", t:"Response", d:"A short written position, so the discussion ends somewhere."}],
+      settings:["Completion tracking on"]},
+    {k:"project", name:"Project-based course", src:"core", format:"topics", unit:"milestones", count:4,
+      desc:"Groups work towards a final product through milestones, with peer review at the end.",
+      why:"A brief, somewhere to work together, and something to hand in.",
+      general:["announcements","about","qa"],
+      section:[
+        {m:"page",   t:"Brief",      d:"What this milestone asks for and how it is judged."},
+        {m:"wiki",   t:"Team space", d:"One shared working document per group, every edit attributed."},
+        {m:"assign", t:"Milestone",  d:"Group submission for this milestone."}],
+      wrap:{title:"Final review", why:"Groups review each other’s finished work.",
+        items:[{m:"workshop", t:"Peer review", d:"Structured peer assessment of the final products."}]},
+      settings:["Group mode: separate groups","Completion tracking on"]},
+    {k:"training", name:"Short training module", src:"core", format:"topics", unit:"topics", count:1,
+      desc:"One sitting with a pass mark. Complete when the assessment is passed.",
+      why:"Read it, then show you know it.",
+      general:["announcements"],
+      section:[
+        {m:"page", t:"Content",    d:"What everyone needs to know."},
+        {m:"quiz", t:"Assessment", d:"Pass grade 80%. Passing completes the course."}],
+      settings:["Course complete when the assessment is passed"]},
+    {k:"fleetwood", name:"Fleetwood standard unit", src:"site", format:"weeks", unit:"weeks", count:13,
+      desc:"The university’s unit shell: unit outline, academic integrity, weekly lectures and tutorials.",
+      why:"Lecture, recording, tutorial: the shape every Fleetwood unit follows.",
+      general:["announcements","about","qa"],
+      generalExtra:[{m:"page", t:"Academic integrity", skel:true, d:"Required in every unit by university policy."}],
+      section:[
+        {m:"page",  t:"Lecture notes",       d:"Slides and notes for this week’s lecture."},
+        {m:"url",   t:"Lecture recording",   d:"Link to the lecture capture system."},
+        {m:"forum", t:"Tutorial discussion", d:"Questions before and after the tutorial."}],
+      wrap:{title:"Assessment", why:"The unit’s final assessment, required by policy.",
+        items:[{m:"assign", t:"Final assessment", d:"The unit rubric is added by the site."}]},
+      settings:["Show activity dates","Completion tracking on"]}
+  ];
+  var BLANK = {k:"blank", name:"Blank course", src:"core", format:"topics", unit:"sections", count:4,
+    desc:"Empty sections. Add activities yourself with Add an activity or resource.",
+    general:["announcements"], section:[], settings:[]};
+  var tplByK = {}; TEMPLATES.concat([BLANK]).forEach(function(t){ tplByK[t.k] = t; });
+  var FORMAT_NAME = {weeks:"Weekly sections", topics:"Custom sections"};
 
   function esc(s){ return String(s).replace(/[&<>"]/g,function(c){
     return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"})[c]; }); }
@@ -54129,11 +54237,6 @@ Traps:
       + '<img src=' + JSON.stringify(ICONS[m] || "") + ' class="activityicon" alt="">'
       + '</div>';
   }
-  function abcNames(m){
-    var a = MODS[m].abc || [];
-    return a.length ? a.map(function(k){ return byK[k].name; }).join(" + ") : "Unmapped";
-  }
-
   /* ============================================================
      STEP 1 - basics, in real mform markup
      ============================================================ */
@@ -54161,31 +54264,149 @@ Traps:
       + (help ? '<div class="form-help-text w-100 mt-1 text-muted">' + help + '</div>' : '')
       + '</div></div>';
   }
-  $("#basicsFields").innerHTML =
-      fitem("id_fullname","Course full name",
-        '<input type="text" class="form-control" id="id_fullname" maxlength="1333" value="Marine Ecology">',
-        null, true)
-    + fitem("id_shortname","Short name",
+  /* ---- STEP 1 has two layouts of ONE form ----
+     Off: the short form, only what is needed to begin.
+     On ("Advanced course details"): the existing course settings form
+     (course/edit_form.php) as it looks today - its headers, its order, its
+     lang strings, General and Description open, the rest collapsed.
+     Either way the wizard carries on to outcomes, template, outline. Field
+     ids are shared, so values survive the switch in both directions and the
+     rest of the wizard never needs to know which layout was used.
+     Left out of the full form: force theme / calendar (only when the site
+     allows forcing), PDF font, role renaming, custom fields. Course format
+     and number of sections stay with the template in step 3. */
+  var advancedOn = false;
+  var SUMMARY = 'An introduction to the ecology of coastal and open-ocean systems: '
+    + 'how energy and nutrients move through marine food webs, what shapes where species live, and the evidence '
+    + 'for human impact on reefs and coastlines. Includes a field survey.';
+  function selectEl(id, opts, cur){
+    return '<select class="form-select" id="' + id + '">' + opts.map(function(o){
+      return '<option' + (o === cur ? ' selected' : '') + '>' + o + '</option>'; }).join("") + '</select>';
+  }
+  var YN = ["No","Yes"];
+  function fhdr(id, title, body, open){
+    return '<fieldset class="clearfix collapsible" id="id_' + id + '">'
+      + '<legend class="d-flex align-items-center px-1">'
+      + '<div class="position-relative d-flex ftoggler align-items-center position-relative me-1">'
+      + '<a data-bs-toggle="collapse" href="#id_' + id + 'container" role="button" aria-expanded="' + (open ? 'true' : 'false') + '"'
+      + ' aria-controls="id_' + id + 'container" class="btn btn-icon me-3 icons-collapse-expand stretched-link fheader' + (open ? '' : ' collapsed') + '">'
+      + '<span class="expanded-icon icon-no-margin p-2" title="Collapse"><i class="icon fa-solid fa-chevron-down fa-fw" aria-hidden="true"></i></span>'
+      + '<span class="collapsed-icon icon-no-margin p-2" title="Expand"><i class="icon fa-solid fa-chevron-right fa-fw" aria-hidden="true"></i></span>'
+      + '<span class="visually-hidden">' + title + '</span></a>'
+      + '<h3 class="d-flex align-self-stretch align-items-center mb-0" aria-hidden="true">' + title + '</h3>'
+      + '</div></legend>'
+      + '<div id="id_' + id + 'container" class="fcontainer collapseable collapse' + (open ? ' show' : '') + '">' + body + '</div>'
+      + '</fieldset>';
+  }
+  /* the shared fields; `full` switches labels to core's own strings and
+     drops the prototype's inline coaching, which the real form does not have */
+  function F(full){
+    return {
+      fullname: fitem("id_fullname","Course full name",
+        '<input type="text" class="form-control" id="id_fullname" maxlength="1333" value="Marine Ecology">', null, true),
+      shortname: fitem("id_shortname", full ? "Course short name" : "Short name",
         '<input type="text" class="form-control" id="id_shortname" maxlength="255" value="MARINE-ECOL">',
-        'Filled in from the full name. Change it if you like.', true)
-    + fitem("id_category","Course category",
-        '<select class="form-select" id="id_category"><option>Category 1</option></select>',
-        null, true)
-    + fitem("id_numsections","Number of topics",
-        '<input type="number" class="form-control" id="id_numsections" value="4" min="1" max="52">',
-        'You can add or remove topics at any time.', false, null, "text")
-    + fitem("id_startdate","Start date",
-        '<input type="date" class="form-control" id="id_startdate" value="2026-09-14">')
-    + fitem("id_enddate","End date",
+        full ? null : 'Filled in from the full name. Change it if you like.', true),
+      category: fitem("id_category","Course category",
+        '<select class="form-select" id="id_category"><option>Category 1</option></select>', null, true),
+      summary: fitem("id_summary", full ? "Course summary" : "Description",
+        '<textarea class="form-control" id="id_summary" rows="4">' + SUMMARY + '</textarea>',
+        full ? null : 'Shown to students on the course listing. Also helps Moodle suggest outcomes in the next step.',
+        false, null, "editor"),
+      startdate: fitem("id_startdate", full ? "Course start date" : "Start date",
+        '<input type="date" class="form-control" id="id_startdate" value="2026-09-14">', null, false, null, "date_time_selector"),
+      enddate: fitem("id_enddate", full ? "Course end date" : "End date",
         '<input type="date" class="form-control" id="id_enddate" value="2027-09-14">',
-        'One year after the start date unless you change it.', false, null, "date_selector");
+        full ? null : 'One year after the start date unless you change it.', false, null, "date_time_selector")
+    };
+  }
+  function shortForm(){
+    var f = F(false);
+    return '<fieldset class="step-section"><legend class="step-title">Course details</legend>'
+      + f.fullname + f.shortname + f.category + f.summary + f.startdate + f.enddate
+      + '</fieldset>';
+  }
+  function fullForm(){
+    var f = F(true);
+    return '<div class="d-flex mb-2"><a href="#" class="ms-auto small" id="advExpandAll" role="button">Expand all</a></div>'
+      + fhdr("general", "General",
+          f.fullname + f.shortname + f.category
+        + fitem("id_visible","Course visibility", selectEl("id_visible",["Show","Hide"],"Show"), null, false, null, "select")
+        + fitem("id_downloadcontent","Enable download course content",
+            selectEl("id_downloadcontent",["Site default (No)","No","Yes"],"Site default (No)"), null, false, null, "select")
+        + f.startdate + f.enddate
+        + fitem("id_idnumber","Course ID number", '<input type="text" class="form-control" id="id_idnumber" maxlength="100">'), true)
+      + fhdr("descriptionhdr", "Description",
+          f.summary
+        + fitem("id_overviewfiles","Course image",
+            '<input type="file" class="form-control" id="id_overviewfiles" accept="image/*">', null, false, null, "filemanager"), true)
+      + fhdr("courseformathdr", "Course format",
+          '<p class="form-help-text text-muted mb-3">Format and number of sections come from the template in '
+        + '<a href="#step-3" data-go="3">step 3</a>.</p>'
+        + fitem("id_hiddensections","Hidden sections",
+            selectEl("id_hiddensections",["Show section names only","Hidden sections are not shown"],"Show section names only"), null, false, null, "select")
+        + fitem("id_coursedisplay","Course layout",
+            selectEl("id_coursedisplay",["Show all sections on one page","Show one section per page"],"Show all sections on one page"), null, false, null, "select"))
+      + fhdr("appearancehdr", "Appearance",
+          fitem("id_lang","Force language", selectEl("id_lang",["Do not force","English ‎(en)‎"],"Do not force"), null, false, null, "select")
+        + fitem("id_newsitems","Number of announcements", selectEl("id_newsitems",["0","1","2","3","4","5","6","7","8","9","10"],"5"), null, false, null, "select")
+        + fitem("id_showgrades","Show gradebook to students", selectEl("id_showgrades",YN,"Yes"), null, false, null, "select")
+        + fitem("id_showreports","Show activity reports", selectEl("id_showreports",YN,"No"), null, false, null, "select")
+        + fitem("id_showactivitydates","Show activity dates", selectEl("id_showactivitydates",YN,"Yes"), null, false, null, "select"))
+      + fhdr("filehdr", "Files and uploads",
+          fitem("id_maxbytes","Maximum upload size",
+            selectEl("id_maxbytes",["Site upload limit (100MB)","50MB","20MB","10MB","5MB","2MB","1MB"],"Site upload limit (100MB)"), null, false, null, "select"))
+      + fhdr("completionhdr", "Completion tracking",
+          fitem("id_enablecompletion","Enable completion tracking", selectEl("id_enablecompletion",YN,"Yes"), null, false, null, "select")
+        + fitem("id_showcompletionconditions","Show activity completion conditions", selectEl("id_showcompletionconditions",YN,"Yes"), null, false, null, "select"))
+      + fhdr("groups", "Groups",
+          fitem("id_groupmode","Group mode", selectEl("id_groupmode",["No groups","Separate groups","Visible groups"],"No groups"), null, false, null, "select")
+        + fitem("id_groupmodeforce","Force group mode", selectEl("id_groupmodeforce",YN,"No"), null, false, null, "select")
+        + fitem("id_defaultgroupingid","Default grouping", selectEl("id_defaultgroupingid",["None"],"None"), null, false, null, "select"))
+      + fhdr("tagshdr", "Tags",
+          fitem("id_tags","Tags", '<input type="text" class="form-control" id="id_tags" placeholder="Enter tags">', null, false, null, "tags"))
+      + fhdr("aitoolshdr", "AI tools",
+          fitem("id_enableaitools","Allow AI tools for this course", selectEl("id_enableaitools",YN,"Yes"), null, false, null, "select"));
+  }
+  /* values typed in either layout survive the switch: the advanced-only
+     fields are kept in `advValues` while the short form is showing */
+  var advValues = {};
+  function renderStep1(){
+    var box = $("#courseForm"), vals = {};
+    $$("input, select, textarea", box).forEach(function(el){ if(el.id && el.type !== "file") vals[el.id] = el.value; });
+    Object.keys(vals).forEach(function(k){ advValues[k] = vals[k]; });
+    box.innerHTML = advancedOn ? fullForm() : shortForm();
+    $$("input, select, textarea", box).forEach(function(el){
+      if(el.id && el.type !== "file" && advValues[el.id] !== undefined) el.value = advValues[el.id];
+    });
+    $("#advSwitch").checked = advancedOn;
+    $("#modeHint").textContent = advancedOn
+      ? "Every course setting. The next steps are the same."
+      : "Everything else uses your site’s defaults.";
+  }
+  function setAdvanced(on){ advancedOn = on; renderStep1(); renderRequirements(); }
+  $("#advSwitch").addEventListener("change", function(){
+    setAdvanced(this.checked);
+    toast(this.checked ? "Showing every course setting. What you typed is kept."
+                       : "Back to the short form. Advanced settings you changed are kept.");
+  });
+  document.addEventListener("click", function(e){
+    var x = e.target.closest("#advExpandAll"); if(!x) return;
+    e.preventDefault();
+    var expand = x.textContent === "Expand all";
+    $$("#courseForm .collapseable").forEach(function(c){
+      bootstrap.Collapse.getOrCreateInstance(c, {toggle:false})[expand ? "show" : "hide"]();
+    });
+    x.textContent = expand ? "Collapse all" : "Expand all";
+  });
+  renderStep1();
 
   document.addEventListener("input", function(e){
+    if(e.target.id === "id_fullname"){
+      $("#id_shortname").value = e.target.value.toUpperCase().replace(/[^A-Z0-9 ]/g,"")
+        .trim().split(/\s+/).slice(0,2).join("-").slice(0,255);
+    }
     if(e.target.id === "id_fullname" || e.target.id === "id_shortname") renderRequirements();
-  });
-  $("#id_fullname").addEventListener("input", function(){
-    $("#id_shortname").value = this.value.toUpperCase().replace(/[^A-Z0-9 ]/g,"")
-      .trim().split(/\s+/).slice(0,2).join("-").slice(0,255);
   });
 
   /* ============================================================
@@ -54202,7 +54423,7 @@ Traps:
   function renderLO(){
     $("#modePill").textContent = loMode === "hard"
       ? "Minimum " + LO_MIN + " \u2014 required" : "Minimum " + LO_MIN + " \u2014 recommended";
-    $("#modePill").className = "badge ms-auto " + (loMode === "hard" ? "text-bg-danger" : "text-bg-secondary");
+    $("#modePill").className = "mds-badge mds-badge--subtle ms-auto " + (loMode === "hard" ? "mds-badge--danger" : "mds-badge--secondary");
     $("#loFields").innerHTML = OUTCOMES.map(function(o,i){
       return fitem("id_lo"+i, "Outcome " + (i+1),
         '<div class="input-group">'
@@ -54279,18 +54500,19 @@ Traps:
     /* review */
     btn.disabled = true; btn.innerHTML = "Draft";
     var title = $("#id_fullname").value.trim() || "this course";
+    var hasDesc = !!$("#id_summary").value.trim();
     box.className = "mt-3";
     box.innerHTML =
         '<div class="small text-muted mb-2"><i class="fa-solid fa-robot me-1" aria-hidden="true"></i>'
-      + 'AI-generated from \u201c' + esc(title) + '\u201d. Review before you use them.</div>'
+      + 'AI-generated from \u201c' + esc(title) + '\u201d' + (hasDesc ? ' and its description' : '') + '. Review before you use them.</div>'
       + AI_SETS[aiSet].map(function(o,i){
           return '<div class="form-check ai-item">'
             + '<input class="form-check-input" type="checkbox" id="ai_' + i + '" checked>'
             + '<label class="form-check-label" for="ai_' + i + '">' + esc(o) + '</label></div>'; }).join("")
       + '<div class="d-flex flex-wrap gap-2 mt-3">'
-      + '<button type="button" class="btn btn-sm btn-primary" id="aiUse">Use selected</button>'
-      + '<button type="button" class="btn btn-sm btn-outline-secondary" id="aiRegen">Try again</button>'
-      + '<button type="button" class="btn btn-sm btn-link text-muted ms-auto" id="aiDismiss">Discard</button>'
+      + '<button type="button" class="btn mds-btn btn-primary mds-btn--size-sm" id="aiUse">Use selected</button>'
+      + '<button type="button" class="btn mds-btn btn-secondary mds-btn--size-sm" id="aiRegen">Try again</button>'
+      + '<button type="button" class="btn mds-btn btn-ghost mds-btn--size-sm ms-auto" id="aiDismiss">Discard</button>'
       + '</div>';
   }
   $("#aiDraftBtn").addEventListener("click", function(){
@@ -54329,12 +54551,11 @@ Traps:
   renderLO();
 
   /* ============================================================
-     STEP 3 - ABC, real radios
+     STEP 3 - template, MDS choiceboxes
      ============================================================ */
-  var primary = "acq", skipped = false;
-  /* MDS choicebox, not a bespoke radio list: label + supporting text +
-     single-select is precisely what the component exists for, and the ABC
-     PRD's requirement is one primary type per course. */
+  var tpl = null, tplSet = "all", sectionCount = null;
+  /* MDS choicebox: label + supporting text + single select is precisely
+     what the component exists for. */
   function choicebox(id, name, value, checked, label, supporting, iconClass){
     return '<div class="mds-choicebox-wrapper">'
       + '<input class="mds-choicebox-input" type="radio" name="' + name + '" id="' + id + '"'
@@ -54348,16 +54569,67 @@ Traps:
       + '<span class="mds-choicebox-indicator" aria-hidden="true"></span>'
       + '</label></div>';
   }
-  $("#abcFields").innerHTML = '<div class="cbstack">' + ABC.map(function(a){
-    return choicebox("abc_" + a.k, "abc", a.k, a.k === primary, esc(a.name),
-      esc(a.desc) + " Suggests: " + a.pool.map(function(m){ return MODS[m].label; }).join(", "));
-  }).join("") + '</div>';
+  function units(n, u){ return n + " " + (n === 1 ? u.replace(/s$/, "") : u); }
+  function renderTemplates(){
+    var list = TEMPLATES.filter(function(t){ return tplSet === "all" || t.src === "site"; });
+    if(tpl && tpl !== BLANK && list.indexOf(tpl) < 0){ tpl = null; outline = []; }
+    $("#tplFields").innerHTML = '<div class="cbstack">' + list.map(function(t){
+      var acts = t.section.map(function(it){ return MODS[it.m].label; }).join(", ");
+      return choicebox("tpl_" + t.k, "tpl", t.k, tpl === t,
+        esc(t.name) + (t.src === "site" ? '<span class="mds-badge mds-badge--info mds-badge--subtle tpl-src">Your site</span>' : ''),
+        esc(t.desc) + '<br>' + FORMAT_NAME[t.format] + ' &middot; ' + units(t.count, t.unit) + ' &middot; ' + acts);
+    }).join("") + '</div>';
+    $("#tplBlank").innerHTML = '<div class="cbstack">'
+      + choicebox("tpl_blank", "tpl", "blank", tpl === BLANK, "Blank course", esc(BLANK.desc)) + '</div>';
+    renderCount();
+  }
+  function renderCount(){
+    if(!tpl){ $("#tplCount").innerHTML = ""; return; }
+    var u = tpl.unit;
+    $("#tplCount").innerHTML = fitem("id_numsections", "Number of " + u,
+      '<input type="number" class="form-control" id="id_numsections" value="' + sectionCount + '" min="1" max="52">',
+      (tpl.format === "weeks" ? "Dated from the start date in step 1. " : "")
+        + "You can add or remove " + u + " at any time.", false, null, "text");
+  }
+  /* "By outcome" needs undated, non-empty sections: weekly sections are
+     named by date and blank has nothing to inherit. Disabled, not hidden. */
+  function syncShape(){
+    var ok = !!tpl && tpl !== BLANK && tpl.format !== "weeks";
+    var ob = $('#shapeSwitch [data-shape="outcome"]');
+    if(!ob){ if(!ok) outlineShape = "type"; return; }   /* dev panel absent in the -test export */
+    ob.disabled = !ok;
+    ob.title = ok ? "" : "Not available for weekly or blank courses";
+    if(!ok && outlineShape === "outcome"){
+      outlineShape = "type";
+      $$("#shapeSwitch .devbtn").forEach(function(x){ x.classList.toggle("on", x.dataset.shape === "type"); });
+    }
+  }
   document.addEventListener("change", function(e){
-    if(e.target.name !== "abc") return;
-    skipped = !e.target.value; primary = e.target.value || primary;
-    generate();
-    toast(skipped ? "Skipped."
-                  : "Primary type: <strong>" + byK[primary].name + "</strong>.");
+    if(e.target.name === "tpl"){
+      tpl = tplByK[e.target.value]; sectionCount = tpl.count;
+      $("#tplInvalid").classList.remove("d-block");
+      renderCount(); syncShape(); generate(); renderRequirements();
+      toast(tpl === BLANK ? "Blank course: empty sections, nothing pre-filled."
+        : "<strong>" + esc(tpl.name) + "</strong> — " + FORMAT_NAME[tpl.format] + ", " + units(tpl.count, tpl.unit) + ".");
+      return;
+    }
+    if(e.target.id === "id_numsections"){
+      sectionCount = Math.max(1, Math.min(52, parseInt(e.target.value, 10) || 1));
+      e.target.value = sectionCount;
+      if(outline.length) generate();
+    }
+    if(e.target.id === "id_startdate" && tpl && tpl.format === "weeks" && outline.length) generate();
+  });
+  $("#tplNext").addEventListener("click", function(){
+    if(!tpl){ $("#tplInvalid").classList.add("d-block"); return; }
+    goStep(4);
+  });
+  if($("#tplSetSwitch")) $("#tplSetSwitch").addEventListener("click", function(e){
+    var b = e.target.closest(".devbtn"); if(!b) return;
+    this.querySelectorAll(".devbtn").forEach(function(x){ x.classList.toggle("on", x===b); });
+    tplSet = b.dataset.tplset; renderTemplates(); syncShape(); renderRequirements();
+    toast(tplSet === "site" ? "This site offers only its own template. Blank course is always there."
+                            : "Moodle’s templates plus the site’s own.");
   });
 
   /* ============================================================
@@ -54365,12 +54637,12 @@ Traps:
      ============================================================ */
   var outline = [];
   /* ---- outline shape ----
-     "type" is what both PRDs describe: the ABC primary type decides the
+     "type" (shown as "By template"): the template decides the sections and
      activities, the outcomes are a separate substrate, and the join is left
      to the teacher one activity at a time. A freshly prefilled course is
      therefore untagged by design.
 
-     "outcome" is a PROPOSAL beyond both PRDs: one topic per outcome, titled
+     "outcome" is a PROPOSAL beyond the CA PRD: one section per outcome, titled
      by it, every activity in it inheriting it. Constructive alignment done at
      build time instead of chased afterwards - the report opens clean rather
      than opening red. The CA PRD describes outcomes as "inferred" after
@@ -54379,53 +54651,76 @@ Traps:
      a toggle so a room can compare the two. */
   var outlineShape = "type";
 
-  function generate(){
-    var n = Math.max(1, Math.min(52, parseInt($("#id_numsections").value,10) || 4));
-    outline = [];
-    if(skipped){
-      for(var z=1; z<=n; z++) outline.push({title:"Topic " + z, items:[]});
-      renderOutline(); return;
-    }
-    var shape = SHAPE[primary];
-    var clone = function(list){ return list.map(function(x){ return JSON.parse(JSON.stringify(x)); }); };
-    outline.push({title:"General", skel:true, why:SKEL.general.why, items:clone(SKEL.general.items)});
+  /* Weekly sections are named the way format_weeks names them:
+     strftimedateshort ("%d %B", leading zero dropped) joined by " - ". */
+  function weekTitle(i){
+    var v = $("#id_startdate").value, d = v ? new Date(v + "T00:00:00") : null;
+    if(!d || isNaN(d.getTime())) return "Week " + i;
+    var s0 = new Date(d.getTime() + (i-1)*7*86400000), e0 = new Date(s0.getTime() + 6*86400000);
+    var f = function(x){ return x.getDate() + " " + x.toLocaleString("en-GB", {month:"long"}); };
+    return f(s0) + " - " + f(e0);
+  }
+  function sectionTitle(t, i){
+    if(t.format === "weeks") return weekTitle(i);
+    if(t.unit === "milestones") return "Milestone " + i;
+    return (t === BLANK ? "Section " : "Topic ") + i;
+  }
 
-    if(outlineShape === "outcome"){
+  function generate(){
+    outline = [];
+    if(!tpl){ outlineBase = "[]"; renderOutline(); return; }
+    var t = tpl, n = sectionCount || t.count;
+    var clone = function(list){ return list.map(function(x){ return JSON.parse(JSON.stringify(x)); }); };
+    var gen = (t.general || []).map(function(k){ return GENERAL[k]; }).concat(t.generalExtra || []);
+    outline.push({title:"General", skel:true,
+      why: t === BLANK ? "" : "What every student sees first: where announcements arrive and how the course works.",
+      items:clone(gen)});
+
+    if(outlineShape === "outcome" && t !== BLANK && t.format !== "weeks"){
       var los = loValid();
       if(!los.length) los = ["(write an outcome in step 2)"];
       los.forEach(function(o, oi){
-        var items = clone(shape.items).map(function(it){
+        var items = clone(t.section).map(function(it){
           it.t = it.t + " " + (oi+1);
           it.lo = oi + 1;                 /* inherited, not chased */
+          if(oi > 0) delete it.d;         /* explained once, not per outcome */
           return it;
         });
         outline.push({
-          title: o.length > 64 ? o.slice(0,61) + "\u2026" : o,
-          why: "Everything in this topic serves outcome " + (oi+1) + ". " + shape.why,
+          title: o.length > 64 ? o.slice(0,61) + "…" : o,
+          why: "Everything in this section serves outcome " + (oi+1) + ". " + t.why,
           lo: oi + 1,
           items: items
         });
       });
     } else {
       for(var i=1;i<=n;i++){
-        var items = clone(shape.items).map(function(it){ it.t = it.t + " " + i; return it; });
-        outline.push({title:"Topic " + i, why:shape.why, items:items});
+        var items = clone(t.section).map(function(it){ it.t = it.t + (n > 1 ? " " + i : ""); return it; });
+        if(t.every && i % t.every.n === 0){
+          var x = clone([t.every.item])[0]; x.t = x.t + " " + (i / t.every.n);
+          if(i > t.every.n) delete x.d;
+          items.push(x);
+        }
+        /* each repeating item explains itself once, the first time it
+           appears, not twelve times down the page */
+        if(i > 1) items.forEach(function(it){ if(it !== x) delete it.d; });
+        /* the reason is said once, on the first section, not repeated n times */
+        outline.push({title:sectionTitle(t, i), auto:true, why: i === 1 ? (t.why || "") : "", items:items});
       }
     }
-    outline.push({title:"Wrap up", skel:true, why:SKEL.wrap.why, items:clone(SKEL.wrap.items)});
+    if(t.wrap) outline.push({title:t.wrap.title, why:t.wrap.why, items:clone(t.wrap.items)});
+    outlineBase = JSON.stringify(outline);
     renderOutline();
   }
   $("#shapeSwitch").addEventListener("click", function(e){
-    var b = e.target.closest(".devbtn"); if(!b) return;
+    var b = e.target.closest(".devbtn"); if(!b || b.disabled) return;
     this.querySelectorAll(".devbtn").forEach(function(x){ x.classList.toggle("on", x===b); });
     outlineShape = b.dataset.shape;
     generate(); renderRequirements();
     toast(outlineShape === "outcome"
-      ? "One topic per outcome, every activity inheriting it. <strong>Beyond both PRDs</strong> \u2014 "
-        + "the report opens clean instead of opening red."
-      : "Topics shaped by the learning type. This is what both PRDs describe; the outcome tags are left to you.");
+      ? "One section per outcome, every activity inheriting it. The report opens clean instead of opening red."
+      : "Sections as the template lays them out; outcome tags are left to you.");
   });
-
 
   /* ---- activity card, adapted from the course-page uplift ----
      Creation context, so no completion or availability chips: the course does
@@ -54446,7 +54741,14 @@ Traps:
        here, not news. */
     var chips = "";
     if(hidden) chips += '<span class="chip hidden"><i class="fa-regular fa-eye-slash" aria-hidden="true"></i>Hidden from students</span>';
-    if(need) chips += '<span class="chip cost">Needs ' + need + '</span>';
+    /* On the course the chip IS the action (it stands in for opening the
+       module's settings). A separate "Add page content" button beside it
+       said the same thing twice. */
+    if(need) chips += (isCourse
+      ? '<button type="button" class="chip cost chip-act" data-act="fix" data-si="' + si + '" data-ii="' + ii + '"'
+        + ' title="Open the settings to add ' + need + '">Needs ' + need
+        + '<i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>'
+      : '<span class="chip cost">Needs ' + need + '</span>');
 
     /* ---- the outcome tag ----
        OUTLINE: a select, because this is where the PRD says tagging happens -
@@ -54480,21 +54782,20 @@ Traps:
     var actions;
     if(isCourse){
       actions = (draft
-          ? '<button class="btn btn-sm btn-outline-primary" data-act="fix" data-si="' + si + '" data-ii="' + ii + '">'
-            + 'Add ' + need + '</button>'
+          ? ''
           : hidden
-            ? '<button class="btn btn-sm btn-outline-primary" data-act="show" data-si="' + si + '" data-ii="' + ii + '">'
+            ? '<button class="btn mds-btn btn-outline-primary mds-btn--size-sm" data-act="show" data-si="' + si + '" data-ii="' + ii + '">'
               + '<i class="fa-regular fa-eye me-1" aria-hidden="true"></i>Show to students</button>'
-            : '<button class="btn btn-sm btn-outline-secondary border-0" data-act="hide" data-si="' + si + '" data-ii="' + ii
+            : '<button class="btn mds-btn btn-ghost mds-btn--icon-only mds-btn--size-md" data-act="hide" data-si="' + si + '" data-ii="' + ii
               + '" title="Hide from students" aria-label="Hide from students"><i class="fa-regular fa-eye-slash" aria-hidden="true"></i></button>')
-        + '<button class="btn btn-sm btn-outline-secondary border-0" data-act="drop" data-si="' + si
+        + '<button class="btn mds-btn btn-ghost mds-btn--icon-only mds-btn--size-md" data-act="drop" data-si="' + si
         + '" data-ii="' + ii + '" title="Delete" aria-label="Delete"><span aria-hidden="true">&times;</span></button>';
     } else {
       actions = it.skel ? ''
-        : '<button class="btn btn-sm btn-outline-secondary border-0" data-act="swap" data-si="' + si
+        : '<button class="btn mds-btn btn-ghost mds-btn--icon-only mds-btn--size-md" data-act="swap" data-si="' + si
           + '" data-ii="' + ii + '" title="Swap the activity type" aria-label="Swap type">'
           + '<i class="fa-solid fa-shuffle" aria-hidden="true"></i></button>'
-          + '<button class="btn btn-sm btn-outline-secondary border-0" data-act="drop" data-si="' + si
+          + '<button class="btn mds-btn btn-ghost mds-btn--icon-only mds-btn--size-md" data-act="drop" data-si="' + si
           + '" data-ii="' + ii + '" title="Remove" aria-label="Remove"><span aria-hidden="true">&times;</span></button>';
     }
     var bulk = isCourse
@@ -54502,21 +54803,10 @@ Traps:
         + ' data-si="' + si + '" data-ii="' + ii + '" aria-label="Select ' + esc(it.t) + '"'
         + (sel[si + ":" + ii] ? " checked" : "") + '></span>'
       : '';
-    /* The learning type is INFERRED by default and only sometimes overridden
-       - the ABC PRD's word is "override". A permanent select presents that as
-       a decision you are expected to make; the label, click to change, is the
-       same capability without the weight. */
     var abcLabel = "";
-    if(isCourse){
-      abcLabel = '<button type="button" class="abc-label" data-abc-si="' + si + '" data-abc-ii="' + ii + '"'
-        + ' aria-label="Learning type for ' + esc(it.t) + (it.abc ? ': ' + byK[it.abc].name : '') + '">'
-        + '&middot; ' + (it.abc ? byK[it.abc].name : 'Set type') + '</button>';
-    } else if(it.abc){
-      abcLabel = '<span class="abc-label static">&middot; ' + byK[it.abc].name + '</span>';
-    }
 
     return '<article class="acard' + (hidden ? ' is-hidden' : '') + (draft ? ' is-draft' : '')
-      + '" data-purpose="' + mod.purpose + '" data-mod="' + it.m + '">'
+      + '" data-si="' + si + '" data-ii="' + ii + '" data-purpose="' + mod.purpose + '" data-mod="' + it.m + '">'
       + '<div class="acard-top">'
         + '<div class="acard-identity">'
           + bulk
@@ -54524,14 +54814,21 @@ Traps:
              starting shape, not a fixed frame: an Announcements forum that
              cannot be moved out of General is a worse default than one that
              can. */
-          + '<button type="button" class="acard-drag" aria-label="Move ' + esc(it.t) + '">'
+          + '<button type="button" class="acard-drag" aria-label="Move ' + esc(it.t) + '"'
+          + ' title="Drag to move, or use the arrow keys">'
           + '<i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>'
           + '<span class="atype">' + icon(it.m) + '<span class="tlabel">' + mod.label + '</span>' + abcLabel + '</span>'
+          + (MODHELP[it.m] ? '<button type="button" class="typeinfo" data-typeinfo="' + it.m + '"'
+              + ' aria-label="About ' + mod.label + '" aria-expanded="false">'
+              + '<i class="fa-solid fa-circle-info" aria-hidden="true"></i></button>' : '')
         + '</div>'
         + '<div class="achips">' + actions + '</div>'
       + '</div>'
       + '<h4 class="atitle">' + titleBtn(it.t, si, ii) + '</h4>'
-      + (it.d ? '<p class="adesc">' + it.d + '</p>' : '')
+      /* the description area is the activity's REAL description, the one
+         students see; a new activity has none. The template's reason is a
+         separate note, outline only. */
+      + (!isCourse && it.d ? whyNote(it.d) : '')
       + (chips || tag || abcSel ? '<div class="acard-badges">' + chips + abcSel + tag + '</div>' : '')
       + '</article>';
   }
@@ -54582,7 +54879,8 @@ Traps:
     function finish(save){
       if(done) return; done = true;
       var v = save ? (inp.value.trim() || prev) : prev;
-      if(hasII) M.secs[si].items[ii].t = v; else M.secs[si].title = v;
+      if(hasII) M.secs[si].items[ii].t = v;
+      else { if(v !== prev) M.secs[si].auto = false; M.secs[si].title = v; }
       M.render();
       if(save && v !== prev){
         toast(hasII ? "Renamed." : "Section renamed.");
@@ -54610,11 +54908,11 @@ Traps:
         ? '<div class="acards">' + sec.items.map(function(it,ii){ return acard(it, si, ii, ctx); }).join("") + '</div>'
         : '<div class="sempty">'
           + '<p class="mb-2">Nothing here yet.</p>'
-          + '<button class="btn btn-primary btn-sm" data-chooser="' + si + '">'
+          + '<button class="btn mds-btn btn-primary mds-btn--size-sm" data-chooser="' + si + '">'
           + '<i class="fa-solid fa-plus me-1" aria-hidden="true"></i>Add an activity or resource</button>'
           + '</div>';
       var add = sec.items.length
-        ? '<button class="btn btn-sm btn-outline-secondary mt-3" data-chooser="' + si + '">'
+        ? '<button class="btn mds-btn btn-secondary mds-btn--size-sm mt-3" data-chooser="' + si + '">'
           + '<i class="fa-solid fa-plus me-1" aria-hidden="true"></i>Add an activity or resource</button>'
         : '';
       var hiddenN = sec.items.filter(function(it){ return ctx === "course" && !it.visible; }).length;
@@ -54624,8 +54922,10 @@ Traps:
       return '<section class="scard' + (draftN ? '' : ' no-drafts') + '" data-section="' + si + '">'
         + '<div class="stop">'
           + '<div class="shead" data-toggle-section="' + si + '">'
-            + '<button type="button" class="shead-drag" aria-label="Move section ' + esc(sec.title) + '">'
-            + '<i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>'
+            + (si === 0 ? '<span class="shead-drag" aria-hidden="true"></span>'
+              : '<button type="button" class="shead-drag" aria-label="Move section ' + esc(sec.title) + '"'
+              + ' title="Drag to move, or use the arrow keys">'
+              + '<i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>')
             + '<button type="button" class="schev" aria-label="Collapse ' + esc(sec.title) + '">'
             + '<i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>'
             + '<h3 class="stitle">' + titleBtn(sec.title, si, null) + '</h3>'
@@ -54633,13 +54933,155 @@ Traps:
           + '</div>'
           + (sec.lo ? '<p class="slo"><i class="fa-solid fa-bullseye" aria-hidden="true"></i>'
               + 'Outcome ' + sec.lo + '</p>' : '')
-          + (sec.why ? '<p class="ssummary">' + sec.why + '</p>' : '')
+          + (ctx !== "course" && sec.why ? '<div class="swhy">' + whyNote(sec.why) + '</div>' : '')
         + '</div>'
         + '<div class="sbody">' + body + add + '</div>'
         + '</section>';
     }).join("");
   }
-  function renderOutline(){ $("#outline").innerHTML = sectionsHTML(outline, "outline"); }
+  var outlineBase = "[]";
+  function renderOutline(){
+    var rb = $("#regenBtn"), dirty = JSON.stringify(outline) !== outlineBase;
+    if(rb){ rb.disabled = !dirty; rb.title = dirty ? "" : "Nothing to reset yet"; }
+    $("#outline").innerHTML = outline.length ? sectionsHTML(outline, "outline")
+      : '<div class="sempty"><p class="mb-2">No template chosen yet.</p>'
+        + '<button type="button" class="btn mds-btn btn-primary mds-btn--size-sm" data-go="3">Choose a template</button></div>';
+  }
+
+  /* ---- MOVE: drag the grip, or arrow keys on it ----
+     Pointer events rather than HTML5 drag-and-drop: one code path for
+     mouse, touch and pen (native DnD does nothing on a tablet), and the
+     card under the pointer is found with elementFromPoint. A drag only
+     starts after 4px of movement, so a plain click on the grip does
+     nothing surprising. Activities move within and across sections
+     (anywhere on a section that is not a card appends to it). Sections
+     reorder, except General, which core never moves. The window scrolls
+     when the pointer nears its top or bottom edge. ArrowUp / ArrowDown on
+     a focused grip moves too; core's own keyboard path is a "Move" dialog,
+     which this stands in for. */
+  var dnd = null;
+  function clearDropMarks(){
+    $$(".drop-before,.drop-after,.drop-into").forEach(function(x){ x.classList.remove("drop-before","drop-after","drop-into"); });
+  }
+  function moveItem(M, a, ai, b, bi){
+    if(a === b && ai < bi) bi--;
+    var it = M.secs[a].items.splice(ai,1)[0];
+    M.secs[b].items.splice(bi,0,it);
+    sel = {}; M.render(); if(M.ctx === "outline") renderRequirements();
+    return it;
+  }
+  function moveSection(M, a, b){
+    if(a === 0) return null;
+    if(b < 1) b = 1;
+    if(a < b) b--;
+    var s0 = M.secs.splice(a,1)[0];
+    M.secs.splice(b,0,s0);
+    /* format_weeks dates a section by its position, so a moved week takes
+       the dates of where it lands, unless the teacher has renamed it */
+    var fmt = (M.ctx === "course" ? (tplByK[created.template] || BLANK) : (tpl || BLANK)).format;
+    if(fmt === "weeks") M.secs.forEach(function(x, i){ if(x.auto) x.title = weekTitle(i); });
+    sel = {}; M.render();
+    return s0;
+  }
+  function markDrop(x, y){
+    clearDropMarks();
+    var under = document.elementFromPoint(x, y);
+    if(!under || !dnd.root.contains(under)) return;
+    if(dnd.kind === "item"){
+      var c = under.closest(".acard");
+      if(c === dnd.el) return;
+      if(c){ var r = c.getBoundingClientRect();
+        c.classList.add(y < r.top + r.height/2 ? "drop-before" : "drop-after"); return; }
+      var sc = under.closest(".scard"); if(sc) sc.classList.add("drop-into");
+    } else {
+      var s2 = under.closest(".scard"); if(!s2 || s2 === dnd.el) return;
+      var r2 = s2.getBoundingClientRect(), before = y < r2.top + r2.height/2;
+      if(+s2.dataset.section === 0) before = false;
+      s2.classList.add(before ? "drop-before" : "drop-after");
+    }
+  }
+  function endDrag(commit){
+    if(!dnd) return;
+    var d = dnd; dnd = null;
+    clearInterval(d.scrollTimer);
+    document.body.classList.remove("cb-dragging");
+    if(d.el) d.el.classList.remove("is-dragging");
+    var mark = d.root.querySelector(".drop-before,.drop-after,.drop-into");
+    var into = !!mark && mark.classList.contains("drop-into"),
+        after = !!mark && mark.classList.contains("drop-after");
+    clearDropMarks();
+    if(!commit || !d.started || !mark) return;
+    if(d.kind === "item"){
+      var b, bi;
+      if(into){ b = +mark.dataset.section; bi = d.M.secs[b].items.length; }
+      else { b = +mark.dataset.si; bi = +mark.dataset.ii + (after ? 1 : 0); }
+      var it = moveItem(d.M, d.si, d.ii, b, bi);
+      toast("Moved <strong>" + esc(it.t) + "</strong>" + (b !== d.si ? " to " + esc(d.M.secs[b].title) : "") + ".");
+    } else {
+      var t = +mark.dataset.section + (after ? 1 : 0);
+      var s0 = moveSection(d.M, d.si, t);
+      if(s0) toast("Moved section <strong>" + esc(s0.title) + "</strong>.");
+    }
+  }
+  document.addEventListener("pointerdown", function(e){
+    if(e.button !== 0) return;
+    var h = e.target.closest("button.acard-drag, button.shead-drag"); if(!h) return;
+    var root = h.closest("#outline, #courseContent"); if(!root) return;
+    var isItem = h.classList.contains("acard-drag");
+    var el = h.closest(isItem ? ".acard" : ".scard");
+    dnd = {kind: isItem ? "item" : "section", M: modelFor(h), root: root, el: el,
+           si: isItem ? +el.dataset.si : +el.dataset.section, ii: isItem ? +el.dataset.ii : null,
+           x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, started: false, scrollTimer: null};
+    try { h.setPointerCapture(e.pointerId); } catch(err){}
+    e.preventDefault();      /* no text selection, no focus jump while dragging */
+  });
+  document.addEventListener("pointermove", function(e){
+    if(!dnd) return;
+    dnd.x = e.clientX; dnd.y = e.clientY;
+    if(!dnd.started){
+      if(Math.abs(e.clientX - dnd.x0) + Math.abs(e.clientY - dnd.y0) < 4) return;
+      dnd.started = true;
+      dnd.el.classList.add("is-dragging");
+      document.body.classList.add("cb-dragging");
+      dnd.scrollTimer = setInterval(function(){
+        if(!dnd) return;
+        var edge = 70, v = dnd.y < edge ? -12 : dnd.y > window.innerHeight - edge ? 12 : 0;
+        if(v){ window.scrollBy(0, v); markDrop(dnd.x, dnd.y); }
+      }, 16);
+    }
+    markDrop(e.clientX, e.clientY);
+  });
+  document.addEventListener("pointerup", function(){ endDrag(true); });
+  document.addEventListener("pointercancel", function(){ endDrag(false); });
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape" && dnd) endDrag(false); });
+
+  ["#outline","#courseContent"].forEach(function(root){
+    var R = $(root);
+    R.addEventListener("keydown", function(e){
+      if(e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+      var h = e.target.closest("button.acard-drag, button.shead-drag"); if(!h) return;
+      e.preventDefault();
+      var up = e.key === "ArrowUp", M = modelFor(h), focusSel;
+      if(h.classList.contains("acard-drag")){
+        var card = h.closest(".acard"), a = +card.dataset.si, ai = +card.dataset.ii, b = a, bi;
+        if(up && ai > 0) bi = ai - 1;
+        else if(!up && ai < M.secs[a].items.length - 1) bi = ai + 2;
+        else if(up && a > 0){ b = a - 1; bi = M.secs[b].items.length; }
+        else if(!up && a < M.secs.length - 1){ b = a + 1; bi = 0; }
+        else return;
+        var it = moveItem(M, a, ai, b, bi), ni = b === a ? (up ? ai - 1 : ai + 1) : bi;
+        focusSel = '.acard[data-si="' + b + '"][data-ii="' + ni + '"] .acard-drag';
+        toast("Moved <strong>" + esc(it.t) + "</strong>" + (b !== a ? " to " + esc(M.secs[b].title) : "") + ".");
+      } else {
+        var s = +h.closest(".scard").dataset.section;
+        if(up ? s <= 1 : s >= M.secs.length - 1) return;
+        var sx = moveSection(M, s, up ? s - 1 : s + 2);
+        focusSel = '.scard[data-section="' + (up ? s - 1 : s + 1) + '"] .shead-drag';
+        toast("Moved section <strong>" + esc(sx.title) + "</strong>.");
+      }
+      var f = R.querySelector(focusSel); if(f) f.focus();
+    });
+  });
 
   /* ---- collapse a section ---- */
   ["#outline","#courseContent"].forEach(function(s){ $(s).addEventListener("click", function(e){
@@ -54715,9 +55157,8 @@ Traps:
   $("#chooserContent").addEventListener("click", function(e){
     var t = e.target.closest("[data-choose]"); if(!t || chooserTarget === null) return;
     var m = t.dataset.choose, mod = MODS[m];
-    var a = (!skipped && byK[primary]) ? byK[primary] : null;
     var name = mod.cost === "0" ? "(text and media area)" : mod.label;
-    var it = {m:m, t:name, lo:0, abc:(a && !skipped ? a.k : ""), filled:false};
+    var it = {m:m, t:name, lo:0, filled:false};
     if(chooserModel.ctx === "course") it.visible = needs(it) ? 0 : 1;
     chooserModel.secs[chooserTarget].items.push(it);
     chooserModel.render(); renderRequirements();
@@ -54749,8 +55190,9 @@ Traps:
       else
         warnings.push(short + " short of the recommended " + LO_MIN + " learning outcomes.");
     }
+    if(!tpl) warnings.push("No template chosen. The course will be created blank.");
     var acts = outline.reduce(function(s,x){ return s + x.items.length; }, 0);
-    if(!acts) warnings.push("The course has no activities yet. You can add them later, "
+    if(tpl && !acts) warnings.push("The course has no activities yet. You can add them later, "
       + "or use \u201cAdd an activity or resource\u201d on any topic.");
     return {blockers:blockers, warnings:warnings};
   }
@@ -54779,7 +55221,11 @@ Traps:
     var b = e.target.closest("[data-act]"); if(!b) return;
     var M = modelFor(b), si = +b.dataset.si, ii = +b.dataset.ii, it = M.secs[si].items[ii], act = b.dataset.act;
     if(act === "drop"){ M.secs[si].items.splice(ii,1); sel = {}; M.render(); toast(M.ctx === "course" ? "Deleted." : "Removed."); }
-    else if(act === "swap"){ var pool = byK[it.abc || primary].pool, idx = pool.indexOf(it.m);
+    /* swap within Moodle's own MOD_PURPOSE family: a Page becomes a Book or
+       a URL, never a Forum */
+    else if(act === "swap"){ var pool = Object.keys(MODS).filter(function(m){
+        return MODS[m].purpose === MODS[it.m].purpose && m !== "label" && m !== "subsection"; }),
+      idx = pool.indexOf(it.m);
       it.m = pool[(idx+1)%pool.length]; M.render();
       toast("Swapped to <strong>" + MODS[it.m].label + "</strong>."); }
     /* "fix" stands in for the module's own settings form. THAT form's
@@ -54791,46 +55237,68 @@ Traps:
     else if(act === "show"){ it.visible = 1; M.render(); toast("Shown to students."); }
     else if(act === "hide"){ it.visible = 0; M.render(); toast("Hidden from students."); }
   }); });
-  $("#regenBtn").addEventListener("click", function(){ generate(); toast("Outline rebuilt."); });
-  $("#id_numsections").addEventListener("change", function(){ if(outline.length) generate(); });
+  $("#regenBtn").addEventListener("click", function(){ generate(); toast("Outline reset to the template."); });
 
-  /* ---- step nav ---- */
-  var STEPS = ["Basics","Outcomes","Shape","Outline","Review"];
+  /* ---- step nav: MDS NavPill markup (components/nav-pill/NavPill.tsx):
+     an anchor, .mds-nav-pill--selected plus the indicator dot when current,
+     label in .mds-nav-pill__label. The number is part of the label string.
+     aria-current is "step", not the component's hard-coded "page": these
+     are steps in one process. Selection is updated in place so keyboard
+     focus stays on the pill that was activated. ---- */
+  var STEPS = ["Course details","Outcomes","Template","Outline","Review"];
   $("#stepNav").innerHTML = STEPS.map(function(s,i){
-    return '<li class="nav-item"><button class="nav-link' + (i===0?" active":"")
-      + '" data-step="' + (i+1) + '" type="button"><span class="stepnum">' + (i+1) + '</span>'
-      + s + '</button></li>'; }).join("");
+    var on = i === 0;
+    return '<a class="mds-nav-pill' + (on ? ' mds-nav-pill--selected' : '') + '" href="#step-' + (i+1) + '"'
+      + ' data-step="' + (i+1) + '"' + (on ? ' aria-current="step"' : '') + '>'
+      + (on ? '<span class="mds-nav-pill__indicator" aria-hidden="true"></span>' : '')
+      + '<span class="mds-nav-pill__label">' + (i+1) + '. ' + s + '</span></a>'; }).join("");
   function goStep(n){
-    $$("#stepNav .nav-link").forEach(function(b){
-      var sn = +b.dataset.step;
-      b.classList.toggle("active", sn === n);
-      b.classList.toggle("done", sn < n);
+    $$("#stepNav [data-step]").forEach(function(a){
+      var on = +a.dataset.step === n, dot = a.querySelector(".mds-nav-pill__indicator");
+      a.classList.toggle("mds-nav-pill--selected", on);
+      if(on){
+        a.setAttribute("aria-current", "step");
+        if(!dot) a.insertAdjacentHTML("afterbegin", '<span class="mds-nav-pill__indicator" aria-hidden="true"></span>');
+      } else {
+        a.removeAttribute("aria-current");
+        if(dot) dot.remove();
+      }
     });
     $$(".stepbody").forEach(function(b){ b.classList.toggle("on", +b.dataset.body === n); });
     if(n === 4 && !outline.length) generate();
     if(n === 5){ renderReview(); renderRequirements(); }
+    try { history.replaceState(null, "", "#step-" + n); } catch(err){}
     window.scrollTo({top:0, behavior:"smooth"});
   }
   document.addEventListener("click", function(e){
-    var g = e.target.closest("[data-go]"); if(g){ goStep(+g.dataset.go); return; }
-    var s = e.target.closest("#stepNav .nav-link"); if(s){ goStep(+s.dataset.step); }
+    var g = e.target.closest("[data-go]"); if(g){ e.preventDefault(); goStep(+g.dataset.go); return; }
+    var s = e.target.closest("#stepNav [data-step]"); if(s){ e.preventDefault(); goStep(+s.dataset.step); }
   });
-
   function renderReview(){
     var acts = outline.reduce(function(s,x){ return s + x.items.length; }, 0);
+    var desc = $("#id_summary").value.trim(), t = tpl || BLANK;
     $("#reviewBody").innerHTML =
       '<dl class="row mb-3">'
       + '<dt class="col-sm-3">Course</dt><dd class="col-sm-9">' + esc($("#id_fullname").value)
       + ' <span class="text-muted">(' + esc($("#id_shortname").value) + ')</span></dd>'
       + '<dt class="col-sm-3">Category</dt><dd class="col-sm-9">Category 1</dd>'
-      + '<dt class="col-sm-3">Primary type</dt><dd class="col-sm-9">'
-      + (skipped ? "None &mdash; skipped" : byK[primary].name) + '</dd>'
+      + '<dt class="col-sm-3">Description</dt><dd class="col-sm-9">'
+      + (desc ? esc(desc.length > 160 ? desc.slice(0,157) + "…" : desc) : '<span class="text-muted">None</span>') + '</dd>'
       + '<dt class="col-sm-3">Outcomes</dt><dd class="col-sm-9">' + loValid().length + ' defined'
-      + (loValid().length < LO_MIN ? ' <span class="badge ' + (loMode === "hard" ? "text-bg-danger" : "text-bg-warning")
+      + (loValid().length < LO_MIN ? ' <span class="mds-badge mds-badge--subtle ' + (loMode === "hard" ? "mds-badge--danger" : "mds-badge--warning")
           + '">below the ' + (loMode === "hard" ? "required" : "recommended") + ' ' + LO_MIN + '</span>' : '') + '</dd>'
-      + '<dt class="col-sm-3">Structure</dt><dd class="col-sm-9">' + outline.length + ' topics, '
+      + '<dt class="col-sm-3">Template</dt><dd class="col-sm-9">'
+      + (tpl ? esc(tpl.name) : 'None chosen &mdash; a blank course') + '</dd>'
+      + '<dt class="col-sm-3">Course format</dt><dd class="col-sm-9">' + FORMAT_NAME[t.format] + '</dd>'
+      + (t.settings.length ? '<dt class="col-sm-3">Also set</dt><dd class="col-sm-9">' + t.settings.join(' &middot; ') + '</dd>' : '')
+      + '<dt class="col-sm-3">Structure</dt><dd class="col-sm-9">' + outline.length + ' sections, '
       + acts + ' activities</dd>'
-      + '</dl>';
+      + '</dl>'
+      + (advancedOn
+        ? '<p class="advanced-line mb-0"><span class="text-muted">Every other setting as you set it in the full form.</span> '
+          + '<a href="#step-1" data-go="1">Change course details</a></p>'
+        : '<p class="advanced-line mb-0"><span class="text-muted">Everything else uses your site’s defaults.</span> '
+          + '<a href="#step-1" data-advanced>Advanced course details</a></p>');
   }
   $("#createBtn").addEventListener("click", function(){
     toast("This is where the course is created \u2014 "
@@ -54859,7 +55327,7 @@ Traps:
       box.innerHTML = '<div class="alert alert-warning d-flex flex-wrap align-items-center gap-2 mb-0">'
         + '<div class="flex-grow-1"><strong>' + c.drafts + ' of ' + c.n + ' activit' + (c.n === 1 ? 'y isn' : 'ies aren')
         + '&rsquo;t ready to show students.</strong> Each one says what it needs. They stay hidden until then.</div>'
-        + '<button type="button" class="btn btn-sm ' + (filterOn ? 'btn-primary' : 'btn-outline-secondary')
+        + '<button type="button" class="btn mds-btn mds-btn--size-sm ' + (filterOn ? 'btn-primary' : 'btn-secondary')
         + '" id="draftsOnly" aria-pressed="' + filterOn + '">' + (filterOn ? 'Show everything' : 'Show only these') + '</button>'
         + '</div>';
     } else {
@@ -54901,7 +55369,7 @@ Traps:
     $("#courseTitle").textContent = created.title;
     $("#reportCourseName").textContent = created.title;
     $("#courseContent").innerHTML = sectionsHTML(created.sections, "course");
-    renderReadyBar(); renderAlignNudge(); renderAlign(); renderReport(); syncBulk(); renderCourseIndex();
+    renderReadyBar(); renderAlignNudge(); renderReport(); syncBulk(); renderCourseIndex();
   }
 
   /* the shell's course index, fed from the created course */
@@ -54975,13 +55443,49 @@ Traps:
      component handles the rest: single-select, keyboard, focus ring on the
      indicator, no JS state. */
   var popEl = null;
-  function closePop(){ if(popEl){ popEl.remove(); popEl = null; } }
+  function closePop(){
+    if(popEl){ popEl.remove(); popEl = null; }
+    $$('.typeinfo[aria-expanded="true"]').forEach(function(b){ b.setAttribute("aria-expanded", "false"); });
+  }
   document.addEventListener("keydown", function(e){ if(e.key === "Escape") closePop(); });
   document.addEventListener("click", function(e){
-    if(popEl && !e.target.closest(".lopop") && !e.target.closest(".lopick")) closePop();
+    if(popEl && !e.target.closest(".lopop") && !e.target.closest(".lopick") && !e.target.closest(".typeinfo")) closePop();
   }, true);
   window.addEventListener("resize", closePop);
   window.addEventListener("scroll", closePop, true);
+
+  /* A: a toggletip on the activity type. Click or tap, not hover: hover
+     does nothing on a tablet, and MDS Tooltip is for short labels, not a
+     sentence plus a tip. Same popover shell as the outcome picker; focus
+     stays on the button, Escape or a click elsewhere closes it. The "More
+     help" link is core's docs link pattern (get_docs_url). */
+  function openTypeInfo(btn){
+    var m = btn.dataset.typeinfo, h = MODHELP[m], key = btn.closest(".acard").dataset.si + ":" + btn.closest(".acard").dataset.ii
+      + ":" + (btn.closest("#courseContent") ? "c" : "o");
+    if(popEl && popEl.dataset.for === key){ closePop(); return; }
+    closePop();
+    popEl = document.createElement("div");
+    popEl.className = "lopop typepop";
+    popEl.id = "typePop";
+    popEl.dataset.for = key;
+    popEl.setAttribute("role", "status");
+    popEl.innerHTML = '<div class="typepop-name">' + icon(m) + '<span>' + MODS[m].label + '</span></div>'
+      + '<p class="mb-2">' + esc(h.s) + '</p>'
+      + (h.t ? '<p class="typepop-tip"><i class="fa-regular fa-lightbulb" aria-hidden="true"></i><span>' + esc(h.t) + '</span></p>' : '')
+      + '<a href="https://docs.moodle.org/502/en/mod/' + m + '/view" target="_blank" rel="noopener">More help'
+      + '<i class="fa-solid fa-arrow-up-right-from-square ms-1" aria-hidden="true"></i></a>';
+    document.body.appendChild(popEl);
+    btn.setAttribute("aria-expanded", "true");
+    btn.setAttribute("aria-controls", "typePop");
+    var r = btn.getBoundingClientRect(), pw = popEl.offsetWidth, ph = popEl.offsetHeight;
+    popEl.style.left = Math.max(8, Math.min(r.left - 12, window.innerWidth - pw - 8)) + "px";
+    var top = (r.bottom + ph + 8 < window.innerHeight) ? r.bottom + 6 : r.top - ph - 6;
+    popEl.style.top = Math.max(8, Math.min(top, window.innerHeight - ph - 8)) + "px";
+  }
+  ["#outline","#courseContent"].forEach(function(s){ $(s).addEventListener("click", function(e){
+    var b = e.target.closest(".typeinfo"); if(!b) return;
+    e.stopPropagation(); openTypeInfo(b);
+  }); });
 
   function openLoPicker(btn, M){
     closePop();
@@ -55022,19 +55526,7 @@ Traps:
     e.stopPropagation(); openLoPicker(lo, modelFor(lo));
   }); });
 
-  $("#courseContent").addEventListener("click", function(e){
-    var ab = e.target.closest("[data-abc-si]");
-    if(ab){
-      var asi = +ab.dataset.abcSi, aii = +ab.dataset.abcIi, ait = created.sections[asi].items[aii];
-      inlinePick(ab,
-        [{v:"", label:"No learning type"}].concat(ABC.map(function(a){ return {v:a.k, label:a.name}; })),
-        ait.abc || "",
-        function(v){ ait.abc = v; renderCourse(); },
-        "Learning type for " + ait.t);
-    }
-  });
-
-  /* ---- outcome tag, learning type, bulk selection ---- */
+  /* ---- bulk selection ---- */
   document.addEventListener("change", function(e){
     if(e.target.classList.contains("bulkcb")){
       sel[e.target.dataset.si + ":" + e.target.dataset.ii] = e.target.checked; syncBulk();
@@ -55052,35 +55544,6 @@ Traps:
     var uncovered = created.lo.map(function(o,i){ return {i:i, o:o, n:used[i+1]||0}; })
       .filter(function(x){ return !x.n; });
     return {used:used, untagged:untagged, deco:deco, tagged:tagged, uncovered:uncovered};
-  }
-
-  /* ---- alignment: reads the PERSISTED type on each activity ---- */
-  function renderAlign(){
-    var c = {}; ABC.forEach(function(a){ c[a.k]=0; });
-    var total = 0, untagged = 0;
-    created.sections.forEach(function(s){ s.items.forEach(function(it){
-      if(!it.abc){ untagged++; return; } total++; c[it.abc]++; }); });
-    var max = Math.max.apply(null, ABC.map(function(a){ return c[a.k]; }).concat([1]));
-    var cx=100, cy=100, R=62;
-    function pt(i,f){ var ang = Math.PI*2*i/6 - Math.PI/2; return [cx+Math.cos(ang)*R*f, cy+Math.sin(ang)*R*f]; }
-    var rings=[0.25,0.5,0.75,1].map(function(f){
-      return '<polygon class="grid" points="'+ABC.map(function(_,i){return pt(i,f).join(",");}).join(" ")+'"/>';}).join("");
-    var axes=ABC.map(function(_,i){var p=pt(i,1);
-      return '<line class="axis" x1="'+cx+'" y1="'+cy+'" x2="'+p[0]+'" y2="'+p[1]+'"/>';}).join("");
-    var shape='<polygon class="shape" points="'+ABC.map(function(a,i){return pt(i,c[a.k]/max).join(",");}).join(" ")+'"/>';
-    var labels=ABC.map(function(a,i){var p=pt(i,1.28);
-      return '<text class="lbl'+(a.k===primary&&!skipped?" on":"")+'" x="'+p[0].toFixed(1)+'" y="'+p[1].toFixed(1)
-        +'" text-anchor="middle" dominant-baseline="middle">'+a.short+'</text>';}).join("");
-    $("#radar").innerHTML = rings+axes+shape+labels;
-    $("#alignTable tbody").innerHTML = ABC.map(function(a){
-      var pct = total ? Math.round(c[a.k]/total*100) : 0;
-      return '<tr'+(a.k===primary&&!skipped?' class="table-active"':'')+'><td>'+a.name+'</td>'
-        +'<td class="text-end">'+c[a.k]+'</td><td class="text-end">'+pct+'%</td></tr>';}).join("")
-      + '<tr><td class="text-muted">No learning type</td><td class="text-end">'+untagged+'</td><td class="text-end">&mdash;</td></tr>';
-    var weakest = ABC.slice().sort(function(x,y){ return c[x.k]-c[y.k]; })[0];
-    $("#reflect").innerHTML = '<strong>Review the blend.</strong> Each activity carries one learning type, set when '
-      + 'the outline was built and changeable on the card. Thinnest here is <strong>' + weakest.name + '</strong> ('
-      + c[weakest.k] + '). Deliberate for this subject, or worth a second look?';
   }
 
   /* ---- two-way gap report ---- */
@@ -55125,8 +55588,8 @@ Traps:
       + '<div class="flex-grow-1"><strong>' + g.untagged.length + ' activit'
       + (g.untagged.length === 1 ? 'y still has' : 'ies still have') + ' no learning outcome.</strong> '
       + 'Students will not see what those activities are for, and the alignment report stays incomplete.</div>'
-      + '<button type="button" class="btn btn-sm btn-primary" data-screen-go="report">Open the report</button>'
-      + '<button type="button" class="btn btn-sm btn-outline-secondary" id="nudgeDismiss">Not now</button>'
+      + '<button type="button" class="btn mds-btn btn-primary mds-btn--size-sm" data-screen-go="report">Open the report</button>'
+      + '<button type="button" class="btn mds-btn btn-secondary mds-btn--size-sm" id="nudgeDismiss">Not now</button>'
       + '</div>';
     $("#leaveNudge").classList.remove("d-none");
   }
@@ -55154,14 +55617,15 @@ Traps:
      course_modules.visible = 0 - the existing "hidden from students" bit,
      nothing new. */
   $("#createBtn").addEventListener("click", function(){
+    if(!tpl){ tpl = BLANK; sectionCount = BLANK.count; generate(); }
     created = {
+      template: tpl.k,
       title: $("#id_fullname").value.trim() || "Untitled course",
       short: $("#id_shortname").value.trim(),
       lo: loValid().slice(),
       sections: JSON.parse(JSON.stringify(outline))
     };
     created.sections.forEach(function(s){ s.items.forEach(function(it){
-      if(it.abc === undefined) it.abc = "";
       it.filled = false; it.visible = needs(it) ? 0 : 1; }); });
     sel = {};
     $("#courseEmpty").classList.add("d-none"); $("#courseBody").classList.remove("d-none");
@@ -55175,6 +55639,22 @@ Traps:
     toast("<strong>" + esc(created.title) + "</strong> created with " + c.n + " activities"
       + (c.drafts ? " \u2014 " + c.drafts + " hidden until they have what they need." : "."));
   });
+
+  /* ============================================================
+     ADVANCED COURSE DETAILS from Review: back to step 1 with the full
+     form switched on. Nothing is lost, because nothing leaves the wizard.
+     ============================================================ */
+  document.addEventListener("click", function(e){
+    var a = e.target.closest("[data-advanced]"); if(!a) return;
+    e.preventDefault();
+    goStep(1); if(!advancedOn) setAdvanced(true);
+  });
+
+  renderTemplates(); syncShape(); renderOutline();
+  (function(){
+    var m = /^#step-([1-5])$/.exec(location.hash);
+    if(m) goStep(+m[1]);
+  })();
 
   // dev:start
   /* ============================================================
